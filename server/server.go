@@ -1,23 +1,24 @@
 package server
 
 import (
+	"Keyline/config"
 	"fmt"
 	"github.com/gorilla/mux"
 	"net/http"
 )
 
 func Serve() {
-	println("starting server")
-
 	r := mux.NewRouter()
 
 	r.HandleFunc("/health", func(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(200)
 	}).Methods(http.MethodGet)
 
+	addr := fmt.Sprintf("%s:%d", config.C.Server.Host, config.C.Server.Port)
+	fmt.Printf("running server at %s\n", addr)
 	srv := &http.Server{
 		Handler: r,
-		Addr:    "localhost:8080",
+		Addr:    addr,
 	}
 
 	err := srv.ListenAndServe()
