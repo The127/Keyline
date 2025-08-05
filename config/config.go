@@ -1,6 +1,9 @@
 package config
 
-import "flag"
+import (
+	"flag"
+	"github.com/spf13/viper"
+)
 
 type Config struct {
 	Server struct {
@@ -15,12 +18,33 @@ var C Config
 func Init() {
 	// read flags (read config file path)
 	readFlags()
-	println(configFilePath)
 
 	// set default values
+
 	// read values from different sources (env vars & files)
+	readConfigFile()
+
 	// validate config
 	// set the global variable
+}
+
+func readConfigFile() {
+	v := viper.NewWithOptions(viper.KeyDelimiter("_"))
+
+	v.SetEnvPrefix("KEYLINE")
+	v.AutomaticEnv()
+
+	v.SetConfigFile(configFilePath)
+
+	err := v.ReadInConfig()
+	if err != nil {
+		panic(err)
+	}
+
+	err = v.Unmarshal(&C)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func readFlags() {
