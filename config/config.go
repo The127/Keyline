@@ -19,13 +19,13 @@ func Init() {
 	// read flags (read config file path)
 	readFlags()
 
-	// set default values
+	// TODO: set default values
 
 	// read values from different sources (env vars & files)
 	readConfigFile()
 
-	// validate config
-	// set the global variable
+	// TODO: validate config
+	// TODO: set the global variable
 }
 
 func readConfigFile() {
