@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 func Serve() {
@@ -22,6 +25,14 @@ func Serve() {
 		Addr:    addr,
 	}
 
+	go serve(srv)
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	<-c
+}
+
+func serve(srv *http.Server) {
 	err := srv.ListenAndServe()
 	if err != nil {
 		panic(fmt.Errorf("error while running server: %w", err))
