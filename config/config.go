@@ -10,6 +10,14 @@ type Config struct {
 		Host string
 		Port int
 	}
+	Database struct {
+		Database string
+		Host     string
+		Port     int
+		Username string
+		Password string
+		SslMode  string
+	}
 }
 
 var configFilePath string
