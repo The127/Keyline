@@ -2,6 +2,7 @@ package server
 
 import (
 	"Keyline/config"
+	"Keyline/logging"
 	"fmt"
 	"github.com/gorilla/mux"
 	"net/http"
@@ -15,7 +16,7 @@ func Serve() {
 	}).Methods(http.MethodGet)
 
 	addr := fmt.Sprintf("%s:%d", config.C.Server.Host, config.C.Server.Port)
-	fmt.Printf("running server at %s\n", addr)
+	logging.Logger.Infof("running server at %s", addr)
 	srv := &http.Server{
 		Handler: r,
 		Addr:    addr,

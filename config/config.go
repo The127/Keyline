@@ -13,7 +13,12 @@ type Config struct {
 }
 
 var configFilePath string
+var environment string
 var C Config
+
+func IsProduction() bool {
+	return environment == "PRODUCTION"
+}
 
 func Init() {
 	// read flags (read config file path)
@@ -50,5 +55,6 @@ func readConfigFile() {
 func readFlags() {
 	// read flags passed to the program
 	flag.StringVar(&configFilePath, "config", "./config.yaml", "The path for the config file.")
+	flag.StringVar(&environment, "environment", "PRODUCTION", "The environment that this application is running in (can be PRODUCTION or DEVELOPMENT).")
 	flag.Parse()
 }
