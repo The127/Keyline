@@ -20,3 +20,25 @@ func TestRequestHandlerGetsCalled(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "foo", response)
 }
+
+func TestBehaviourCalled(t *testing.T) {
+	// arrange
+	m := NewMediator()
+	RegisterHandler(m, func(ctx context.Context, request string) (string, error) {
+		return "foo", nil
+	})
+
+	behaviourCalled := false
+	RegisterBehaviour(m, func(ctx context.Context, request string, next Next) {
+		behaviourCalled = true
+		next()
+	})
+
+	// act
+	response, err := Send[string](t.Context(), m, "bar")
+
+	// assert
+	assert.NoError(t, err)
+	assert.Equal(t, "foo", response)
+	assert.True(t, behaviourCalled)
+}

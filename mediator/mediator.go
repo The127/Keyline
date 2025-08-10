@@ -8,7 +8,15 @@ import (
 )
 
 type Mediator struct {
-	handlers map[reflect.Type]handlerInfo
+	handlers   map[reflect.Type]handlerInfo
+	behaviours map[reflect.Type][]behaviourInfo
+}
+
+type Next func()
+
+type behaviourInfo struct {
+	requestType   reflect.Type
+	behaviourFunc func(ctx context.Context, request any, next Next)
 }
 
 type handlerInfo struct {
@@ -21,8 +29,29 @@ type HandlerFunc[TRequest any, TResponse any] func(ctx context.Context, request 
 
 func NewMediator() *Mediator {
 	return &Mediator{
-		handlers: make(map[reflect.Type]handlerInfo),
+		handlers:   make(map[reflect.Type]handlerInfo),
+		behaviours: make(map[reflect.Type][]behaviourInfo),
 	}
+}
+
+type BehaviourFunc[TRequest any] func(ctx context.Context, request TRequest, next Next)
+
+func RegisterBehaviour[TRequest any](m *Mediator, behaviour BehaviourFunc[TRequest]) {
+	requestType := utils.TypeOf[TRequest]()
+
+	behaviours, ok := m.behaviours[requestType]
+	if !ok {
+		behaviours = make([]behaviourInfo, 0)
+	}
+
+	behaviours = append(behaviours, behaviourInfo{
+		requestType: requestType,
+		behaviourFunc: func(ctx context.Context, request any, next Next) {
+			behaviour(ctx, request.(TRequest), next)
+		},
+	})
+
+	m.behaviours[requestType] = behaviours
 }
 
 func RegisterHandler[TRequest any, TResponse any](m *Mediator, handler HandlerFunc[TRequest, TResponse]) {
@@ -51,6 +80,28 @@ func Send[TResponse any](ctx context.Context, m *Mediator, request any) (TRespon
 			info.responseType.Name())
 	}
 
-	response, err := info.handlerFunc(ctx, request)
+	var step Next
+	var response any
+	var err error
+
+	step = func() {
+		response, err = info.handlerFunc(ctx, request)
+	}
+
+	behaviours, ok := m.behaviours[requestType]
+	if !ok {
+		behaviours = make([]behaviourInfo, 0)
+	}
+
+	for i := len(behaviours) - 1; i >= 0; i-- {
+		behaviour := behaviours[i]
+		prev := step
+		step = func() {
+			behaviour.behaviourFunc(ctx, request, prev)
+		}
+	}
+
+	step()
+
 	return response.(TResponse), err
 }
