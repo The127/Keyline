@@ -39,6 +39,7 @@ func NewDependencyCollection() *DependencyCollection {
 		transientProviders: make(map[reflect.Type]ProviderFunc[any]),
 		scopedProviders:    make(map[reflect.Type]ProviderFunc[any]),
 		singletonProviders: make(map[reflect.Type]ProviderFunc[any]),
+		closeHandlers:      make(map[reflect.Type]CloseHandler[any]),
 	}
 }
 
@@ -48,6 +49,7 @@ func (dc *DependencyCollection) clone() *DependencyCollection {
 	other.transientProviders = maps.Clone(dc.transientProviders)
 	other.scopedProviders = maps.Clone(dc.scopedProviders)
 	other.singletonProviders = maps.Clone(dc.singletonProviders)
+	other.closeHandlers = maps.Clone(dc.closeHandlers)
 
 	return other
 }
