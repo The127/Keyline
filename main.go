@@ -6,6 +6,7 @@ import (
 	"Keyline/ioc"
 	"Keyline/logging"
 	"Keyline/mediator"
+	"Keyline/queries/virtualServers"
 	"Keyline/server"
 	"Keyline/services"
 	"database/sql"
@@ -38,6 +39,8 @@ func main() {
 
 func setupMediator(dc *ioc.DependencyCollection) {
 	m := mediator.NewMediator()
+
+	mediator.RegisterHandler(m, virtualServers.DoesAnyVirtualServerExistQueryHandler)
 
 	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) *mediator.Mediator {
 		return m
