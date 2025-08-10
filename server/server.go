@@ -4,7 +4,9 @@ import (
 	"Keyline/config"
 	"Keyline/ioc"
 	"Keyline/logging"
+	"Keyline/mediator"
 	"Keyline/middlewares"
+	"Keyline/queries/virtualServers"
 	"fmt"
 	"github.com/gorilla/mux"
 	"net/http"
@@ -18,9 +20,25 @@ func Serve(dp *ioc.DependencyProvider) {
 
 	r.Use(middlewares.ScopeMiddleware(dp))
 
-	r.HandleFunc("/health", func(writer http.ResponseWriter, request *http.Request) {
-		writer.WriteHeader(200)
+	r.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(200)
 	}).Methods(http.MethodGet)
+
+	r.HandleFunc("/debug", func(w http.ResponseWriter, r *http.Request) {
+		scope := middlewares.GetScope(r.Context())
+		m := ioc.GetDependency[*mediator.Mediator](scope)
+		response, err := mediator.Send[virtualServers.DoesAnyVirtualServerExistResponse](r.Context(), m, virtualServers.DoesAnyVirtualServerExistQuery{})
+		if err != nil {
+			logging.Logger.Errorf("failed to call handler: %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+
+		if response.FoundVirtualServer {
+			w.WriteHeader(http.StatusOK)
+		} else {
+			w.WriteHeader(http.StatusNotFound)
+		}
+	})
 
 	addr := fmt.Sprintf("%s:%d", config.C.Server.Host, config.C.Server.Port)
 	logging.Logger.Infof("running server at %s", addr)
