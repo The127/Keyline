@@ -2,7 +2,9 @@ package server
 
 import (
 	"Keyline/config"
+	"Keyline/ioc"
 	"Keyline/logging"
+	"Keyline/middlewares"
 	"fmt"
 	"github.com/gorilla/mux"
 	"net/http"
@@ -11,8 +13,10 @@ import (
 	"syscall"
 )
 
-func Serve() {
+func Serve(dp *ioc.DependencyProvider) {
 	r := mux.NewRouter()
+
+	r.Use(middlewares.ScopeMiddleware(dp))
 
 	r.HandleFunc("/health", func(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(200)
