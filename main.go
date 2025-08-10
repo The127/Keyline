@@ -7,6 +7,8 @@ import (
 	"Keyline/logging"
 	"Keyline/mediator"
 	"Keyline/server"
+	"Keyline/services"
+	"database/sql"
 )
 
 func main() {
@@ -15,6 +17,17 @@ func main() {
 	database.Migrate()
 
 	dc := ioc.NewDependencyCollection()
+	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) *sql.DB {
+		return database.ConnectToDatabase()
+	})
+
+	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) *services.DbService {
+		return services.NewDbService(dp)
+	})
+	ioc.RegisterCloseHandler(dc, func(dbService *services.DbService) error {
+		return dbService.Close()
+	})
+
 	setupMediator(dc)
 	dp := dc.BuildProvider()
 
@@ -26,7 +39,7 @@ func main() {
 func setupMediator(dc *ioc.DependencyCollection) {
 	m := mediator.NewMediator()
 
-	ioc.RegisterSingleton(dc, func() *mediator.Mediator {
+	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) *mediator.Mediator {
 		return m
 	})
 }

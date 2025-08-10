@@ -59,7 +59,7 @@ func (t *TestConnector) Close() {
 func TestDependencyIsResolved(t *testing.T) {
 	// arrange
 	dependencyCollection := NewDependencyCollection()
-	RegisterTransient(dependencyCollection, func() RocketLauncher {
+	RegisterTransient(dependencyCollection, func(dp *DependencyProvider) RocketLauncher {
 		return SaturnV{}
 	})
 
@@ -77,7 +77,7 @@ func TestDependencyIsResolved(t *testing.T) {
 func TestSingletonIsSame(t *testing.T) {
 	// arrange
 	dependencyCollection := NewDependencyCollection()
-	RegisterSingleton(dependencyCollection, func() StorageSystem {
+	RegisterSingleton(dependencyCollection, func(dp *DependencyProvider) StorageSystem {
 		return &Warehouse{
 			items: make(map[string]bool),
 		}
@@ -100,7 +100,7 @@ func TestSingletonIsSame(t *testing.T) {
 func TestScopeIsSameInSameScope(t *testing.T) {
 	// arrange
 	dependencyCollection := NewDependencyCollection()
-	RegisterScoped(dependencyCollection, func() StorageSystem {
+	RegisterScoped(dependencyCollection, func(dp *DependencyProvider) StorageSystem {
 		return &Warehouse{
 			items: make(map[string]bool),
 		}
@@ -122,7 +122,7 @@ func TestScopeIsSameInSameScope(t *testing.T) {
 func TestScopeIsDifferentInOtherScope(t *testing.T) {
 	// arrange
 	dependencyCollection := NewDependencyCollection()
-	RegisterScoped(dependencyCollection, func() StorageSystem {
+	RegisterScoped(dependencyCollection, func(dp *DependencyProvider) StorageSystem {
 		return &Warehouse{
 			items: make(map[string]bool),
 		}
@@ -146,7 +146,7 @@ func TestScopeIsDifferentInOtherScope(t *testing.T) {
 func TestScopeIsNotInherited(t *testing.T) {
 	// arrange
 	dependencyCollection := NewDependencyCollection()
-	RegisterScoped(dependencyCollection, func() StorageSystem {
+	RegisterScoped(dependencyCollection, func(dp *DependencyProvider) StorageSystem {
 		return &Warehouse{
 			items: make(map[string]bool),
 		}
@@ -170,7 +170,7 @@ func TestScopeIsNotInherited(t *testing.T) {
 func TestCloseHandler(t *testing.T) {
 	// arrange
 	dependencyCollection := NewDependencyCollection()
-	RegisterScoped(dependencyCollection, func() Connector {
+	RegisterScoped(dependencyCollection, func(dp *DependencyProvider) Connector {
 		return &TestConnector{}
 	})
 	RegisterCloseHandler(dependencyCollection, func(connector Connector) error {

@@ -9,11 +9,11 @@ import (
 	"sync"
 )
 
-type ProviderFunc[TDependency any] func() TDependency
+type ProviderFunc[TDependency any] func(dp *DependencyProvider) TDependency
 
 func (f ProviderFunc[TDependency]) untyped() ProviderFunc[any] {
-	return func() any {
-		return f()
+	return func(dp *DependencyProvider) any {
+		return f(dp)
 	}
 }
 
@@ -169,7 +169,7 @@ func (dp *DependencyProvider) getSingletonDependency(dependencyType reflect.Type
 	}
 
 	// no one else created the dependency in the meantime, we create and save it for reuse
-	dependency = providerFunc()
+	dependency = providerFunc(dp)
 	rootProvider.singletonInstances[dependencyType] = dependency
 
 	return dependency, true
@@ -186,7 +186,7 @@ func (dp *DependencyProvider) getScopedDependency(dependencyType reflect.Type) (
 		return nil, false
 	}
 
-	dependency = providerFunc()
+	dependency = providerFunc(dp)
 	dp.scopedInstances[dependencyType] = dependency
 
 	return dependency, true
@@ -197,5 +197,5 @@ func (dp *DependencyProvider) getTransientDependency(dependencyType reflect.Type
 	if !ok {
 		return nil, false
 	}
-	return providerFunc(), true
+	return providerFunc(dp), true
 }
