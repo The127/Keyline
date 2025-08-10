@@ -42,3 +42,20 @@ func TestBehaviourCalled(t *testing.T) {
 	assert.Equal(t, "foo", response)
 	assert.True(t, behaviourCalled)
 }
+
+func TestEventHandlerGetsCalled(t *testing.T) {
+	// arrange
+	m := NewMediator()
+	evtHandlerCalled := false
+	RegisterEventHandler(m, func(ctx context.Context, evt string) error {
+		evtHandlerCalled = true
+		return nil
+	})
+
+	// act
+	err := SendEvent(t.Context(), m, "foo")
+
+	// assert
+	assert.NoError(t, err)
+	assert.True(t, evtHandlerCalled)
+}
