@@ -6,7 +6,7 @@ import (
 	"Keyline/logging"
 	"Keyline/mediator"
 	"Keyline/middlewares"
-	"Keyline/queries/virtualServers"
+	"Keyline/queries"
 	"fmt"
 	"github.com/gorilla/mux"
 	"net/http"
@@ -27,13 +27,13 @@ func Serve(dp *ioc.DependencyProvider) {
 	r.HandleFunc("/debug", func(w http.ResponseWriter, r *http.Request) {
 		scope := middlewares.GetScope(r.Context())
 		m := ioc.GetDependency[*mediator.Mediator](scope)
-		response, err := mediator.Send[virtualServers.DoesAnyVirtualServerExistResponse](r.Context(), m, virtualServers.DoesAnyVirtualServerExistQuery{})
+		response, err := mediator.Send[*queries.AnyVirtualServerExistsResult](r.Context(), m, queries.AnyVirtualServerExists{})
 		if err != nil {
 			logging.Logger.Errorf("failed to call handler: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 
-		if response.FoundVirtualServer {
+		if response.Found {
 			w.WriteHeader(http.StatusOK)
 		} else {
 			w.WriteHeader(http.StatusNotFound)

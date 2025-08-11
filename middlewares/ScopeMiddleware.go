@@ -18,7 +18,7 @@ func ScopeMiddleware(dp *ioc.DependencyProvider) mux.MiddlewareFunc {
 			scope := dp.NewScope()
 			defer utils.PanicOnError(scope.Close, "failed to close scope")
 
-			r = r.WithContext(context.WithValue(r.Context(), ScopeKey, scope))
+			r = r.WithContext(ContextWithScope(r.Context(), scope))
 			next.ServeHTTP(w, r)
 		})
 	}
@@ -26,4 +26,8 @@ func ScopeMiddleware(dp *ioc.DependencyProvider) mux.MiddlewareFunc {
 
 func GetScope(ctx context.Context) *ioc.DependencyProvider {
 	return ctx.Value(ScopeKey).(*ioc.DependencyProvider)
+}
+
+func ContextWithScope(ctx context.Context, scope *ioc.DependencyProvider) context.Context {
+	return context.WithValue(ctx, ScopeKey, scope)
 }
