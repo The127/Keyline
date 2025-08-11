@@ -8,3 +8,6 @@ database:
   password: "password"
   database: "keyline"
   sslMode: "disable"
+initialVirtualServer:
+  name: "keyline"
+  displayName: "Keyline"

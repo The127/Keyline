@@ -18,6 +18,10 @@ type Config struct {
 		Password string
 		SslMode  string
 	}
+	InitialVirtualServer struct {
+		Name        string
+		DisplayName string
+	}
 }
 
 var configFilePath string
