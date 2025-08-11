@@ -2,6 +2,7 @@ package server
 
 import (
 	"Keyline/config"
+	"Keyline/handlers"
 	"Keyline/ioc"
 	"Keyline/logging"
 	"Keyline/middlewares"
@@ -18,15 +19,11 @@ func Serve(dp *ioc.DependencyProvider) {
 
 	r.Use(middlewares.ScopeMiddleware(dp))
 
-	r.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(200)
-	}).Methods(http.MethodGet)
+	r.HandleFunc("/health", handlers.ApplicationHealth).Methods(http.MethodGet)
 
 	vsApiRouter := r.PathPrefix("/api/{virtualServerName}/").Subrouter()
 	vsApiRouter.Use(middlewares.VirtualServerMiddleware())
-	vsApiRouter.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(200)
-	}).Methods(http.MethodGet)
+	vsApiRouter.HandleFunc("/health", handlers.VirtualServerHealth).Methods(http.MethodGet)
 
 	addr := fmt.Sprintf("%s:%d", config.C.Server.Host, config.C.Server.Port)
 	logging.Logger.Infof("running server at %s", addr)
