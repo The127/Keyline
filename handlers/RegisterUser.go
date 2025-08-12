@@ -11,6 +11,7 @@ import (
 )
 
 type RegisterUserRequestDto struct {
+	Username    string `json:"username"`
 	DisplayName string `json:"displayName"`
 }
 
@@ -36,6 +37,7 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 
 	_, err = mediator.Send[*commands.RegisterUserResponse](r.Context(), m, commands.RegisterUser{
 		VirtualServerName: vsName,
+		Username:          dto.Username,
 		DisplayName:       dto.DisplayName,
 	})
 	if err != nil {

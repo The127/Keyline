@@ -1,8 +1,9 @@
 ### call health endpoint
-POST http://127.0.0.1:8081/api/foobar/users/register
+POST http://127.0.0.1:8081/api/keyline/users/register
 Content-Type: application/json
 
 {
-  "displayName": "karo"
+  "username": "karo",
+  "displayName": "Karo"
 }
 

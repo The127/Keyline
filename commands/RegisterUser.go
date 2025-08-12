@@ -15,6 +15,7 @@ import (
 type RegisterUser struct {
 	VirtualServerName string
 	DisplayName       string
+	Username          string
 }
 
 type RegisterUserResponse struct {
@@ -51,10 +52,10 @@ func HandleRegisterUser(ctx context.Context, command RegisterUser) (*RegisterUse
 	// create user
 	row = tx.QueryRow(`
 insert into users
-(virtual_server_id, display_name)
-values ($1, $2)
+(virtual_server_id, display_name, username)
+values ($1, $2, $3)
 returning id;
-`, virtualServerId, command.DisplayName)
+`, virtualServerId, command.DisplayName, command.Username)
 
 	var userId uuid.UUID
 	err = row.Scan(&userId)
