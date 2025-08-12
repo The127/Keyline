@@ -10,8 +10,9 @@ import (
 )
 
 type CreateVirtualServer struct {
-	Name        string
-	DisplayName string
+	Name               string
+	DisplayName        string
+	EnableRegistration bool
 }
 
 type CreateVirtualServerResponse struct {
@@ -29,11 +30,12 @@ func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer)
 
 	row := tx.QueryRow(`
 insert into virtual_servers
-("name", "display_name")
-values($1, $2)
+("name", "display_name", "enable_registration")
+values($1, $2, $3)
 returning id;`,
 		command.Name,
-		command.DisplayName)
+		command.DisplayName,
+		command.EnableRegistration)
 
 	var id uuid.UUID
 	err = row.Scan(&id)

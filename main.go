@@ -75,8 +75,9 @@ func initApplication(dp *ioc.DependencyProvider) {
 
 	// create initial vs
 	_, err = mediator.Send[*commands.CreateVirtualServerResponse](ctx, m, commands.CreateVirtualServer{
-		Name:        config.C.InitialVirtualServer.Name,
-		DisplayName: config.C.InitialVirtualServer.DisplayName,
+		Name:               config.C.InitialVirtualServer.Name,
+		DisplayName:        config.C.InitialVirtualServer.DisplayName,
+		EnableRegistration: config.C.InitialVirtualServer.EnableRegistration,
 	})
 	if err != nil {
 		logging.Logger.Fatalf("failed to create intial virtual server: %v", err)

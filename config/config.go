@@ -19,8 +19,9 @@ type Config struct {
 		SslMode  string
 	}
 	InitialVirtualServer struct {
-		Name        string
-		DisplayName string
+		Name               string
+		DisplayName        string
+		EnableRegistration bool
 	}
 }
 

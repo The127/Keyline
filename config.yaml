@@ -11,3 +11,4 @@ database:
 initialVirtualServer:
   name: "keyline"
   displayName: "Keyline"
+  enableRegistration: true
