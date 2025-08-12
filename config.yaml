@@ -1,14 +1,10 @@
 server:
   host: "127.0.0.1"
-  port: 8081
 database:
   host: "localhost"
   port: 5732
   username: "user"
   password: "password"
-  database: "keyline"
   sslMode: "disable"
 initialVirtualServer:
-  name: "keyline"
-  displayName: "Keyline"
   enableRegistration: true
