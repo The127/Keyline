@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"context"
+	"errors"
 	"github.com/gorilla/mux"
 	"net/http"
 )
@@ -29,15 +30,17 @@ func ContextWithVirtualServerName(ctx context.Context, name string) context.Cont
 	return context.WithValue(ctx, virtualServerCtxKey, name)
 }
 
-func GetVirtualServerName(ctx context.Context) (string, bool) {
+var ErrMissingVirtualServerNameInContext = errors.New("no virtual server name in context")
+
+func GetVirtualServerName(ctx context.Context) (string, error) {
 	value, ok := ctx.Value(virtualServerCtxKey).(string)
 	if !ok {
-		return "", false
+		return "", ErrMissingVirtualServerNameInContext
 	}
 
 	if value == "" {
-		return "", false
+		return "", ErrMissingVirtualServerNameInContext
 	}
 
-	return value, true
+	return value, nil
 }

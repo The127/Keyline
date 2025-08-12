@@ -1,16 +1,44 @@
 package utils
 
 import (
+	"Keyline/config"
 	"Keyline/logging"
 	"errors"
 	"fmt"
+	"net/http"
 )
 
-var ResourceNotFoundErr = fmt.Errorf("not found")
-var VirtualServerNotFoundErr = fmt.Errorf("virtual server: %w", ResourceNotFoundErr)
+var ErrResourceNotFound = errors.New("not found")
+var ErrVirtualServerNotFound = fmt.Errorf("virtual server: %w", ErrResourceNotFound)
 
-var HttpBadRequestErr = fmt.Errorf("bad request")
-var RegistrationNotEnabledErr = fmt.Errorf("registartion is not enabled: %w", HttpBadRequestErr)
+var ErrHttpBadRequest = errors.New("bad request")
+var ErrRegistrationNotEnabled = fmt.Errorf("registartion is not enabled: %w", ErrHttpBadRequest)
+
+func HandleHttpError(w http.ResponseWriter, err error) {
+	var status int
+	var msg string
+
+	switch {
+	case errors.Is(err, ErrHttpBadRequest):
+		status = http.StatusBadRequest
+		msg = err.Error()
+		break
+
+	case errors.Is(err, ErrResourceNotFound):
+		status = http.StatusNotFound
+		msg = err.Error()
+
+	default:
+		status = http.StatusInternalServerError
+		if config.IsProduction() {
+			msg = "internal server error"
+		} else {
+			msg = err.Error()
+		}
+	}
+
+	http.Error(w, msg, status)
+}
 
 func PanicOnError(f func() error, msg string) {
 	err := f()
@@ -18,5 +46,5 @@ func PanicOnError(f func() error, msg string) {
 		logging.Logger.Fatalf("%s: %v", msg, err)
 	}
 
-	errors.Is(err, ResourceNotFoundErr)
+	errors.Is(err, ErrResourceNotFound)
 }

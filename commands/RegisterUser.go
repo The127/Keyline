@@ -39,13 +39,13 @@ func HandleRegisterUser(ctx context.Context, command RegisterUser) (*RegisterUse
 	err = row.Scan(&virtualServerId, &isRegistrationEnabled)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
-		return nil, utils.VirtualServerNotFoundErr
+		return nil, utils.ErrVirtualServerNotFound
 	case err != nil:
 		return nil, fmt.Errorf("querying virtual server: %w", err)
 	}
 
 	if !isRegistrationEnabled {
-		return nil, utils.RegistrationNotEnabledErr
+		return nil, utils.ErrRegistrationNotEnabled
 	}
 
 	// create user

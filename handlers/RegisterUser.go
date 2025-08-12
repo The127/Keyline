@@ -5,6 +5,7 @@ import (
 	"Keyline/ioc"
 	"Keyline/mediator"
 	"Keyline/middlewares"
+	"Keyline/utils"
 	"encoding/json"
 	"net/http"
 )
@@ -14,16 +15,16 @@ type RegisterUserRequestDto struct {
 }
 
 func RegisterUser(w http.ResponseWriter, r *http.Request) {
-	vsName, ok := middlewares.GetVirtualServerName(r.Context())
-	if !ok {
-		http.Error(w, "no virtual server name in context", http.StatusInternalServerError)
+	vsName, err := middlewares.GetVirtualServerName(r.Context())
+	if err != nil {
+		utils.HandleHttpError(w, err)
 		return
 	}
 
 	var dto RegisterUserRequestDto
-	err := json.NewDecoder(r.Body).Decode(&dto)
+	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
-		http.Error(w, "failed to parse json", http.StatusBadRequest)
+		utils.HandleHttpError(w, err)
 		return
 	}
 
@@ -38,7 +39,7 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 		DisplayName:       dto.DisplayName,
 	})
 	if err != nil {
-		http.Error(w, "failed to register user", http.StatusInternalServerError)
+		utils.HandleHttpError(w, err)
 		return
 	}
 
