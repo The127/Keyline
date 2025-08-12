@@ -1,7 +1,7 @@
 package middlewares
 
 import (
-	"Keyline/logging"
+	"context"
 	"github.com/gorilla/mux"
 	"net/http"
 )
@@ -20,9 +20,24 @@ func VirtualServerMiddleware() mux.MiddlewareFunc {
 				return
 			}
 
-			logging.Logger.Infof("got request for %s", name)
-
-			next.ServeHTTP(w, r)
+			next.ServeHTTP(w, r.WithContext(ContextWithVirtualServerName(r.Context(), name)))
 		})
 	}
+}
+
+func ContextWithVirtualServerName(ctx context.Context, name string) context.Context {
+	return context.WithValue(ctx, virtualServerCtxKey, name)
+}
+
+func GetVirtualServerName(ctx context.Context) (string, bool) {
+	value, ok := ctx.Value(virtualServerCtxKey).(string)
+	if !ok {
+		return "", false
+	}
+
+	if value == "" {
+		return "", false
+	}
+
+	return value, true
 }
