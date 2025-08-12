@@ -25,6 +25,8 @@ func Serve(dp *ioc.DependencyProvider) {
 	vsApiRouter.Use(middlewares.VirtualServerMiddleware())
 	vsApiRouter.HandleFunc("/health", handlers.VirtualServerHealth).Methods(http.MethodGet)
 
+	vsApiRouter.HandleFunc("/users/register", handlers.RegisterUser).Methods(http.MethodPost)
+
 	addr := fmt.Sprintf("%s:%d", config.C.Server.Host, config.C.Server.Port)
 	logging.Logger.Infof("running server at %s", addr)
 	srv := &http.Server{

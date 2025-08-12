@@ -1,6 +1,8 @@
 package utils
 
-import "reflect"
+import (
+	"reflect"
+)
 
 func TypeOf[T any]() reflect.Type {
 	var tp *T

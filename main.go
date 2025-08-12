@@ -45,7 +45,9 @@ func setupMediator(dc *ioc.DependencyCollection) {
 	m := mediator.NewMediator()
 
 	mediator.RegisterHandler(m, queries.HandleAnyVirtualServerExists)
+
 	mediator.RegisterHandler(m, commands.HandleCreateVirtualServer)
+	mediator.RegisterHandler(m, commands.HandleRegisterUser)
 
 	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) *mediator.Mediator {
 		return m
