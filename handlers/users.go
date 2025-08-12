@@ -29,9 +29,8 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// validate the request
+	// TODO: validate the request
 
-	// call our mediator with the command
 	scope := middlewares.GetScope(r.Context())
 	m := ioc.GetDependency[*mediator.Mediator](scope)
 
