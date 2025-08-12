@@ -8,3 +8,7 @@ database:
   sslMode: "disable"
 initialVirtualServer:
   enableRegistration: true
+keyStore:
+  mode: "directory"
+  directory:
+    path: "./keys"

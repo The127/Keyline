@@ -5,6 +5,14 @@ import (
 	"github.com/spf13/viper"
 )
 
+// KeyStoreMode has the following constants: KeyStoreModeDirectory, KeyStoreModeOpenBao
+type KeyStoreMode string
+
+const (
+	KeyStoreModeDirectory KeyStoreMode = "directory"
+	KeyStoreModeOpenBao   KeyStoreMode = "openbao"
+)
+
 type Config struct {
 	Server struct {
 		Host string
@@ -22,6 +30,15 @@ type Config struct {
 		Name               string
 		DisplayName        string
 		EnableRegistration bool
+	}
+	KeyStore struct {
+		Mode    KeyStoreMode
+		OpenBao struct {
+			//TODO:
+		}
+		Directory struct {
+			Path string
+		}
 	}
 }
 
@@ -71,6 +88,33 @@ func setDefaultsOrPanic() {
 	setServerDefaultsOrPanic()
 	setDatabaseDefaultsOrPanic()
 	setInitialVirtualServerDefaultsOrPanic()
+	setKeyStoreDefaultsOrPanic()
+}
+
+func setKeyStoreDefaultsOrPanic() {
+	switch C.KeyStore.Mode {
+	case KeyStoreModeOpenBao:
+		setKeyStoreModeOpenBaoDefaultsOrPanic()
+		break
+
+	case KeyStoreModeDirectory:
+		setKeyStoreModeDirectoryDefaultsOrPanic()
+		break
+
+	default:
+		panic("key store mode missing or not supported")
+	}
+}
+
+func setKeyStoreModeOpenBaoDefaultsOrPanic() {
+	// TODO: implement me
+	panic("not implemented")
+}
+
+func setKeyStoreModeDirectoryDefaultsOrPanic() {
+	if C.KeyStore.Directory.Path == "" {
+		panic("missing key store directory path")
+	}
 }
 
 func setInitialVirtualServerDefaultsOrPanic() {
