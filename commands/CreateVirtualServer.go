@@ -40,7 +40,13 @@ returning id;`,
 	var id uuid.UUID
 	err = row.Scan(&id)
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute insert: %w", err)
+		return nil, fmt.Errorf("inserting virtual server: %w", err)
+	}
+
+	keyService := ioc.GetDependency[services.KeyService](scope)
+	_, err = keyService.Generate(command.Name)
+	if err != nil {
+		return nil, fmt.Errorf("generating keypair: %w", err)
 	}
 
 	return &CreateVirtualServerResponse{

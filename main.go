@@ -33,6 +33,28 @@ func main() {
 		return dbService.Close()
 	})
 
+	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) services.KeyCache {
+		return services.NewMemoryCache[string, services.KeyPair]()
+	})
+	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) services.KeyStore {
+		switch config.C.KeyStore.Mode {
+		case config.KeyStoreModeDirectory:
+			return services.NewDirectoryKeyStore()
+
+		case config.KeyStoreModeOpenBao:
+			panic("not implemented yet")
+
+		default:
+			panic("not implemented")
+		}
+	})
+	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) services.KeyService {
+		return services.NewKeyService(
+			ioc.GetDependency[services.KeyCache](dp),
+			ioc.GetDependency[services.KeyStore](dp),
+		)
+	})
+
 	setupMediator(dc)
 	dp := dc.BuildProvider()
 

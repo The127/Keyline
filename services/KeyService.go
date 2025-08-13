@@ -32,7 +32,7 @@ type keyServiceImpl struct {
 	store KeyStore
 }
 
-func NewKeyServiceImpl(cache KeyCache, store KeyStore) KeyService {
+func NewKeyService(cache KeyCache, store KeyStore) KeyService {
 	return &keyServiceImpl{
 		cache: cache,
 		store: store,

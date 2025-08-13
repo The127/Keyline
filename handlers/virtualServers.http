@@ -3,7 +3,7 @@ POST http://127.0.0.1:8081/api/virtual-servers
 Content-Type: application/json
 
 {
-  "name": "qux",
-  "displayName": "Qux",
+  "name": "f",
+  "displayName": "A",
   "enableRegistration": true
 }

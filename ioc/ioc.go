@@ -159,8 +159,8 @@ func (dp *DependencyProvider) getSingletonDependency(dependencyType reflect.Type
 		return nil, false
 	}
 
-	singletonMutex.Lock()
-	defer singletonMutex.Unlock()
+	//singletonMutex.Lock()
+	//defer singletonMutex.Unlock()
 
 	// check singleton instances again after acquiring the mutex
 	dependency, ok = rootProvider.singletonInstances[dependencyType]
