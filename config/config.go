@@ -2,6 +2,7 @@ package config
 
 import (
 	"flag"
+	"fmt"
 	"github.com/spf13/viper"
 )
 
@@ -15,8 +16,9 @@ const (
 
 type Config struct {
 	Server struct {
-		Host string
-		Port int
+		ExternalUrl string
+		Host        string
+		Port        int
 	}
 	Database struct {
 		Database string
@@ -54,13 +56,8 @@ func Init() {
 	// read flags (read config file path)
 	readFlags()
 
-	// TODO: set default values
-
 	// read values from different sources (env vars & files)
 	readConfigFile()
-
-	// TODO: validate config
-	// TODO: set the global variable
 }
 
 func readConfigFile() {
@@ -138,6 +135,14 @@ func setServerDefaultsOrPanic() {
 
 	if C.Server.Port == 0 {
 		C.Server.Port = 8081
+	}
+
+	if C.Server.ExternalUrl == "" {
+		if IsProduction() {
+			panic("missing external url")
+		}
+
+		C.Server.ExternalUrl = fmt.Sprintf("%s:%d", C.Server.Host, C.Server.Port)
 	}
 }
 
