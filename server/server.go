@@ -23,6 +23,7 @@ func Serve(dp *ioc.DependencyProvider) {
 
 	oidcRouter := r.PathPrefix("/virtual-servers/{virtualServerName}/").Subrouter()
 	oidcRouter.Use(middlewares.VirtualServerMiddleware())
+	oidcRouter.HandleFunc("/.well-known/openid-configuration", handlers.WellKnownOpenIdConfiguration).Methods(http.MethodGet)
 	oidcRouter.HandleFunc("/.well-known/jwks.json", handlers.WellKnownJwks).Methods(http.MethodGet)
 
 	r.HandleFunc("/api/virtual-servers", handlers.CreateVirtualSever).Methods(http.MethodPost)

@@ -1,2 +1,5 @@
+### get oidc config
+GET http://127.0.0.1:8081/virtual-servers/keyline/.well-known/openid-configuration
+
 ### get signing key for virtual server
 GET http://127.0.0.1:8081/virtual-servers/keyline/.well-known/jwks.json
