@@ -145,7 +145,21 @@ func GetDependency[TDependency any](dp *DependencyProvider) TDependency {
 	panic(dependencyType)
 }
 
-var singletonMutex sync.Mutex
+var singletonMutexMapLock sync.Mutex
+var singletonMutexes = make(map[reflect.Type]*sync.Mutex)
+
+func getSingletonMutex(dependencyType reflect.Type) *sync.Mutex {
+	singletonMutexMapLock.Lock()
+	defer singletonMutexMapLock.Unlock()
+
+	if mutex, ok := singletonMutexes[dependencyType]; ok {
+		return mutex
+	}
+
+	mutex := &sync.Mutex{}
+	singletonMutexes[dependencyType] = mutex
+	return mutex
+}
 
 func (dp *DependencyProvider) getSingletonDependency(dependencyType reflect.Type) (any, bool) {
 	rootProvider := dp.GetRoot()
@@ -159,8 +173,9 @@ func (dp *DependencyProvider) getSingletonDependency(dependencyType reflect.Type
 		return nil, false
 	}
 
-	//singletonMutex.Lock()
-	//defer singletonMutex.Unlock()
+	mutex := getSingletonMutex(dependencyType)
+	mutex.Lock()
+	defer mutex.Unlock()
 
 	// check singleton instances again after acquiring the mutex
 	dependency, ok = rootProvider.singletonInstances[dependencyType]
