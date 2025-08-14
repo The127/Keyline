@@ -141,7 +141,7 @@ func GetDependency[TDependency any](dp *DependencyProvider) TDependency {
 		return dependency.(TDependency)
 	}
 
-	logging.Logger.Fatalf("could not provde dependency for %s", dependencyType.Name())
+	logging.Logger.Fatalf("could not provide dependency for %s", dependencyType.Name())
 	panic(dependencyType)
 }
 
