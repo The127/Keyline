@@ -25,6 +25,30 @@ type User struct {
 	displayName string
 }
 
+func (m *User) Id() uuid.UUID {
+	return m.id
+}
+
+func (m *User) AuditCreatedAt() time.Time {
+	return m.auditCreatedAt
+}
+
+func (m *User) AuditUpdatedAt() time.Time {
+	return m.auditUpdatedAt
+}
+
+func (m *User) VirtualServerId() uuid.UUID {
+	return m.virtualServerId
+}
+
+func (m *User) Username() string {
+	return m.username
+}
+
+func (m *User) DisplayName() string {
+	return m.displayName
+}
+
 type UserFilter struct {
 	virtualServerId *uuid.UUID
 	username        *string
