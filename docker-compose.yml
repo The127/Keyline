@@ -11,3 +11,10 @@ services:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
       POSTGRES_DB: keyline
+
+  mail:
+    image: axllent/mailpit:v1.26
+    restart: always
+    ports:
+      - "8025:8025"
+      - "1025:1025"
