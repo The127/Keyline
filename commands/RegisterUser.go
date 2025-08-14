@@ -1,7 +1,9 @@
 package commands
 
 import (
+	"Keyline/events"
 	"Keyline/ioc"
+	"Keyline/mediator"
 	"Keyline/middlewares"
 	"Keyline/repositories"
 	"Keyline/utils"
@@ -56,6 +58,14 @@ func HandleRegisterUser(ctx context.Context, command RegisterUser) (*RegisterUse
 	err = credentialRepository.Insert(ctx, credential)
 	if err != nil {
 		return nil, fmt.Errorf("inserting credential: %w", err)
+	}
+
+	m := ioc.GetDependency[*mediator.Mediator](scope)
+	err = mediator.SendEvent(ctx, m, events.UserCreatedEvent{
+		UserId: user.Id(),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("raising event: %w", err)
 	}
 
 	return &RegisterUserResponse{
