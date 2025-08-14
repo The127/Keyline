@@ -4,6 +4,7 @@ import (
 	"Keyline/commands"
 	"Keyline/config"
 	"Keyline/database"
+	"Keyline/events"
 	"Keyline/ioc"
 	"Keyline/logging"
 	"Keyline/mediator"
@@ -85,7 +86,7 @@ func setupMediator(dc *ioc.DependencyCollection) {
 	mediator.RegisterHandler(m, commands.HandleCreateVirtualServer)
 	mediator.RegisterHandler(m, commands.HandleRegisterUser)
 
-	//mediator.RegisterEventHandler(m, events.)
+	mediator.RegisterEventHandler(m, events.QueueEmailVerificationJobOnUserCreatedEvent)
 
 	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) *mediator.Mediator {
 		return m
