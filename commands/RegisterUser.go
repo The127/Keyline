@@ -4,7 +4,6 @@ import (
 	"Keyline/ioc"
 	"Keyline/middlewares"
 	"Keyline/repositories"
-	"Keyline/services"
 	"Keyline/utils"
 	"context"
 	"fmt"
@@ -23,15 +22,10 @@ type RegisterUserResponse struct {
 
 func HandleRegisterUser(ctx context.Context, command RegisterUser) (*RegisterUserResponse, error) {
 	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[*services.DbService](scope)
-
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return nil, fmt.Errorf("failed to open tx: %w", err)
-	}
 
 	virtualServerRepository := ioc.GetDependency[*repositories.VirtualServerRepository](scope)
-	virtualServer, err := virtualServerRepository.First(ctx, repositories.NewVirtualServerFilter().Name(command.VirtualServerName))
+	virtualServerFilter := repositories.NewVirtualServerFilter().Name(command.VirtualServerName)
+	virtualServer, err := virtualServerRepository.First(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
@@ -40,21 +34,18 @@ func HandleRegisterUser(ctx context.Context, command RegisterUser) (*RegisterUse
 		return nil, utils.ErrRegistrationNotEnabled
 	}
 
-	// create user
-	row := tx.QueryRow(`
-insert into users
-(virtual_server_id, display_name, username)
-values ($1, $2, $3)
-returning id;
-`, virtualServer.Id(), command.DisplayName, command.Username)
-
-	var userId uuid.UUID
-	err = row.Scan(&userId)
+	userRepository := ioc.GetDependency[*repositories.UserRepository](scope)
+	user := repositories.NewUser(
+		command.Username,
+		command.DisplayName,
+		virtualServer.Id(),
+	)
+	err = userRepository.Insert(ctx, user)
 	if err != nil {
 		return nil, fmt.Errorf("inserting user: %w", err)
 	}
 
 	return &RegisterUserResponse{
-		Id: userId,
+		Id: user.Id(),
 	}, nil
 }
