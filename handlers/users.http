@@ -1,5 +1,5 @@
 ### call health endpoint
-POST http://127.0.0.1:8081/api/virtual-servers/qux/users/register
+POST http://127.0.0.1:8081/api/virtual-servers/keyline/users/register
 Content-Type: application/json
 
 {

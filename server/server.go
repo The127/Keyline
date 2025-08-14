@@ -20,6 +20,7 @@ func Serve(dp *ioc.DependencyProvider) {
 	r.Use(middlewares.ScopeMiddleware(dp))
 
 	r.HandleFunc("/health", handlers.ApplicationHealth).Methods(http.MethodGet)
+	r.HandleFunc("/debug", handlers.Debug).Methods(http.MethodGet)
 
 	oidcRouter := r.PathPrefix("/virtual-servers/{virtualServerName}/").Subrouter()
 	oidcRouter.Use(middlewares.VirtualServerMiddleware())

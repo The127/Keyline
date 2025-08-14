@@ -9,6 +9,7 @@ import (
 	"Keyline/mediator"
 	"Keyline/middlewares"
 	"Keyline/queries"
+	"Keyline/repositories"
 	"Keyline/server"
 	"Keyline/services"
 	"Keyline/utils"
@@ -53,6 +54,10 @@ func main() {
 			ioc.GetDependency[services.KeyCache](dp),
 			ioc.GetDependency[services.KeyStore](dp),
 		)
+	})
+
+	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) *repositories.UserRepository {
+		return &repositories.UserRepository{}
 	})
 
 	setupMediator(dc)
