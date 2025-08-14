@@ -3,7 +3,7 @@ package queries
 import (
 	"Keyline/ioc"
 	"Keyline/middlewares"
-	"Keyline/services"
+	"Keyline/repositories"
 	"context"
 	"fmt"
 )
@@ -15,22 +15,14 @@ type AnyVirtualServerExistsResult struct {
 
 func HandleAnyVirtualServerExists(ctx context.Context, _ AnyVirtualServerExists) (*AnyVirtualServerExistsResult, error) {
 	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[*services.DbService](scope)
 
-	tx, err := dbService.GetTx()
+	virtualServerRepository := ioc.GetDependency[*repositories.VirtualServerRepository](scope)
+	virtualServer, err := virtualServerRepository.First(ctx, repositories.NewVirtualServerFilter())
 	if err != nil {
-		return nil, fmt.Errorf("failed to open tx: %w", err)
-	}
-
-	row := tx.QueryRow("select exists(select * from virtual_servers)")
-
-	var anyVirtualServers bool
-	err = row.Scan(&anyVirtualServers)
-	if err != nil {
-		return nil, fmt.Errorf("failed to query db: %w", err)
+		return nil, fmt.Errorf("searching virtual servers: %w", err)
 	}
 
 	return &AnyVirtualServerExistsResult{
-		Found: anyVirtualServers,
+		Found: virtualServer != nil,
 	}, nil
 }
