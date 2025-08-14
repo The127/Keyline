@@ -25,6 +25,14 @@ type VirtualServer struct {
 	enableRegistration bool
 }
 
+func NewVirtualServer(name string, displayName string) *VirtualServer {
+	return &VirtualServer{
+		name:               name,
+		displayName:        displayName,
+		enableRegistration: false,
+	}
+}
+
 func (m *VirtualServer) Id() uuid.UUID {
 	return m.id
 }
@@ -47,6 +55,11 @@ func (m *VirtualServer) DisplayName() string {
 
 func (m *VirtualServer) EnableRegistration() bool {
 	return m.enableRegistration
+}
+
+func (m *VirtualServer) SetEnableRegistration(enableRegistration bool) *VirtualServer {
+	m.enableRegistration = enableRegistration
+	return m
 }
 
 type VirtualServerFilter struct {
@@ -103,4 +116,30 @@ func (r *VirtualServerRepository) First(ctx context.Context, filter VirtualServe
 	}
 
 	return &virtualServer, nil
+}
+
+func (r *VirtualServerRepository) Insert(ctx context.Context, virtualServer *VirtualServer) error {
+	scope := middlewares.GetScope(ctx)
+	dbService := ioc.GetDependency[*services.DbService](scope)
+
+	tx, err := dbService.GetTx()
+	if err != nil {
+		return fmt.Errorf("failed to open tx: %w", err)
+	}
+
+	s := `
+insert into virtual_servers 
+    (name, display_name, enable_registration) 
+values ($1, $2, $3)
+returning id, audit_created_at, audit_updated_at`
+
+	logging.Logger.Debug("sql: %s", s)
+	row := tx.QueryRow(s, virtualServer.name, virtualServer.displayName, virtualServer.enableRegistration)
+
+	err = row.Scan(&virtualServer.id, &virtualServer.auditCreatedAt, &virtualServer.auditUpdatedAt)
+	if err != nil {
+		return fmt.Errorf("scanning row: %w", err)
+	}
+
+	return nil
 }

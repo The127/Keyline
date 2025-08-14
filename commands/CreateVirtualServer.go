@@ -3,6 +3,7 @@ package commands
 import (
 	"Keyline/ioc"
 	"Keyline/middlewares"
+	"Keyline/repositories"
 	"Keyline/services"
 	"context"
 	"fmt"
@@ -21,24 +22,11 @@ type CreateVirtualServerResponse struct {
 
 func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer) (*CreateVirtualServerResponse, error) {
 	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[*services.DbService](scope)
 
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return nil, fmt.Errorf("failed to open tx: %w", err)
-	}
-
-	row := tx.QueryRow(`
-insert into virtual_servers
-("name", "display_name", "enable_registration")
-values($1, $2, $3)
-returning id;`,
-		command.Name,
-		command.DisplayName,
-		command.EnableRegistration)
-
-	var id uuid.UUID
-	err = row.Scan(&id)
+	virtualServerRepository := ioc.GetDependency[*repositories.VirtualServerRepository](scope)
+	virtualServer := repositories.NewVirtualServer(command.Name, command.DisplayName).
+		SetEnableRegistration(command.EnableRegistration)
+	err := virtualServerRepository.Insert(ctx, virtualServer)
 	if err != nil {
 		return nil, fmt.Errorf("inserting virtual server: %w", err)
 	}
@@ -50,6 +38,6 @@ returning id;`,
 	}
 
 	return &CreateVirtualServerResponse{
-		Id: id,
+		Id: virtualServer.Id(),
 	}, nil
 }
