@@ -52,6 +52,47 @@ func (f UserFilter) Username(username string) UserFilter {
 type UserRepository struct {
 }
 
+func (r *UserRepository) List(ctx context.Context, filter UserFilter) ([]User, error) {
+	scope := middlewares.GetScope(ctx)
+	dbService := ioc.GetDependency[*services.DbService](scope)
+
+	tx, err := dbService.GetTx()
+	if err != nil {
+		return nil, fmt.Errorf("failed to open tx: %w", err)
+	}
+
+	s := "select id, audit_created_at, audit_updated_at, virtual_server_id, display_name, username from users "
+	params := make([]any, 0)
+
+	if filter.username != nil {
+		s += fmt.Sprintf(" where username = $%d", len(params)+1)
+		params = append(params, filter.username)
+	}
+
+	if filter.virtualServerId != nil {
+		s += fmt.Sprintf(" where virtual_server_id = $%d", len(params)+1)
+		params = append(params, filter.username)
+	}
+
+	rows, err := tx.Query(s, params...)
+	defer rows.Close()
+	if err != nil {
+		return nil, fmt.Errorf("querying db: %w", err)
+	}
+
+	var users []User
+	for rows.Next() {
+		var user User
+		err = rows.Scan(&user.id, &user.auditCreatedAt, &user.auditUpdatedAt, &user.virtualServerId, &user.displayName, &user.username)
+		if err != nil {
+			return nil, fmt.Errorf("scanning row: %w", err)
+		}
+		users = append(users, user)
+	}
+
+	return users, nil
+}
+
 func (r *UserRepository) First(ctx context.Context, filter UserFilter) (*User, error) {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[*services.DbService](scope)
