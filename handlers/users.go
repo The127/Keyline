@@ -13,6 +13,7 @@ import (
 type RegisterUserRequestDto struct {
 	Username    string `json:"username"`
 	DisplayName string `json:"displayName"`
+	Password    string `json:"password"`
 }
 
 func RegisterUser(w http.ResponseWriter, r *http.Request) {
@@ -38,6 +39,7 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 		VirtualServerName: vsName,
 		Username:          dto.Username,
 		DisplayName:       dto.DisplayName,
+		Password:          dto.Password,
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)

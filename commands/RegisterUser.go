@@ -14,6 +14,7 @@ type RegisterUser struct {
 	VirtualServerName string
 	DisplayName       string
 	Username          string
+	Password          string
 }
 
 type RegisterUserResponse struct {
@@ -43,6 +44,18 @@ func HandleRegisterUser(ctx context.Context, command RegisterUser) (*RegisterUse
 	err = userRepository.Insert(ctx, user)
 	if err != nil {
 		return nil, fmt.Errorf("inserting user: %w", err)
+	}
+
+	hashedPassword := utils.HashPassword(command.Password)
+
+	credentialRepository := ioc.GetDependency[*repositories.CredentialRepository](scope)
+	credential := repositories.NewCredential(user.Id(), &repositories.CredentialPasswordDetails{
+		HashedPassword: hashedPassword,
+		Temporary:      false,
+	})
+	err = credentialRepository.Insert(ctx, credential)
+	if err != nil {
+		return nil, fmt.Errorf("inserting credential: %w", err)
 	}
 
 	return &RegisterUserResponse{
