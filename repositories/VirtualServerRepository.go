@@ -25,6 +25,30 @@ type VirtualServer struct {
 	enableRegistration bool
 }
 
+func (m *VirtualServer) Id() uuid.UUID {
+	return m.id
+}
+
+func (m *VirtualServer) AuditCreatedAt() time.Time {
+	return m.auditCreatedAt
+}
+
+func (m *VirtualServer) AuditUpdatedAt() time.Time {
+	return m.auditUpdatedAt
+}
+
+func (m *VirtualServer) Name() string {
+	return m.name
+}
+
+func (m *VirtualServer) DisplayName() string {
+	return m.displayName
+}
+
+func (m *VirtualServer) EnableRegistration() bool {
+	return m.enableRegistration
+}
+
 type VirtualServerFilter struct {
 	name *string
 }

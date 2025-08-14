@@ -3,11 +3,10 @@ package commands
 import (
 	"Keyline/ioc"
 	"Keyline/middlewares"
+	"Keyline/repositories"
 	"Keyline/services"
 	"Keyline/utils"
 	"context"
-	"database/sql"
-	"errors"
 	"fmt"
 	"github.com/google/uuid"
 )
@@ -31,31 +30,23 @@ func HandleRegisterUser(ctx context.Context, command RegisterUser) (*RegisterUse
 		return nil, fmt.Errorf("failed to open tx: %w", err)
 	}
 
-	// get the virtual server
-	row := tx.QueryRow("select id, enable_registration from virtual_servers where name = $1",
-		command.VirtualServerName)
-
-	var virtualServerId uuid.UUID
-	var isRegistrationEnabled bool
-	err = row.Scan(&virtualServerId, &isRegistrationEnabled)
-	switch {
-	case errors.Is(err, sql.ErrNoRows):
-		return nil, utils.ErrVirtualServerNotFound
-	case err != nil:
-		return nil, fmt.Errorf("querying virtual server: %w", err)
+	virtualServerRepository := ioc.GetDependency[*repositories.VirtualServerRepository](scope)
+	virtualServer, err := virtualServerRepository.First(ctx, repositories.NewVirtualServerFilter().Name(command.VirtualServerName))
+	if err != nil {
+		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
-	if !isRegistrationEnabled {
+	if !virtualServer.EnableRegistration() {
 		return nil, utils.ErrRegistrationNotEnabled
 	}
 
 	// create user
-	row = tx.QueryRow(`
+	row := tx.QueryRow(`
 insert into users
 (virtual_server_id, display_name, username)
 values ($1, $2, $3)
 returning id;
-`, virtualServerId, command.DisplayName, command.Username)
+`, virtualServer.Id(), command.DisplayName, command.Username)
 
 	var userId uuid.UUID
 	err = row.Scan(&userId)
