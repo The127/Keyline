@@ -55,6 +55,9 @@ func main() {
 			ioc.GetDependency[services.KeyStore](dp),
 		)
 	})
+	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) services.MailService {
+		return services.NewMailService()
+	})
 
 	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) *repositories.UserRepository {
 		return &repositories.UserRepository{}
@@ -81,6 +84,8 @@ func setupMediator(dc *ioc.DependencyCollection) {
 
 	mediator.RegisterHandler(m, commands.HandleCreateVirtualServer)
 	mediator.RegisterHandler(m, commands.HandleRegisterUser)
+
+	//mediator.RegisterEventHandler(m, events.)
 
 	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) *mediator.Mediator {
 		return m
