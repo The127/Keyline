@@ -42,6 +42,12 @@ type Config struct {
 			Path string
 		}
 	}
+	Mail struct {
+		Host     string
+		Port     int
+		Username string
+		Password string
+	}
 }
 
 var configFilePath string
@@ -86,6 +92,25 @@ func setDefaultsOrPanic() {
 	setDatabaseDefaultsOrPanic()
 	setInitialVirtualServerDefaultsOrPanic()
 	setKeyStoreDefaultsOrPanic()
+	setMailDefaultsOrPanic()
+}
+
+func setMailDefaultsOrPanic() {
+	if C.Mail.Host == "" {
+		panic("missing mail server host")
+	}
+
+	if C.Mail.Port == 0 {
+		panic("missing mail server port")
+	}
+
+	if C.Mail.Username == "" {
+		panic("missing mail server user")
+	}
+
+	if C.Mail.Password == "" {
+		panic("missing mail server passwort")
+	}
 }
 
 func setKeyStoreDefaultsOrPanic() {

@@ -13,3 +13,8 @@ keyStore:
   mode: "directory"
   directory:
     path: "./keys"
+mail:
+  host: "localhost"
+  port: 1025
+  username: "foo"
+  password": "bar"
