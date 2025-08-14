@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"Keyline/ioc"
+	"Keyline/logging"
 	"Keyline/middlewares"
 	"Keyline/services"
 	"context"
@@ -117,6 +118,7 @@ func (r *UserRepository) First(ctx context.Context, filter UserFilter) (*User, e
 
 	s += " limit 1"
 
+	logging.Logger.Debug("sql: %s", s)
 	row := tx.QueryRow(s, params...)
 
 	var user User

@@ -59,6 +59,9 @@ func main() {
 	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) *repositories.UserRepository {
 		return &repositories.UserRepository{}
 	})
+	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) *repositories.VirtualServerRepository {
+		return &repositories.VirtualServerRepository{}
+	})
 
 	setupMediator(dc)
 	dp := dc.BuildProvider()
