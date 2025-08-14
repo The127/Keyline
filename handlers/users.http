@@ -3,7 +3,7 @@ POST http://127.0.0.1:8081/api/virtual-servers/keyline/users/register
 Content-Type: application/json
 
 {
-  "username": "foo2",
+  "username": "foo3",
   "displayName": "Foo",
   "password": "foo",
   "email": "foo@bar.home"

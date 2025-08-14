@@ -3,6 +3,7 @@ package events
 import (
 	"Keyline/ioc"
 	"Keyline/middlewares"
+	"Keyline/repositories"
 	"Keyline/services"
 	"context"
 	"fmt"
@@ -33,6 +34,15 @@ func QueueEmailVerificationJobOnUserCreatedEvent(ctx context.Context, event User
 	err := mailService.Send(message)
 	if err != nil {
 		return fmt.Errorf("sending email verification mail: %w", err)
+	}
+
+	// dummy outbox test
+	outboxRepository := ioc.GetDependency[*repositories.OutboxMessageRepository](scope)
+	err = outboxRepository.Insert(ctx, repositories.NewOutboxMessage(&repositories.DummyOutboxMessageDetails{
+		Foo: "some test value",
+	}))
+	if err != nil {
+		return fmt.Errorf("testing outbox repo: %w", err)
 	}
 
 	return nil

@@ -28,10 +28,10 @@ func main() {
 		return database.ConnectToDatabase()
 	})
 
-	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) *services.DbService {
-		return services.NewDbService(dp)
+	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) *database.DbService {
+		return database.NewDbService(dp)
 	})
-	ioc.RegisterCloseHandler(dc, func(dbService *services.DbService) error {
+	ioc.RegisterCloseHandler(dc, func(dbService *database.DbService) error {
 		return dbService.Close()
 	})
 
@@ -68,6 +68,9 @@ func main() {
 	})
 	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) *repositories.CredentialRepository {
 		return &repositories.CredentialRepository{}
+	})
+	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) *repositories.OutboxMessageRepository {
+		return &repositories.OutboxMessageRepository{}
 	})
 
 	setupMediator(dc)
