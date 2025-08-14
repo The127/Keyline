@@ -17,6 +17,7 @@ type RegisterUser struct {
 	DisplayName       string
 	Username          string
 	Password          string
+	Email             string
 }
 
 type RegisterUserResponse struct {
@@ -41,6 +42,7 @@ func HandleRegisterUser(ctx context.Context, command RegisterUser) (*RegisterUse
 	user := repositories.NewUser(
 		command.Username,
 		command.DisplayName,
+		command.Email,
 		virtualServer.Id(),
 	)
 	err = userRepository.Insert(ctx, user)

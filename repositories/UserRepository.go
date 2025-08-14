@@ -23,13 +23,17 @@ type User struct {
 
 	username    string
 	displayName string
+
+	primaryEmail  string
+	emailVerified bool
 }
 
-func NewUser(username string, displayName string, virtualServerid uuid.UUID) *User {
+func NewUser(username string, displayName string, primaryEmail string, virtualServerId uuid.UUID) *User {
 	return &User{
-		virtualServerId: virtualServerid,
+		virtualServerId: virtualServerId,
 		username:        username,
 		displayName:     displayName,
+		primaryEmail:    primaryEmail,
 	}
 }
 
@@ -94,7 +98,7 @@ func (r *UserRepository) List(ctx context.Context, filter UserFilter) ([]User, e
 		return nil, fmt.Errorf("failed to open tx: %w", err)
 	}
 
-	s := "select id, audit_created_at, audit_updated_at, virtual_server_id, display_name, username from users "
+	s := "select id, audit_created_at, audit_updated_at, virtual_server_id, display_name, username, primary_email, email_verified from users "
 	params := make([]any, 0)
 
 	if filter.username != nil {
@@ -116,7 +120,16 @@ func (r *UserRepository) List(ctx context.Context, filter UserFilter) ([]User, e
 	var users []User
 	for rows.Next() {
 		var user User
-		err = rows.Scan(&user.id, &user.auditCreatedAt, &user.auditUpdatedAt, &user.virtualServerId, &user.displayName, &user.username)
+		err = rows.Scan(
+			&user.id,
+			&user.auditCreatedAt,
+			&user.auditUpdatedAt,
+			&user.virtualServerId,
+			&user.displayName,
+			&user.username,
+			&user.primaryEmail,
+			&user.emailVerified,
+		)
 		if err != nil {
 			return nil, fmt.Errorf("scanning row: %w", err)
 		}
@@ -135,7 +148,7 @@ func (r *UserRepository) First(ctx context.Context, filter UserFilter) (*User, e
 		return nil, fmt.Errorf("failed to open tx: %w", err)
 	}
 
-	s := "select id, audit_created_at, audit_updated_at, virtual_server_id, display_name, username from users "
+	s := "select id, audit_created_at, audit_updated_at, virtual_server_id, display_name, username, primary_email, email_verified from users "
 	params := make([]any, 0)
 
 	if filter.username != nil {
@@ -154,7 +167,16 @@ func (r *UserRepository) First(ctx context.Context, filter UserFilter) (*User, e
 	row := tx.QueryRow(s, params...)
 
 	var user User
-	err = row.Scan(&user.id, &user.auditCreatedAt, &user.auditUpdatedAt, &user.virtualServerId, &user.displayName, &user.username)
+	err = row.Scan(
+		&user.id,
+		&user.auditCreatedAt,
+		&user.auditUpdatedAt,
+		&user.virtualServerId,
+		&user.displayName,
+		&user.username,
+		&user.primaryEmail,
+		&user.emailVerified,
+	)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, nil
@@ -177,12 +199,19 @@ func (r *UserRepository) Insert(ctx context.Context, user *User) error {
 
 	s := `
 insert into users 
-    (virtual_server_id, username, display_name) 
-values ($1, $2, $3)
+    (virtual_server_id, username, display_name, primary_email, email_verified) 
+values ($1, $2, $3, $4, $5)
 returning id, audit_created_at, audit_updated_at`
 
 	logging.Logger.Debug("sql: %s", s)
-	row := tx.QueryRow(s, user.virtualServerId, user.username, user.displayName)
+	row := tx.QueryRow(
+		s,
+		user.virtualServerId,
+		user.username,
+		user.displayName,
+		user.primaryEmail,
+		user.emailVerified,
+	)
 
 	err = row.Scan(&user.id, &user.auditCreatedAt, &user.auditUpdatedAt)
 	if err != nil {

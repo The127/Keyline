@@ -14,6 +14,7 @@ type RegisterUserRequestDto struct {
 	Username    string `json:"username"`
 	DisplayName string `json:"displayName"`
 	Password    string `json:"password"`
+	Email       string `json:"email"`
 }
 
 func RegisterUser(w http.ResponseWriter, r *http.Request) {
@@ -40,6 +41,7 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 		Username:          dto.Username,
 		DisplayName:       dto.DisplayName,
 		Password:          dto.Password,
+		Email:             dto.Email,
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)
