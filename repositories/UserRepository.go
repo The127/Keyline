@@ -25,6 +25,14 @@ type User struct {
 	displayName string
 }
 
+func NewUser(username string, displayName string, virtualServerid uuid.UUID) *User {
+	return &User{
+		virtualServerId: virtualServerid,
+		username:        username,
+		displayName:     displayName,
+	}
+}
+
 func (m *User) Id() uuid.UUID {
 	return m.id
 }
@@ -156,4 +164,30 @@ func (r *UserRepository) First(ctx context.Context, filter UserFilter) (*User, e
 	}
 
 	return &user, nil
+}
+
+func (r *UserRepository) Insert(ctx context.Context, user *User) error {
+	scope := middlewares.GetScope(ctx)
+	dbService := ioc.GetDependency[*services.DbService](scope)
+
+	tx, err := dbService.GetTx()
+	if err != nil {
+		return fmt.Errorf("failed to open tx: %w", err)
+	}
+
+	s := `
+insert into users 
+    (virtual_server_id, username, display_name) 
+values ($1, $2, $3)
+returning id, audit_created_at, audit_updated_at`
+
+	logging.Logger.Debug("sql: %s", s)
+	row := tx.QueryRow(s, user.virtualServerId, user.username, user.displayName)
+
+	err = row.Scan(&user.id, &user.auditCreatedAt, &user.auditUpdatedAt)
+	if err != nil {
+		return fmt.Errorf("scanning row: %w", err)
+	}
+
+	return nil
 }
