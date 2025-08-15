@@ -103,6 +103,7 @@ func setupMediator(dc *ioc.DependencyCollection) {
 
 	mediator.RegisterHandler(m, commands.HandleCreateVirtualServer)
 	mediator.RegisterHandler(m, commands.HandleRegisterUser)
+	mediator.RegisterHandler(m, commands.HandleVerifyEmail)
 
 	mediator.RegisterEventHandler(m, events.QueueEmailVerificationJobOnUserCreatedEvent)
 

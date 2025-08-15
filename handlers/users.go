@@ -7,6 +7,7 @@ import (
 	"Keyline/middlewares"
 	"Keyline/utils"
 	"encoding/json"
+	"fmt"
 	"net/http"
 )
 
@@ -17,8 +18,36 @@ type RegisterUserRequestDto struct {
 	Email       string `json:"email"`
 }
 
-func VerifyEmail(w http.ResponseWriter, r *http.Request) {
+var (
+	ErrMissingEmailVerificationToken = fmt.Errorf("missing email verification token: %w", utils.ErrHttpBadRequest)
+)
 
+func VerifyEmail(w http.ResponseWriter, r *http.Request) {
+	vsName, err := middlewares.GetVirtualServerName(r.Context())
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	token := r.URL.Query().Get("token")
+	if token == "" {
+		utils.HandleHttpError(w, ErrMissingEmailVerificationToken)
+		return
+	}
+
+	scope := middlewares.GetScope(r.Context())
+	m := ioc.GetDependency[*mediator.Mediator](scope)
+
+	_, err = mediator.Send[*commands.VerifyEmailResponse](r.Context(), m, commands.VerifyEmail{
+		VirtualServerName: vsName,
+		Token:             token,
+	})
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func RegisterUser(w http.ResponseWriter, r *http.Request) {

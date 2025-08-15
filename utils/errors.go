@@ -8,8 +8,8 @@ import (
 	"net/http"
 )
 
-var ErrResourceNotFound = errors.New("not found")
-var ErrVirtualServerNotFound = fmt.Errorf("virtual server: %w", ErrResourceNotFound)
+var ErrHttpNotFound = errors.New("not found")
+var ErrVirtualServerNotFound = fmt.Errorf("virtual server: %w", ErrHttpNotFound)
 
 var ErrHttpBadRequest = errors.New("bad request")
 var ErrRegistrationNotEnabled = fmt.Errorf("registartion is not enabled: %w", ErrHttpBadRequest)
@@ -24,7 +24,7 @@ func HandleHttpError(w http.ResponseWriter, err error) {
 		msg = err.Error()
 		break
 
-	case errors.Is(err, ErrResourceNotFound):
+	case errors.Is(err, ErrHttpNotFound):
 		status = http.StatusNotFound
 		msg = err.Error()
 
@@ -46,5 +46,5 @@ func PanicOnError(f func() error, msg string) {
 		logging.Logger.Fatalf("%s: %v", msg, err)
 	}
 
-	errors.Is(err, ErrResourceNotFound)
+	errors.Is(err, ErrHttpNotFound)
 }

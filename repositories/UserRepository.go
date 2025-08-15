@@ -15,10 +15,7 @@ import (
 )
 
 type User struct {
-	id uuid.UUID
-
-	auditCreatedAt time.Time
-	auditUpdatedAt time.Time
+	ModelBase
 
 	virtualServerId uuid.UUID
 
@@ -31,6 +28,7 @@ type User struct {
 
 func NewUser(username string, displayName string, primaryEmail string, virtualServerId uuid.UUID) *User {
 	return &User{
+		ModelBase:       NewModelBase(),
 		virtualServerId: virtualServerId,
 		username:        username,
 		displayName:     displayName,
@@ -68,6 +66,11 @@ func (m *User) PrimaryEmail() string {
 
 func (m *User) EmailVerified() bool {
 	return m.emailVerified
+}
+
+func (m *User) SetEmailVerified(emailVerified bool) {
+	m.emailVerified = true
+	m.TrackChange("email_verified", emailVerified)
 }
 
 type UserFilter struct {
@@ -134,7 +137,9 @@ func (r *UserRepository) List(ctx context.Context, filter UserFilter) ([]User, e
 
 	var users []User
 	for rows.Next() {
-		var user User
+		user := User{
+			ModelBase: NewModelBase(),
+		}
 		err = rows.Scan(
 			&user.id,
 			&user.auditCreatedAt,
@@ -180,7 +185,9 @@ func (r *UserRepository) First(ctx context.Context, filter UserFilter) (*User, e
 	logging.Logger.Debug("sql: %s", query)
 	row := tx.QueryRow(query, args...)
 
-	var user User
+	user := User{
+		ModelBase: NewModelBase(),
+	}
 	err = row.Scan(
 		&user.id,
 		&user.auditCreatedAt,
@@ -200,6 +207,35 @@ func (r *UserRepository) First(ctx context.Context, filter UserFilter) (*User, e
 	}
 
 	return &user, nil
+}
+
+func (r *UserRepository) Update(ctx context.Context, user *User) error {
+	scope := middlewares.GetScope(ctx)
+	dbService := ioc.GetDependency[*database.DbService](scope)
+
+	tx, err := dbService.GetTx()
+	if err != nil {
+		return fmt.Errorf("failed to open tx: %w", err)
+	}
+
+	s := sqlbuilder.Update("users")
+	for fieldName, value := range user.changes {
+		s.Set(s.Assign(fieldName, value))
+	}
+
+	s.Where(s.Equal("id", user.id))
+	s.Returning("audit_updated_at")
+
+	query, args := s.Build()
+	logging.Logger.Debug("sql: %s", query)
+	row := tx.QueryRow(query, args...)
+
+	err = row.Scan(&user.auditUpdatedAt)
+	if err != nil {
+		return fmt.Errorf("scanning row: %w", err)
+	}
+
+	return nil
 }
 
 func (r *UserRepository) Insert(ctx context.Context, user *User) error {
