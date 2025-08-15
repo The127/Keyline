@@ -65,6 +65,7 @@ func (m *VirtualServer) SetEnableRegistration(enableRegistration bool) *VirtualS
 
 type VirtualServerFilter struct {
 	name *string
+	id   *uuid.UUID
 }
 
 func NewVirtualServerFilter() VirtualServerFilter {
@@ -77,7 +78,13 @@ func (f VirtualServerFilter) Clone() VirtualServerFilter {
 
 func (f VirtualServerFilter) Name(name string) VirtualServerFilter {
 	filter := f.Clone()
-	f.name = &name
+	filter.name = &name
+	return filter
+}
+
+func (f VirtualServerFilter) Id(id uuid.UUID) VirtualServerFilter {
+	filter := f.Clone()
+	filter.id = &id
 	return filter
 }
 

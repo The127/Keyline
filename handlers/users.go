@@ -17,6 +17,10 @@ type RegisterUserRequestDto struct {
 	Email       string `json:"email"`
 }
 
+func VerifyEmail(w http.ResponseWriter, r *http.Request) {
+
+}
+
 func RegisterUser(w http.ResponseWriter, r *http.Request) {
 	vsName, err := middlewares.GetVirtualServerName(r.Context())
 	if err != nil {

@@ -62,6 +62,14 @@ func (m *User) DisplayName() string {
 	return m.displayName
 }
 
+func (m *User) PrimaryEmail() string {
+	return m.primaryEmail
+}
+
+func (m *User) EmailVerified() bool {
+	return m.emailVerified
+}
+
 type UserFilter struct {
 	virtualServerId *uuid.UUID
 	id              *uuid.UUID
@@ -155,7 +163,8 @@ func (r *UserRepository) First(ctx context.Context, filter UserFilter) (*User, e
 		return nil, fmt.Errorf("failed to open tx: %w", err)
 	}
 
-	s := sqlbuilder.Select("id", "audit_created_at", "audit_updated_at", "virtual_server_id", "display_name", "username", "primary_email", "email_verified")
+	s := sqlbuilder.Select("id", "audit_created_at", "audit_updated_at", "virtual_server_id", "display_name", "username", "primary_email", "email_verified").
+		From("users")
 
 	if filter.username != nil {
 		s.Where(s.Equal("username", filter.username))

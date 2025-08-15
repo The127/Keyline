@@ -65,6 +65,9 @@ func main() {
 	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) services.TemplateService {
 		return services.NewTemplateService()
 	})
+	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) services.TokenService {
+		return services.NewTokenService()
+	})
 
 	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) *repositories.UserRepository {
 		return &repositories.UserRepository{}

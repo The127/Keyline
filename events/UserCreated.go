@@ -1,6 +1,7 @@
 package events
 
 import (
+	"Keyline/config"
 	"Keyline/ioc"
 	"Keyline/middlewares"
 	"Keyline/repositories"
@@ -10,6 +11,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	gomail "gopkg.in/mail.v2"
+	"time"
 )
 
 type UserCreatedEvent struct {
@@ -25,15 +27,39 @@ func QueueEmailVerificationJobOnUserCreatedEvent(ctx context.Context, event User
 		return fmt.Errorf("getting user: %w", err)
 	}
 
+	if user.EmailVerified() {
+		return nil
+	}
+
+	virtualServerRepository := ioc.GetDependency[*repositories.VirtualServerRepository](scope)
+	virtualServer, err := virtualServerRepository.First(ctx, repositories.NewVirtualServerFilter().Id(user.VirtualServerId()))
+	if err != nil {
+		return fmt.Errorf("getting virtual server: %w", err)
+	}
+
+	tokenService := ioc.GetDependency[services.TokenService](scope)
+	token, err := tokenService.StoreToken(ctx, services.GetEmailVerificationTokenKey(user.Id()), time.Minute*15)
+	if err != nil {
+		return fmt.Errorf("storing email verification token: %w", err)
+	}
+
 	templateService := ioc.GetDependency[services.TemplateService](scope)
-	templateService.Template(
+	mailBody, err := templateService.Template(
 		ctx,
 		user.VirtualServerId(),
 		repositories.EmailVerificationMailTemplate,
 		templates.EmailVerificationTemplateData{
-			VerificationLink: "",
+			VerificationLink: fmt.Sprintf(
+				"%s/api/virtual-servers/%s/users/verify-email?token=%s",
+				config.C.Server.ExternalUrl,
+				virtualServer.Name(),
+				token,
+			),
 		},
 	)
+	if err != nil {
+		return fmt.Errorf("templating email verification mail: %w", err)
+	}
 
 	// TODO: queue a job instead
 
@@ -42,11 +68,11 @@ func QueueEmailVerificationJobOnUserCreatedEvent(ctx context.Context, event User
 
 	// Set email headers
 	message.SetHeader("From", "youremail@email.com")
-	message.SetHeader("To", "recipient1@email.com")
-	message.SetHeader("Subject", "Hello from the Mailtrap team")
+	message.SetHeader("To", user.PrimaryEmail())
+	message.SetHeader("Subject", "Email verification")
 
 	// Set email body
-	message.SetBody("text/plain", "This is the Test Body")
+	message.SetBody("text/plain", mailBody)
 
 	mailService := ioc.GetDependency[services.MailService](scope)
 	err = mailService.Send(message)
