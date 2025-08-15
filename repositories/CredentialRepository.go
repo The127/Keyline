@@ -72,6 +72,10 @@ type CredentialFilter struct {
 	userId *uuid.UUID
 }
 
+func NewCredentialFilter() CredentialFilter {
+	return CredentialFilter{}
+}
+
 func (f CredentialFilter) Clone() CredentialFilter {
 	return f
 }

@@ -71,7 +71,7 @@ func (f FileFilter) Clone() FileFilter {
 
 func (f FileFilter) Id(id uuid.UUID) FileFilter {
 	filter := f.Clone()
-	f.id = &id
+	filter.id = &id
 	return filter
 }
 

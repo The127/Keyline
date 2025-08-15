@@ -65,6 +65,10 @@ func NewOutboxMessage(details OutboxMessageDetails) *OutboxMessage {
 type OutboxMessageFilter struct {
 }
 
+func NewOutboxMessageFilter() OutboxMessageFilter {
+	return OutboxMessageFilter{}
+}
+
 type OutboxMessageRepository struct {
 }
 

@@ -84,7 +84,7 @@ func (f UserFilter) Clone() UserFilter {
 	return f
 }
 
-func (f UserFilter) VirtualServer(virtualServerId uuid.UUID) UserFilter {
+func (f UserFilter) VirtualServerId(virtualServerId uuid.UUID) UserFilter {
 	filter := f.Clone()
 	filter.virtualServerId = &virtualServerId
 	return filter
