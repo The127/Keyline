@@ -6,6 +6,12 @@ import (
 	"fmt"
 )
 
+func GetSecureRandomBytes(length int) []byte {
+	bytes := make([]byte, length)
+	_, _ = rand.Read(bytes)
+	return bytes
+}
+
 func GenerateKeyPair() (ed25519.PrivateKey, ed25519.PublicKey) {
 	publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {

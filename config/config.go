@@ -53,6 +53,7 @@ type Config struct {
 		Port     int
 		Username string
 		Password string
+		Database int
 	}
 }
 
