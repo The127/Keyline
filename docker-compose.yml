@@ -19,6 +19,11 @@ services:
       - "8025:8025"
       - "1025:1025"
 
+  redis:
+    image: valkey/valkey
+    ports:
+      - "6379:6379"
+
   rabbitmq:
     image: rabbitmq:4-management
     restart: always

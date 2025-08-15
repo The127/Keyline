@@ -18,3 +18,5 @@ mail:
   port: 1025
   username: "foo"
   password: "bar"
+redis:
+  host: "localhost"

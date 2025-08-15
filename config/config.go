@@ -48,6 +48,12 @@ type Config struct {
 		Username string
 		Password string
 	}
+	Redis struct {
+		Host     string
+		Port     int
+		Username string
+		Password string
+	}
 }
 
 var configFilePath string
@@ -93,6 +99,21 @@ func setDefaultsOrPanic() {
 	setInitialVirtualServerDefaultsOrPanic()
 	setKeyStoreDefaultsOrPanic()
 	setMailDefaultsOrPanic()
+	setRedisDefaultsOrPanic()
+}
+
+func setRedisDefaultsOrPanic() {
+	if C.Redis.Host == "" {
+		if IsProduction() {
+			panic("missing redis host")
+		}
+
+		C.Redis.Host = "localhost"
+	}
+
+	if C.Redis.Port == 0 {
+		C.Redis.Port = 6379
+	}
 }
 
 func setMailDefaultsOrPanic() {

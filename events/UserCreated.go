@@ -5,6 +5,7 @@ import (
 	"Keyline/middlewares"
 	"Keyline/repositories"
 	"Keyline/services"
+	"Keyline/templates"
 	"context"
 	"fmt"
 	"github.com/google/uuid"
@@ -16,6 +17,24 @@ type UserCreatedEvent struct {
 }
 
 func QueueEmailVerificationJobOnUserCreatedEvent(ctx context.Context, event UserCreatedEvent) error {
+	scope := middlewares.GetScope(ctx)
+
+	userRepository := ioc.GetDependency[*repositories.UserRepository](scope)
+	user, err := userRepository.First(ctx, repositories.NewUserFilter().Id(event.UserId))
+	if err != nil {
+		return fmt.Errorf("getting user: %w", err)
+	}
+
+	templateService := ioc.GetDependency[services.TemplateService](scope)
+	templateService.Template(
+		ctx,
+		user.VirtualServerId(),
+		repositories.EmailVerificationMailTemplate,
+		templates.EmailVerificationTemplateData{
+			VerificationLink: "",
+		},
+	)
+
 	// TODO: queue a job instead
 
 	// Create a new message
@@ -29,9 +48,8 @@ func QueueEmailVerificationJobOnUserCreatedEvent(ctx context.Context, event User
 	// Set email body
 	message.SetBody("text/plain", "This is the Test Body")
 
-	scope := middlewares.GetScope(ctx)
 	mailService := ioc.GetDependency[services.MailService](scope)
-	err := mailService.Send(message)
+	err = mailService.Send(message)
 	if err != nil {
 		return fmt.Errorf("sending email verification mail: %w", err)
 	}

@@ -64,6 +64,7 @@ func (m *User) DisplayName() string {
 
 type UserFilter struct {
 	virtualServerId *uuid.UUID
+	id              *uuid.UUID
 	username        *string
 }
 
@@ -78,6 +79,12 @@ func (f UserFilter) Clone() UserFilter {
 func (f UserFilter) VirtualServer(virtualServerId uuid.UUID) UserFilter {
 	filter := f.Clone()
 	filter.virtualServerId = &virtualServerId
+	return filter
+}
+
+func (f UserFilter) Id(id uuid.UUID) UserFilter {
+	filter := f.Clone()
+	filter.id = &id
 	return filter
 }
 
