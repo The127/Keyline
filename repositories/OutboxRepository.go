@@ -6,8 +6,6 @@ import (
 	"Keyline/logging"
 	"Keyline/middlewares"
 	"context"
-	"database/sql/driver"
-	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/huandu/go-sqlbuilder"
@@ -17,32 +15,11 @@ import (
 type OutboxMessageType string
 
 const (
-	DummyOutboxMessageType OutboxMessageType = "dummy"
+	SendMailOutboxMessageType OutboxMessageType = "send_mail"
 )
 
 type OutboxMessageDetails interface {
 	OutboxMessageType() OutboxMessageType
-}
-
-type DummyOutboxMessageDetails struct {
-	Foo string
-}
-
-func (d *DummyOutboxMessageDetails) OutboxMessageType() OutboxMessageType {
-	return DummyOutboxMessageType
-}
-
-func (d *DummyOutboxMessageDetails) Value() (driver.Value, error) {
-	return json.Marshal(d)
-}
-
-func (d *DummyOutboxMessageDetails) Scan(value any) error {
-	bytes, ok := value.([]byte)
-	if !ok {
-		return fmt.Errorf("type assertion for outbox message failed")
-	}
-
-	return json.Unmarshal(bytes, &d)
 }
 
 type OutboxMessage struct {

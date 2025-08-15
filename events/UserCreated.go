@@ -3,6 +3,7 @@ package events
 import (
 	"Keyline/config"
 	"Keyline/ioc"
+	"Keyline/messages"
 	"Keyline/middlewares"
 	"Keyline/repositories"
 	"Keyline/services"
@@ -10,7 +11,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/uuid"
-	gomail "gopkg.in/mail.v2"
 	"time"
 )
 
@@ -64,29 +64,17 @@ func QueueEmailVerificationJobOnUserCreatedEvent(ctx context.Context, event User
 	// TODO: queue a job instead
 
 	// Create a new message
-	message := gomail.NewMessage()
-
-	// Set email headers
-	message.SetHeader("From", "youremail@email.com")
-	message.SetHeader("To", user.PrimaryEmail())
-	message.SetHeader("Subject", "Email verification")
-
-	// Set email body
-	message.SetBody("text/plain", mailBody)
-
-	mailService := ioc.GetDependency[services.MailService](scope)
-	err = mailService.Send(message)
-	if err != nil {
-		return fmt.Errorf("sending email verification mail: %w", err)
+	message := &messages.SendEmailMessage{
+		VirtualServerId: user.VirtualServerId(),
+		To:              user.PrimaryEmail(),
+		Subject:         "Email verification",
+		Body:            mailBody,
 	}
 
-	// dummy outbox test
-	outboxRepository := ioc.GetDependency[*repositories.OutboxMessageRepository](scope)
-	err = outboxRepository.Insert(ctx, repositories.NewOutboxMessage(&repositories.DummyOutboxMessageDetails{
-		Foo: "some test value",
-	}))
+	outboxMessageRepository := ioc.GetDependency[*repositories.OutboxMessageRepository](scope)
+	err = outboxMessageRepository.Insert(ctx, repositories.NewOutboxMessage(message))
 	if err != nil {
-		return fmt.Errorf("testing outbox repo: %w", err)
+		return fmt.Errorf("creating email outbox message: %w", err)
 	}
 
 	return nil
