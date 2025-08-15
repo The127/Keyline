@@ -11,14 +11,10 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/huandu/go-sqlbuilder"
-	"time"
 )
 
 type Credential struct {
-	id uuid.UUID
-
-	auditCreatedAt time.Time
-	auditUpdatedAt time.Time
+	ModelBase
 
 	userId uuid.UUID
 
@@ -28,9 +24,10 @@ type Credential struct {
 
 func NewCredential(userId uuid.UUID, details CredentialDetails) *Credential {
 	return &Credential{
-		userId:  userId,
-		_type:   details.CredentialDetailType(),
-		details: details,
+		ModelBase: NewModelBase(),
+		userId:    userId,
+		_type:     details.CredentialDetailType(),
+		details:   details,
 	}
 }
 

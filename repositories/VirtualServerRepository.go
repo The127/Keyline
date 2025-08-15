@@ -15,10 +15,7 @@ import (
 )
 
 type VirtualServer struct {
-	id uuid.UUID
-
-	auditCreatedAt time.Time
-	auditUpdatedAt time.Time
+	ModelBase
 
 	name        string
 	displayName string
@@ -28,6 +25,7 @@ type VirtualServer struct {
 
 func NewVirtualServer(name string, displayName string) *VirtualServer {
 	return &VirtualServer{
+		ModelBase:          NewModelBase(),
 		name:               name,
 		displayName:        displayName,
 		enableRegistration: false,
@@ -113,7 +111,9 @@ func (r *VirtualServerRepository) First(ctx context.Context, filter VirtualServe
 	logging.Logger.Debug("sql: %s", query)
 	row := tx.QueryRow(query, args...)
 
-	var virtualServer VirtualServer
+	virtualServer := VirtualServer{
+		ModelBase: NewModelBase(),
+	}
 	err = row.Scan(&virtualServer.id, &virtualServer.auditCreatedAt, &virtualServer.auditUpdatedAt, &virtualServer.displayName, &virtualServer.name, &virtualServer.enableRegistration)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):

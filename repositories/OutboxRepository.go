@@ -7,9 +7,7 @@ import (
 	"Keyline/middlewares"
 	"context"
 	"fmt"
-	"github.com/google/uuid"
 	"github.com/huandu/go-sqlbuilder"
-	"time"
 )
 
 type OutboxMessageType string
@@ -23,10 +21,7 @@ type OutboxMessageDetails interface {
 }
 
 type OutboxMessage struct {
-	id uuid.UUID
-
-	auditCreatedAt time.Time
-	auditUpdatedAt time.Time
+	ModelBase
 
 	_type   OutboxMessageType
 	details OutboxMessageDetails
@@ -34,8 +29,9 @@ type OutboxMessage struct {
 
 func NewOutboxMessage(details OutboxMessageDetails) *OutboxMessage {
 	return &OutboxMessage{
-		_type:   details.OutboxMessageType(),
-		details: details,
+		ModelBase: NewModelBase(),
+		_type:     details.OutboxMessageType(),
+		details:   details,
 	}
 }
 

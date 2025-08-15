@@ -15,10 +15,7 @@ import (
 )
 
 type File struct {
-	id uuid.UUID
-
-	auditCreatedAt time.Time
-	auditUpdatedAt time.Time
+	ModelBase
 
 	name     string
 	mimeType string
@@ -27,9 +24,10 @@ type File struct {
 
 func NewFile(name string, mimeType string, content []byte) *File {
 	return &File{
-		name:     name,
-		mimeType: mimeType,
-		content:  content,
+		ModelBase: NewModelBase(),
+		name:      name,
+		mimeType:  mimeType,
+		content:   content,
 	}
 }
 
@@ -100,7 +98,9 @@ func (r *FileRepository) First(ctx context.Context, filter FileFilter) (*File, e
 	logging.Logger.Debug("sql: %s", query)
 	row := tx.QueryRow(query, args...)
 
-	var file File
+	file := File{
+		ModelBase: NewModelBase(),
+	}
 	err = row.Scan(
 		&file.id,
 		&file.auditCreatedAt,

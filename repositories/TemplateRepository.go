@@ -21,10 +21,7 @@ const (
 )
 
 type Template struct {
-	id uuid.UUID
-
-	auditCreatedAt time.Time
-	auditUpdatedAt time.Time
+	ModelBase
 
 	virtualServerId uuid.UUID
 	fileId          uuid.UUID
@@ -33,6 +30,7 @@ type Template struct {
 
 func NewTemplate(virtualServerId uuid.UUID, fileId uuid.UUID, templateType TemplateType) *Template {
 	return &Template{
+		ModelBase:       NewModelBase(),
 		virtualServerId: virtualServerId,
 		fileId:          fileId,
 		templateType:    templateType,
@@ -116,7 +114,9 @@ func (r *TemplateRepository) First(ctx context.Context, filter TemplateFilter) (
 	logging.Logger.Debug("sql: %s", query)
 	row := tx.QueryRow(query, args...)
 
-	var template Template
+	template := Template{
+		ModelBase: NewModelBase(),
+	}
 	err = row.Scan(
 		&template.id,
 		&template.auditCreatedAt,
