@@ -4,24 +4,37 @@ import (
 	"Keyline/ioc"
 	"Keyline/middlewares"
 	"Keyline/repositories"
+	"Keyline/services"
 	"Keyline/utils"
 	"fmt"
 	"github.com/google/uuid"
 	"net/http"
 )
 
+type Data struct {
+	Link string
+}
+
 func Debug(w http.ResponseWriter, r *http.Request) {
 	scope := middlewares.GetScope(r.Context())
-	userRepository := ioc.GetDependency[*repositories.UserRepository](scope)
+	templateService := ioc.GetDependency[services.TemplateService](scope)
 
-	user := repositories.NewUser("foo", "bar", "", uuid.MustParse("3ed47d00-1cec-48c4-8be4-f258e91d7016"))
-	err := userRepository.Insert(r.Context(), user)
+	data := Data{
+		Link: "https://website.url/verifyemail/asodhrflaeawrhgawubhkawdf",
+	}
+
+	mailBody, err := templateService.Template(
+		r.Context(),
+		uuid.MustParse("3ed47d00-1cec-48c4-8be4-f258e91d7016"),
+		repositories.EmailVerificationMailTemplate,
+		data,
+	)
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
 	}
 
-	fmt.Printf("users: %v", user)
+	fmt.Printf("templated mail body: %v", mailBody)
 
 	w.WriteHeader(http.StatusOK)
 }

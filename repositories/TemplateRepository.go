@@ -101,11 +101,12 @@ func (r *TemplateRepository) First(ctx context.Context, filter TemplateFilter) (
 	s := "select id, audit_created_at, audit_updated_at, virtual_server_id, file_id, type from templates"
 	params := make([]any, 0)
 
-	if filter.virtualServerId != nil {
+	// TODO: really add sql builder now soon
+	/*if filter.virtualServerId != nil {
 		s += fmt.Sprintf(" where virtual_server_id = $%d ", len(params)+1)
 		params = append(params, filter.virtualServerId)
 	}
-
+	*/
 	if filter.templateType != nil {
 		s += fmt.Sprintf(" where type = $%d ", len(params)+1)
 		params = append(params, filter.templateType)

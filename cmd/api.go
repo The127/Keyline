@@ -59,6 +59,9 @@ func main() {
 	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) services.MailService {
 		return services.NewMailService()
 	})
+	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) services.TemplateService {
+		return services.NewTemplateService()
+	})
 
 	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) *repositories.UserRepository {
 		return &repositories.UserRepository{}
@@ -74,6 +77,9 @@ func main() {
 	})
 	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) *repositories.FileRepository {
 		return &repositories.FileRepository{}
+	})
+	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) *repositories.TemplateRepository {
+		return &repositories.TemplateRepository{}
 	})
 
 	setupMediator(dc)
