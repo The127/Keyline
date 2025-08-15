@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/huandu/go-sqlbuilder"
 	"time"
 )
 
@@ -76,18 +77,16 @@ func (r *OutboxMessageRepository) Insert(ctx context.Context, outboxMessage *Out
 		return fmt.Errorf("failed to open tx: %w", err)
 	}
 
-	s := `
-insert into outbox_messages
-	(type, details)
-values ($1, $2)
-returning id, audit_created_at, audit_updated_at`
+	s := sqlbuilder.InsertInto("outbox_messages").
+		Cols("type", "details").
+		Values(
+			outboxMessage._type,
+			outboxMessage.details,
+		).Returning("id", "audit_created_at", "audit_updated_at")
 
-	logging.Logger.Debug("sql: %s", s)
-	row := tx.QueryRow(
-		s,
-		outboxMessage._type,
-		outboxMessage.details,
-	)
+	query, args := s.Build()
+	logging.Logger.Debug("sql: %s", query)
+	row := tx.QueryRow(query, args...)
 
 	err = row.Scan(&outboxMessage.id, &outboxMessage.auditCreatedAt, &outboxMessage.auditUpdatedAt)
 	if err != nil {

@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/huandu/go-sqlbuilder"
 	"time"
 )
 
@@ -98,20 +99,19 @@ func (r *UserRepository) List(ctx context.Context, filter UserFilter) ([]User, e
 		return nil, fmt.Errorf("failed to open tx: %w", err)
 	}
 
-	s := "select id, audit_created_at, audit_updated_at, virtual_server_id, display_name, username, primary_email, email_verified from users "
-	params := make([]any, 0)
+	s := sqlbuilder.Select("id", "audit_created_at", "audit_updated_at", "virtual_server_id", "display_name", "username", "primary_email", "email_verified")
 
 	if filter.username != nil {
-		s += fmt.Sprintf(" where username = $%d", len(params)+1)
-		params = append(params, filter.username)
+		s.Where(s.Equal("username", filter.username))
 	}
 
 	if filter.virtualServerId != nil {
-		s += fmt.Sprintf(" where virtual_server_id = $%d", len(params)+1)
-		params = append(params, filter.username)
+		s.Where(s.Equal("virtual_server_id", filter.virtualServerId))
 	}
 
-	rows, err := tx.Query(s, params...)
+	query, args := s.Build()
+	logging.Logger.Debug("sql: %s", query)
+	rows, err := tx.Query(query, args...)
 	defer rows.Close()
 	if err != nil {
 		return nil, fmt.Errorf("querying db: %w", err)
@@ -148,23 +148,21 @@ func (r *UserRepository) First(ctx context.Context, filter UserFilter) (*User, e
 		return nil, fmt.Errorf("failed to open tx: %w", err)
 	}
 
-	s := "select id, audit_created_at, audit_updated_at, virtual_server_id, display_name, username, primary_email, email_verified from users "
-	params := make([]any, 0)
+	s := sqlbuilder.Select("id", "audit_created_at", "audit_updated_at", "virtual_server_id", "display_name", "username", "primary_email", "email_verified")
 
 	if filter.username != nil {
-		s += fmt.Sprintf(" where username = $%d", len(params)+1)
-		params = append(params, filter.username)
+		s.Where(s.Equal("username", filter.username))
 	}
 
 	if filter.virtualServerId != nil {
-		s += fmt.Sprintf(" where virtual_server_id = $%d", len(params)+1)
-		params = append(params, filter.username)
+		s.Where(s.Equal("virtual_server_id", filter.virtualServerId))
 	}
 
-	s += " limit 1"
+	s.Limit(1)
 
-	logging.Logger.Debug("sql: %s", s)
-	row := tx.QueryRow(s, params...)
+	query, args := s.Build()
+	logging.Logger.Debug("sql: %s", query)
+	row := tx.QueryRow(query, args...)
 
 	var user User
 	err = row.Scan(
@@ -197,21 +195,19 @@ func (r *UserRepository) Insert(ctx context.Context, user *User) error {
 		return fmt.Errorf("failed to open tx: %w", err)
 	}
 
-	s := `
-insert into users 
-    (virtual_server_id, username, display_name, primary_email, email_verified) 
-values ($1, $2, $3, $4, $5)
-returning id, audit_created_at, audit_updated_at`
+	s := sqlbuilder.InsertInto("users").
+		Cols("virtual_server_id", "username", "display_name", "primary_email", "email_verified").
+		Values(
+			user.virtualServerId,
+			user.username,
+			user.displayName,
+			user.primaryEmail,
+			user.emailVerified,
+		).Returning("id", "audit_created_at", "audit_updated_at")
 
-	logging.Logger.Debug("sql: %s", s)
-	row := tx.QueryRow(
-		s,
-		user.virtualServerId,
-		user.username,
-		user.displayName,
-		user.primaryEmail,
-		user.emailVerified,
-	)
+	query, args := s.Build()
+	logging.Logger.Debug("sql: %s", query)
+	row := tx.QueryRow(query, args...)
 
 	err = row.Scan(&user.id, &user.auditCreatedAt, &user.auditUpdatedAt)
 	if err != nil {

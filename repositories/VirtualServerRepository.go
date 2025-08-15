@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/huandu/go-sqlbuilder"
 	"time"
 )
 
@@ -92,18 +93,18 @@ func (r *VirtualServerRepository) First(ctx context.Context, filter VirtualServe
 		return nil, fmt.Errorf("failed to open tx: %w", err)
 	}
 
-	s := "select id, audit_created_at, audit_updated_at, display_name, name, enable_registration from virtual_servers "
-	params := make([]any, 0)
+	s := sqlbuilder.Select("id", "audit_created_at", "audit_updated_at", "display_name", "name", "enable_registration").
+		From("virtual_servers")
 
 	if filter.name != nil {
-		s += fmt.Sprintf(" where name = $%d", len(params)+1)
-		params = append(params, filter.name)
+		s.Where(s.Equal("name", filter.name))
 	}
 
-	s += " limit 1"
+	s.Limit(1)
 
-	logging.Logger.Debug("sql: %s", s)
-	row := tx.QueryRow(s, params...)
+	query, args := s.Build()
+	logging.Logger.Debug("sql: %s", query)
+	row := tx.QueryRow(query, args...)
 
 	var virtualServer VirtualServer
 	err = row.Scan(&virtualServer.id, &virtualServer.auditCreatedAt, &virtualServer.auditUpdatedAt, &virtualServer.displayName, &virtualServer.name, &virtualServer.enableRegistration)
@@ -127,14 +128,17 @@ func (r *VirtualServerRepository) Insert(ctx context.Context, virtualServer *Vir
 		return fmt.Errorf("failed to open tx: %w", err)
 	}
 
-	s := `
-insert into virtual_servers 
-    (name, display_name, enable_registration) 
-values ($1, $2, $3)
-returning id, audit_created_at, audit_updated_at`
+	s := sqlbuilder.InsertInto("virtual_servers").
+		Cols("name", "display_name", "enable_registration").
+		Values(
+			virtualServer.name,
+			virtualServer.displayName,
+			virtualServer.enableRegistration,
+		).Returning("id", "audit_created_at", "audit_updated_at")
 
-	logging.Logger.Debug("sql: %s", s)
-	row := tx.QueryRow(s, virtualServer.name, virtualServer.displayName, virtualServer.enableRegistration)
+	query, args := s.Build()
+	logging.Logger.Debug("sql: %s", query)
+	row := tx.QueryRow(query, args...)
 
 	err = row.Scan(&virtualServer.id, &virtualServer.auditCreatedAt, &virtualServer.auditUpdatedAt)
 	if err != nil {

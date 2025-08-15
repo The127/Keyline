@@ -146,18 +146,17 @@ func (r *TemplateRepository) Insert(ctx context.Context, template *Template) err
 		return fmt.Errorf("failed to open tx: %w", err)
 	}
 
-	s := `
-insert into templates
-	(virtual_server_id, file_id, type)
-values ($1, $2, $3)
-returning id, audit_created_at, audit_updated_at`
+	s := sqlbuilder.InsertInto("templates").
+		Cols("virtual_server_id", "file_id", "type").
+		Values(
+			template.virtualServerId,
+			template.fileId,
+			template.templateType,
+		).Returning("id", "audit_created_at", "audit_updated_at")
 
-	logging.Logger.Debug("sql: %s", s)
-	row := tx.QueryRow(
-		s,
-		template.virtualServerId,
-		template.fileId,
-		template.templateType)
+	query, args := s.Build()
+	logging.Logger.Debug("sql: %s", query)
+	row := tx.QueryRow(query, args...)
 
 	err = row.Scan(&template.id, &template.auditCreatedAt, &template.auditUpdatedAt)
 	if err != nil {

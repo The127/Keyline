@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/huandu/go-sqlbuilder"
 	"time"
 )
 
@@ -86,18 +87,18 @@ func (r *FileRepository) First(ctx context.Context, filter FileFilter) (*File, e
 		return nil, fmt.Errorf("failed to open tx: %w", err)
 	}
 
-	s := "select id, audit_created_at, audit_updated_at, name, mime_type, content from files "
-	params := make([]any, 0)
+	s := sqlbuilder.Select("id", "audit_created_at", "audit_updated_at", "name", "mime_type", "content").
+		From("files")
 
 	if filter.id != nil {
-		s += fmt.Sprintf(" where id = $%d ", len(params)+1)
-		params = append(params, filter.id)
+		s.Where(s.Equal("id", filter.id))
 	}
 
-	s += " limit 1"
+	s.Limit(1)
 
-	logging.Logger.Debug("sql: %s", s)
-	row := tx.QueryRow(s, params...)
+	query, args := s.Build()
+	logging.Logger.Debug("sql: %s", query)
+	row := tx.QueryRow(query, args...)
 
 	var file File
 	err = row.Scan(
@@ -128,19 +129,17 @@ func (r *FileRepository) Insert(ctx context.Context, file *File) error {
 		return fmt.Errorf("failed to open tx: %w", err)
 	}
 
-	s := `
-insert into files 
-	(name, mime_type, content)
-values ($1, $2, $3)
-returning id, audit_created_at, audit_updated_at`
+	s := sqlbuilder.InsertInto("files").
+		Cols("name", "mime_type", "content").
+		Values(
+			file.name,
+			file.mimeType,
+			file.content,
+		).Returning("id", "audit_created_at", "audit_updated_at")
 
-	logging.Logger.Debug("sql: %s", s)
-	row := tx.QueryRow(
-		s,
-		file.name,
-		file.mimeType,
-		file.content,
-	)
+	query, args := s.Build()
+	logging.Logger.Debug("sql: %s", query)
+	row := tx.QueryRow(query, args...)
 
 	err = row.Scan(&file.id, &file.auditCreatedAt, &file.auditUpdatedAt)
 	if err != nil {
