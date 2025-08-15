@@ -6,6 +6,8 @@ import (
 	"Keyline/logging"
 	"Keyline/middlewares"
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"github.com/google/uuid"
 	"time"
@@ -55,7 +57,7 @@ func (f *File) Content() []byte {
 }
 
 type FileFilter struct {
-	id uuid.UUID
+	id *uuid.UUID
 }
 
 func NewFileFilter() FileFilter {
@@ -68,11 +70,53 @@ func (f FileFilter) Clone() FileFilter {
 
 func (f FileFilter) Id(id uuid.UUID) FileFilter {
 	filter := f.Clone()
-	f.id = id
+	f.id = &id
 	return filter
 }
 
 type FileRepository struct {
+}
+
+func (r *FileRepository) First(ctx context.Context, filter FileFilter) (*File, error) {
+	scope := middlewares.GetScope(ctx)
+	dbService := ioc.GetDependency[*database.DbService](scope)
+
+	tx, err := dbService.GetTx()
+	if err != nil {
+		return nil, fmt.Errorf("failed to open tx: %w", err)
+	}
+
+	s := "select id, audit_created_at, audit_updated_at, name, mime_type, content from files "
+	params := make([]any, 0)
+
+	if filter.id != nil {
+		s += fmt.Sprintf(" where id = $%d ", len(params)+1)
+		params = append(params, filter.id)
+	}
+
+	s += " limit 1"
+
+	logging.Logger.Debug("sql: %s", s)
+	row := tx.QueryRow(s, params...)
+
+	var file File
+	err = row.Scan(
+		&file.id,
+		&file.auditCreatedAt,
+		&file.auditUpdatedAt,
+		&file.name,
+		&file.mimeType,
+		&file.content,
+	)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return nil, nil
+
+	case err != nil:
+		return nil, fmt.Errorf("scanning row: %w", err)
+	}
+
+	return &file, nil
 }
 
 func (r *FileRepository) Insert(ctx context.Context, file *File) error {
