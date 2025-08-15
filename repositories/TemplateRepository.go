@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/huandu/go-sqlbuilder"
 	"time"
 )
 
@@ -98,24 +99,22 @@ func (r *TemplateRepository) First(ctx context.Context, filter TemplateFilter) (
 		return nil, fmt.Errorf("failed to open tx: %w", err)
 	}
 
-	s := "select id, audit_created_at, audit_updated_at, virtual_server_id, file_id, type from templates"
-	params := make([]any, 0)
+	s := sqlbuilder.Select("id", "audit_created_at", "audit_updated_at", "virtual_server_id", "file_id", "type").
+		From("templates")
 
-	// TODO: really add sql builder now soon
-	/*if filter.virtualServerId != nil {
-		s += fmt.Sprintf(" where virtual_server_id = $%d ", len(params)+1)
-		params = append(params, filter.virtualServerId)
+	if filter.virtualServerId != nil {
+		s.Where(s.Equal("virtual_server_id", filter.virtualServerId))
 	}
-	*/
+
 	if filter.templateType != nil {
-		s += fmt.Sprintf(" where type = $%d ", len(params)+1)
-		params = append(params, filter.templateType)
+		s.Where(s.Equal("type", filter.templateType))
 	}
 
-	s += " limit 1"
+	s.Limit(1)
 
-	logging.Logger.Debug("sql: %s", s)
-	row := tx.QueryRow(s, params...)
+	query, args := s.Build()
+	logging.Logger.Debug("sql: %s", query)
+	row := tx.QueryRow(query, args...)
 
 	var template Template
 	err = row.Scan(

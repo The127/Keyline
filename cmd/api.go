@@ -16,9 +16,12 @@ import (
 	"Keyline/utils"
 	"context"
 	"database/sql"
+	"github.com/huandu/go-sqlbuilder"
 )
 
 func main() {
+	sqlbuilder.DefaultFlavor = sqlbuilder.PostgreSQL
+
 	config.Init()
 	logging.Init()
 	database.Migrate()
