@@ -72,6 +72,9 @@ func main() {
 	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) *repositories.OutboxMessageRepository {
 		return &repositories.OutboxMessageRepository{}
 	})
+	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) *repositories.FileRepository {
+		return &repositories.FileRepository{}
+	})
 
 	setupMediator(dc)
 	dp := dc.BuildProvider()
