@@ -6,6 +6,8 @@ import (
 	"Keyline/logging"
 	"Keyline/middlewares"
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"github.com/google/uuid"
 	"time"
@@ -85,6 +87,54 @@ func (f TemplateFilter) TemplateType(templateType TemplateType) TemplateFilter {
 }
 
 type TemplateRepository struct {
+}
+
+func (r *TemplateRepository) First(ctx context.Context, filter TemplateFilter) (*Template, error) {
+	scope := middlewares.GetScope(ctx)
+	dbService := ioc.GetDependency[*database.DbService](scope)
+
+	tx, err := dbService.GetTx()
+	if err != nil {
+		return nil, fmt.Errorf("failed to open tx: %w", err)
+	}
+
+	s := "select id, audit_created_at, audit_updated_at, virtual_server_id, file_id, type from templates"
+	params := make([]any, 0)
+
+	if filter.virtualServerId != nil {
+		s += fmt.Sprintf(" where virtual_server_id = $%d ", len(params)+1)
+		params = append(params, filter.virtualServerId)
+	}
+
+	if filter.templateType != nil {
+		s += fmt.Sprintf(" where type = $%d ", len(params)+1)
+		params = append(params, filter.templateType)
+	}
+
+	s += " limit 1"
+
+	logging.Logger.Debug("sql: %s", s)
+	row := tx.QueryRow(s, params...)
+
+	var template Template
+	err = row.Scan(
+		&template.id,
+		&template.auditCreatedAt,
+		&template.auditUpdatedAt,
+		&template.virtualServerId,
+		&template.fileId,
+		&template.templateType,
+	)
+
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return nil, nil
+
+	case err != nil:
+		return nil, fmt.Errorf("scanning row: %w", err)
+	}
+
+	return &template, nil
 }
 
 func (r *TemplateRepository) Insert(ctx context.Context, template *Template) error {
