@@ -83,7 +83,7 @@ func (r *FileRepository) First(ctx context.Context, filter FileFilter) (*File, e
 
 	query, args := s.Build()
 	logging.Logger.Debug("sql: %s", query)
-	row := tx.QueryRow(query, args...)
+	row := tx.QueryRowContext(ctx, query, args...)
 
 	file := File{
 		ModelBase: NewModelBase(),
@@ -126,7 +126,7 @@ func (r *FileRepository) Insert(ctx context.Context, file *File) error {
 
 	query, args := s.Build()
 	logging.Logger.Debug("sql: %s", query)
-	row := tx.QueryRow(query, args...)
+	row := tx.QueryRowContext(ctx, query, args...)
 
 	err = row.Scan(&file.id, &file.auditCreatedAt, &file.auditUpdatedAt)
 	if err != nil {

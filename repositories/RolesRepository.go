@@ -130,7 +130,7 @@ func (r *RoleRepository) Insert(ctx context.Context, role *Role) error {
 
 	query, args := s.Build()
 	logging.Logger.Debug("sql: %s", query)
-	row := tx.QueryRow(query, args...)
+	row := tx.QueryRowContext(ctx, query, args...)
 
 	err = row.Scan(&role.id, &role.auditCreatedAt, &role.auditUpdatedAt)
 	if err != nil {

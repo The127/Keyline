@@ -96,7 +96,7 @@ func (r *VirtualServerRepository) First(ctx context.Context, filter VirtualServe
 
 	query, args := s.Build()
 	logging.Logger.Debug("sql: %s", query)
-	row := tx.QueryRow(query, args...)
+	row := tx.QueryRowContext(ctx, query, args...)
 
 	virtualServer := VirtualServer{
 		ModelBase: NewModelBase(),
@@ -132,7 +132,7 @@ func (r *VirtualServerRepository) Insert(ctx context.Context, virtualServer *Vir
 
 	query, args := s.Build()
 	logging.Logger.Debug("sql: %s", query)
-	row := tx.QueryRow(query, args...)
+	row := tx.QueryRowContext(ctx, query, args...)
 
 	err = row.Scan(&virtualServer.id, &virtualServer.auditCreatedAt, &virtualServer.auditUpdatedAt)
 	if err != nil {

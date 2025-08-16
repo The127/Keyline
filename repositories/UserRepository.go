@@ -186,7 +186,7 @@ func (r *UserRepository) First(ctx context.Context, filter UserFilter) (*User, e
 
 	query, args := s.Build()
 	logging.Logger.Debug("sql: %s", query)
-	row := tx.QueryRow(query, args...)
+	row := tx.QueryRowContext(ctx, query, args...)
 
 	user := User{
 		ModelBase: NewModelBase(),
@@ -231,7 +231,7 @@ func (r *UserRepository) Update(ctx context.Context, user *User) error {
 
 	query, args := s.Build()
 	logging.Logger.Debug("sql: %s", query)
-	row := tx.QueryRow(query, args...)
+	row := tx.QueryRowContext(ctx, query, args...)
 
 	err = row.Scan(&user.auditUpdatedAt)
 	if err != nil {
@@ -262,7 +262,7 @@ func (r *UserRepository) Insert(ctx context.Context, user *User) error {
 
 	query, args := s.Build()
 	logging.Logger.Debug("sql: %s", query)
-	row := tx.QueryRow(query, args...)
+	row := tx.QueryRowContext(ctx, query, args...)
 
 	err = row.Scan(&user.id, &user.auditCreatedAt, &user.auditUpdatedAt)
 	if err != nil {
