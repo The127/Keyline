@@ -127,6 +127,10 @@ func (r *UserRepository) List(ctx context.Context, filter UserFilter) ([]User, e
 		s.Where(s.Equal("virtual_server_id", filter.virtualServerId))
 	}
 
+	if filter.id != nil {
+		s.Where(s.Equal("id", filter.id))
+	}
+
 	query, args := s.Build()
 	logging.Logger.Debug("sql: %s", query)
 	rows, err := tx.Query(query, args...)
@@ -185,6 +189,10 @@ func (r *UserRepository) First(ctx context.Context, filter UserFilter) (*User, e
 
 	if filter.virtualServerId != nil {
 		s.Where(s.Equal("virtual_server_id", filter.virtualServerId))
+	}
+
+	if filter.id != nil {
+		s.Where(s.Equal("id", filter.id))
 	}
 
 	s.Limit(1)
