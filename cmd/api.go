@@ -87,6 +87,15 @@ func main() {
 	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) *repositories.TemplateRepository {
 		return &repositories.TemplateRepository{}
 	})
+	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) *repositories.RoleRepository {
+		return &repositories.RoleRepository{}
+	})
+	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) *repositories.GroupRepository {
+		return &repositories.GroupRepository{}
+	})
+	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) *repositories.GroupRoleRepository {
+		return &repositories.GroupRoleRepository{}
+	})
 
 	setupMediator(dc)
 	dp := dc.BuildProvider()
@@ -104,6 +113,8 @@ func setupMediator(dc *ioc.DependencyCollection) {
 	mediator.RegisterHandler(m, commands.HandleCreateVirtualServer)
 	mediator.RegisterHandler(m, commands.HandleRegisterUser)
 	mediator.RegisterHandler(m, commands.HandleVerifyEmail)
+
+	mediator.RegisterHandler(m, commands.HandleCreateRole)
 
 	mediator.RegisterEventHandler(m, events.QueueEmailVerificationJobOnUserCreatedEvent)
 

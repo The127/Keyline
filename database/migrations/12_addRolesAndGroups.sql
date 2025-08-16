@@ -12,7 +12,7 @@ create table roles (
     "description" text not null,
 
     "require_mfa" bool not null,
-    "max_token_age_seconds" int not null,
+    "max_token_age" interval,
 
     primary key ("id")
 );

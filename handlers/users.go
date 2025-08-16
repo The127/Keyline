@@ -51,7 +51,8 @@ func VerifyEmail(w http.ResponseWriter, r *http.Request) {
 }
 
 func RegisterUser(w http.ResponseWriter, r *http.Request) {
-	vsName, err := middlewares.GetVirtualServerName(r.Context())
+	ctx := r.Context()
+	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
@@ -66,10 +67,10 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 
 	// TODO: validate the request
 
-	scope := middlewares.GetScope(r.Context())
+	scope := middlewares.GetScope(ctx)
 	m := ioc.GetDependency[*mediator.Mediator](scope)
 
-	_, err = mediator.Send[*commands.RegisterUserResponse](r.Context(), m, commands.RegisterUser{
+	_, err = mediator.Send[*commands.RegisterUserResponse](ctx, m, commands.RegisterUser{
 		VirtualServerName: vsName,
 		Username:          dto.Username,
 		DisplayName:       dto.DisplayName,

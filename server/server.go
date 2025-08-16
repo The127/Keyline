@@ -36,6 +36,8 @@ func Serve(dp *ioc.DependencyProvider) {
 	vsApiRouter.HandleFunc("/users/register", handlers.RegisterUser).Methods(http.MethodPost)
 	vsApiRouter.HandleFunc("/users/verify-email", handlers.VerifyEmail).Methods(http.MethodGet)
 
+	vsApiRouter.HandleFunc("/roles", handlers.CreateRole).Methods(http.MethodPost)
+
 	addr := fmt.Sprintf("%s:%d", config.C.Server.Host, config.C.Server.Port)
 	logging.Logger.Infof("running server at %s", addr)
 	srv := &http.Server{

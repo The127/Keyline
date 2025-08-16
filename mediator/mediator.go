@@ -96,7 +96,6 @@ func SendEvent[TEvent any](ctx context.Context, m *Mediator, evt TEvent) error {
 
 	eventHandlers, ok := m.eventHandlers[eventType]
 	if !ok {
-		logging.Logger.Warnf("Could no9t find any event handler for %s", eventType.Name())
 		return nil
 	}
 

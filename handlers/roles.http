@@ -1,0 +1,10 @@
+### create a role
+POST http://127.0.0.1:8081/api/virtual-servers/keyline/roles
+Content-Type: application/json
+
+{
+  "name": "role5",
+  "description": "this is a demo role",
+  "requiresMfa": true,
+  "maxTokenAge": "12h"
+}
