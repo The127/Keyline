@@ -64,7 +64,7 @@ func WellKnownJwks(w http.ResponseWriter, r *http.Request) {
 
 func computeKID(pub ed25519.PublicKey) string {
 	hash := sha256.Sum256(pub)
-	return base64.RawURLEncoding.EncodeToString(hash[:8])
+	return base64.RawURLEncoding.EncodeToString(hash[:])
 }
 
 type OpenIdConfigurationResponseDto struct {
