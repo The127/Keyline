@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/huandu/go-sqlbuilder"
-	"time"
 )
 
 type User struct {
@@ -34,18 +33,6 @@ func NewUser(username string, displayName string, primaryEmail string, virtualSe
 		displayName:     displayName,
 		primaryEmail:    primaryEmail,
 	}
-}
-
-func (m *User) Id() uuid.UUID {
-	return m.id
-}
-
-func (m *User) AuditCreatedAt() time.Time {
-	return m.auditCreatedAt
-}
-
-func (m *User) AuditUpdatedAt() time.Time {
-	return m.auditUpdatedAt
 }
 
 func (m *User) VirtualServerId() uuid.UUID {

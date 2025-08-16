@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/huandu/go-sqlbuilder"
-	"time"
 )
 
 type TemplateType string
@@ -35,17 +34,6 @@ func NewTemplate(virtualServerId uuid.UUID, fileId uuid.UUID, templateType Templ
 		fileId:          fileId,
 		templateType:    templateType,
 	}
-}
-
-func (t *Template) Id() uuid.UUID {
-	return t.id
-}
-func (t *Template) AuditCreatedAt() time.Time {
-	return t.auditCreatedAt
-}
-
-func (t *Template) AuditUpdatedAt() time.Time {
-	return t.auditUpdatedAt
 }
 
 func (t *Template) VirtualServerId() uuid.UUID {

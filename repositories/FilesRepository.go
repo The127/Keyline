@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/huandu/go-sqlbuilder"
-	"time"
 )
 
 type File struct {
@@ -29,18 +28,6 @@ func NewFile(name string, mimeType string, content []byte) *File {
 		mimeType:  mimeType,
 		content:   content,
 	}
-}
-
-func (f *File) Id() uuid.UUID {
-	return f.id
-}
-
-func (f *File) AuditCreatedAt() time.Time {
-	return f.auditCreatedAt
-}
-
-func (f *File) AuditUpdatedAt() time.Time {
-	return f.auditUpdatedAt
 }
 
 func (f *File) Name() string {

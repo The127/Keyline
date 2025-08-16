@@ -23,3 +23,15 @@ func NewModelBase() ModelBase {
 func (m *ModelBase) TrackChange(fieldName string, value any) {
 	m.changes[fieldName] = value
 }
+
+func (m *ModelBase) Id() uuid.UUID {
+	return m.id
+}
+
+func (m *ModelBase) AuditCreatedAt() time.Time {
+	return m.auditCreatedAt
+}
+
+func (m *ModelBase) AuditUpdatedAt() time.Time {
+	return m.auditUpdatedAt
+}

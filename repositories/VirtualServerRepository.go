@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/huandu/go-sqlbuilder"
-	"time"
 )
 
 type VirtualServer struct {
@@ -30,18 +29,6 @@ func NewVirtualServer(name string, displayName string) *VirtualServer {
 		displayName:        displayName,
 		enableRegistration: false,
 	}
-}
-
-func (m *VirtualServer) Id() uuid.UUID {
-	return m.id
-}
-
-func (m *VirtualServer) AuditCreatedAt() time.Time {
-	return m.auditCreatedAt
-}
-
-func (m *VirtualServer) AuditUpdatedAt() time.Time {
-	return m.auditUpdatedAt
 }
 
 func (m *VirtualServer) Name() string {
