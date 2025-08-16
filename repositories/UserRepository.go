@@ -69,7 +69,7 @@ func (m *User) EmailVerified() bool {
 }
 
 func (m *User) SetEmailVerified(emailVerified bool) {
-	m.emailVerified = true
+	m.emailVerified = emailVerified
 	m.TrackChange("email_verified", emailVerified)
 }
 
@@ -168,8 +168,16 @@ func (r *UserRepository) First(ctx context.Context, filter UserFilter) (*User, e
 		return nil, fmt.Errorf("failed to open tx: %w", err)
 	}
 
-	s := sqlbuilder.Select("id", "audit_created_at", "audit_updated_at", "virtual_server_id", "display_name", "username", "primary_email", "email_verified").
-		From("users")
+	s := sqlbuilder.Select(
+		"id",
+		"audit_created_at",
+		"audit_updated_at",
+		"virtual_server_id",
+		"display_name",
+		"username",
+		"primary_email",
+		"email_verified",
+	).From("users")
 
 	if filter.username != nil {
 		s.Where(s.Equal("username", filter.username))
