@@ -1,6 +1,16 @@
 package repositories
 
-import "github.com/google/uuid"
+import (
+	"Keyline/database"
+	"Keyline/ioc"
+	"Keyline/logging"
+	"Keyline/middlewares"
+	"context"
+	"fmt"
+	"github.com/google/uuid"
+	"github.com/huandu/go-sqlbuilder"
+	"github.com/lib/pq"
+)
 
 type Application struct {
 	ModelBase
@@ -99,3 +109,34 @@ func (f ApplicationFilter) VirtualServerId(virtualServerId uuid.UUID) Applicatio
 }
 
 type ApplicationRepository struct{}
+
+func (r *ApplicationRepository) Insert(ctx context.Context, application *Application) error {
+	scope := middlewares.GetScope(ctx)
+	dbService := ioc.GetDependency[*database.DbService](scope)
+
+	tx, err := dbService.GetTx()
+	if err != nil {
+		return fmt.Errorf("failed to open tx: %w", err)
+	}
+
+	s := sqlbuilder.InsertInto("applications").
+		Cols("virtual_server_id", "name", "display_name", "hashed_secret", "redirect_uris").
+		Values(
+			application.virtualServerId,
+			application.name,
+			application.displayName,
+			application.hashedSecret,
+			pq.Array(application.redirectUris),
+		).Returning("id", "audit_created_at", "audit_updated_at")
+
+	query, args := s.Build()
+	logging.Logger.Debug("executing sql: ", query)
+	row := tx.QueryRowContext(ctx, query, args...)
+
+	err = row.Scan(&application.id, &application.auditCreatedAt, &application.auditUpdatedAt)
+	if err != nil {
+		return fmt.Errorf("scanning row: %w", err)
+	}
+
+	return nil
+}

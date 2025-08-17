@@ -1,0 +1,57 @@
+package commands
+
+import (
+	"Keyline/ioc"
+	"Keyline/middlewares"
+	"Keyline/repositories"
+	"Keyline/utils"
+	"context"
+	"encoding/base64"
+	"fmt"
+	"github.com/google/uuid"
+)
+
+type CreateApplication struct {
+	VirtualServerName string
+	Name              string
+	DisplayName       string
+	RedirectUris      []string
+}
+
+type CreateApplicationResponse struct {
+	Id     uuid.UUID
+	Secret string
+}
+
+func HandleCreateApplication(ctx context.Context, command CreateApplication) (*CreateApplicationResponse, error) {
+	scope := middlewares.GetScope(ctx)
+
+	virtualServerRepository := ioc.GetDependency[*repositories.VirtualServerRepository](scope)
+	virtualServerFilter := repositories.NewVirtualServerFilter().Name(command.VirtualServerName)
+	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
+	if err != nil {
+		return nil, fmt.Errorf("getting virtual server: %w", err)
+	}
+
+	secretBytes := utils.GetSecureRandomBytes(16)
+	secretBase64 := base64.RawURLEncoding.EncodeToString(secretBytes)
+	hashedSecret := utils.CheapHash(secretBase64)
+
+	applicationRepository := ioc.GetDependency[*repositories.ApplicationRepository](scope)
+	application := repositories.NewApplication(
+		virtualServer.Id(),
+		command.Name,
+		command.DisplayName,
+		hashedSecret,
+		command.RedirectUris,
+	)
+	err = applicationRepository.Insert(ctx, application)
+	if err != nil {
+		return nil, fmt.Errorf("inserting application: %w", err)
+	}
+
+	return &CreateApplicationResponse{
+		Id:     application.Id(),
+		Secret: secretBase64,
+	}, nil
+}

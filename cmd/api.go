@@ -120,6 +120,8 @@ func setupMediator(dc *ioc.DependencyCollection) {
 	mediator.RegisterHandler(m, commands.HandleRegisterUser)
 	mediator.RegisterHandler(m, commands.HandleVerifyEmail)
 
+	mediator.RegisterHandler(m, commands.HandleCreateApplication)
+
 	mediator.RegisterHandler(m, commands.HandleCreateRole)
 	mediator.RegisterHandler(m, commands.HandleAssignRoleToUser)
 

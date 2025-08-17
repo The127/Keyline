@@ -1,9 +1,12 @@
 package utils
 
 import (
+	"crypto/sha256"
+	"fmt"
 	"github.com/go-crypt/crypt"
 	"github.com/go-crypt/crypt/algorithm"
 	"github.com/go-crypt/crypt/algorithm/argon2"
+	"strings"
 )
 
 func CompareHash(password string, hashedPassword string) bool {
@@ -37,4 +40,13 @@ func HashPassword(password string) string {
 	}
 
 	return digest.Encode()
+}
+
+func CheapHash(input string) string {
+	hash := sha256.Sum256([]byte(input))
+	return fmt.Sprintf("%x", hash)
+}
+
+func CheapCompareHash(input string, hash string) bool {
+	return strings.Trim(CheapHash(input), "=") == strings.Trim(hash, "=")
 }

@@ -51,6 +51,8 @@ func WellKnownJwks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
 	err = json.NewEncoder(w).Encode(JwksResponseDto{
 		Keys: []Ed25519JWK{jwk},
 	})
@@ -58,8 +60,6 @@ func WellKnownJwks(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, err)
 		return
 	}
-
-	w.WriteHeader(http.StatusOK)
 }
 
 func computeKID(pub ed25519.PublicKey) string {
