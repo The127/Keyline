@@ -222,5 +222,6 @@ func (r *RoleRepository) Insert(ctx context.Context, role *Role) error {
 		return fmt.Errorf("scanning row: %w", err)
 	}
 
+	role.ClearChanges()
 	return nil
 }

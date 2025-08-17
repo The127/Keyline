@@ -250,6 +250,7 @@ func (r *UserRepository) Update(ctx context.Context, user *User) error {
 		return fmt.Errorf("scanning row: %w", err)
 	}
 
+	user.ClearChanges()
 	return nil
 }
 
@@ -281,5 +282,6 @@ func (r *UserRepository) Insert(ctx context.Context, user *User) error {
 		return fmt.Errorf("scanning row: %w", err)
 	}
 
+	user.ClearChanges()
 	return nil
 }

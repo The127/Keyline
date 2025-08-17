@@ -24,6 +24,10 @@ func (m *ModelBase) TrackChange(fieldName string, value any) {
 	m.changes[fieldName] = value
 }
 
+func (m *ModelBase) ClearChanges() {
+	m.changes = make(map[string]any)
+}
+
 func (m *ModelBase) Id() uuid.UUID {
 	return m.id
 }

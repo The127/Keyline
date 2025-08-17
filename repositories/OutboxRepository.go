@@ -70,5 +70,6 @@ func (r *OutboxMessageRepository) Insert(ctx context.Context, outboxMessage *Out
 		return fmt.Errorf("scanning row: %w", err)
 	}
 
+	outboxMessage.ClearChanges()
 	return nil
 }

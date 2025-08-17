@@ -101,5 +101,6 @@ func (r *UserRoleAssignmentRepository) Insert(ctx context.Context, userRoleAssig
 		return fmt.Errorf("scanning row: %w", err)
 	}
 
+	userRoleAssignment.ClearChanges()
 	return nil
 }

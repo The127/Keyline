@@ -133,5 +133,6 @@ func (r *FileRepository) Insert(ctx context.Context, file *File) error {
 		return fmt.Errorf("scanning row: %w", err)
 	}
 
+	file.ClearChanges()
 	return nil
 }

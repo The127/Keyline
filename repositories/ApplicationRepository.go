@@ -145,5 +145,6 @@ func (r *ApplicationRepository) Insert(ctx context.Context, application *Applica
 		return fmt.Errorf("scanning row: %w", err)
 	}
 
+	application.ClearChanges()
 	return nil
 }
