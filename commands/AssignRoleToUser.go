@@ -22,12 +22,22 @@ func HandleAssignRoleToUser(ctx context.Context, command AssignRoleToUser) (*Ass
 
 	virtualServerRepository := ioc.GetDependency[*repositories.VirtualServerRepository](scope)
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(command.VirtualServerName)
-	_, err := virtualServerRepository.Single(ctx, virtualServerFilter)
+	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
-	// TODO: check that user and role and group are all in the correct tenant (virtual server)
+	roleRepository := ioc.GetDependency[*repositories.RoleRepository](scope)
+	_, err = roleRepository.Single(ctx, repositories.NewRoleFilter().Id(command.RoleId).VirtualServerId(virtualServer.Id()))
+	if err != nil {
+		return nil, fmt.Errorf("getting role: %w", err)
+	}
+
+	userRepository := ioc.GetDependency[*repositories.UserRepository](scope)
+	_, err = userRepository.Single(ctx, repositories.NewUserFilter().Id(command.UserId).VirtualServerId(virtualServer.Id()))
+	if err != nil {
+		return nil, fmt.Errorf("getting user: %w", err)
+	}
 
 	userRoleAssignmentRepository := ioc.GetDependency[*repositories.UserRoleAssignmentRepository](scope)
 	userRoleAssignment := repositories.NewUserRoleAssignment(
