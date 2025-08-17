@@ -22,7 +22,7 @@ func HandleAssignRoleToUser(ctx context.Context, command AssignRoleToUser) (*Ass
 
 	virtualServerRepository := ioc.GetDependency[*repositories.VirtualServerRepository](scope)
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(command.VirtualServerName)
-	_, err := virtualServerRepository.First(ctx, virtualServerFilter)
+	_, err := virtualServerRepository.Single(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}

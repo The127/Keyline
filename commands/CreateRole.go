@@ -29,7 +29,7 @@ func HandleCreateRole(ctx context.Context, command CreateRole) (*CreateRoleRespo
 
 	virtualServerRepository := ioc.GetDependency[*repositories.VirtualServerRepository](scope)
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(command.VirtualServerName)
-	virtualServer, err := virtualServerRepository.First(ctx, virtualServerFilter)
+	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}

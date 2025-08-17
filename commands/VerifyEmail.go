@@ -33,7 +33,7 @@ func HandleVerifyEmail(ctx context.Context, command VerifyEmail) (*VerifyEmailRe
 	}
 
 	userRepository := ioc.GetDependency[*repositories.UserRepository](scope)
-	user, err := userRepository.First(ctx, repositories.NewUserFilter().Id(userId))
+	user, err := userRepository.Single(ctx, repositories.NewUserFilter().Id(userId))
 	if err != nil {
 		return nil, fmt.Errorf("getting user: %w", err)
 	}

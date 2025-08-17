@@ -6,7 +6,10 @@ import (
 	"Keyline/ioc"
 	"Keyline/logging"
 	"Keyline/middlewares"
+	"Keyline/utils"
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/huandu/go-sqlbuilder"
@@ -81,8 +84,9 @@ func (r *Role) SetMaxTokenAge(maxTokenAge *time.Duration) {
 }
 
 type RoleFilter struct {
-	name *string
-	id   *uuid.UUID
+	name            *string
+	id              *uuid.UUID
+	virtualServerId *uuid.UUID
 }
 
 func NewRoleFilter() RoleFilter {
@@ -105,7 +109,88 @@ func (f RoleFilter) Id(id uuid.UUID) RoleFilter {
 	return filter
 }
 
+func (f RoleFilter) VirtualServerId(virtualServerId uuid.UUID) RoleFilter {
+	filter := f.Clone()
+	filter.virtualServerId = &virtualServerId
+	return filter
+}
+
 type RoleRepository struct {
+}
+
+func (r *RoleRepository) Single(ctx context.Context, filter RoleFilter) (*Role, error) {
+	result, err := r.First(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	if result == nil {
+		return nil, utils.ErrRoleNotFound
+	}
+	return result, nil
+}
+
+func (r *RoleRepository) First(ctx context.Context, filter RoleFilter) (*Role, error) {
+	scope := middlewares.GetScope(ctx)
+	dbService := ioc.GetDependency[*database.DbService](scope)
+
+	tx, err := dbService.GetTx()
+	if err != nil {
+		return nil, fmt.Errorf("failed to open tx: %w", err)
+	}
+
+	s := sqlbuilder.Select(
+		"id",
+		"audit_created_at",
+		"audit_updated_at",
+		"virtual_server_id",
+		"application_id",
+		"name",
+		"description",
+		"require_mfa",
+		"max_token_age",
+	).From("roles")
+
+	if filter.name != nil {
+		s.Where(s.Equal("name", filter.name))
+	}
+
+	if filter.id != nil {
+		s.Where(s.Equal("id", filter.id))
+	}
+
+	if filter.virtualServerId != nil {
+		s.Where(s.Equal("virtual_server_id", filter.virtualServerId))
+	}
+
+	s.Limit(1)
+
+	query, args := s.Build()
+	logging.Logger.Debug("sql: %s", query)
+	row := tx.QueryRowContext(ctx, query, args...)
+
+	role := Role{
+		ModelBase: NewModelBase(),
+	}
+	err = row.Scan(
+		&role.id,
+		&role.auditCreatedAt,
+		&role.auditUpdatedAt,
+		&role.virtualServerId,
+		&role.applicationId,
+		&role.name,
+		&role.description,
+		&role.requireMfa,
+		&role.maxTokenAge,
+	)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return nil, nil
+
+	case err != nil:
+		return nil, fmt.Errorf("scanning row: %w", err)
+	}
+
+	return &role, nil
 }
 
 func (r *RoleRepository) Insert(ctx context.Context, role *Role) error {

@@ -5,6 +5,7 @@ import (
 	"Keyline/ioc"
 	"Keyline/logging"
 	"Keyline/middlewares"
+	"Keyline/utils"
 	"context"
 	"database/sql"
 	"errors"
@@ -148,6 +149,17 @@ func (r *UserRepository) List(ctx context.Context, filter UserFilter) ([]User, e
 	}
 
 	return users, nil
+}
+
+func (r *UserRepository) Single(ctx context.Context, filter UserFilter) (*User, error) {
+	result, err := r.First(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	if result == nil {
+		return nil, utils.ErrUserNotFound
+	}
+	return result, nil
 }
 
 func (r *UserRepository) First(ctx context.Context, filter UserFilter) (*User, error) {

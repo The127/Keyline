@@ -5,6 +5,7 @@ import (
 	"Keyline/ioc"
 	"Keyline/logging"
 	"Keyline/middlewares"
+	"Keyline/utils"
 	"context"
 	"database/sql"
 	"errors"
@@ -74,6 +75,18 @@ func (f VirtualServerFilter) Id(id uuid.UUID) VirtualServerFilter {
 }
 
 type VirtualServerRepository struct {
+}
+
+func (r *VirtualServerRepository) Single(ctx context.Context, filter VirtualServerFilter) (*VirtualServer, error) {
+	result, err := r.First(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	if result == nil {
+		return nil, utils.ErrVirtualServerNotFound
+	}
+
+	return result, nil
 }
 
 func (r *VirtualServerRepository) First(ctx context.Context, filter VirtualServerFilter) (*VirtualServer, error) {
