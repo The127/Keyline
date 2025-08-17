@@ -4,9 +4,7 @@ import (
 	"Keyline/ioc"
 	"Keyline/middlewares"
 	"Keyline/repositories"
-	"Keyline/utils"
 	"context"
-	"encoding/base64"
 	"fmt"
 	"github.com/google/uuid"
 )
@@ -33,18 +31,14 @@ func HandleCreateApplication(ctx context.Context, command CreateApplication) (*C
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
-	secretBytes := utils.GetSecureRandomBytes(16)
-	secretBase64 := base64.RawURLEncoding.EncodeToString(secretBytes)
-	hashedSecret := utils.CheapHash(secretBase64)
-
 	applicationRepository := ioc.GetDependency[*repositories.ApplicationRepository](scope)
 	application := repositories.NewApplication(
 		virtualServer.Id(),
 		command.Name,
 		command.DisplayName,
-		hashedSecret,
 		command.RedirectUris,
 	)
+	secret := application.GenerateSecret()
 	err = applicationRepository.Insert(ctx, application)
 	if err != nil {
 		return nil, fmt.Errorf("inserting application: %w", err)
@@ -52,6 +46,6 @@ func HandleCreateApplication(ctx context.Context, command CreateApplication) (*C
 
 	return &CreateApplicationResponse{
 		Id:     application.Id(),
-		Secret: secretBase64,
+		Secret: secret,
 	}, nil
 }

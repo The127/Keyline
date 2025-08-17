@@ -12,7 +12,9 @@ import (
 )
 
 const (
-	AdminRoleName = "Administrator"
+	AdminRoleName = "admin"
+
+	AdminApplicationName = "admin-ui"
 )
 
 type CreateVirtualServer struct {
@@ -52,9 +54,34 @@ func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer)
 		return nil, fmt.Errorf("initializing default templates: %w", err)
 	}
 
+	err = initializeDefaultApplications(ctx, virtualServer)
+
 	return &CreateVirtualServerResponse{
 		Id: virtualServer.Id(),
 	}, nil
+}
+
+func initializeDefaultApplications(ctx context.Context, virtualServer *repositories.VirtualServer) error {
+	scope := middlewares.GetScope(ctx)
+
+	applicationRepository := ioc.GetDependency[*repositories.ApplicationRepository](scope)
+
+	adminUiApplication := repositories.NewApplication(
+		virtualServer.Id(),
+		AdminApplicationName,
+		"Admin Application",
+		[]string{
+			"http://localhost:3000",
+		},
+	)
+	adminUiApplication.GenerateSecret()
+
+	err := applicationRepository.Insert(ctx, adminUiApplication)
+	if err != nil {
+		return fmt.Errorf("inserting application: %w", err)
+	}
+
+	return nil
 }
 
 func initializeDefaultRoles(ctx context.Context, virtualServer *repositories.VirtualServer) error {

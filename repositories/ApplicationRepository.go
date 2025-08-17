@@ -5,7 +5,9 @@ import (
 	"Keyline/ioc"
 	"Keyline/logging"
 	"Keyline/middlewares"
+	"Keyline/utils"
 	"context"
+	"encoding/base64"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/huandu/go-sqlbuilder"
@@ -28,7 +30,6 @@ func NewApplication(
 	virtualServerId uuid.UUID,
 	name string,
 	displayName string,
-	hashedSecret string,
 	redirectUris []string,
 ) *Application {
 	return &Application{
@@ -36,9 +37,15 @@ func NewApplication(
 		virtualServerId: virtualServerId,
 		name:            name,
 		displayName:     displayName,
-		hashedSecret:    hashedSecret,
 		redirectUris:    redirectUris,
 	}
+}
+
+func (a *Application) GenerateSecret() string {
+	secretBytes := utils.GetSecureRandomBytes(16)
+	secretBase64 := base64.RawURLEncoding.EncodeToString(secretBytes)
+	a.hashedSecret = utils.CheapHash(secretBase64)
+	return secretBase64
 }
 
 func (a *Application) VirtualServerId() uuid.UUID {
