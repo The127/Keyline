@@ -11,6 +11,10 @@ import (
 	"github.com/google/uuid"
 )
 
+const (
+	AdminRoleName = "Administrator"
+)
+
 type CreateVirtualServer struct {
 	Name               string
 	DisplayName        string
@@ -38,6 +42,11 @@ func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer)
 		return nil, fmt.Errorf("generating keypair: %w", err)
 	}
 
+	err = initializeDefaultRoles(ctx, virtualServer)
+	if err != nil {
+		return nil, fmt.Errorf("initializing default roles: %w", err)
+	}
+
 	err = initializeDefaultTemplates(ctx, virtualServer)
 	if err != nil {
 		return nil, fmt.Errorf("initializing default templates: %w", err)
@@ -48,20 +57,42 @@ func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer)
 	}, nil
 }
 
+func initializeDefaultRoles(ctx context.Context, virtualServer *repositories.VirtualServer) error {
+	scope := middlewares.GetScope(ctx)
+
+	roleRepository := ioc.GetDependency[*repositories.RoleRepository](scope)
+
+	adminRole := repositories.NewRole(
+		virtualServer.Id(),
+		nil,
+		AdminRoleName,
+		"Administrator role",
+	)
+	adminRole.SetRequireMfa(true)
+	adminRole.SetMaxTokenAge(nil)
+
+	err := roleRepository.Insert(ctx, adminRole)
+	if err != nil {
+		return fmt.Errorf("inserting role: %w", err)
+	}
+
+	return nil
+}
+
 func initializeDefaultTemplates(ctx context.Context, virtualServer *repositories.VirtualServer) error {
 	scope := middlewares.GetScope(ctx)
 
 	fileRepository := ioc.GetDependency[*repositories.FileRepository](scope)
 	templateRepository := ioc.GetDependency[*repositories.TemplateRepository](scope)
 
-	err2 := insertTemplate(
+	err := insertTemplate(
 		ctx,
 		"email_verification_template",
 		virtualServer,
 		fileRepository,
 		templateRepository)
-	if err2 != nil {
-		return err2
+	if err != nil {
+		return err
 	}
 
 	return nil
