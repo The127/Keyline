@@ -13,6 +13,7 @@ var ErrVirtualServerNotFound = fmt.Errorf("virtual server: %w", ErrHttpNotFound)
 
 var ErrHttpBadRequest = errors.New("bad request")
 var ErrRegistrationNotEnabled = fmt.Errorf("registartion is not enabled: %w", ErrHttpBadRequest)
+var ErrInvalidUuid = fmt.Errorf("invalid uuid: %w", ErrHttpBadRequest)
 
 func HandleHttpError(w http.ResponseWriter, err error) {
 	var status int

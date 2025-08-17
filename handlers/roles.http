@@ -8,3 +8,11 @@ Content-Type: application/json
   "requiresMfa": true,
   "maxTokenAge": "12h"
 }
+
+### asign a role to a user
+POST http://127.0.0.1:8081/api/virtual-servers/keyline/roles/a41d9f23-af14-4f84-855a-cebeff5e2f04/assign
+Content-Type: application/json
+
+{
+  "userId": "ed12488b-01ca-4f88-8b2e-cffd22cd3aaa"
+}
