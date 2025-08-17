@@ -2,6 +2,7 @@ package utils
 
 import (
 	"crypto/sha256"
+	"crypto/subtle"
 	"fmt"
 	"github.com/go-crypt/crypt"
 	"github.com/go-crypt/crypt/algorithm"
@@ -48,5 +49,7 @@ func CheapHash(input string) string {
 }
 
 func CheapCompareHash(input string, hash string) bool {
-	return strings.Trim(CheapHash(input), "=") == strings.Trim(hash, "=")
+	inputHash := strings.TrimRight(CheapHash(input), "=")
+	storedHash := strings.TrimRight(hash, "=")
+	return subtle.ConstantTimeCompare([]byte(inputHash), []byte(storedHash)) == 1
 }
