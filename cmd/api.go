@@ -99,6 +99,9 @@ func main() {
 	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) *repositories.UserRoleAssignmentRepository {
 		return &repositories.UserRoleAssignmentRepository{}
 	})
+	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) *repositories.ApplicationRepository {
+		return &repositories.ApplicationRepository{}
+	})
 
 	setupMediator(dc)
 	dp := dc.BuildProvider()
