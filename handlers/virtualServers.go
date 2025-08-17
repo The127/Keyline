@@ -14,6 +14,7 @@ type CreateVirtualSeverRequestDto struct {
 	Name               string `json:"name"`
 	DisplayName        string `json:"displayName"`
 	EnableRegistration bool   `json:"enableRegistration"`
+	Require2fa         bool   `json:"require2fa"`
 }
 
 func CreateVirtualSever(w http.ResponseWriter, r *http.Request) {
@@ -32,6 +33,7 @@ func CreateVirtualSever(w http.ResponseWriter, r *http.Request) {
 		Name:               dto.Name,
 		DisplayName:        dto.DisplayName,
 		EnableRegistration: dto.EnableRegistration,
+		Require2fa:         dto.Require2fa,
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)

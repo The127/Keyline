@@ -20,6 +20,7 @@ type VirtualServer struct {
 	name        string
 	displayName string
 
+	require2fa         bool
 	enableRegistration bool
 }
 
@@ -44,9 +45,18 @@ func (m *VirtualServer) EnableRegistration() bool {
 	return m.enableRegistration
 }
 
-func (m *VirtualServer) SetEnableRegistration(enableRegistration bool) *VirtualServer {
+func (m *VirtualServer) SetEnableRegistration(enableRegistration bool) {
 	m.enableRegistration = enableRegistration
-	return m
+	m.TrackChange("enable_registration", enableRegistration)
+}
+
+func (m *VirtualServer) Require2fa() bool {
+	return m.require2fa
+}
+
+func (m *VirtualServer) SetRequire2fa(require2fa bool) {
+	m.require2fa = require2fa
+	m.TrackChange("require_2fa", require2fa)
 }
 
 type VirtualServerFilter struct {
@@ -98,8 +108,15 @@ func (r *VirtualServerRepository) First(ctx context.Context, filter VirtualServe
 		return nil, fmt.Errorf("failed to open tx: %w", err)
 	}
 
-	s := sqlbuilder.Select("id", "audit_created_at", "audit_updated_at", "display_name", "name", "enable_registration").
-		From("virtual_servers")
+	s := sqlbuilder.Select(
+		"id",
+		"audit_created_at",
+		"audit_updated_at",
+		"display_name",
+		"name",
+		"enable_registration",
+		"require_2fa",
+	).From("virtual_servers")
 
 	if filter.name != nil {
 		s.Where(s.Equal("name", filter.name))
@@ -114,7 +131,15 @@ func (r *VirtualServerRepository) First(ctx context.Context, filter VirtualServe
 	virtualServer := VirtualServer{
 		ModelBase: NewModelBase(),
 	}
-	err = row.Scan(&virtualServer.id, &virtualServer.auditCreatedAt, &virtualServer.auditUpdatedAt, &virtualServer.displayName, &virtualServer.name, &virtualServer.enableRegistration)
+	err = row.Scan(
+		&virtualServer.id,
+		&virtualServer.auditCreatedAt,
+		&virtualServer.auditUpdatedAt,
+		&virtualServer.displayName,
+		&virtualServer.name,
+		&virtualServer.enableRegistration,
+		&virtualServer.require2fa,
+	)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, nil
@@ -136,11 +161,12 @@ func (r *VirtualServerRepository) Insert(ctx context.Context, virtualServer *Vir
 	}
 
 	s := sqlbuilder.InsertInto("virtual_servers").
-		Cols("name", "display_name", "enable_registration").
+		Cols("name", "display_name", "enable_registration", "require_2fa").
 		Values(
 			virtualServer.name,
 			virtualServer.displayName,
 			virtualServer.enableRegistration,
+			virtualServer.require2fa,
 		).Returning("id", "audit_created_at", "audit_updated_at")
 
 	query, args := s.Build()

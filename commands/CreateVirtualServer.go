@@ -21,6 +21,7 @@ type CreateVirtualServer struct {
 	Name               string
 	DisplayName        string
 	EnableRegistration bool
+	Require2fa         bool
 }
 
 type CreateVirtualServerResponse struct {
@@ -31,8 +32,9 @@ func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer)
 	scope := middlewares.GetScope(ctx)
 
 	virtualServerRepository := ioc.GetDependency[*repositories.VirtualServerRepository](scope)
-	virtualServer := repositories.NewVirtualServer(command.Name, command.DisplayName).
-		SetEnableRegistration(command.EnableRegistration)
+	virtualServer := repositories.NewVirtualServer(command.Name, command.DisplayName)
+	virtualServer.SetEnableRegistration(command.EnableRegistration)
+	virtualServer.SetRequire2fa(command.Require2fa)
 	err := virtualServerRepository.Insert(ctx, virtualServer)
 	if err != nil {
 		return nil, fmt.Errorf("inserting virtual server: %w", err)
