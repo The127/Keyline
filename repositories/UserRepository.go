@@ -120,7 +120,7 @@ func (r *UserRepository) List(ctx context.Context, filter UserFilter) ([]User, e
 	}
 
 	query, args := s.Build()
-	logging.Logger.Debug("sql: %s", query)
+	logging.Logger.Debug("executing sql: ", query)
 	rows, err := tx.Query(query, args...)
 	defer rows.Close()
 	if err != nil {
@@ -197,7 +197,7 @@ func (r *UserRepository) First(ctx context.Context, filter UserFilter) (*User, e
 	s.Limit(1)
 
 	query, args := s.Build()
-	logging.Logger.Debug("sql: %s", query)
+	logging.Logger.Debug("executing sql: ", query)
 	row := tx.QueryRowContext(ctx, query, args...)
 
 	user := User{
@@ -242,7 +242,7 @@ func (r *UserRepository) Update(ctx context.Context, user *User) error {
 	s.Returning("audit_updated_at")
 
 	query, args := s.Build()
-	logging.Logger.Debug("sql: %s", query)
+	logging.Logger.Debug("executing sql: ", query)
 	row := tx.QueryRowContext(ctx, query, args...)
 
 	err = row.Scan(&user.auditUpdatedAt)
@@ -273,7 +273,7 @@ func (r *UserRepository) Insert(ctx context.Context, user *User) error {
 		).Returning("id", "audit_created_at", "audit_updated_at")
 
 	query, args := s.Build()
-	logging.Logger.Debug("sql: %s", query)
+	logging.Logger.Debug("executing sql: ", query)
 	row := tx.QueryRowContext(ctx, query, args...)
 
 	err = row.Scan(&user.id, &user.auditCreatedAt, &user.auditUpdatedAt)

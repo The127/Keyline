@@ -165,7 +165,7 @@ func (r *RoleRepository) First(ctx context.Context, filter RoleFilter) (*Role, e
 	s.Limit(1)
 
 	query, args := s.Build()
-	logging.Logger.Debug("sql: %s", query)
+	logging.Logger.Debug("executing sql: ", query)
 	row := tx.QueryRowContext(ctx, query, args...)
 
 	role := Role{
@@ -214,7 +214,7 @@ func (r *RoleRepository) Insert(ctx context.Context, role *Role) error {
 		).Returning("id", "audit_created_at", "audit_updated_at")
 
 	query, args := s.Build()
-	logging.Logger.Debug("sql: %s", query)
+	logging.Logger.Debug("executing sql: ", query)
 	row := tx.QueryRowContext(ctx, query, args...)
 
 	err = row.Scan(&role.id, &role.auditCreatedAt, &role.auditUpdatedAt)

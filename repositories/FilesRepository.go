@@ -82,7 +82,7 @@ func (r *FileRepository) First(ctx context.Context, filter FileFilter) (*File, e
 	s.Limit(1)
 
 	query, args := s.Build()
-	logging.Logger.Debug("sql: %s", query)
+	logging.Logger.Debug("executing sql: ", query)
 	row := tx.QueryRowContext(ctx, query, args...)
 
 	file := File{
@@ -125,7 +125,7 @@ func (r *FileRepository) Insert(ctx context.Context, file *File) error {
 		).Returning("id", "audit_created_at", "audit_updated_at")
 
 	query, args := s.Build()
-	logging.Logger.Debug("sql: %s", query)
+	logging.Logger.Debug("executing sql: ", query)
 	row := tx.QueryRowContext(ctx, query, args...)
 
 	err = row.Scan(&file.id, &file.auditCreatedAt, &file.auditUpdatedAt)

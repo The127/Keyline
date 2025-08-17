@@ -108,7 +108,7 @@ func (r *VirtualServerRepository) First(ctx context.Context, filter VirtualServe
 	s.Limit(1)
 
 	query, args := s.Build()
-	logging.Logger.Debug("sql: %s", query)
+	logging.Logger.Debug("executing sql: ", query)
 	row := tx.QueryRowContext(ctx, query, args...)
 
 	virtualServer := VirtualServer{
@@ -144,7 +144,7 @@ func (r *VirtualServerRepository) Insert(ctx context.Context, virtualServer *Vir
 		).Returning("id", "audit_created_at", "audit_updated_at")
 
 	query, args := s.Build()
-	logging.Logger.Debug("sql: %s", query)
+	logging.Logger.Debug("executing sql: ", query)
 	row := tx.QueryRowContext(ctx, query, args...)
 
 	err = row.Scan(&virtualServer.id, &virtualServer.auditCreatedAt, &virtualServer.auditUpdatedAt)

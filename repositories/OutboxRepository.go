@@ -62,7 +62,7 @@ func (r *OutboxMessageRepository) Insert(ctx context.Context, outboxMessage *Out
 		).Returning("id", "audit_created_at", "audit_updated_at")
 
 	query, args := s.Build()
-	logging.Logger.Debug("sql: %s", query)
+	logging.Logger.Debug("executing sql: ", query)
 	row := tx.QueryRowContext(ctx, query, args...)
 
 	err = row.Scan(&outboxMessage.id, &outboxMessage.auditCreatedAt, &outboxMessage.auditUpdatedAt)

@@ -99,7 +99,7 @@ func (r *TemplateRepository) First(ctx context.Context, filter TemplateFilter) (
 	s.Limit(1)
 
 	query, args := s.Build()
-	logging.Logger.Debug("sql: %s", query)
+	logging.Logger.Debug("executing sql: ", query)
 	row := tx.QueryRowContext(ctx, query, args...)
 
 	template := Template{
@@ -143,7 +143,7 @@ func (r *TemplateRepository) Insert(ctx context.Context, template *Template) err
 		).Returning("id", "audit_created_at", "audit_updated_at")
 
 	query, args := s.Build()
-	logging.Logger.Debug("sql: %s", query)
+	logging.Logger.Debug("executing sql: ", query)
 	row := tx.QueryRowContext(ctx, query, args...)
 
 	err = row.Scan(&template.id, &template.auditCreatedAt, &template.auditUpdatedAt)

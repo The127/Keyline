@@ -101,7 +101,7 @@ func (r *CredentialRepository) Insert(ctx context.Context, credential *Credentia
 		Returning("id", "audit_created_at", "audit_updated_at")
 
 	query, args := s.Build()
-	logging.Logger.Debug("sql: %s", query)
+	logging.Logger.Debug("executing sql: ", query)
 	row := tx.QueryRowContext(ctx, query, args...)
 
 	err = row.Scan(&credential.id, &credential.auditCreatedAt, &credential.auditUpdatedAt)
