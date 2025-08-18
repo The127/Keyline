@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/huandu/go-sqlbuilder"
+	"github.com/pquerna/otp"
 )
 
 type Credential struct {
@@ -37,6 +38,7 @@ type CredentialType string
 
 const (
 	CredentialTypePassword CredentialType = "password"
+	CredentialTypeTotp     CredentialType = "totp"
 )
 
 type CredentialDetails interface {
@@ -57,6 +59,33 @@ func (d *CredentialPasswordDetails) Value() (driver.Value, error) {
 }
 
 func (d *CredentialPasswordDetails) Scan(value any) error {
+	bytes, ok := value.([]byte)
+	if !ok {
+		return fmt.Errorf("type assertion for credential failed")
+	}
+
+	return json.Unmarshal(bytes, &d)
+}
+
+type CredentialTotpDetails struct {
+	Issuer      string        `json:"issuer"`
+	AccountName string        `json:"accountName"`
+	Period      uint          `json:"period"`
+	SecretSize  uint          `json:"secretSize"`
+	Secret      []byte        `json:"secret"`
+	Digits      otp.Digits    `json:"digits"`
+	Algorithm   otp.Algorithm `json:"algorithm"`
+}
+
+func (d *CredentialTotpDetails) CredentialDetailType() CredentialType {
+	return CredentialTypeTotp
+}
+
+func (d *CredentialTotpDetails) Value() (driver.Value, error) {
+	return json.Marshal(d)
+}
+
+func (d *CredentialTotpDetails) Scan(value any) error {
 	bytes, ok := value.([]byte)
 	if !ok {
 		return fmt.Errorf("type assertion for credential failed")
