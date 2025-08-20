@@ -24,6 +24,7 @@ func Serve(dp *ioc.DependencyProvider) {
 
 	oidcRouter := r.PathPrefix("/virtual-servers/{virtualServerName}/").Subrouter()
 	oidcRouter.Use(middlewares.VirtualServerMiddleware())
+	oidcRouter.Use(middlewares.SessionMiddleware())
 	oidcRouter.HandleFunc("/.well-known/openid-configuration", handlers.WellKnownOpenIdConfiguration).Methods(http.MethodGet)
 	oidcRouter.HandleFunc("/.well-known/jwks.json", handlers.WellKnownJwks).Methods(http.MethodGet)
 	oidcRouter.HandleFunc("/authorize", handlers.BeginAuthorizationFlow).Methods(http.MethodGet, http.MethodPost)
@@ -32,6 +33,7 @@ func Serve(dp *ioc.DependencyProvider) {
 
 	vsApiRouter := r.PathPrefix("/api/virtual-servers/{virtualServerName}/").Subrouter()
 	vsApiRouter.Use(middlewares.VirtualServerMiddleware())
+	vsApiRouter.Use(middlewares.SessionMiddleware())
 	vsApiRouter.HandleFunc("/health", handlers.VirtualServerHealth).Methods(http.MethodGet)
 
 	vsApiRouter.HandleFunc("/users/register", handlers.RegisterUser).Methods(http.MethodPost)
