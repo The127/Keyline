@@ -57,6 +57,7 @@ func (s *Session) GenerateToken() string {
 }
 
 type SessionFilter struct {
+	id              *uuid.UUID
 	virtualServerId *uuid.UUID
 	userId          *uuid.UUID
 }
@@ -78,6 +79,12 @@ func (f SessionFilter) VirtualServerId(virtualServerId uuid.UUID) SessionFilter 
 func (f SessionFilter) UserId(userId uuid.UUID) SessionFilter {
 	filter := f.Clone()
 	filter.userId = &userId
+	return filter
+}
+
+func (f SessionFilter) Id(id uuid.UUID) SessionFilter {
+	filter := f.Clone()
+	filter.id = &id
 	return filter
 }
 
