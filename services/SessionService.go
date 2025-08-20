@@ -4,12 +4,15 @@ import (
 	"Keyline/ioc"
 	"Keyline/middlewares"
 	"Keyline/repositories"
+	"Keyline/utils"
 	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/redis/go-redis/v9"
+	"time"
 )
 
 type sessionService struct {
@@ -25,20 +28,47 @@ func NewSessionService() middlewares.SessionService {
 }
 
 func (s *sessionService) GetSession(ctx context.Context, virtualServerName string, id uuid.UUID) (*middlewares.Session, error) {
-	scope := middlewares.GetScope(ctx)
+	redisClient := utils.NewRedisClient()
+	redisKey := getRedisSessionKey(virtualServerName, id)
 
-	tokens := ioc.GetDependency[TokenService](scope)
-	value, err := tokens.GetValue(ctx, SessionTokenType, id.String())
+	stringCmd := redisClient.Get(ctx, redisKey)
+	err := stringCmd.Err()
 	switch {
-	case errors.Is(err, ErrTokenNotFound):
-		return s.loadSessionFromDatabase(ctx, virtualServerName, id)
+	case errors.Is(err, redis.Nil):
+		dbSession, err := s.loadSessionFromDatabase(ctx, virtualServerName, id)
+		if err != nil {
+			return nil, fmt.Errorf("loading session from db: %w", err)
+		}
+
+		if dbSession != nil {
+			tokenValue := sessionTokenValue{
+				UserId:       dbSession.UserId(),
+				HashedSecret: dbSession.HashedSecret(),
+			}
+
+			valueBytes, err := json.Marshal(tokenValue)
+			if err != nil {
+				return nil, fmt.Errorf("marshalling session: %w", err)
+			}
+
+			statusCmd := redisClient.Set(ctx, redisKey, string(valueBytes), time.Minute*15)
+			err = statusCmd.Err()
+			if err != nil {
+				return nil, fmt.Errorf("storing session token in cache: %w", err)
+			}
+
+			return middlewares.NewSession(
+				dbSession.UserId(),
+				dbSession.HashedSecret(),
+			), nil
+		}
 
 	case err != nil:
 		return nil, fmt.Errorf("getting session from cache: %w", err)
 	}
 
 	tokenValue := sessionTokenValue{}
-	err = json.NewDecoder(bytes.NewBuffer([]byte(value))).
+	err = json.NewDecoder(bytes.NewBuffer([]byte(stringCmd.Val()))).
 		Decode(&tokenValue)
 	if err != nil {
 		return nil, fmt.Errorf("decoding token from cache: %w", err)
@@ -74,10 +104,12 @@ func (s *sessionService) loadSessionFromDatabase(ctx context.Context, virtualSer
 		return nil, nil
 	}
 
-	// TODO: store session in redis
-
 	return middlewares.NewSession(
 		dbSession.UserId(),
 		dbSession.HashedToken(),
 	), nil
+}
+
+func getRedisSessionKey(virtualServerName string, sessionId uuid.UUID) string {
+	return fmt.Sprintf("session:%s:%s", virtualServerName, sessionId)
 }
