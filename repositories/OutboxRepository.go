@@ -45,6 +45,52 @@ func NewOutboxMessageFilter() OutboxMessageFilter {
 type OutboxMessageRepository struct {
 }
 
+func (r *OutboxMessageRepository) List(ctx context.Context, filter OutboxMessageFilter) ([]OutboxMessage, error) {
+	scope := middlewares.GetScope(ctx)
+	dbService := ioc.GetDependency[database.DbService](scope)
+
+	tx, err := dbService.GetTx()
+	if err != nil {
+		return nil, fmt.Errorf("failed to open tx: %w", err)
+	}
+
+	s := sqlbuilder.Select(
+		"id",
+		"audit_created_at",
+		"audit_updated_at",
+		"type",
+		"details",
+	).From("outbox_messages")
+
+	query, args := s.Build()
+	logging.Logger.Debug("executing sql: ", query)
+	rows, err := tx.Query(query, args...)
+	defer rows.Close()
+	if err != nil {
+		return nil, fmt.Errorf("querying db: %w", err)
+	}
+
+	var outboxMessages []OutboxMessage
+	for rows.Next() {
+		outboxMessage := OutboxMessage{
+			ModelBase: NewModelBase(),
+		}
+		err = rows.Scan(
+			&outboxMessage.id,
+			&outboxMessage.auditCreatedAt,
+			&outboxMessage.auditUpdatedAt,
+			&outboxMessage._type,
+			&outboxMessage.details,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("scanning row: %w", err)
+		}
+		outboxMessages = append(outboxMessages, outboxMessage)
+	}
+
+	return outboxMessages, nil
+}
+
 func (r *OutboxMessageRepository) Insert(ctx context.Context, outboxMessage *OutboxMessage) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
