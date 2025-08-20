@@ -70,6 +70,9 @@ func main() {
 	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) services.TokenService {
 		return services.NewTokenService()
 	})
+	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) middlewares.SessionService {
+		return services.NewSessionService()
+	})
 
 	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) *repositories.UserRepository {
 		return &repositories.UserRepository{}
