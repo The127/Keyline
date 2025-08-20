@@ -7,6 +7,7 @@ import (
 	"Keyline/middlewares"
 	"context"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/huandu/go-sqlbuilder"
 )
 
@@ -36,10 +37,21 @@ func NewOutboxMessage(details OutboxMessageDetails) *OutboxMessage {
 }
 
 type OutboxMessageFilter struct {
+	id *uuid.UUID
 }
 
 func NewOutboxMessageFilter() OutboxMessageFilter {
 	return OutboxMessageFilter{}
+}
+
+func (f OutboxMessageFilter) Clone() OutboxMessageFilter {
+	return f
+}
+
+func (f OutboxMessageFilter) Id(id uuid.UUID) OutboxMessageFilter {
+	filter := f.Clone()
+	filter.id = &id
+	return filter
 }
 
 type OutboxMessageRepository struct {
@@ -61,6 +73,10 @@ func (r *OutboxMessageRepository) List(ctx context.Context, filter OutboxMessage
 		"type",
 		"details",
 	).From("outbox_messages")
+
+	if filter.id != nil {
+		s.Where(s.Equal("id", filter.id))
+	}
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
@@ -117,5 +133,30 @@ func (r *OutboxMessageRepository) Insert(ctx context.Context, outboxMessage *Out
 	}
 
 	outboxMessage.ClearChanges()
+	return nil
+}
+
+func (r *OutboxMessageRepository) Delete(ctx context.Context, filter OutboxMessageFilter) error {
+	scope := middlewares.GetScope(ctx)
+	dbService := ioc.GetDependency[database.DbService](scope)
+
+	tx, err := dbService.GetTx()
+	if err != nil {
+		return fmt.Errorf("failed to open tx: %w", err)
+	}
+
+	s := sqlbuilder.DeleteFrom("outbox_messages")
+
+	if filter.id != nil {
+		s.Where(s.Equal("id", filter.id))
+	}
+
+	query, args := s.Build()
+	logging.Logger.Debug("executing sql: ", query)
+	_, err = tx.ExecContext(ctx, query, args...)
+	if err != nil {
+		return fmt.Errorf("executing delete: %w", err)
+	}
+
 	return nil
 }
