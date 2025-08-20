@@ -22,7 +22,7 @@ func HandleVerifyEmail(ctx context.Context, command VerifyEmail) (*VerifyEmailRe
 	scope := middlewares.GetScope(ctx)
 
 	tokenService := ioc.GetDependency[services.TokenService](scope)
-	value, err := tokenService.GetValue(ctx, services.EmailVerificationTokenType, command.Token)
+	value, err := tokenService.GetToken(ctx, services.EmailVerificationTokenType, command.Token)
 	if err != nil {
 		return nil, fmt.Errorf("getting token: %w", err)
 	}
@@ -44,7 +44,7 @@ func HandleVerifyEmail(ctx context.Context, command VerifyEmail) (*VerifyEmailRe
 		return nil, fmt.Errorf("updating user: %w", err)
 	}
 
-	err = tokenService.Delete(ctx, services.EmailVerificationTokenType, command.Token)
+	err = tokenService.DeleteToken(ctx, services.EmailVerificationTokenType, command.Token)
 	if err != nil {
 		return nil, fmt.Errorf("deleting token: %w", err)
 	}
