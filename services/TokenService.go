@@ -25,9 +25,9 @@ func (t TokenType) Key(token string) string {
 var ErrTokenNotFound = fmt.Errorf("token: %w", utils.ErrHttpNotFound)
 
 type TokenService interface {
-	StoreValue(ctx context.Context, tokenType TokenType, value string, expiration time.Duration) (string, error)
-	GetValue(ctx context.Context, tokenType TokenType, token string) (string, error)
-	Delete(ctx context.Context, tokenType TokenType, token string) error
+	GenerateAndStoreToken(ctx context.Context, tokenType TokenType, value string, expiration time.Duration) (string, error)
+	GetToken(ctx context.Context, tokenType TokenType, token string) (string, error)
+	DeleteToken(ctx context.Context, tokenType TokenType, token string) error
 }
 
 type tokenService struct {
@@ -46,7 +46,7 @@ func getRedisClient() *redis.Client {
 	})
 }
 
-func (t *tokenService) StoreValue(ctx context.Context, tokenType TokenType, value string, expiration time.Duration) (string, error) {
+func (t *tokenService) GenerateAndStoreToken(ctx context.Context, tokenType TokenType, value string, expiration time.Duration) (string, error) {
 	bytes := utils.GetSecureRandomBytes(16)
 	token := base64.URLEncoding.EncodeToString(bytes)
 
@@ -60,7 +60,7 @@ func (t *tokenService) StoreValue(ctx context.Context, tokenType TokenType, valu
 	return token, nil
 }
 
-func (t *tokenService) GetValue(ctx context.Context, tokenType TokenType, token string) (string, error) {
+func (t *tokenService) GetToken(ctx context.Context, tokenType TokenType, token string) (string, error) {
 	rdb := getRedisClient()
 	token, err := rdb.Get(ctx, tokenType.Key(token)).Result()
 	switch {
@@ -74,7 +74,7 @@ func (t *tokenService) GetValue(ctx context.Context, tokenType TokenType, token 
 	return token, nil
 }
 
-func (t *tokenService) Delete(ctx context.Context, tokenType TokenType, token string) error {
+func (t *tokenService) DeleteToken(ctx context.Context, tokenType TokenType, token string) error {
 	rdb := getRedisClient()
 	intCmd := rdb.Del(ctx, tokenType.Key(token))
 	err := intCmd.Err()

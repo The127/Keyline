@@ -38,7 +38,7 @@ func QueueEmailVerificationJobOnUserCreatedEvent(ctx context.Context, event User
 	}
 
 	tokenService := ioc.GetDependency[services.TokenService](scope)
-	token, err := tokenService.StoreValue(ctx, services.EmailVerificationTokenType, user.Id().String(), time.Minute*15)
+	token, err := tokenService.GenerateAndStoreToken(ctx, services.EmailVerificationTokenType, user.Id().String(), time.Minute*15)
 	if err != nil {
 		return fmt.Errorf("storing email verification token: %w", err)
 	}
