@@ -6,6 +6,7 @@ import (
 	"Keyline/database"
 	"Keyline/events"
 	"Keyline/ioc"
+	"Keyline/jobs"
 	"Keyline/logging"
 	"Keyline/mediator"
 	"Keyline/middlewares"
@@ -17,6 +18,7 @@ import (
 	"context"
 	"database/sql"
 	"github.com/huandu/go-sqlbuilder"
+	"time"
 )
 
 func main() {
@@ -105,6 +107,19 @@ func main() {
 
 	setupMediator(dc)
 	dp := dc.BuildProvider()
+
+	jobManager := jobs.NewJobManager(jobs.WithOnError(func(err error) {
+		logging.Logger.Errorf("an error happened while running a job: %v", err)
+	}))
+
+	jobManager.QueueJob(
+		jobs.OutboxSendingJob(dp),
+		time.Second,
+		jobs.WithName("outbox_sender"),
+		jobs.WithStartImmediate(),
+	)
+
+	jobManager.Start(context.Background())
 
 	initApplication(dp)
 
