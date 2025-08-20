@@ -1,9 +1,18 @@
 package repositories
 
 import (
+	"Keyline/database"
+	"Keyline/ioc"
+	"Keyline/logging"
+	"Keyline/middlewares"
 	"Keyline/utils"
+	"context"
+	"database/sql"
 	"encoding/base64"
+	"errors"
+	"fmt"
 	"github.com/google/uuid"
+	"github.com/huandu/go-sqlbuilder"
 	"time"
 )
 
@@ -89,4 +98,77 @@ func (f SessionFilter) Id(id uuid.UUID) SessionFilter {
 }
 
 type SessionRepository struct {
+}
+
+func (r *SessionRepository) Single(ctx context.Context, filter SessionFilter) (*Session, error) {
+	result, err := r.First(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	if result == nil {
+		return nil, utils.ErrSessionNotFound
+	}
+	return result, nil
+}
+
+func (r *SessionRepository) First(ctx context.Context, filter SessionFilter) (*Session, error) {
+	scope := middlewares.GetScope(ctx)
+	dbService := ioc.GetDependency[database.DbService](scope)
+
+	tx, err := dbService.GetTx()
+	if err != nil {
+		return nil, fmt.Errorf("failed to open tx: %w", err)
+	}
+
+	s := sqlbuilder.Select(
+		"id",
+		"audit_created_at",
+		"audit_updated_at",
+		"virtual_server_id",
+		"user_id",
+		"hashed_token",
+		"expires_at",
+		"last_used_at",
+	).From("sessions")
+
+	if filter.id != nil {
+		s.Where(s.Equal("id", filter.id))
+	}
+
+	if filter.virtualServerId != nil {
+		s.Where(s.Equal("virtual_server_id", filter.virtualServerId))
+	}
+
+	if filter.userId != nil {
+		s.Where(s.Equal("user_id", filter.userId))
+	}
+
+	s.Limit(1)
+
+	query, args := s.Build()
+	logging.Logger.Debug("executing sql: ", query)
+	row := tx.QueryRowContext(ctx, query, args...)
+
+	session := Session{
+		ModelBase: NewModelBase(),
+	}
+	err = row.Scan(
+		&session.id,
+		&session.auditCreatedAt,
+		&session.auditUpdatedAt,
+		&session.virtualServerId,
+		&session.userId,
+		&session.hashedToken,
+		&session.expiresAt,
+		&session.lastUsedAt,
+	)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return nil, nil
+
+	case err != nil:
+		return nil, fmt.Errorf("scanning row: %w", err)
+	}
+
+	return &session, nil
 }
