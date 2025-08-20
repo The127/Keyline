@@ -47,7 +47,7 @@ type OutboxMessageRepository struct {
 
 func (r *OutboxMessageRepository) Insert(ctx context.Context, outboxMessage *OutboxMessage) error {
 	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[*database.DbService](scope)
+	dbService := ioc.GetDependency[database.DbService](scope)
 
 	tx, err := dbService.GetTx()
 	if err != nil {

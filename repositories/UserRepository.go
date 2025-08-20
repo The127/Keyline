@@ -98,7 +98,7 @@ type UserRepository struct {
 
 func (r *UserRepository) List(ctx context.Context, filter UserFilter) ([]User, error) {
 	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[*database.DbService](scope)
+	dbService := ioc.GetDependency[database.DbService](scope)
 
 	tx, err := dbService.GetTx()
 	if err != nil {
@@ -164,7 +164,7 @@ func (r *UserRepository) Single(ctx context.Context, filter UserFilter) (*User, 
 
 func (r *UserRepository) First(ctx context.Context, filter UserFilter) (*User, error) {
 	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[*database.DbService](scope)
+	dbService := ioc.GetDependency[database.DbService](scope)
 
 	tx, err := dbService.GetTx()
 	if err != nil {
@@ -226,7 +226,7 @@ func (r *UserRepository) First(ctx context.Context, filter UserFilter) (*User, e
 
 func (r *UserRepository) Update(ctx context.Context, user *User) error {
 	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[*database.DbService](scope)
+	dbService := ioc.GetDependency[database.DbService](scope)
 
 	tx, err := dbService.GetTx()
 	if err != nil {
@@ -256,7 +256,7 @@ func (r *UserRepository) Update(ctx context.Context, user *User) error {
 
 func (r *UserRepository) Insert(ctx context.Context, user *User) error {
 	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[*database.DbService](scope)
+	dbService := ioc.GetDependency[database.DbService](scope)
 
 	tx, err := dbService.GetTx()
 	if err != nil {

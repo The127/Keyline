@@ -121,7 +121,7 @@ type ApplicationRepository struct{}
 
 func (r *ApplicationRepository) First(ctx context.Context, filter ApplicationFilter) (*Application, error) {
 	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[*database.DbService](scope)
+	dbService := ioc.GetDependency[database.DbService](scope)
 
 	tx, err := dbService.GetTx()
 	if err != nil {
@@ -183,7 +183,7 @@ func (r *ApplicationRepository) First(ctx context.Context, filter ApplicationFil
 
 func (r *ApplicationRepository) Insert(ctx context.Context, application *Application) error {
 	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[*database.DbService](scope)
+	dbService := ioc.GetDependency[database.DbService](scope)
 
 	tx, err := dbService.GetTx()
 	if err != nil {

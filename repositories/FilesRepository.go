@@ -65,7 +65,7 @@ type FileRepository struct {
 
 func (r *FileRepository) First(ctx context.Context, filter FileFilter) (*File, error) {
 	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[*database.DbService](scope)
+	dbService := ioc.GetDependency[database.DbService](scope)
 
 	tx, err := dbService.GetTx()
 	if err != nil {
@@ -109,7 +109,7 @@ func (r *FileRepository) First(ctx context.Context, filter FileFilter) (*File, e
 
 func (r *FileRepository) Insert(ctx context.Context, file *File) error {
 	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[*database.DbService](scope)
+	dbService := ioc.GetDependency[database.DbService](scope)
 
 	tx, err := dbService.GetTx()
 	if err != nil {

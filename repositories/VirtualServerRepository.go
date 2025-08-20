@@ -101,7 +101,7 @@ func (r *VirtualServerRepository) Single(ctx context.Context, filter VirtualServ
 
 func (r *VirtualServerRepository) First(ctx context.Context, filter VirtualServerFilter) (*VirtualServer, error) {
 	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[*database.DbService](scope)
+	dbService := ioc.GetDependency[database.DbService](scope)
 
 	tx, err := dbService.GetTx()
 	if err != nil {
@@ -153,7 +153,7 @@ func (r *VirtualServerRepository) First(ctx context.Context, filter VirtualServe
 
 func (r *VirtualServerRepository) Insert(ctx context.Context, virtualServer *VirtualServer) error {
 	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[*database.DbService](scope)
+	dbService := ioc.GetDependency[database.DbService](scope)
 
 	tx, err := dbService.GetTx()
 	if err != nil {

@@ -5,18 +5,23 @@ import (
 	"database/sql"
 )
 
-type DbService struct {
+type DbService interface {
+	GetTx() (*sql.Tx, error)
+	Close() error
+}
+
+type dbService struct {
 	tx *sql.Tx
 	dp *ioc.DependencyProvider
 }
 
-func NewDbService(dp *ioc.DependencyProvider) *DbService {
-	return &DbService{
+func NewDbService(dp *ioc.DependencyProvider) DbService {
+	return &dbService{
 		dp: dp,
 	}
 }
 
-func (s *DbService) GetTx() (*sql.Tx, error) {
+func (s *dbService) GetTx() (*sql.Tx, error) {
 	if s.tx != nil {
 		return s.tx, nil
 	}
@@ -28,7 +33,7 @@ func (s *DbService) GetTx() (*sql.Tx, error) {
 	return tx, err
 }
 
-func (s *DbService) Close() error {
+func (s *dbService) Close() error {
 	if s.tx != nil {
 		return s.tx.Commit()
 	}

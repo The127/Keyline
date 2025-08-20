@@ -78,7 +78,7 @@ type TemplateRepository struct {
 
 func (r *TemplateRepository) First(ctx context.Context, filter TemplateFilter) (*Template, error) {
 	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[*database.DbService](scope)
+	dbService := ioc.GetDependency[database.DbService](scope)
 
 	tx, err := dbService.GetTx()
 	if err != nil {
@@ -127,7 +127,7 @@ func (r *TemplateRepository) First(ctx context.Context, filter TemplateFilter) (
 
 func (r *TemplateRepository) Insert(ctx context.Context, template *Template) error {
 	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[*database.DbService](scope)
+	dbService := ioc.GetDependency[database.DbService](scope)
 
 	tx, err := dbService.GetTx()
 	if err != nil {

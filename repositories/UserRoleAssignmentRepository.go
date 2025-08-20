@@ -77,7 +77,7 @@ type UserRoleAssignmentRepository struct {
 
 func (r *UserRoleAssignmentRepository) Insert(ctx context.Context, userRoleAssignment *UserRoleAssignment) error {
 	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[*database.DbService](scope)
+	dbService := ioc.GetDependency[database.DbService](scope)
 
 	tx, err := dbService.GetTx()
 	if err != nil {

@@ -131,7 +131,7 @@ func (r *RoleRepository) Single(ctx context.Context, filter RoleFilter) (*Role, 
 
 func (r *RoleRepository) First(ctx context.Context, filter RoleFilter) (*Role, error) {
 	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[*database.DbService](scope)
+	dbService := ioc.GetDependency[database.DbService](scope)
 
 	tx, err := dbService.GetTx()
 	if err != nil {
@@ -195,7 +195,7 @@ func (r *RoleRepository) First(ctx context.Context, filter RoleFilter) (*Role, e
 
 func (r *RoleRepository) Insert(ctx context.Context, role *Role) error {
 	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[*database.DbService](scope)
+	dbService := ioc.GetDependency[database.DbService](scope)
 
 	tx, err := dbService.GetTx()
 	if err != nil {
