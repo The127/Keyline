@@ -1,7 +1,6 @@
 package services
 
 import (
-	"Keyline/config"
 	"Keyline/utils"
 	"context"
 	"encoding/base64"
@@ -37,20 +36,11 @@ func NewTokenService() TokenService {
 	return &tokenService{}
 }
 
-func getRedisClient() *redis.Client {
-	return redis.NewClient(&redis.Options{
-		Addr:     fmt.Sprintf("%s:%d", config.C.Redis.Host, config.C.Redis.Port),
-		Username: config.C.Redis.Username,
-		Password: config.C.Redis.Password,
-		DB:       config.C.Redis.Database,
-	})
-}
-
 func (t *tokenService) GenerateAndStoreToken(ctx context.Context, tokenType TokenType, value string, expiration time.Duration) (string, error) {
 	bytes := utils.GetSecureRandomBytes(16)
 	token := base64.URLEncoding.EncodeToString(bytes)
 
-	rdb := getRedisClient()
+	rdb := utils.NewRedisClient()
 	statusCmd := rdb.Set(ctx, tokenType.Key(token), value, expiration)
 	err := statusCmd.Err()
 	if err != nil {
@@ -61,7 +51,7 @@ func (t *tokenService) GenerateAndStoreToken(ctx context.Context, tokenType Toke
 }
 
 func (t *tokenService) GetToken(ctx context.Context, tokenType TokenType, token string) (string, error) {
-	rdb := getRedisClient()
+	rdb := utils.NewRedisClient()
 	token, err := rdb.Get(ctx, tokenType.Key(token)).Result()
 	switch {
 	case errors.Is(err, redis.Nil):
@@ -75,7 +65,7 @@ func (t *tokenService) GetToken(ctx context.Context, tokenType TokenType, token 
 }
 
 func (t *tokenService) DeleteToken(ctx context.Context, tokenType TokenType, token string) error {
-	rdb := getRedisClient()
+	rdb := utils.NewRedisClient()
 	intCmd := rdb.Del(ctx, tokenType.Key(token))
 	err := intCmd.Err()
 	switch {
