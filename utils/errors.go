@@ -13,6 +13,7 @@ var ErrVirtualServerNotFound = fmt.Errorf("virtual server: %w", ErrHttpNotFound)
 var ErrUserNotFound = fmt.Errorf("user: %w", ErrHttpNotFound)
 var ErrRoleNotFound = fmt.Errorf("role: %w", ErrHttpNotFound)
 var ErrGroupNotFound = fmt.Errorf("group: %w", ErrHttpNotFound)
+var ErrSessionNotFound = fmt.Errorf("session: %w", ErrHttpNotFound)
 
 var ErrHttpBadRequest = errors.New("bad request")
 var ErrRegistrationNotEnabled = fmt.Errorf("registartion is not enabled: %w", ErrHttpBadRequest)
