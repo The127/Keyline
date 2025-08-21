@@ -158,7 +158,7 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// validate the auth request
-	virtualServerRepository := ioc.GetDependency[*repositories.VirtualServerRepository](scope)
+	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(vsName)
 	virtualServer, err := virtualServerRepository.First(ctx, virtualServerFilter)
 	if err != nil {

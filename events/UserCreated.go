@@ -31,7 +31,7 @@ func QueueEmailVerificationJobOnUserCreatedEvent(ctx context.Context, event User
 		return nil
 	}
 
-	virtualServerRepository := ioc.GetDependency[*repositories.VirtualServerRepository](scope)
+	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
 	virtualServer, err := virtualServerRepository.First(ctx, repositories.NewVirtualServerFilter().Id(user.VirtualServerId()))
 	if err != nil {
 		return fmt.Errorf("getting virtual server: %w", err)

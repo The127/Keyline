@@ -84,10 +84,20 @@ func (f VirtualServerFilter) Id(id uuid.UUID) VirtualServerFilter {
 	return filter
 }
 
-type VirtualServerRepository struct {
+type VirtualServerRepository interface {
+	Single(ctx context.Context, filter VirtualServerFilter) (*VirtualServer, error)
+	First(ctx context.Context, filter VirtualServerFilter) (*VirtualServer, error)
+	Insert(ctx context.Context, virtualServer *VirtualServer) error
 }
 
-func (r *VirtualServerRepository) Single(ctx context.Context, filter VirtualServerFilter) (*VirtualServer, error) {
+type virtualServerRepository struct {
+}
+
+func NewVirtualServerRepository() VirtualServerRepository {
+	return &virtualServerRepository{}
+}
+
+func (r *virtualServerRepository) Single(ctx context.Context, filter VirtualServerFilter) (*VirtualServer, error) {
 	result, err := r.First(ctx, filter)
 	if err != nil {
 		return nil, err
@@ -99,7 +109,7 @@ func (r *VirtualServerRepository) Single(ctx context.Context, filter VirtualServ
 	return result, nil
 }
 
-func (r *VirtualServerRepository) First(ctx context.Context, filter VirtualServerFilter) (*VirtualServer, error) {
+func (r *virtualServerRepository) First(ctx context.Context, filter VirtualServerFilter) (*VirtualServer, error) {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -151,7 +161,7 @@ func (r *VirtualServerRepository) First(ctx context.Context, filter VirtualServe
 	return &virtualServer, nil
 }
 
-func (r *VirtualServerRepository) Insert(ctx context.Context, virtualServer *VirtualServer) error {
+func (r *virtualServerRepository) Insert(ctx context.Context, virtualServer *VirtualServer) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 

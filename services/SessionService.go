@@ -83,7 +83,7 @@ func (s *sessionService) GetSession(ctx context.Context, virtualServerName strin
 func (s *sessionService) loadSessionFromDatabase(ctx context.Context, virtualServerName string, id uuid.UUID) (*middlewares.Session, error) {
 	scope := middlewares.GetScope(ctx)
 
-	virtualServerRepository := ioc.GetDependency[*repositories.VirtualServerRepository](scope)
+	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
 	vsFilter := repositories.NewVirtualServerFilter().
 		Name(virtualServerName)
 	virtualServer, err := virtualServerRepository.Single(ctx, vsFilter)
