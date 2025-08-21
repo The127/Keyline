@@ -67,5 +67,12 @@ func (f GroupFilter) Id(id uuid.UUID) GroupFilter {
 	return filter
 }
 
-type GroupRepository struct {
+type GroupRepository interface {
+}
+
+type groupRepository struct {
+}
+
+func NewGroupRepository() GroupRepository {
+	return &groupRepository{}
 }
