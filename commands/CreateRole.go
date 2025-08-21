@@ -34,7 +34,7 @@ func HandleCreateRole(ctx context.Context, command CreateRole) (*CreateRoleRespo
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
-	roleRepository := ioc.GetDependency[*repositories.RoleRepository](scope)
+	roleRepository := ioc.GetDependency[repositories.RoleRepository](scope)
 	role := repositories.NewRole(
 		virtualServer.Id(),
 		nil,

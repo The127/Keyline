@@ -115,10 +115,20 @@ func (f RoleFilter) VirtualServerId(virtualServerId uuid.UUID) RoleFilter {
 	return filter
 }
 
-type RoleRepository struct {
+type RoleRepository interface {
+	Single(ctx context.Context, filter RoleFilter) (*Role, error)
+	First(ctx context.Context, filter RoleFilter) (*Role, error)
+	Insert(ctx context.Context, role *Role) error
 }
 
-func (r *RoleRepository) Single(ctx context.Context, filter RoleFilter) (*Role, error) {
+type roleRepository struct {
+}
+
+func NewRoleRepository() RoleRepository {
+	return &roleRepository{}
+}
+
+func (r *roleRepository) Single(ctx context.Context, filter RoleFilter) (*Role, error) {
 	result, err := r.First(ctx, filter)
 	if err != nil {
 		return nil, err
@@ -129,7 +139,7 @@ func (r *RoleRepository) Single(ctx context.Context, filter RoleFilter) (*Role, 
 	return result, nil
 }
 
-func (r *RoleRepository) First(ctx context.Context, filter RoleFilter) (*Role, error) {
+func (r *roleRepository) First(ctx context.Context, filter RoleFilter) (*Role, error) {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -193,7 +203,7 @@ func (r *RoleRepository) First(ctx context.Context, filter RoleFilter) (*Role, e
 	return &role, nil
 }
 
-func (r *RoleRepository) Insert(ctx context.Context, role *Role) error {
+func (r *roleRepository) Insert(ctx context.Context, role *Role) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
