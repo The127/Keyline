@@ -72,10 +72,18 @@ func (f UserRoleAssignmentFilter) GroupId(groupId uuid.UUID) UserRoleAssignmentF
 	return filter
 }
 
-type UserRoleAssignmentRepository struct {
+type UserRoleAssignmentRepository interface {
+	Insert(ctx context.Context, userRoleAssignment *UserRoleAssignment) error
 }
 
-func (r *UserRoleAssignmentRepository) Insert(ctx context.Context, userRoleAssignment *UserRoleAssignment) error {
+type userRoleAssignmentRepository struct {
+}
+
+func NewUserRoleAssignmentRepository() UserRoleAssignmentRepository {
+	return &userRoleAssignmentRepository{}
+}
+
+func (r *userRoleAssignmentRepository) Insert(ctx context.Context, userRoleAssignment *UserRoleAssignment) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
