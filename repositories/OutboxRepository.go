@@ -54,10 +54,20 @@ func (f OutboxMessageFilter) Id(id uuid.UUID) OutboxMessageFilter {
 	return filter
 }
 
-type OutboxMessageRepository struct {
+type OutboxMessageRepository interface {
+	List(ctx context.Context, filter OutboxMessageFilter) ([]OutboxMessage, error)
+	Insert(ctx context.Context, outboxMessage *OutboxMessage) error
+	Delete(ctx context.Context, filter OutboxMessageFilter) error
 }
 
-func (r *OutboxMessageRepository) List(ctx context.Context, filter OutboxMessageFilter) ([]OutboxMessage, error) {
+type outboxMessageRepository struct {
+}
+
+func NewOutboxMessageRepository() OutboxMessageRepository {
+	return &outboxMessageRepository{}
+}
+
+func (r *outboxMessageRepository) List(ctx context.Context, filter OutboxMessageFilter) ([]OutboxMessage, error) {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -107,7 +117,7 @@ func (r *OutboxMessageRepository) List(ctx context.Context, filter OutboxMessage
 	return outboxMessages, nil
 }
 
-func (r *OutboxMessageRepository) Insert(ctx context.Context, outboxMessage *OutboxMessage) error {
+func (r *outboxMessageRepository) Insert(ctx context.Context, outboxMessage *OutboxMessage) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -136,7 +146,7 @@ func (r *OutboxMessageRepository) Insert(ctx context.Context, outboxMessage *Out
 	return nil
 }
 
-func (r *OutboxMessageRepository) Delete(ctx context.Context, filter OutboxMessageFilter) error {
+func (r *outboxMessageRepository) Delete(ctx context.Context, filter OutboxMessageFilter) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 

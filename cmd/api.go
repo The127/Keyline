@@ -86,8 +86,8 @@ func main() {
 	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.CredentialRepository {
 		return repositories.NewCredentialRepository()
 	})
-	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) *repositories.OutboxMessageRepository {
-		return &repositories.OutboxMessageRepository{}
+	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.OutboxMessageRepository {
+		return repositories.NewOutboxMessageRepository()
 	})
 	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.FileRepository {
 		return repositories.NewFileRepository()
