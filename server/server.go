@@ -9,9 +9,6 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
 )
 
 func Serve(dp *ioc.DependencyProvider) {
@@ -52,10 +49,6 @@ func Serve(dp *ioc.DependencyProvider) {
 	}
 
 	go serve(srv)
-
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-	<-c
 }
 
 func serve(srv *http.Server) {
