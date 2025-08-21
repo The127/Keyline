@@ -18,6 +18,9 @@ import (
 	"context"
 	"database/sql"
 	"github.com/huandu/go-sqlbuilder"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 )
 
@@ -127,6 +130,10 @@ func main() {
 	initApplication(dp)
 
 	server.Serve(dp)
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	<-c
 }
 
 func setupMediator(dc *ioc.DependencyCollection) {
