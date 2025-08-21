@@ -5,6 +5,7 @@ import (
 	"Keyline/ioc"
 	"Keyline/logging"
 	"Keyline/middlewares"
+	"Keyline/utils"
 	"context"
 	"database/sql"
 	"errors"
@@ -73,10 +74,31 @@ func (f TemplateFilter) TemplateType(templateType TemplateType) TemplateFilter {
 	return filter
 }
 
-type TemplateRepository struct {
+type TemplateRepository interface {
+	Single(ctx context.Context, filter TemplateFilter) (*Template, error)
+	First(ctx context.Context, filter TemplateFilter) (*Template, error)
+	Insert(ctx context.Context, template *Template) error
 }
 
-func (r *TemplateRepository) First(ctx context.Context, filter TemplateFilter) (*Template, error) {
+type templateRepository struct {
+}
+
+func NewTemplateRepository() TemplateRepository {
+	return &templateRepository{}
+}
+
+func (r *templateRepository) Single(ctx context.Context, filter TemplateFilter) (*Template, error) {
+	template, err := r.First(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	if template == nil {
+		return nil, utils.ErrTemplateNotFound
+	}
+	return template, nil
+}
+
+func (r *templateRepository) First(ctx context.Context, filter TemplateFilter) (*Template, error) {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -125,7 +147,7 @@ func (r *TemplateRepository) First(ctx context.Context, filter TemplateFilter) (
 	return &template, nil
 }
 
-func (r *TemplateRepository) Insert(ctx context.Context, template *Template) error {
+func (r *templateRepository) Insert(ctx context.Context, template *Template) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 

@@ -15,6 +15,7 @@ var ErrRoleNotFound = fmt.Errorf("role: %w", ErrHttpNotFound)
 var ErrGroupNotFound = fmt.Errorf("group: %w", ErrHttpNotFound)
 var ErrSessionNotFound = fmt.Errorf("session: %w", ErrHttpNotFound)
 var ErrFileNotFoud = fmt.Errorf("file: %w", ErrHttpNotFound)
+var ErrTemplateNotFound = fmt.Errorf("template: %w", ErrHttpNotFound)
 
 var ErrHttpBadRequest = errors.New("bad request")
 var ErrRegistrationNotEnabled = fmt.Errorf("registartion is not enabled: %w", ErrHttpBadRequest)
