@@ -39,7 +39,7 @@ func HandleAssignRoleToUser(ctx context.Context, command AssignRoleToUser) (*Ass
 		return nil, fmt.Errorf("getting user: %w", err)
 	}
 
-	userRoleAssignmentRepository := ioc.GetDependency[*repositories.UserRoleAssignmentRepository](scope)
+	userRoleAssignmentRepository := ioc.GetDependency[repositories.UserRoleAssignmentRepository](scope)
 	userRoleAssignment := repositories.NewUserRoleAssignment(
 		command.UserId,
 		command.RoleId,
