@@ -111,7 +111,7 @@ func initializeDefaultRoles(ctx context.Context, virtualServer *repositories.Vir
 func initializeDefaultTemplates(ctx context.Context, virtualServer *repositories.VirtualServer) error {
 	scope := middlewares.GetScope(ctx)
 
-	fileRepository := ioc.GetDependency[*repositories.FileRepository](scope)
+	fileRepository := ioc.GetDependency[repositories.FileRepository](scope)
 	templateRepository := ioc.GetDependency[*repositories.TemplateRepository](scope)
 
 	err := insertTemplate(
@@ -131,7 +131,7 @@ func insertTemplate(
 	ctx context.Context,
 	templateName string,
 	virtualServer *repositories.VirtualServer,
-	fileRepository *repositories.FileRepository,
+	fileRepository repositories.FileRepository,
 	templateRepository *repositories.TemplateRepository,
 ) error {
 	file := repositories.NewFile(templateName, "text/plain", templates.DefaultEmailVerificationTemplate)
