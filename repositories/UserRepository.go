@@ -93,10 +93,22 @@ func (f UserFilter) Username(username string) UserFilter {
 	return filter
 }
 
-type UserRepository struct {
+type UserRepository interface {
+	List(ctx context.Context, filter UserFilter) ([]User, error)
+	Single(ctx context.Context, filter UserFilter) (*User, error)
+	First(ctx context.Context, filter UserFilter) (*User, error)
+	Update(ctx context.Context, user *User) error
+	Insert(ctx context.Context, user *User) error
 }
 
-func (r *UserRepository) List(ctx context.Context, filter UserFilter) ([]User, error) {
+type userRepository struct {
+}
+
+func NewUserRepository() UserRepository {
+	return &userRepository{}
+}
+
+func (r *userRepository) List(ctx context.Context, filter UserFilter) ([]User, error) {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -152,7 +164,7 @@ func (r *UserRepository) List(ctx context.Context, filter UserFilter) ([]User, e
 	return users, nil
 }
 
-func (r *UserRepository) Single(ctx context.Context, filter UserFilter) (*User, error) {
+func (r *userRepository) Single(ctx context.Context, filter UserFilter) (*User, error) {
 	result, err := r.First(ctx, filter)
 	if err != nil {
 		return nil, err
@@ -163,7 +175,7 @@ func (r *UserRepository) Single(ctx context.Context, filter UserFilter) (*User, 
 	return result, nil
 }
 
-func (r *UserRepository) First(ctx context.Context, filter UserFilter) (*User, error) {
+func (r *userRepository) First(ctx context.Context, filter UserFilter) (*User, error) {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -225,7 +237,7 @@ func (r *UserRepository) First(ctx context.Context, filter UserFilter) (*User, e
 	return &user, nil
 }
 
-func (r *UserRepository) Update(ctx context.Context, user *User) error {
+func (r *userRepository) Update(ctx context.Context, user *User) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -255,7 +267,7 @@ func (r *UserRepository) Update(ctx context.Context, user *User) error {
 	return nil
 }
 
-func (r *UserRepository) Insert(ctx context.Context, user *User) error {
+func (r *userRepository) Insert(ctx context.Context, user *User) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 

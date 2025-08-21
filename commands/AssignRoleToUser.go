@@ -33,7 +33,7 @@ func HandleAssignRoleToUser(ctx context.Context, command AssignRoleToUser) (*Ass
 		return nil, fmt.Errorf("getting role: %w", err)
 	}
 
-	userRepository := ioc.GetDependency[*repositories.UserRepository](scope)
+	userRepository := ioc.GetDependency[repositories.UserRepository](scope)
 	_, err = userRepository.Single(ctx, repositories.NewUserFilter().Id(command.UserId).VirtualServerId(virtualServer.Id()))
 	if err != nil {
 		return nil, fmt.Errorf("getting user: %w", err)
