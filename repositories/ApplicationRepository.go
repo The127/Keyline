@@ -117,9 +117,18 @@ func (f ApplicationFilter) VirtualServerId(virtualServerId uuid.UUID) Applicatio
 	return filter
 }
 
-type ApplicationRepository struct{}
+type ApplicationRepository interface {
+	First(ctx context.Context, filter ApplicationFilter) (*Application, error)
+	Insert(ctx context.Context, application *Application) error
+}
 
-func (r *ApplicationRepository) First(ctx context.Context, filter ApplicationFilter) (*Application, error) {
+type applicationRepository struct{}
+
+func NewApplicationRepository() ApplicationRepository {
+	return &applicationRepository{}
+}
+
+func (r *applicationRepository) First(ctx context.Context, filter ApplicationFilter) (*Application, error) {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -181,7 +190,7 @@ func (r *ApplicationRepository) First(ctx context.Context, filter ApplicationFil
 	return &application, nil
 }
 
-func (r *ApplicationRepository) Insert(ctx context.Context, application *Application) error {
+func (r *applicationRepository) Insert(ctx context.Context, application *Application) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 

@@ -171,7 +171,7 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	applicationRepository := ioc.GetDependency[*repositories.ApplicationRepository](scope)
+	applicationRepository := ioc.GetDependency[repositories.ApplicationRepository](scope)
 	applicationFilter := repositories.NewApplicationFilter().
 		Name(authRequest.ApplicationName).
 		VirtualServerId(virtualServer.Id())

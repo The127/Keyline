@@ -66,7 +66,7 @@ func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer)
 func initializeDefaultApplications(ctx context.Context, virtualServer *repositories.VirtualServer) error {
 	scope := middlewares.GetScope(ctx)
 
-	applicationRepository := ioc.GetDependency[*repositories.ApplicationRepository](scope)
+	applicationRepository := ioc.GetDependency[repositories.ApplicationRepository](scope)
 
 	adminUiApplication := repositories.NewApplication(
 		virtualServer.Id(),
