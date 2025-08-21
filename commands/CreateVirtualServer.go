@@ -89,7 +89,7 @@ func initializeDefaultApplications(ctx context.Context, virtualServer *repositor
 func initializeDefaultRoles(ctx context.Context, virtualServer *repositories.VirtualServer) error {
 	scope := middlewares.GetScope(ctx)
 
-	roleRepository := ioc.GetDependency[*repositories.RoleRepository](scope)
+	roleRepository := ioc.GetDependency[repositories.RoleRepository](scope)
 
 	adminRole := repositories.NewRole(
 		virtualServer.Id(),
