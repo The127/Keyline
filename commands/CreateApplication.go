@@ -31,7 +31,7 @@ func HandleCreateApplication(ctx context.Context, command CreateApplication) (*C
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
-	applicationRepository := ioc.GetDependency[*repositories.ApplicationRepository](scope)
+	applicationRepository := ioc.GetDependency[repositories.ApplicationRepository](scope)
 	application := repositories.NewApplication(
 		virtualServer.Id(),
 		command.Name,
