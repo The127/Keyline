@@ -83,8 +83,8 @@ func main() {
 	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) *repositories.VirtualServerRepository {
 		return &repositories.VirtualServerRepository{}
 	})
-	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) *repositories.CredentialRepository {
-		return &repositories.CredentialRepository{}
+	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.CredentialRepository {
+		return repositories.NewCredentialRepository()
 	})
 	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) *repositories.OutboxMessageRepository {
 		return &repositories.OutboxMessageRepository{}
