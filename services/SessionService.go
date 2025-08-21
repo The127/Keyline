@@ -91,7 +91,7 @@ func (s *sessionService) loadSessionFromDatabase(ctx context.Context, virtualSer
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
-	sessionRepository := ioc.GetDependency[*repositories.SessionRepository](scope)
+	sessionRepository := ioc.GetDependency[repositories.SessionRepository](scope)
 	sessionFilter := repositories.NewSessionFilter().
 		VirtualServerId(virtualServer.Id()).
 		Id(id)

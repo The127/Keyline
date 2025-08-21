@@ -97,10 +97,19 @@ func (f SessionFilter) Id(id uuid.UUID) SessionFilter {
 	return filter
 }
 
-type SessionRepository struct {
+type SessionRepository interface {
+	Single(ctx context.Context, filter SessionFilter) (*Session, error)
+	First(ctx context.Context, filter SessionFilter) (*Session, error)
 }
 
-func (r *SessionRepository) Single(ctx context.Context, filter SessionFilter) (*Session, error) {
+type sessionRepository struct {
+}
+
+func NewSessionRepository() SessionRepository {
+	return &sessionRepository{}
+}
+
+func (r *sessionRepository) Single(ctx context.Context, filter SessionFilter) (*Session, error) {
 	result, err := r.First(ctx, filter)
 	if err != nil {
 		return nil, err
@@ -111,7 +120,7 @@ func (r *SessionRepository) Single(ctx context.Context, filter SessionFilter) (*
 	return result, nil
 }
 
-func (r *SessionRepository) First(ctx context.Context, filter SessionFilter) (*Session, error) {
+func (r *sessionRepository) First(ctx context.Context, filter SessionFilter) (*Session, error) {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
