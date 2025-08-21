@@ -112,7 +112,7 @@ func initializeDefaultTemplates(ctx context.Context, virtualServer *repositories
 	scope := middlewares.GetScope(ctx)
 
 	fileRepository := ioc.GetDependency[repositories.FileRepository](scope)
-	templateRepository := ioc.GetDependency[*repositories.TemplateRepository](scope)
+	templateRepository := ioc.GetDependency[repositories.TemplateRepository](scope)
 
 	err := insertTemplate(
 		ctx,
@@ -132,7 +132,7 @@ func insertTemplate(
 	templateName string,
 	virtualServer *repositories.VirtualServer,
 	fileRepository repositories.FileRepository,
-	templateRepository *repositories.TemplateRepository,
+	templateRepository repositories.TemplateRepository,
 ) error {
 	file := repositories.NewFile(templateName, "text/plain", templates.DefaultEmailVerificationTemplate)
 	err := fileRepository.Insert(ctx, file)

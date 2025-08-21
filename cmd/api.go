@@ -92,8 +92,8 @@ func main() {
 	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.FileRepository {
 		return repositories.NewFileRepository()
 	})
-	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) *repositories.TemplateRepository {
-		return &repositories.TemplateRepository{}
+	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.TemplateRepository {
+		return repositories.NewTemplateRepository()
 	})
 	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.RoleRepository {
 		return repositories.NewRoleRepository()

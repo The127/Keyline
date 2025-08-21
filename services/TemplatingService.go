@@ -24,7 +24,7 @@ func NewTemplateService() TemplateService {
 
 func (s templateService) Template(ctx context.Context, virtualServerId uuid.UUID, templateType repositories.TemplateType, data any) (string, error) {
 	scope := middlewares.GetScope(ctx)
-	templateRepository := ioc.GetDependency[*repositories.TemplateRepository](scope)
+	templateRepository := ioc.GetDependency[repositories.TemplateRepository](scope)
 	fileRepository := ioc.GetDependency[repositories.FileRepository](scope)
 
 	dbTemplate, err := templateRepository.First(ctx, repositories.NewTemplateFilter().
