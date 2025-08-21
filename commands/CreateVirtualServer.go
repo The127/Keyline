@@ -31,7 +31,7 @@ type CreateVirtualServerResponse struct {
 func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer) (*CreateVirtualServerResponse, error) {
 	scope := middlewares.GetScope(ctx)
 
-	virtualServerRepository := ioc.GetDependency[*repositories.VirtualServerRepository](scope)
+	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
 	virtualServer := repositories.NewVirtualServer(command.Name, command.DisplayName)
 	virtualServer.SetEnableRegistration(command.EnableRegistration)
 	virtualServer.SetRequire2fa(command.Require2fa)
