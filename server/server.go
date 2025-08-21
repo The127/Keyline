@@ -14,6 +14,7 @@ import (
 func Serve(dp *ioc.DependencyProvider) {
 	r := mux.NewRouter()
 
+	r.Use(middlewares.RecoverMiddleware())
 	r.Use(middlewares.ScopeMiddleware(dp))
 
 	r.HandleFunc("/health", handlers.ApplicationHealth).Methods(http.MethodGet)
