@@ -21,7 +21,7 @@ type UserCreatedEvent struct {
 func QueueEmailVerificationJobOnUserCreatedEvent(ctx context.Context, event UserCreatedEvent) error {
 	scope := middlewares.GetScope(ctx)
 
-	userRepository := ioc.GetDependency[*repositories.UserRepository](scope)
+	userRepository := ioc.GetDependency[repositories.UserRepository](scope)
 	user, err := userRepository.First(ctx, repositories.NewUserFilter().Id(event.UserId))
 	if err != nil {
 		return fmt.Errorf("getting user: %w", err)

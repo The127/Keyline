@@ -32,7 +32,7 @@ func HandleVerifyEmail(ctx context.Context, command VerifyEmail) (*VerifyEmailRe
 		return nil, fmt.Errorf("parsing value: %w", err)
 	}
 
-	userRepository := ioc.GetDependency[*repositories.UserRepository](scope)
+	userRepository := ioc.GetDependency[repositories.UserRepository](scope)
 	user, err := userRepository.Single(ctx, repositories.NewUserFilter().Id(userId))
 	if err != nil {
 		return nil, fmt.Errorf("getting user: %w", err)

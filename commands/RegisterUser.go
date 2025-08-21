@@ -38,7 +38,7 @@ func HandleRegisterUser(ctx context.Context, command RegisterUser) (*RegisterUse
 		return nil, utils.ErrRegistrationNotEnabled
 	}
 
-	userRepository := ioc.GetDependency[*repositories.UserRepository](scope)
+	userRepository := ioc.GetDependency[repositories.UserRepository](scope)
 	user := repositories.NewUser(
 		command.Username,
 		command.DisplayName,
