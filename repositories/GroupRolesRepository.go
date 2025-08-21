@@ -50,5 +50,12 @@ func (f GroupRoleFilter) RoleId(roleId uuid.UUID) GroupRoleFilter {
 	return filter
 }
 
-type GroupRoleRepository struct {
+type GroupRoleRoleRepository interface {
+}
+
+type groupRoleRepository struct {
+}
+
+func NewGroupRoleRepository() GroupRoleRoleRepository {
+	return &groupRoleRepository{}
 }

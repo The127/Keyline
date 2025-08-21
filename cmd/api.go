@@ -90,7 +90,7 @@ func main() {
 		return &repositories.OutboxMessageRepository{}
 	})
 	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.FileRepository {
-		return &repositories.NewFileRepository()
+		return repositories.NewFileRepository()
 	})
 	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) *repositories.TemplateRepository {
 		return &repositories.TemplateRepository{}
@@ -101,8 +101,8 @@ func main() {
 	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) *repositories.GroupRepository {
 		return &repositories.GroupRepository{}
 	})
-	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) *repositories.GroupRoleRepository {
-		return &repositories.GroupRoleRepository{}
+	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.GroupRoleRoleRepository {
+		return repositories.NewGroupRoleRepository()
 	})
 	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) *repositories.UserRoleAssignmentRepository {
 		return &repositories.UserRoleAssignmentRepository{}
