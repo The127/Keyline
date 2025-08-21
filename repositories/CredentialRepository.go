@@ -112,10 +112,18 @@ func (f CredentialFilter) UserId(userId uuid.UUID) CredentialFilter {
 	return filter
 }
 
-type CredentialRepository struct {
+type CredentialRepository interface {
+	Insert(ctx context.Context, credential *Credential) error
 }
 
-func (r *CredentialRepository) Insert(ctx context.Context, credential *Credential) error {
+type credentialRepository struct {
+}
+
+func NewCredentialRepository() CredentialRepository {
+	return &credentialRepository{}
+}
+
+func (r *credentialRepository) Insert(ctx context.Context, credential *Credential) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
