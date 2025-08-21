@@ -16,7 +16,7 @@ func OutboxSendingJob(dp *ioc.DependencyProvider) JobFn {
 		defer utils.PanicOnError(scope.Close, "failed to close scope")
 		ctx = middlewares.ContextWithScope(ctx, scope)
 
-		outboxMessageRepository := ioc.GetDependency[*repositories.OutboxMessageRepository](scope)
+		outboxMessageRepository := ioc.GetDependency[repositories.OutboxMessageRepository](scope)
 		filter := repositories.NewOutboxMessageFilter()
 		outboxMessages, err := outboxMessageRepository.List(ctx, filter)
 		if err != nil {
@@ -34,7 +34,7 @@ func OutboxSendingJob(dp *ioc.DependencyProvider) JobFn {
 	}
 }
 
-func handleMessage(ctx context.Context, message repositories.OutboxMessage, repository *repositories.OutboxMessageRepository) error {
+func handleMessage(ctx context.Context, message repositories.OutboxMessage, repository repositories.OutboxMessageRepository) error {
 	// TODO: send to rabbitmq
 
 	filter := repositories.NewOutboxMessageFilter().Id(message.Id())
