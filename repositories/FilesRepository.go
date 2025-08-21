@@ -5,6 +5,7 @@ import (
 	"Keyline/ioc"
 	"Keyline/logging"
 	"Keyline/middlewares"
+	"Keyline/utils"
 	"context"
 	"database/sql"
 	"errors"
@@ -60,10 +61,31 @@ func (f FileFilter) Id(id uuid.UUID) FileFilter {
 	return filter
 }
 
-type FileRepository struct {
+type FileRepository interface {
+	Single(ctx context.Context, filter FileFilter) (*File, error)
+	First(ctx context.Context, filter FileFilter) (*File, error)
+	Insert(ctx context.Context, file *File) error
 }
 
-func (r *FileRepository) First(ctx context.Context, filter FileFilter) (*File, error) {
+type fileRepository struct {
+}
+
+func NewFileRepository() FileRepository {
+	return &fileRepository{}
+}
+
+func (r *fileRepository) Single(ctx context.Context, filter FileFilter) (*File, error) {
+	file, err := r.First(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	if file == nil {
+		return nil, utils.ErrFileNotFoud
+	}
+	return file, nil
+}
+
+func (r *fileRepository) First(ctx context.Context, filter FileFilter) (*File, error) {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -107,7 +129,7 @@ func (r *FileRepository) First(ctx context.Context, filter FileFilter) (*File, e
 	return &file, nil
 }
 
-func (r *FileRepository) Insert(ctx context.Context, file *File) error {
+func (r *fileRepository) Insert(ctx context.Context, file *File) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
