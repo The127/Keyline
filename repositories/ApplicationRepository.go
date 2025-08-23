@@ -120,6 +120,7 @@ func (f ApplicationFilter) VirtualServerId(virtualServerId uuid.UUID) Applicatio
 type ApplicationRepository interface {
 	First(ctx context.Context, filter ApplicationFilter) (*Application, error)
 	Insert(ctx context.Context, application *Application) error
+	List(ctx context.Context, filter ApplicationFilter) ([]Application, error)
 }
 
 type applicationRepository struct{}
@@ -220,4 +221,68 @@ func (r *applicationRepository) Insert(ctx context.Context, application *Applica
 
 	application.ClearChanges()
 	return nil
+}
+
+func (r *applicationRepository) List(ctx context.Context, filter ApplicationFilter) ([]Application, error) {
+	scope := middlewares.GetScope(ctx)
+	dbService := ioc.GetDependency[database.DbService](scope)
+
+	tx, err := dbService.GetTx()
+	if err != nil {
+		return nil, fmt.Errorf("failed to open tx: %w", err)
+	}
+
+	s := sqlbuilder.Select(
+		"id",
+		"audit_created_at",
+		"audit_updated_at",
+		"virtual_server_id",
+		"name",
+		"display_name",
+		"hashed_secret",
+		"redirect_uris",
+	).From("applications")
+
+	if filter.name != nil {
+		s.Where(s.Equal("name", filter.name))
+	}
+
+	if filter.id != nil {
+		s.Where(s.Equal("id", filter.id))
+	}
+
+	if filter.virtualServerId != nil {
+		s.Where(s.Equal("virtual_server_id", filter.virtualServerId))
+	}
+
+	query, args := s.Build()
+	logging.Logger.Debug("executing sql: ", query)
+	rows, err := tx.Query(query, args...)
+	defer rows.Close()
+	if err != nil {
+		return nil, fmt.Errorf("querying db: %w", err)
+	}
+
+	var applications []Application
+	for rows.Next() {
+		application := Application{
+			ModelBase: NewModelBase(),
+		}
+		err = rows.Scan(
+			&application.id,
+			&application.auditCreatedAt,
+			&application.auditUpdatedAt,
+			&application.virtualServerId,
+			&application.name,
+			&application.displayName,
+			&application.hashedSecret,
+			pq.Array(&application.redirectUris),
+		)
+		if err != nil {
+			return nil, fmt.Errorf("scanning row: %w", err)
+		}
+		applications = append(applications, application)
+	}
+
+	return applications, nil
 }
