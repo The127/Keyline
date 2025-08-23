@@ -131,6 +131,7 @@ func (f ApplicationFilter) VirtualServerId(virtualServerId uuid.UUID) Applicatio
 }
 
 type ApplicationRepository interface {
+	Single(ctx context.Context, filter ApplicationFilter) (*Application, error)
 	First(ctx context.Context, filter ApplicationFilter) (*Application, error)
 	Insert(ctx context.Context, application *Application) error
 	List(ctx context.Context, filter ApplicationFilter) ([]Application, error)
@@ -140,6 +141,17 @@ type applicationRepository struct{}
 
 func NewApplicationRepository() ApplicationRepository {
 	return &applicationRepository{}
+}
+
+func (r *applicationRepository) Single(ctx context.Context, filter ApplicationFilter) (*Application, error) {
+	application, err := r.First(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	if application != nil {
+		return nil, utils.ErrApplicationNotFound
+	}
+	return application, nil
 }
 
 func (r *applicationRepository) First(ctx context.Context, filter ApplicationFilter) (*Application, error) {

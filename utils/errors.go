@@ -11,6 +11,7 @@ import (
 var ErrHttpNotFound = errors.New("not found")
 var ErrVirtualServerNotFound = fmt.Errorf("virtual server: %w", ErrHttpNotFound)
 var ErrUserNotFound = fmt.Errorf("user: %w", ErrHttpNotFound)
+var ErrApplicationNotFound = fmt.Errorf("application: %w", ErrHttpNotFound)
 var ErrRoleNotFound = fmt.Errorf("role: %w", ErrHttpNotFound)
 var ErrGroupNotFound = fmt.Errorf("group: %w", ErrHttpNotFound)
 var ErrSessionNotFound = fmt.Errorf("session: %w", ErrHttpNotFound)
