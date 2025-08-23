@@ -142,26 +142,7 @@ func NewRoleRepository() RoleRepository {
 	return &roleRepository{}
 }
 
-func (r *roleRepository) Single(ctx context.Context, filter RoleFilter) (*Role, error) {
-	result, err := r.First(ctx, filter)
-	if err != nil {
-		return nil, err
-	}
-	if result == nil {
-		return nil, utils.ErrRoleNotFound
-	}
-	return result, nil
-}
-
-func (r *roleRepository) First(ctx context.Context, filter RoleFilter) (*Role, error) {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
-
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return nil, fmt.Errorf("failed to open tx: %w", err)
-	}
-
+func (r *roleRepository) selectQuery(filter RoleFilter) *sqlbuilder.SelectBuilder {
 	s := sqlbuilder.Select(
 		"id",
 		"audit_created_at",
@@ -185,6 +166,31 @@ func (r *roleRepository) First(ctx context.Context, filter RoleFilter) (*Role, e
 	if filter.virtualServerId != nil {
 		s.Where(s.Equal("virtual_server_id", filter.virtualServerId))
 	}
+
+	return s
+}
+
+func (r *roleRepository) Single(ctx context.Context, filter RoleFilter) (*Role, error) {
+	result, err := r.First(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	if result == nil {
+		return nil, utils.ErrRoleNotFound
+	}
+	return result, nil
+}
+
+func (r *roleRepository) First(ctx context.Context, filter RoleFilter) (*Role, error) {
+	scope := middlewares.GetScope(ctx)
+	dbService := ioc.GetDependency[database.DbService](scope)
+
+	tx, err := dbService.GetTx()
+	if err != nil {
+		return nil, fmt.Errorf("failed to open tx: %w", err)
+	}
+
+	s := r.selectQuery(filter)
 
 	s.Limit(1)
 

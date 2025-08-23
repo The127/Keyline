@@ -122,26 +122,7 @@ func NewSessionRepository() SessionRepository {
 	return &sessionRepository{}
 }
 
-func (r *sessionRepository) Single(ctx context.Context, filter SessionFilter) (*Session, error) {
-	result, err := r.First(ctx, filter)
-	if err != nil {
-		return nil, err
-	}
-	if result == nil {
-		return nil, utils.ErrSessionNotFound
-	}
-	return result, nil
-}
-
-func (r *sessionRepository) First(ctx context.Context, filter SessionFilter) (*Session, error) {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
-
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return nil, fmt.Errorf("failed to open tx: %w", err)
-	}
-
+func (r *sessionRepository) selectQuery(filter SessionFilter) *sqlbuilder.SelectBuilder {
 	s := sqlbuilder.Select(
 		"id",
 		"audit_created_at",
@@ -165,6 +146,30 @@ func (r *sessionRepository) First(ctx context.Context, filter SessionFilter) (*S
 		s.Where(s.Equal("user_id", filter.userId))
 	}
 
+	return s
+}
+
+func (r *sessionRepository) Single(ctx context.Context, filter SessionFilter) (*Session, error) {
+	result, err := r.First(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	if result == nil {
+		return nil, utils.ErrSessionNotFound
+	}
+	return result, nil
+}
+
+func (r *sessionRepository) First(ctx context.Context, filter SessionFilter) (*Session, error) {
+	scope := middlewares.GetScope(ctx)
+	dbService := ioc.GetDependency[database.DbService](scope)
+
+	tx, err := dbService.GetTx()
+	if err != nil {
+		return nil, fmt.Errorf("failed to open tx: %w", err)
+	}
+
+	s := r.selectQuery(filter)
 	s.Limit(1)
 
 	query, args := s.Build()

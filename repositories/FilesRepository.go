@@ -85,6 +85,17 @@ func NewFileRepository() FileRepository {
 	return &fileRepository{}
 }
 
+func (r *fileRepository) selectQuery(filter FileFilter) *sqlbuilder.SelectBuilder {
+	s := sqlbuilder.Select("id", "audit_created_at", "audit_updated_at", "name", "mime_type", "content").
+		From("files")
+
+	if filter.id != nil {
+		s.Where(s.Equal("id", filter.id))
+	}
+
+	return s
+}
+
 func (r *fileRepository) Single(ctx context.Context, filter FileFilter) (*File, error) {
 	file, err := r.First(ctx, filter)
 	if err != nil {
@@ -105,12 +116,7 @@ func (r *fileRepository) First(ctx context.Context, filter FileFilter) (*File, e
 		return nil, fmt.Errorf("failed to open tx: %w", err)
 	}
 
-	s := sqlbuilder.Select("id", "audit_created_at", "audit_updated_at", "name", "mime_type", "content").
-		From("files")
-
-	if filter.id != nil {
-		s.Where(s.Equal("id", filter.id))
-	}
+	s := r.selectQuery(filter)
 
 	s.Limit(1)
 

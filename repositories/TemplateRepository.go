@@ -98,6 +98,21 @@ func NewTemplateRepository() TemplateRepository {
 	return &templateRepository{}
 }
 
+func (r *templateRepository) selectQuery(filter TemplateFilter) *sqlbuilder.SelectBuilder {
+	s := sqlbuilder.Select("id", "audit_created_at", "audit_updated_at", "virtual_server_id", "file_id", "type").
+		From("templates")
+
+	if filter.virtualServerId != nil {
+		s.Where(s.Equal("virtual_server_id", filter.virtualServerId))
+	}
+
+	if filter.templateType != nil {
+		s.Where(s.Equal("type", filter.templateType))
+	}
+
+	return s
+}
+
 func (r *templateRepository) Single(ctx context.Context, filter TemplateFilter) (*Template, error) {
 	template, err := r.First(ctx, filter)
 	if err != nil {
@@ -118,17 +133,7 @@ func (r *templateRepository) First(ctx context.Context, filter TemplateFilter) (
 		return nil, fmt.Errorf("failed to open tx: %w", err)
 	}
 
-	s := sqlbuilder.Select("id", "audit_created_at", "audit_updated_at", "virtual_server_id", "file_id", "type").
-		From("templates")
-
-	if filter.virtualServerId != nil {
-		s.Where(s.Equal("virtual_server_id", filter.virtualServerId))
-	}
-
-	if filter.templateType != nil {
-		s.Where(s.Equal("type", filter.templateType))
-	}
-
+	s := r.selectQuery(filter)
 	s.Limit(1)
 
 	query, args := s.Build()

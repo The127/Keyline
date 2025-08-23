@@ -109,6 +109,24 @@ func NewVirtualServerRepository() VirtualServerRepository {
 	return &virtualServerRepository{}
 }
 
+func (r *virtualServerRepository) selectQuery(filter VirtualServerFilter) *sqlbuilder.SelectBuilder {
+	s := sqlbuilder.Select(
+		"id",
+		"audit_created_at",
+		"audit_updated_at",
+		"display_name",
+		"name",
+		"enable_registration",
+		"require_2fa",
+	).From("virtual_servers")
+
+	if filter.name != nil {
+		s.Where(s.Equal("name", filter.name))
+	}
+
+	return s
+}
+
 func (r *virtualServerRepository) Single(ctx context.Context, filter VirtualServerFilter) (*VirtualServer, error) {
 	result, err := r.First(ctx, filter)
 	if err != nil {
@@ -130,20 +148,7 @@ func (r *virtualServerRepository) First(ctx context.Context, filter VirtualServe
 		return nil, fmt.Errorf("failed to open tx: %w", err)
 	}
 
-	s := sqlbuilder.Select(
-		"id",
-		"audit_created_at",
-		"audit_updated_at",
-		"display_name",
-		"name",
-		"enable_registration",
-		"require_2fa",
-	).From("virtual_servers")
-
-	if filter.name != nil {
-		s.Where(s.Equal("name", filter.name))
-	}
-
+	s := r.selectQuery(filter)
 	s.Limit(1)
 
 	query, args := s.Build()
