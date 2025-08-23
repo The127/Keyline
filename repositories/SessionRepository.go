@@ -33,6 +33,19 @@ func NewSession(virtualServerId uuid.UUID, userId uuid.UUID, expiresAt time.Time
 	}
 }
 
+func (s *Session) getScanPointers() []any {
+	return []any{
+		&s.id,
+		&s.auditCreatedAt,
+		&s.auditUpdatedAt,
+		&s.virtualServerId,
+		&s.userId,
+		&s.hashedToken,
+		&s.expiresAt,
+		&s.lastUsedAt,
+	}
+}
+
 func (s *Session) VirtualServerId() uuid.UUID {
 	return s.virtualServerId
 }
@@ -161,16 +174,7 @@ func (r *sessionRepository) First(ctx context.Context, filter SessionFilter) (*S
 	session := Session{
 		ModelBase: NewModelBase(),
 	}
-	err = row.Scan(
-		&session.id,
-		&session.auditCreatedAt,
-		&session.auditUpdatedAt,
-		&session.virtualServerId,
-		&session.userId,
-		&session.hashedToken,
-		&session.expiresAt,
-		&session.lastUsedAt,
-	)
+	err = row.Scan(session.getScanPointers()...)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, nil

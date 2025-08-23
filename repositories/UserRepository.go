@@ -61,6 +61,19 @@ func (m *User) SetEmailVerified(emailVerified bool) {
 	m.TrackChange("email_verified", emailVerified)
 }
 
+func (m *User) getScanPointers() []any {
+	return []any{
+		&m.id,
+		&m.auditCreatedAt,
+		&m.auditUpdatedAt,
+		&m.virtualServerId,
+		&m.displayName,
+		&m.username,
+		&m.primaryEmail,
+		&m.emailVerified,
+	}
+}
+
 type UserFilter struct {
 	virtualServerId *uuid.UUID
 	id              *uuid.UUID
@@ -145,16 +158,7 @@ func (r *userRepository) List(ctx context.Context, filter UserFilter) ([]User, e
 		user := User{
 			ModelBase: NewModelBase(),
 		}
-		err = rows.Scan(
-			&user.id,
-			&user.auditCreatedAt,
-			&user.auditUpdatedAt,
-			&user.virtualServerId,
-			&user.displayName,
-			&user.username,
-			&user.primaryEmail,
-			&user.emailVerified,
-		)
+		err = rows.Scan(user.getScanPointers()...)
 		if err != nil {
 			return nil, fmt.Errorf("scanning row: %w", err)
 		}
@@ -216,16 +220,7 @@ func (r *userRepository) First(ctx context.Context, filter UserFilter) (*User, e
 	user := User{
 		ModelBase: NewModelBase(),
 	}
-	err = row.Scan(
-		&user.id,
-		&user.auditCreatedAt,
-		&user.auditUpdatedAt,
-		&user.virtualServerId,
-		&user.displayName,
-		&user.username,
-		&user.primaryEmail,
-		&user.emailVerified,
-	)
+	err = row.Scan(user.getScanPointers()...)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, nil

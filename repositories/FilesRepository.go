@@ -31,6 +31,17 @@ func NewFile(name string, mimeType string, content []byte) *File {
 	}
 }
 
+func (f *File) getScanPointers() []any {
+	return []any{
+		&f.id,
+		&f.auditCreatedAt,
+		&f.auditUpdatedAt,
+		&f.name,
+		&f.mimeType,
+		&f.content,
+	}
+}
+
 func (f *File) Name() string {
 	return f.name
 }
@@ -110,14 +121,7 @@ func (r *fileRepository) First(ctx context.Context, filter FileFilter) (*File, e
 	file := File{
 		ModelBase: NewModelBase(),
 	}
-	err = row.Scan(
-		&file.id,
-		&file.auditCreatedAt,
-		&file.auditUpdatedAt,
-		&file.name,
-		&file.mimeType,
-		&file.content,
-	)
+	err = row.Scan(file.getScanPointers()...)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, nil
