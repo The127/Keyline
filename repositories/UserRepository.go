@@ -121,17 +121,17 @@ func NewUserRepository() UserRepository {
 	return &userRepository{}
 }
 
-func (r *userRepository) List(ctx context.Context, filter UserFilter) ([]User, error) {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
-
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return nil, fmt.Errorf("failed to open tx: %w", err)
-	}
-
-	s := sqlbuilder.Select("id", "audit_created_at", "audit_updated_at", "virtual_server_id", "display_name", "username", "primary_email", "email_verified").
-		From("users")
+func (r *userRepository) selectQuery(filter UserFilter) *sqlbuilder.SelectBuilder {
+	s := sqlbuilder.Select(
+		"id",
+		"audit_created_at",
+		"audit_updated_at",
+		"virtual_server_id",
+		"display_name",
+		"username",
+		"primary_email",
+		"email_verified",
+	).From("users")
 
 	if filter.username != nil {
 		s.Where(s.Equal("username", filter.username))
@@ -144,6 +144,20 @@ func (r *userRepository) List(ctx context.Context, filter UserFilter) ([]User, e
 	if filter.id != nil {
 		s.Where(s.Equal("id", filter.id))
 	}
+
+	return s
+}
+
+func (r *userRepository) List(ctx context.Context, filter UserFilter) ([]User, error) {
+	scope := middlewares.GetScope(ctx)
+	dbService := ioc.GetDependency[database.DbService](scope)
+
+	tx, err := dbService.GetTx()
+	if err != nil {
+		return nil, fmt.Errorf("failed to open tx: %w", err)
+	}
+
+	s := r.selectQuery(filter)
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
@@ -188,29 +202,7 @@ func (r *userRepository) First(ctx context.Context, filter UserFilter) (*User, e
 		return nil, fmt.Errorf("failed to open tx: %w", err)
 	}
 
-	s := sqlbuilder.Select(
-		"id",
-		"audit_created_at",
-		"audit_updated_at",
-		"virtual_server_id",
-		"display_name",
-		"username",
-		"primary_email",
-		"email_verified",
-	).From("users")
-
-	if filter.username != nil {
-		s.Where(s.Equal("username", filter.username))
-	}
-
-	if filter.virtualServerId != nil {
-		s.Where(s.Equal("virtual_server_id", filter.virtualServerId))
-	}
-
-	if filter.id != nil {
-		s.Where(s.Equal("id", filter.id))
-	}
-
+	s := r.selectQuery(filter)
 	s.Limit(1)
 
 	query, args := s.Build()

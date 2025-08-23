@@ -77,15 +77,7 @@ func NewOutboxMessageRepository() OutboxMessageRepository {
 	return &outboxMessageRepository{}
 }
 
-func (r *outboxMessageRepository) List(ctx context.Context, filter OutboxMessageFilter) ([]OutboxMessage, error) {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
-
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return nil, fmt.Errorf("failed to open tx: %w", err)
-	}
-
+func (r *outboxMessageRepository) selectQuery(filter OutboxMessageFilter) *sqlbuilder.SelectBuilder {
 	s := sqlbuilder.Select(
 		"id",
 		"audit_created_at",
@@ -97,6 +89,20 @@ func (r *outboxMessageRepository) List(ctx context.Context, filter OutboxMessage
 	if filter.id != nil {
 		s.Where(s.Equal("id", filter.id))
 	}
+
+	return s
+}
+
+func (r *outboxMessageRepository) List(ctx context.Context, filter OutboxMessageFilter) ([]OutboxMessage, error) {
+	scope := middlewares.GetScope(ctx)
+	dbService := ioc.GetDependency[database.DbService](scope)
+
+	tx, err := dbService.GetTx()
+	if err != nil {
+		return nil, fmt.Errorf("failed to open tx: %w", err)
+	}
+
+	s := r.selectQuery(filter)
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)

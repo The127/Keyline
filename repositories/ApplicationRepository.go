@@ -143,26 +143,7 @@ func NewApplicationRepository() ApplicationRepository {
 	return &applicationRepository{}
 }
 
-func (r *applicationRepository) Single(ctx context.Context, filter ApplicationFilter) (*Application, error) {
-	application, err := r.First(ctx, filter)
-	if err != nil {
-		return nil, err
-	}
-	if application != nil {
-		return nil, utils.ErrApplicationNotFound
-	}
-	return application, nil
-}
-
-func (r *applicationRepository) First(ctx context.Context, filter ApplicationFilter) (*Application, error) {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
-
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return nil, fmt.Errorf("failed to open tx: %w", err)
-	}
-
+func (r *applicationRepository) selectQuery(filter ApplicationFilter) *sqlbuilder.SelectBuilder {
 	s := sqlbuilder.Select(
 		"id",
 		"audit_created_at",
@@ -186,6 +167,30 @@ func (r *applicationRepository) First(ctx context.Context, filter ApplicationFil
 		s.Where(s.Equal("virtual_server_id", filter.virtualServerId))
 	}
 
+	return s
+}
+
+func (r *applicationRepository) Single(ctx context.Context, filter ApplicationFilter) (*Application, error) {
+	application, err := r.First(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	if application != nil {
+		return nil, utils.ErrApplicationNotFound
+	}
+	return application, nil
+}
+
+func (r *applicationRepository) First(ctx context.Context, filter ApplicationFilter) (*Application, error) {
+	scope := middlewares.GetScope(ctx)
+	dbService := ioc.GetDependency[database.DbService](scope)
+
+	tx, err := dbService.GetTx()
+	if err != nil {
+		return nil, fmt.Errorf("failed to open tx: %w", err)
+	}
+
+	s := r.selectQuery(filter)
 	s.Limit(1)
 
 	query, args := s.Build()
@@ -248,28 +253,7 @@ func (r *applicationRepository) List(ctx context.Context, filter ApplicationFilt
 		return nil, fmt.Errorf("failed to open tx: %w", err)
 	}
 
-	s := sqlbuilder.Select(
-		"id",
-		"audit_created_at",
-		"audit_updated_at",
-		"virtual_server_id",
-		"name",
-		"display_name",
-		"hashed_secret",
-		"redirect_uris",
-	).From("applications")
-
-	if filter.name != nil {
-		s.Where(s.Equal("name", filter.name))
-	}
-
-	if filter.id != nil {
-		s.Where(s.Equal("id", filter.id))
-	}
-
-	if filter.virtualServerId != nil {
-		s.Where(s.Equal("virtual_server_id", filter.virtualServerId))
-	}
+	s := r.selectQuery(filter)
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
