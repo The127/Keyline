@@ -43,6 +43,19 @@ func NewApplication(
 	}
 }
 
+func (a *Application) getScanPointers() []any {
+	return []any{
+		&a.id,
+		&a.auditCreatedAt,
+		&a.auditUpdatedAt,
+		&a.virtualServerId,
+		&a.name,
+		&a.displayName,
+		&a.hashedSecret,
+		pq.Array(&a.redirectUris),
+	}
+}
+
 func (a *Application) GenerateSecret() string {
 	secretBytes := utils.GetSecureRandomBytes(16)
 	secretBase64 := base64.RawURLEncoding.EncodeToString(secretBytes)
@@ -170,16 +183,7 @@ func (r *applicationRepository) First(ctx context.Context, filter ApplicationFil
 	application := Application{
 		ModelBase: NewModelBase(),
 	}
-	err = row.Scan(
-		&application.id,
-		&application.auditCreatedAt,
-		&application.auditUpdatedAt,
-		&application.virtualServerId,
-		&application.name,
-		&application.displayName,
-		&application.hashedSecret,
-		pq.Array(&application.redirectUris),
-	)
+	err = row.Scan(application.getScanPointers()...)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, nil
@@ -268,16 +272,7 @@ func (r *applicationRepository) List(ctx context.Context, filter ApplicationFilt
 		application := Application{
 			ModelBase: NewModelBase(),
 		}
-		err = rows.Scan(
-			&application.id,
-			&application.auditCreatedAt,
-			&application.auditUpdatedAt,
-			&application.virtualServerId,
-			&application.name,
-			&application.displayName,
-			&application.hashedSecret,
-			pq.Array(&application.redirectUris),
-		)
+		err = rows.Scan(application.getScanPointers()...)
 		if err != nil {
 			return nil, fmt.Errorf("scanning row: %w", err)
 		}

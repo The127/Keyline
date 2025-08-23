@@ -39,6 +39,20 @@ func NewRole(virtualServerId uuid.UUID, applicationId *uuid.UUID, name string, d
 	}
 }
 
+func (r *Role) getScanPointers() []any {
+	return []any{
+		&r.id,
+		&r.auditCreatedAt,
+		&r.auditUpdatedAt,
+		&r.virtualServerId,
+		&r.applicationId,
+		&r.name,
+		&r.description,
+		&r.requireMfa,
+		&r.maxTokenAge,
+	}
+}
+
 func (r *Role) Name() string {
 	return r.name
 }
@@ -181,17 +195,7 @@ func (r *roleRepository) First(ctx context.Context, filter RoleFilter) (*Role, e
 	role := Role{
 		ModelBase: NewModelBase(),
 	}
-	err = row.Scan(
-		&role.id,
-		&role.auditCreatedAt,
-		&role.auditUpdatedAt,
-		&role.virtualServerId,
-		&role.applicationId,
-		&role.name,
-		&role.description,
-		&role.requireMfa,
-		&role.maxTokenAge,
-	)
+	err = row.Scan(role.getScanPointers()...)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, nil

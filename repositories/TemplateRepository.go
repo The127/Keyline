@@ -49,6 +49,17 @@ func (t *Template) TemplateType() TemplateType {
 	return t.templateType
 }
 
+func (t *Template) getScanPointers() []any {
+	return []any{
+		&t.id,
+		&t.auditCreatedAt,
+		&t.auditUpdatedAt,
+		&t.virtualServerId,
+		&t.fileId,
+		&t.templateType,
+	}
+}
+
 type TemplateFilter struct {
 	virtualServerId *uuid.UUID
 	templateType    *TemplateType
@@ -127,14 +138,7 @@ func (r *templateRepository) First(ctx context.Context, filter TemplateFilter) (
 	template := Template{
 		ModelBase: NewModelBase(),
 	}
-	err = row.Scan(
-		&template.id,
-		&template.auditCreatedAt,
-		&template.auditUpdatedAt,
-		&template.virtualServerId,
-		&template.fileId,
-		&template.templateType,
-	)
+	err = row.Scan(template.getScanPointers()...)
 
 	switch {
 	case errors.Is(err, sql.ErrNoRows):

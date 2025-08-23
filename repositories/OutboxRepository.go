@@ -28,6 +28,16 @@ type OutboxMessage struct {
 	details OutboxMessageDetails
 }
 
+func (m *OutboxMessage) getScanPointers() []any {
+	return []any{
+		&m.id,
+		&m.auditCreatedAt,
+		&m.auditUpdatedAt,
+		&m._type,
+		&m.details,
+	}
+}
+
 func NewOutboxMessage(details OutboxMessageDetails) *OutboxMessage {
 	return &OutboxMessage{
 		ModelBase: NewModelBase(),
@@ -101,13 +111,7 @@ func (r *outboxMessageRepository) List(ctx context.Context, filter OutboxMessage
 		outboxMessage := OutboxMessage{
 			ModelBase: NewModelBase(),
 		}
-		err = rows.Scan(
-			&outboxMessage.id,
-			&outboxMessage.auditCreatedAt,
-			&outboxMessage.auditUpdatedAt,
-			&outboxMessage._type,
-			&outboxMessage.details,
-		)
+		err = rows.Scan(outboxMessage.getScanPointers()...)
 		if err != nil {
 			return nil, fmt.Errorf("scanning row: %w", err)
 		}

@@ -33,6 +33,18 @@ func NewVirtualServer(name string, displayName string) *VirtualServer {
 	}
 }
 
+func (m *VirtualServer) getScanPointers() []any {
+	return []any{
+		&m.id,
+		&m.auditCreatedAt,
+		&m.auditUpdatedAt,
+		&m.displayName,
+		&m.name,
+		&m.enableRegistration,
+		&m.require2fa,
+	}
+}
+
 func (m *VirtualServer) Name() string {
 	return m.name
 }
@@ -141,15 +153,7 @@ func (r *virtualServerRepository) First(ctx context.Context, filter VirtualServe
 	virtualServer := VirtualServer{
 		ModelBase: NewModelBase(),
 	}
-	err = row.Scan(
-		&virtualServer.id,
-		&virtualServer.auditCreatedAt,
-		&virtualServer.auditUpdatedAt,
-		&virtualServer.displayName,
-		&virtualServer.name,
-		&virtualServer.enableRegistration,
-		&virtualServer.require2fa,
-	)
+	err = row.Scan(virtualServer.getScanPointers()...)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, nil
