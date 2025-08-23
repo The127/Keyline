@@ -42,6 +42,7 @@ func Serve(dp *ioc.DependencyProvider) {
 	vsApiRouter.HandleFunc("/roles/{roleId}/assign", handlers.AssignRole).Methods(http.MethodPost)
 
 	vsApiRouter.HandleFunc("/applications", handlers.CreateApplication).Methods(http.MethodPost)
+	vsApiRouter.HandleFunc("/applications", handlers.ListApplications).Methods(http.MethodGet)
 
 	addr := fmt.Sprintf("%s:%d", config.C.Server.Host, config.C.Server.Port)
 	logging.Logger.Infof("running server at %s", addr)

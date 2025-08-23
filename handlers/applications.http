@@ -10,3 +10,7 @@ Content-Type: application/json
     "http://localhost:3245"
   ]
 }
+
+### list all applicaitons
+GET http://127.0.0.1:8081/api/virtual-servers/keyline/applications
+Accept: application/json
