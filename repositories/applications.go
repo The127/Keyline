@@ -184,16 +184,21 @@ func (r *applicationRepository) Update(ctx context.Context, application *Applica
 	for fieldName, value := range application.changes {
 		s.Set(s.Assign(fieldName, value))
 	}
+	s.Set(s.Assign("version", application.version))
 
 	s.Where(s.Equal("id", application.id))
-	s.Returning("audit_updated_at")
+	s.Where(s.Equal("version", application.version))
+	s.Returning("audit_updated_at", "version")
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
 	row := tx.QueryRowContext(ctx, query, args...)
 
-	err = row.Scan(&application.auditUpdatedAt)
-	if err != nil {
+	err = row.Scan(&application.auditUpdatedAt, &application.version)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return fmt.Errorf("updating application: %w", ErrVersionMismatch)
+	case err != nil:
 		return fmt.Errorf("scanning row: %w", err)
 	}
 

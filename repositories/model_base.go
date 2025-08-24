@@ -1,9 +1,12 @@
 package repositories
 
 import (
+	"errors"
 	"github.com/google/uuid"
 	"time"
 )
+
+var ErrVersionMismatch = errors.New("version mismatch")
 
 type ModelBase struct {
 	id uuid.UUID

@@ -237,16 +237,21 @@ func (r *userRepository) Update(ctx context.Context, user *User) error {
 	for fieldName, value := range user.changes {
 		s.Set(s.Assign(fieldName, value))
 	}
+	s.Set(s.Assign("version", user.version+1))
 
 	s.Where(s.Equal("id", user.id))
-	s.Returning("audit_updated_at")
+	s.Where(s.Equal("version", user.version))
+	s.Returning("audit_updated_at", "version")
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
 	row := tx.QueryRowContext(ctx, query, args...)
 
-	err = row.Scan(&user.auditUpdatedAt)
-	if err != nil {
+	err = row.Scan(&user.auditUpdatedAt, &user.version)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return fmt.Errorf("updating user: %w", ErrVersionMismatch)
+	case err != nil:
 		return fmt.Errorf("scanning row: %w", err)
 	}
 
