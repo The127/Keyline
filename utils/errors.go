@@ -22,6 +22,8 @@ var ErrHttpBadRequest = errors.New("bad request")
 var ErrRegistrationNotEnabled = fmt.Errorf("registartion is not enabled: %w", ErrHttpBadRequest)
 var ErrInvalidUuid = fmt.Errorf("invalid uuid: %w", ErrHttpBadRequest)
 
+var ErrHttpConflict = errors.New("conflict")
+
 func HandleHttpError(w http.ResponseWriter, err error) {
 	var status int
 	var msg string
@@ -35,6 +37,12 @@ func HandleHttpError(w http.ResponseWriter, err error) {
 	case errors.Is(err, ErrHttpNotFound):
 		status = http.StatusNotFound
 		msg = err.Error()
+		break
+
+	case errors.Is(err, ErrHttpConflict):
+		status = http.StatusConflict
+		msg = err.Error()
+		break
 
 	default:
 		status = http.StatusInternalServerError
