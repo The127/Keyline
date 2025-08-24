@@ -133,8 +133,9 @@ func (f ApplicationFilter) VirtualServerId(virtualServerId uuid.UUID) Applicatio
 type ApplicationRepository interface {
 	Single(ctx context.Context, filter ApplicationFilter) (*Application, error)
 	First(ctx context.Context, filter ApplicationFilter) (*Application, error)
-	Insert(ctx context.Context, application *Application) error
 	List(ctx context.Context, filter ApplicationFilter) ([]Application, error)
+	Insert(ctx context.Context, application *Application) error
+	Update(ctx context.Context, application *Application) error
 }
 
 type applicationRepository struct{}
@@ -168,6 +169,36 @@ func (r *applicationRepository) selectQuery(filter ApplicationFilter) *sqlbuilde
 	}
 
 	return s
+}
+
+func (r *applicationRepository) Update(ctx context.Context, application *Application) error {
+	scope := middlewares.GetScope(ctx)
+	dbService := ioc.GetDependency[database.DbService](scope)
+
+	tx, err := dbService.GetTx()
+	if err != nil {
+		return fmt.Errorf("failed to open tx: %w", err)
+	}
+
+	s := sqlbuilder.Update("applications")
+	for fieldName, value := range application.changes {
+		s.Set(s.Assign(fieldName, value))
+	}
+
+	s.Where(s.Equal("id", application.id))
+	s.Returning("audit_updated_at")
+
+	query, args := s.Build()
+	logging.Logger.Debug("executing sql: ", query)
+	row := tx.QueryRowContext(ctx, query, args...)
+
+	err = row.Scan(&application.auditUpdatedAt)
+	if err != nil {
+		return fmt.Errorf("scanning row: %w", err)
+	}
+
+	application.ClearChanges()
+	return nil
 }
 
 func (r *applicationRepository) Single(ctx context.Context, filter ApplicationFilter) (*Application, error) {
