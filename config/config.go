@@ -20,6 +20,9 @@ type Config struct {
 		Host        string
 		Port        int
 	}
+	Frontend struct {
+		ExternalUrl string
+	}
 	Database struct {
 		Database string
 		Host     string
@@ -96,11 +99,21 @@ func readConfigFile() {
 
 func setDefaultsOrPanic() {
 	setServerDefaultsOrPanic()
+	setFrontendDefaultsOrPanic()
 	setDatabaseDefaultsOrPanic()
 	setInitialVirtualServerDefaultsOrPanic()
 	setKeyStoreDefaultsOrPanic()
 	setMailDefaultsOrPanic()
 	setRedisDefaultsOrPanic()
+}
+
+func setFrontendDefaultsOrPanic() {
+	if C.Frontend.ExternalUrl == "" {
+		if IsProduction() {
+			panic("missing frontend external url")
+		}
+		C.Frontend.ExternalUrl = "http://localhost:5173"
+	}
 }
 
 func setRedisDefaultsOrPanic() {
