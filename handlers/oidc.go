@@ -227,7 +227,6 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 
 	// TODO: check the scopes for email and profile
 
-	// TODO: check if the request already contains a valid session cookie
 	_, ok := middlewares.GetSession(ctx)
 	if ok {
 		// TODO: authorize user
