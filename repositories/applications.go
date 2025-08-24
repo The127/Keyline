@@ -265,13 +265,13 @@ func (r *applicationRepository) Insert(ctx context.Context, application *Applica
 			application.displayName,
 			application.hashedSecret,
 			pq.Array(application.redirectUris),
-		).Returning("id", "audit_created_at", "audit_updated_at")
+		).Returning("id", "audit_created_at", "audit_updated_at", "version")
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
 	row := tx.QueryRowContext(ctx, query, args...)
 
-	err = row.Scan(&application.id, &application.auditCreatedAt, &application.auditUpdatedAt)
+	err = row.Scan(&application.id, &application.auditCreatedAt, &application.auditUpdatedAt, &application.version)
 	if err != nil {
 		return fmt.Errorf("scanning row: %w", err)
 	}

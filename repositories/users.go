@@ -269,20 +269,26 @@ func (r *userRepository) Insert(ctx context.Context, user *User) error {
 	}
 
 	s := sqlbuilder.InsertInto("users").
-		Cols("virtual_server_id", "username", "display_name", "primary_email", "email_verified").
+		Cols(
+			"virtual_server_id",
+			"username",
+			"display_name",
+			"primary_email",
+			"email_verified",
+		).
 		Values(
 			user.virtualServerId,
 			user.username,
 			user.displayName,
 			user.primaryEmail,
 			user.emailVerified,
-		).Returning("id", "audit_created_at", "audit_updated_at")
+		).Returning("id", "audit_created_at", "audit_updated_at", "version")
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
 	row := tx.QueryRowContext(ctx, query, args...)
 
-	err = row.Scan(&user.id, &user.auditCreatedAt, &user.auditUpdatedAt)
+	err = row.Scan(&user.id, &user.auditCreatedAt, &user.auditUpdatedAt, &user.version)
 	if err != nil {
 		return fmt.Errorf("scanning row: %w", err)
 	}

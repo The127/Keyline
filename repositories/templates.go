@@ -166,18 +166,22 @@ func (r *templateRepository) Insert(ctx context.Context, template *Template) err
 	}
 
 	s := sqlbuilder.InsertInto("templates").
-		Cols("virtual_server_id", "file_id", "type").
+		Cols(
+			"virtual_server_id",
+			"file_id",
+			"type",
+		).
 		Values(
 			template.virtualServerId,
 			template.fileId,
 			template.templateType,
-		).Returning("id", "audit_created_at", "audit_updated_at")
+		).Returning("id", "audit_created_at", "audit_updated_at", "version")
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
 	row := tx.QueryRowContext(ctx, query, args...)
 
-	err = row.Scan(&template.id, &template.auditCreatedAt, &template.auditUpdatedAt)
+	err = row.Scan(&template.id, &template.auditCreatedAt, &template.auditUpdatedAt, &template.version)
 	if err != nil {
 		return fmt.Errorf("scanning row: %w", err)
 	}

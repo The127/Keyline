@@ -135,13 +135,13 @@ func (r *credentialRepository) Insert(ctx context.Context, credential *Credentia
 	s := sqlbuilder.InsertInto("credentials").
 		Cols("user_id", "type", "details").
 		Values(credential.userId, credential._type, credential.details).
-		Returning("id", "audit_created_at", "audit_updated_at")
+		Returning("id", "audit_created_at", "audit_updated_at", "version")
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
 	row := tx.QueryRowContext(ctx, query, args...)
 
-	err = row.Scan(&credential.id, &credential.auditCreatedAt, &credential.auditUpdatedAt)
+	err = row.Scan(&credential.id, &credential.auditCreatedAt, &credential.auditUpdatedAt, &credential.version)
 	if err != nil {
 		return fmt.Errorf("scanning row: %w", err)
 	}
