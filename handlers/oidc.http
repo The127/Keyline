@@ -1,8 +1,8 @@
 ### get oidc config
-GET http://127.0.0.1:8081/virtual-servers/keyline/.well-known/openid-configuration
+GET http://127.0.0.1:8081/oidc/keyline/.well-known/openid-configuration
 
 ### get signing key for virtual server
-GET http://127.0.0.1:8081/virtual-servers/keyline/.well-known/jwks.json
+GET http://127.0.0.1:8081/oidc/keyline/.well-known/jwks.json
 
 ### start auth flow
-GET http://127.0.0.1:8081/virtual-servers/keyline/authorize?foo=qux
+GET http://127.0.0.1:8081/oidc/keyline/authorize?foo=qux
