@@ -65,7 +65,7 @@ func (f OutboxMessageFilter) Id(id uuid.UUID) OutboxMessageFilter {
 }
 
 type OutboxMessageRepository interface {
-	List(ctx context.Context, filter OutboxMessageFilter) ([]OutboxMessage, error)
+	List(ctx context.Context, filter OutboxMessageFilter) ([]*OutboxMessage, error)
 	Insert(ctx context.Context, outboxMessage *OutboxMessage) error
 	Delete(ctx context.Context, filter OutboxMessageFilter) error
 }
@@ -93,7 +93,7 @@ func (r *outboxMessageRepository) selectQuery(filter OutboxMessageFilter) *sqlbu
 	return s
 }
 
-func (r *outboxMessageRepository) List(ctx context.Context, filter OutboxMessageFilter) ([]OutboxMessage, error) {
+func (r *outboxMessageRepository) List(ctx context.Context, filter OutboxMessageFilter) ([]*OutboxMessage, error) {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -112,7 +112,7 @@ func (r *outboxMessageRepository) List(ctx context.Context, filter OutboxMessage
 	}
 	defer rows.Close()
 
-	var outboxMessages []OutboxMessage
+	var outboxMessages []*OutboxMessage
 	for rows.Next() {
 		outboxMessage := OutboxMessage{
 			ModelBase: NewModelBase(),
@@ -121,7 +121,7 @@ func (r *outboxMessageRepository) List(ctx context.Context, filter OutboxMessage
 		if err != nil {
 			return nil, fmt.Errorf("scanning row: %w", err)
 		}
-		outboxMessages = append(outboxMessages, outboxMessage)
+		outboxMessages = append(outboxMessages, &outboxMessage)
 	}
 
 	return outboxMessages, nil
