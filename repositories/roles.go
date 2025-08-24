@@ -223,7 +223,14 @@ func (r *roleRepository) Insert(ctx context.Context, role *Role) error {
 	}
 
 	s := sqlbuilder.InsertInto("roles").
-		Cols("virtual_server_id", "application_id", "name", "description", "require_mfa", "max_token_age").
+		Cols(
+			"virtual_server_id",
+			"application_id",
+			"name",
+			"description",
+			"require_mfa",
+			"max_token_age",
+		).
 		Values(
 			role.virtualServerId,
 			role.applicationId,
@@ -231,13 +238,13 @@ func (r *roleRepository) Insert(ctx context.Context, role *Role) error {
 			role.description,
 			role.requireMfa,
 			helpers.PqIntervalPtr(role.maxTokenAge),
-		).Returning("id", "audit_created_at", "audit_updated_at")
+		).Returning("id", "audit_created_at", "audit_updated_at", "version")
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
 	row := tx.QueryRowContext(ctx, query, args...)
 
-	err = row.Scan(&role.id, &role.auditCreatedAt, &role.auditUpdatedAt)
+	err = row.Scan(&role.id, &role.auditCreatedAt, &role.auditUpdatedAt, &role.version)
 	if err != nil {
 		return fmt.Errorf("scanning row: %w", err)
 	}

@@ -154,13 +154,13 @@ func (r *fileRepository) Insert(ctx context.Context, file *File) error {
 			file.name,
 			file.mimeType,
 			file.content,
-		).Returning("id", "audit_created_at", "audit_updated_at")
+		).Returning("id", "audit_created_at", "audit_updated_at", "version")
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
 	row := tx.QueryRowContext(ctx, query, args...)
 
-	err = row.Scan(&file.id, &file.auditCreatedAt, &file.auditUpdatedAt)
+	err = row.Scan(&file.id, &file.auditCreatedAt, &file.auditUpdatedAt, &file.version)
 	if err != nil {
 		return fmt.Errorf("scanning row: %w", err)
 	}

@@ -93,18 +93,22 @@ func (r *userRoleAssignmentRepository) Insert(ctx context.Context, userRoleAssig
 	}
 
 	s := sqlbuilder.InsertInto("user_role_assignments").
-		Cols("user_id", "role_id", "group_id").
+		Cols(
+			"user_id",
+			"role_id",
+			"group_id",
+		).
 		Values(
 			userRoleAssignment.userId,
 			userRoleAssignment.roleId,
 			userRoleAssignment.groupId,
-		).Returning("id", "audit_created_at", "audit_updated_at")
+		).Returning("id", "audit_created_at", "audit_updated_at", "version")
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
 	row := tx.QueryRowContext(ctx, query, args...)
 
-	err = row.Scan(&userRoleAssignment.id, &userRoleAssignment.auditCreatedAt, &userRoleAssignment.auditUpdatedAt)
+	err = row.Scan(&userRoleAssignment.id, &userRoleAssignment.auditCreatedAt, &userRoleAssignment.auditUpdatedAt, &userRoleAssignment.version)
 	if err != nil {
 		return fmt.Errorf("scanning row: %w", err)
 	}

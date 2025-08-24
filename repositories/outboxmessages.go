@@ -141,13 +141,16 @@ func (r *outboxMessageRepository) Insert(ctx context.Context, outboxMessage *Out
 		Values(
 			outboxMessage._type,
 			outboxMessage.details,
-		).Returning("id", "audit_created_at", "audit_updated_at")
+		).Returning("id", "audit_created_at", "audit_updated_at", "version")
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
 	row := tx.QueryRowContext(ctx, query, args...)
 
-	err = row.Scan(&outboxMessage.id, &outboxMessage.auditCreatedAt, &outboxMessage.auditUpdatedAt)
+	err = row.Scan(&outboxMessage.id, &outboxMessage.auditCreatedAt, &outboxMessage.auditUpdatedAt, &outboxMessage.version)
+	if err != nil {
+		return fmt.Errorf("scanning row: %w", err)
+	}
 	if err != nil {
 		return fmt.Errorf("scanning row: %w", err)
 	}

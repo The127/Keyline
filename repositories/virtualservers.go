@@ -180,19 +180,24 @@ func (r *virtualServerRepository) Insert(ctx context.Context, virtualServer *Vir
 	}
 
 	s := sqlbuilder.InsertInto("virtual_servers").
-		Cols("name", "display_name", "enable_registration", "require_2fa").
+		Cols(
+			"name",
+			"display_name",
+			"enable_registration",
+			"require_2fa",
+		).
 		Values(
 			virtualServer.name,
 			virtualServer.displayName,
 			virtualServer.enableRegistration,
 			virtualServer.require2fa,
-		).Returning("id", "audit_created_at", "audit_updated_at")
+		).Returning("id", "audit_created_at", "audit_updated_at", "version")
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
 	row := tx.QueryRowContext(ctx, query, args...)
 
-	err = row.Scan(&virtualServer.id, &virtualServer.auditCreatedAt, &virtualServer.auditUpdatedAt)
+	err = row.Scan(&virtualServer.id, &virtualServer.auditCreatedAt, &virtualServer.auditUpdatedAt, &virtualServer.version)
 	if err != nil {
 		return fmt.Errorf("scanning row: %w", err)
 	}
