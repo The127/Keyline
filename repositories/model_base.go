@@ -11,6 +11,8 @@ type ModelBase struct {
 	auditCreatedAt time.Time
 	auditUpdatedAt time.Time
 
+	version int64
+
 	changes map[string]any
 }
 
@@ -38,4 +40,8 @@ func (m *ModelBase) AuditCreatedAt() time.Time {
 
 func (m *ModelBase) AuditUpdatedAt() time.Time {
 	return m.auditUpdatedAt
+}
+
+func (m *ModelBase) Version() int64 {
+	return m.version
 }
