@@ -107,7 +107,7 @@ func (f UserFilter) Username(username string) UserFilter {
 }
 
 type UserRepository interface {
-	List(ctx context.Context, filter UserFilter) ([]User, error)
+	List(ctx context.Context, filter UserFilter) ([]*User, error)
 	Single(ctx context.Context, filter UserFilter) (*User, error)
 	First(ctx context.Context, filter UserFilter) (*User, error)
 	Update(ctx context.Context, user *User) error
@@ -148,7 +148,7 @@ func (r *userRepository) selectQuery(filter UserFilter) *sqlbuilder.SelectBuilde
 	return s
 }
 
-func (r *userRepository) List(ctx context.Context, filter UserFilter) ([]User, error) {
+func (r *userRepository) List(ctx context.Context, filter UserFilter) ([]*User, error) {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -167,7 +167,7 @@ func (r *userRepository) List(ctx context.Context, filter UserFilter) ([]User, e
 	}
 	defer rows.Close()
 
-	var users []User
+	var users []*User
 	for rows.Next() {
 		user := User{
 			ModelBase: NewModelBase(),
@@ -176,7 +176,7 @@ func (r *userRepository) List(ctx context.Context, filter UserFilter) ([]User, e
 		if err != nil {
 			return nil, fmt.Errorf("scanning row: %w", err)
 		}
-		users = append(users, user)
+		users = append(users, &user)
 	}
 
 	return users, nil

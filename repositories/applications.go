@@ -133,7 +133,7 @@ func (f ApplicationFilter) VirtualServerId(virtualServerId uuid.UUID) Applicatio
 type ApplicationRepository interface {
 	Single(ctx context.Context, filter ApplicationFilter) (*Application, error)
 	First(ctx context.Context, filter ApplicationFilter) (*Application, error)
-	List(ctx context.Context, filter ApplicationFilter) ([]Application, error)
+	List(ctx context.Context, filter ApplicationFilter) ([]*Application, error)
 	Insert(ctx context.Context, application *Application) error
 	Update(ctx context.Context, application *Application) error
 }
@@ -275,7 +275,7 @@ func (r *applicationRepository) Insert(ctx context.Context, application *Applica
 	return nil
 }
 
-func (r *applicationRepository) List(ctx context.Context, filter ApplicationFilter) ([]Application, error) {
+func (r *applicationRepository) List(ctx context.Context, filter ApplicationFilter) ([]*Application, error) {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -294,7 +294,7 @@ func (r *applicationRepository) List(ctx context.Context, filter ApplicationFilt
 	}
 	defer rows.Close()
 
-	var applications []Application
+	var applications []*Application
 	for rows.Next() {
 		application := Application{
 			ModelBase: NewModelBase(),
@@ -303,7 +303,7 @@ func (r *applicationRepository) List(ctx context.Context, filter ApplicationFilt
 		if err != nil {
 			return nil, fmt.Errorf("scanning row: %w", err)
 		}
-		applications = append(applications, application)
+		applications = append(applications, &application)
 	}
 
 	return applications, nil
