@@ -8,6 +8,7 @@ import (
 	"Keyline/middlewares"
 	"fmt"
 	"github.com/gorilla/mux"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net/http"
 )
 
@@ -20,6 +21,8 @@ func Serve(dp *ioc.DependencyProvider) {
 
 	r.HandleFunc("/health", handlers.ApplicationHealth).Methods(http.MethodGet)
 	r.HandleFunc("/debug", handlers.Debug).Methods(http.MethodGet)
+	r.Handle("/debug/vars", http.DefaultServeMux)
+	r.Handle("/metrics", promhttp.Handler())
 
 	oidcRouter := r.PathPrefix("/virtual-servers/{virtualServerName}/").Subrouter()
 	oidcRouter.Use(middlewares.VirtualServerMiddleware())

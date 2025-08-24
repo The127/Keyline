@@ -1,2 +1,8 @@
 ### call debug endpoint
 GET http://127.0.0.1:8081/debug
+
+### get debug vars
+GET http://127.0.0.1:8081/debug/vars
+
+### get prometheus metrics
+GET http://127.0.0.1:8081/metrics
