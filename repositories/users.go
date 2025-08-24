@@ -162,10 +162,10 @@ func (r *userRepository) List(ctx context.Context, filter UserFilter) ([]User, e
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
 	rows, err := tx.Query(query, args...)
-	defer rows.Close()
 	if err != nil {
 		return nil, fmt.Errorf("querying db: %w", err)
 	}
+	defer rows.Close()
 
 	var users []User
 	for rows.Next() {
