@@ -13,5 +13,7 @@ func ValidateDto(s any) error {
 		return fmt.Errorf("invalid request: %w", ErrHttpBadRequest)
 	}
 
+	// TODO: make an api friendly error type
+
 	return nil
 }
