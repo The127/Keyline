@@ -11,8 +11,8 @@ import (
 )
 
 type CreateVirtualSeverRequestDto struct {
-	Name               string `json:"name"`
-	DisplayName        string `json:"displayName"`
+	Name               string `json:"name" validate:"required,min=1,max=255,alphanum"`
+	DisplayName        string `json:"displayName" validate:"required,min=1,max=255"`
 	EnableRegistration bool   `json:"enableRegistration"`
 	Require2fa         bool   `json:"require2fa"`
 }
