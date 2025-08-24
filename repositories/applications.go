@@ -289,10 +289,10 @@ func (r *applicationRepository) List(ctx context.Context, filter ApplicationFilt
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
 	rows, err := tx.Query(query, args...)
-	defer rows.Close()
 	if err != nil {
 		return nil, fmt.Errorf("querying db: %w", err)
 	}
+	defer rows.Close()
 
 	var applications []Application
 	for rows.Next() {

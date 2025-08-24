@@ -107,10 +107,10 @@ func (r *outboxMessageRepository) List(ctx context.Context, filter OutboxMessage
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
 	rows, err := tx.Query(query, args...)
-	defer rows.Close()
 	if err != nil {
 		return nil, fmt.Errorf("querying db: %w", err)
 	}
+	defer rows.Close()
 
 	var outboxMessages []OutboxMessage
 	for rows.Next() {
