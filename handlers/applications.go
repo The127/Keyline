@@ -13,9 +13,9 @@ import (
 )
 
 type CreateApplicationRequestDto struct {
-	Name         string   `json:"name"`
-	DisplayName  string   `json:"displayName"`
-	RedirectUris []string `json:"redirectUris"`
+	Name         string   `json:"name" validate:"required,min=1,max=255"`
+	DisplayName  string   `json:"displayName" validate:"required,min=1,max=255"`
+	RedirectUris []string `json:"redirectUris" validate:"required,dive,url,min=1"`
 }
 
 type CreateApplicationResponseDto struct {

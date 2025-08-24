@@ -14,8 +14,8 @@ import (
 )
 
 type CreateRoleRequestDto struct {
-	Name        string             `json:"name"`
-	Description string             `json:"description"`
+	Name        string             `json:"name" validate:"required,min=1,max=255"`
+	Description string             `json:"description" validate:"max=1024"`
 	RequireMfa  bool               `json:"requireMfa"`
 	MaxTokenAge jsonTypes.Duration `json:"maxTokenAge"`
 }
@@ -72,7 +72,7 @@ func CreateRole(w http.ResponseWriter, r *http.Request) {
 }
 
 type AssignRoleRequestDto struct {
-	UserId uuid.UUID `json:"userId"`
+	UserId uuid.UUID `json:"userId" validate:"required,uuid=4"`
 }
 
 func AssignRole(w http.ResponseWriter, r *http.Request) {
