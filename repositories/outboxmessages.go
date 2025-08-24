@@ -33,6 +33,7 @@ func (m *OutboxMessage) getScanPointers() []any {
 		&m.id,
 		&m.auditCreatedAt,
 		&m.auditUpdatedAt,
+		&m.version,
 		&m._type,
 		&m.details,
 	}
@@ -82,6 +83,7 @@ func (r *outboxMessageRepository) selectQuery(filter OutboxMessageFilter) *sqlbu
 		"id",
 		"audit_created_at",
 		"audit_updated_at",
+		"version",
 		"type",
 		"details",
 	).From("outbox_messages")

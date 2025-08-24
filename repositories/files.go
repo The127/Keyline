@@ -36,6 +36,7 @@ func (f *File) getScanPointers() []any {
 		&f.id,
 		&f.auditCreatedAt,
 		&f.auditUpdatedAt,
+		&f.version,
 		&f.name,
 		&f.mimeType,
 		&f.content,
@@ -86,8 +87,15 @@ func NewFileRepository() FileRepository {
 }
 
 func (r *fileRepository) selectQuery(filter FileFilter) *sqlbuilder.SelectBuilder {
-	s := sqlbuilder.Select("id", "audit_created_at", "audit_updated_at", "name", "mime_type", "content").
-		From("files")
+	s := sqlbuilder.Select(
+		"id",
+		"audit_created_at",
+		"audit_updated_at",
+		"version",
+		"name",
+		"mime_type",
+		"content",
+	).From("files")
 
 	if filter.id != nil {
 		s.Where(s.Equal("id", filter.id))

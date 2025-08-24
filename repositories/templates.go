@@ -54,6 +54,7 @@ func (t *Template) getScanPointers() []any {
 		&t.id,
 		&t.auditCreatedAt,
 		&t.auditUpdatedAt,
+		&t.version,
 		&t.virtualServerId,
 		&t.fileId,
 		&t.templateType,
@@ -99,8 +100,15 @@ func NewTemplateRepository() TemplateRepository {
 }
 
 func (r *templateRepository) selectQuery(filter TemplateFilter) *sqlbuilder.SelectBuilder {
-	s := sqlbuilder.Select("id", "audit_created_at", "audit_updated_at", "virtual_server_id", "file_id", "type").
-		From("templates")
+	s := sqlbuilder.Select(
+		"id",
+		"audit_created_at",
+		"audit_updated_at",
+		"version",
+		"virtual_server_id",
+		"file_id",
+		"type",
+	).From("templates")
 
 	if filter.virtualServerId != nil {
 		s.Where(s.Equal("virtual_server_id", filter.virtualServerId))
