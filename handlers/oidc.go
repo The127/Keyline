@@ -13,6 +13,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 )
 
@@ -208,7 +209,12 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: check the scopes
+	if !slices.Contains(authRequest.Scopes, "oidc") {
+		utils.HandleHttpError(w, fmt.Errorf("required oidc scope missing"))
+		return
+	}
+
+	// TODO: check the scopes for email and profile
 
 	// TODO: check if the request already contains a valid session cookie
 	// TODO: if not => start the login (redirect to login page and store original request in redis)
