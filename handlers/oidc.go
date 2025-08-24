@@ -217,6 +217,11 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 	// TODO: check the scopes for email and profile
 
 	// TODO: check if the request already contains a valid session cookie
-	// TODO: if not => start the login (redirect to login page and store original request in redis)
-	// TODO: if yes => consent page/isue code
+	_, ok := middlewares.GetSession(ctx)
+	if ok {
+		// TODO: authorize user
+		// TODO: consent page/isue code
+	}
+
+	// TODO: start the login (redirect to login page and store original request in redis)
 }
