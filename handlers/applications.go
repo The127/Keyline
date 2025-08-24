@@ -39,6 +39,12 @@ func CreateApplication(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	err = utils.ValidateDto(dto)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
 	scope := middlewares.GetScope(ctx)
 	m := ioc.GetDependency[*mediator.Mediator](scope)
 
@@ -65,7 +71,7 @@ func CreateApplication(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-type GetApplicationListRequestDto struct {
+type GetApplicationListResponseDto struct {
 	Name        string `json:"name"`
 	DisplayName string `json:"displayName"`
 }
@@ -90,9 +96,9 @@ func ListApplications(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var response []GetApplicationListRequestDto
+	var response []GetApplicationListResponseDto
 	for _, application := range applications {
-		response = append(response, GetApplicationListRequestDto{
+		response = append(response, GetApplicationListResponseDto{
 			Name:        application.Name,
 			DisplayName: application.DisplayName,
 		})

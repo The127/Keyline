@@ -1,0 +1,17 @@
+package utils
+
+import (
+	"fmt"
+	"github.com/go-playground/validator/v10"
+)
+
+var validate = validator.New()
+
+func ValidateDto(s any) error {
+	err := validate.Struct(s)
+	if err != nil {
+		return fmt.Errorf("invalid request: %w", ErrHttpBadRequest)
+	}
+
+	return nil
+}

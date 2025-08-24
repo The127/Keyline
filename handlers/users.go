@@ -65,7 +65,11 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: validate the request
+	err = utils.ValidateDto(dto)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
 
 	scope := middlewares.GetScope(ctx)
 	m := ioc.GetDependency[*mediator.Mediator](scope)
