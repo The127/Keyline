@@ -24,7 +24,7 @@ func Serve(dp *ioc.DependencyProvider) {
 	r.Handle("/debug/vars", http.DefaultServeMux)
 	r.Handle("/metrics", promhttp.Handler())
 
-	oidcRouter := r.PathPrefix("/virtual-servers/{virtualServerName}/").Subrouter()
+	oidcRouter := r.PathPrefix("/oidc/{virtualServerName}/").Subrouter()
 	oidcRouter.Use(middlewares.VirtualServerMiddleware())
 	oidcRouter.Use(middlewares.SessionMiddleware())
 	oidcRouter.HandleFunc("/.well-known/openid-configuration", handlers.WellKnownOpenIdConfiguration).Methods(http.MethodGet)
