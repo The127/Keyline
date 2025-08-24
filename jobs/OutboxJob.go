@@ -34,7 +34,7 @@ func OutboxSendingJob(dp *ioc.DependencyProvider) JobFn {
 	}
 }
 
-func handleMessage(ctx context.Context, message repositories.OutboxMessage, repository repositories.OutboxMessageRepository) error {
+func handleMessage(ctx context.Context, message *repositories.OutboxMessage, repository repositories.OutboxMessageRepository) error {
 	// TODO: send to rabbitmq
 
 	filter := repositories.NewOutboxMessageFilter().Id(message.Id())
