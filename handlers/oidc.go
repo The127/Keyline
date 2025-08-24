@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"slices"
 	"strings"
+	"time"
 )
 
 type Ed25519JWK struct {
@@ -128,6 +129,16 @@ type AuthorizationRequest struct {
 	PKCEChallengeMethod string
 }
 
+type LoginStep string
+
+const (
+	LoginStepPassword LoginStep = "password"
+)
+
+type LoginInfo struct {
+	Step LoginStep `json:"step"`
+}
+
 func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	scope := middlewares.GetScope(ctx)
@@ -223,5 +234,17 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 		// TODO: consent page/isue code
 	}
 
+	tokenService := ioc.GetDependency[services.TokenService](scope)
+	loginInfo := LoginInfo{
+		Step: LoginStepPassword,
+	}
+	loginInfoString, err := json.Marshal(loginInfo)
+	loginSessionToken, err := tokenService.GenerateAndStoreToken(ctx, services.LoginSessionTokenType, string(loginInfoString), time.Minute*15)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("generating login session token: %w", err))
+		return
+	}
+
+	print(loginSessionToken)
 	// TODO: start the login (redirect to login page and store original request in redis)
 }
