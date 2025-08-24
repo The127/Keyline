@@ -9,6 +9,7 @@ import (
 	"Keyline/jobs"
 	"Keyline/logging"
 	"Keyline/mediator"
+	"Keyline/metrics"
 	"Keyline/middlewares"
 	"Keyline/queries"
 	"Keyline/repositories"
@@ -29,6 +30,7 @@ func main() {
 
 	config.Init()
 	logging.Init()
+	metrics.Init()
 	database.Migrate()
 
 	dc := ioc.NewDependencyCollection()
