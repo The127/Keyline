@@ -46,3 +46,12 @@ func CreateVirtualSever(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusNoContent)
 }
+
+type GetVirtualServerListResponseDto struct {
+	Name        string `json:"name"`
+	DisplayName string `json:"displayName"`
+}
+
+func GetVirtualServerPublicInfo(w http.ResponseWriter, r *http.Request) {
+	// TODO: implement me!
+}
