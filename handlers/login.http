@@ -1,2 +1,16 @@
 ### get current login state
 GET http://127.0.0.1:8081/logins/ZU9H6anYJGpO5_wGgEkvsA==
+
+
+### get current login state
+OPTIONS http://127.0.0.1:8081/logins/DQikSunQEdWbBV2jIL2gwg==/verify-password
+
+### verify username and password
+POST http://127.0.0.1:8081/logins/DQikSunQEdWbBV2jIL2gwg==/verify-password
+Content-Type: application/json
+
+{
+  "username": "foo",
+  "password": "bar"
+}
+

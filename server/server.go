@@ -16,44 +16,47 @@ import (
 func Serve(dp *ioc.DependencyProvider) {
 	r := mux.NewRouter()
 
+	r.Use(gh.CORS(
+		gh.AllowedOrigins([]string{"*", "http://localhost:5173"}),
+		gh.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "PATCH"}),
+		gh.AllowedHeaders([]string{"Authorization", "Content-Type"}),
+		gh.AllowCredentials(),
+		gh.MaxAge(3600),
+	))
 	r.Use(middlewares.LoggingMiddleware())
 	r.Use(middlewares.RecoverMiddleware())
 	r.Use(middlewares.ScopeMiddleware(dp))
-	r.Use(gh.CORS(
-		gh.AllowedOrigins([]string{"*"}),
-		gh.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE"}),
-	))
 
-	r.HandleFunc("/health", handlers.ApplicationHealth).Methods(http.MethodGet)
-	r.HandleFunc("/debug", handlers.Debug).Methods(http.MethodGet)
-	r.Handle("/debug/vars", http.DefaultServeMux)
-	r.Handle("/metrics", promhttp.Handler())
+	r.HandleFunc("/health", handlers.ApplicationHealth).Methods(http.MethodGet, http.MethodOptions)
+	r.HandleFunc("/debug", handlers.Debug).Methods(http.MethodGet, http.MethodOptions)
+	r.Handle("/debug/vars", http.DefaultServeMux).Methods(http.MethodGet, http.MethodOptions)
+	r.Handle("/metrics", promhttp.Handler()).Methods(http.MethodGet, http.MethodOptions)
 
 	oidcRouter := r.PathPrefix("/oidc/{virtualServerName}/").Subrouter()
 	oidcRouter.Use(middlewares.VirtualServerMiddleware())
 	oidcRouter.Use(middlewares.SessionMiddleware())
-	oidcRouter.HandleFunc("/.well-known/openid-configuration", handlers.WellKnownOpenIdConfiguration).Methods(http.MethodGet)
-	oidcRouter.HandleFunc("/.well-known/jwks.json", handlers.WellKnownJwks).Methods(http.MethodGet)
-	oidcRouter.HandleFunc("/authorize", handlers.BeginAuthorizationFlow).Methods(http.MethodGet, http.MethodPost)
+	oidcRouter.HandleFunc("/.well-known/openid-configuration", handlers.WellKnownOpenIdConfiguration).Methods(http.MethodGet, http.MethodOptions)
+	oidcRouter.HandleFunc("/.well-known/jwks.json", handlers.WellKnownJwks).Methods(http.MethodGet, http.MethodOptions)
+	oidcRouter.HandleFunc("/authorize", handlers.BeginAuthorizationFlow).Methods(http.MethodGet, http.MethodPost, http.MethodOptions)
 
-	r.HandleFunc("/logins/{loginToken}", handlers.GetLoginState).Methods(http.MethodGet)
-	r.HandleFunc("/logins/{loginToken}/password", handlers.VerifyPassword).Methods(http.MethodPost)
+	r.HandleFunc("/logins/{loginToken}", handlers.GetLoginState).Methods(http.MethodGet, http.MethodOptions)
+	r.HandleFunc("/logins/{loginToken}/verify-password", handlers.VerifyPassword).Methods(http.MethodPost, http.MethodOptions)
 
-	r.HandleFunc("/api/virtual-servers", handlers.CreateVirtualSever).Methods(http.MethodPost)
+	r.HandleFunc("/api/virtual-servers", handlers.CreateVirtualSever).Methods(http.MethodPost, http.MethodOptions)
 
 	vsApiRouter := r.PathPrefix("/api/virtual-servers/{virtualServerName}/").Subrouter()
 	vsApiRouter.Use(middlewares.VirtualServerMiddleware())
 	vsApiRouter.Use(middlewares.SessionMiddleware())
-	vsApiRouter.HandleFunc("/health", handlers.VirtualServerHealth).Methods(http.MethodGet)
+	vsApiRouter.HandleFunc("/health", handlers.VirtualServerHealth).Methods(http.MethodGet, http.MethodOptions)
 
-	vsApiRouter.HandleFunc("/users/register", handlers.RegisterUser).Methods(http.MethodPost)
-	vsApiRouter.HandleFunc("/users/verify-email", handlers.VerifyEmail).Methods(http.MethodGet)
+	vsApiRouter.HandleFunc("/users/register", handlers.RegisterUser).Methods(http.MethodPost, http.MethodOptions)
+	vsApiRouter.HandleFunc("/users/verify-email", handlers.VerifyEmail).Methods(http.MethodGet, http.MethodOptions)
 
-	vsApiRouter.HandleFunc("/roles", handlers.CreateRole).Methods(http.MethodPost)
-	vsApiRouter.HandleFunc("/roles/{roleId}/assign", handlers.AssignRole).Methods(http.MethodPost)
+	vsApiRouter.HandleFunc("/roles", handlers.CreateRole).Methods(http.MethodPost, http.MethodOptions)
+	vsApiRouter.HandleFunc("/roles/{roleId}/assign", handlers.AssignRole).Methods(http.MethodPost, http.MethodOptions)
 
-	vsApiRouter.HandleFunc("/applications", handlers.CreateApplication).Methods(http.MethodPost)
-	vsApiRouter.HandleFunc("/applications", handlers.ListApplications).Methods(http.MethodGet)
+	vsApiRouter.HandleFunc("/applications", handlers.CreateApplication).Methods(http.MethodPost, http.MethodOptions)
+	vsApiRouter.HandleFunc("/applications", handlers.ListApplications).Methods(http.MethodGet, http.MethodOptions)
 
 	addr := fmt.Sprintf("%s:%d", config.C.Server.Host, config.C.Server.Port)
 	logging.Logger.Infof("running server at %s", addr)
