@@ -169,6 +169,8 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 		PKCEChallengeMethod: r.Form.Get("code_challenge_method"),
 	}
 
+	// TODO: use validation annotations to validate the auth request
+
 	// validate the auth request
 	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(vsName)
