@@ -186,7 +186,7 @@ func (r *applicationRepository) Update(ctx context.Context, application *Applica
 	for fieldName, value := range application.changes {
 		s.Set(s.Assign(fieldName, value))
 	}
-	s.Set(s.Assign("version", application.version))
+	s.Set(s.Assign("version", application.version+1))
 
 	s.Where(s.Equal("id", application.id))
 	s.Where(s.Equal("version", application.version))
