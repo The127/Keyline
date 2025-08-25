@@ -1,2 +1,2 @@
 ### get current login state
-GET http://127.0.0.1:8081/oidc/keyline/logins/xyz
+GET http://127.0.0.1:8081/logins/ZU9H6anYJGpO5_wGgEkvsA==
