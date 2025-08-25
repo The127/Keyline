@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"Keyline/ioc"
+	"Keyline/jsonTypes"
 	"Keyline/middlewares"
 	"Keyline/services"
 	"encoding/json"
@@ -10,7 +11,9 @@ import (
 )
 
 type GetLoginStateResponseDto struct {
-	Step string `json:"step"`
+	Step                     string `json:"step"`
+	ApplicationDisplayName   string `json:"applicationDisplayName"`
+	VirtualServerDisplayName string `json:"virtualServerDisplayName"`
 }
 
 func GetLoginState(w http.ResponseWriter, r *http.Request) {
@@ -27,7 +30,7 @@ func GetLoginState(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var loginInfo LoginInfo
+	var loginInfo jsonTypes.LoginInfo
 	err = json.Unmarshal([]byte(redisValueString), &loginInfo)
 	if err != nil {
 		http.Error(w, "invalid login token", http.StatusBadRequest)
@@ -35,7 +38,9 @@ func GetLoginState(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := GetLoginStateResponseDto{
-		Step: string(loginInfo.Step),
+		Step:                     string(loginInfo.Step),
+		ApplicationDisplayName:   loginInfo.ApplicationDisplayName,
+		VirtualServerDisplayName: loginInfo.VirtualServerDisplayName,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
