@@ -7,6 +7,7 @@ import (
 	"Keyline/logging"
 	"Keyline/middlewares"
 	"fmt"
+	gh "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net/http"
@@ -18,6 +19,10 @@ func Serve(dp *ioc.DependencyProvider) {
 	r.Use(middlewares.LoggingMiddleware())
 	r.Use(middlewares.RecoverMiddleware())
 	r.Use(middlewares.ScopeMiddleware(dp))
+	r.Use(gh.CORS(
+		gh.AllowedOrigins([]string{"*"}),
+		gh.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE"}),
+	))
 
 	r.HandleFunc("/health", handlers.ApplicationHealth).Methods(http.MethodGet)
 	r.HandleFunc("/debug", handlers.Debug).Methods(http.MethodGet)
