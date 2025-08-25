@@ -22,7 +22,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 )
 
 func main() {
@@ -123,12 +122,12 @@ func main() {
 		logging.Logger.Errorf("an error happened while running a job: %v", err)
 	}))
 
-	jobManager.QueueJob(
+	/*jobManager.QueueJob(
 		jobs.OutboxSendingJob(dp),
 		time.Second,
 		jobs.WithName("outbox_sender"),
 		jobs.WithStartImmediate(),
-	)
+	)*/
 
 	jobManager.Start(context.Background())
 
