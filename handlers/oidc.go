@@ -3,6 +3,7 @@ package handlers
 import (
 	"Keyline/config"
 	"Keyline/ioc"
+	"Keyline/jsonTypes"
 	"Keyline/middlewares"
 	"Keyline/repositories"
 	"Keyline/services"
@@ -129,16 +130,6 @@ type AuthorizationRequest struct {
 	PKCEChallengeMethod string
 }
 
-type LoginStep string
-
-const (
-	LoginStepPassword LoginStep = "password"
-)
-
-type LoginInfo struct {
-	Step LoginStep `json:"step"`
-}
-
 func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	scope := middlewares.GetScope(ctx)
@@ -237,9 +228,10 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tokenService := ioc.GetDependency[services.TokenService](scope)
-	loginInfo := LoginInfo{
-		Step: LoginStepPassword,
-	}
+	loginInfo := jsonTypes.NewLoginInfo(
+		virtualServer.DisplayName(),
+		application.DisplayName(),
+	)
 	loginInfoString, err := json.Marshal(loginInfo)
 	loginSessionToken, err := tokenService.GenerateAndStoreToken(ctx, services.LoginSessionTokenType, string(loginInfoString), time.Minute*15)
 	if err != nil {
