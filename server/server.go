@@ -37,6 +37,7 @@ func Serve(dp *ioc.DependencyProvider) {
 	oidcRouter.HandleFunc("/authorize", handlers.BeginAuthorizationFlow).Methods(http.MethodGet, http.MethodPost)
 
 	r.HandleFunc("/logins/{loginToken}", handlers.GetLoginState).Methods(http.MethodGet)
+	r.HandleFunc("/logins/{loginToken}/password", handlers.VerifyPassword).Methods(http.MethodPost)
 
 	r.HandleFunc("/api/virtual-servers", handlers.CreateVirtualSever).Methods(http.MethodPost)
 
