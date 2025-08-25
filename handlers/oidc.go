@@ -247,6 +247,10 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	print(loginSessionToken)
-	// TODO: start the login (redirect to login page and store original request in redis)
+	redirectUrl := fmt.Sprintf(
+		"%s/login?token=%s",
+		config.C.Frontend.ExternalUrl,
+		loginSessionToken,
+	)
+	http.Redirect(w, r, redirectUrl, http.StatusFound)
 }
