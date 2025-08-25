@@ -5,6 +5,7 @@ GET http://127.0.0.1:8081/oidc/keyline/.well-known/openid-configuration
 GET http://127.0.0.1:8081/oidc/keyline/.well-known/jwks.json
 
 ### start auth flow
+# @no-redirect
 GET http://127.0.0.1:8081/oidc/keyline/authorize
     ?client_id=admin-ui
     &redirect_uri=http://localhost:3000
