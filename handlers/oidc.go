@@ -229,8 +229,8 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 
 	tokenService := ioc.GetDependency[services.TokenService](scope)
 	loginInfo := jsonTypes.NewLoginInfo(
-		virtualServer.DisplayName(),
-		application.DisplayName(),
+		virtualServer,
+		application,
 	)
 	loginInfoString, err := json.Marshal(loginInfo)
 	loginSessionToken, err := tokenService.GenerateAndStoreToken(ctx, services.LoginSessionTokenType, string(loginInfoString), time.Minute*15)
