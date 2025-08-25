@@ -1,20 +1,23 @@
 package handlers
 
 import (
+	"Keyline/config"
 	"Keyline/ioc"
 	"Keyline/jsonTypes"
 	"Keyline/middlewares"
 	"Keyline/services"
 	"Keyline/utils"
 	"encoding/json"
+	"fmt"
 	"github.com/gorilla/mux"
 	"net/http"
 )
 
 type GetLoginStateResponseDto struct {
-	Step                     string `json:"step"`
-	ApplicationDisplayName   string `json:"applicationDisplayName"`
-	VirtualServerDisplayName string `json:"virtualServerDisplayName"`
+	Step                     string  `json:"step"`
+	ApplicationDisplayName   string  `json:"applicationDisplayName"`
+	VirtualServerDisplayName string  `json:"virtualServerDisplayName"`
+	SignUpUrl                *string `json:"signUpUrl"`
 }
 
 func GetLoginState(w http.ResponseWriter, r *http.Request) {
@@ -38,10 +41,20 @@ func GetLoginState(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var signUpUrl *string = nil
+	if loginInfo.RegistrationEnabled {
+		signUpUrl = utils.Ptr(fmt.Sprintf(
+			"%s/%s/signup",
+			config.C.Frontend.ExternalUrl,
+			loginInfo.VirtualServerName,
+		))
+	}
+
 	response := GetLoginStateResponseDto{
 		Step:                     string(loginInfo.Step),
 		ApplicationDisplayName:   loginInfo.ApplicationDisplayName,
 		VirtualServerDisplayName: loginInfo.VirtualServerDisplayName,
+		SignUpUrl:                signUpUrl,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

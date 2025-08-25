@@ -1,5 +1,7 @@
 package jsonTypes
 
+import "Keyline/repositories"
+
 type LoginStep string
 
 const (
@@ -10,12 +12,16 @@ type LoginInfo struct {
 	Step                     LoginStep `json:"step"`
 	ApplicationDisplayName   string    `json:"applicationDisplayName"`
 	VirtualServerDisplayName string    `json:"virtualServerDisplayName"`
+	VirtualServerName        string    `json:"virtualServerName"`
+	RegistrationEnabled      bool      `json:"registrationEnabled"`
 }
 
-func NewLoginInfo(virtualServerDisplayName string, applicationDisplayName string) LoginInfo {
+func NewLoginInfo(virtualServer *repositories.VirtualServer, application *repositories.Application) LoginInfo {
 	return LoginInfo{
 		Step:                     LoginStepPassword,
-		VirtualServerDisplayName: virtualServerDisplayName,
-		ApplicationDisplayName:   applicationDisplayName,
+		VirtualServerDisplayName: virtualServer.DisplayName(),
+		VirtualServerName:        virtualServer.Name(),
+		RegistrationEnabled:      virtualServer.EnableRegistration(),
+		ApplicationDisplayName:   application.DisplayName(),
 	}
 }
