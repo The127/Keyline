@@ -31,7 +31,7 @@ func Serve(dp *ioc.DependencyProvider) {
 	oidcRouter.HandleFunc("/.well-known/jwks.json", handlers.WellKnownJwks).Methods(http.MethodGet)
 	oidcRouter.HandleFunc("/authorize", handlers.BeginAuthorizationFlow).Methods(http.MethodGet, http.MethodPost)
 
-	oidcRouter.HandleFunc("/logins/{loginToken}", handlers.GetLoginState).Methods(http.MethodGet)
+	r.HandleFunc("/logins/{loginToken}", handlers.GetLoginState).Methods(http.MethodGet)
 
 	r.HandleFunc("/api/virtual-servers", handlers.CreateVirtualSever).Methods(http.MethodPost)
 
