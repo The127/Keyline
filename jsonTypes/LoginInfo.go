@@ -5,7 +5,11 @@ import "Keyline/repositories"
 type LoginStep string
 
 const (
-	LoginStepPassword LoginStep = "password"
+	LoginStepPasswordVerification LoginStep = "passwordVerification"
+	LoginStepTemporaryPassword    LoginStep = "temporaryPassword"
+	LoginStepEmailVerification    LoginStep = "emailVerification"
+	LoginStepTotpOnboarding       LoginStep = "totpOnboarding"
+	LoginStepTotpVerification     LoginStep = "totpVerification"
 )
 
 type LoginInfo struct {
@@ -18,7 +22,7 @@ type LoginInfo struct {
 
 func NewLoginInfo(virtualServer *repositories.VirtualServer, application *repositories.Application) LoginInfo {
 	return LoginInfo{
-		Step:                     LoginStepPassword,
+		Step:                     LoginStepPasswordVerification,
 		VirtualServerDisplayName: virtualServer.DisplayName(),
 		VirtualServerName:        virtualServer.Name(),
 		RegistrationEnabled:      virtualServer.EnableRegistration(),
