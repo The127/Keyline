@@ -17,6 +17,10 @@ import (
 	"github.com/pquerna/otp"
 )
 
+var (
+	ErrWrongCredentialCast = errors.New("wrong credential cast")
+)
+
 type Credential struct {
 	ModelBase
 
@@ -53,6 +57,25 @@ func (c *Credential) UserId() uuid.UUID {
 
 func (c *Credential) Type() CredentialType {
 	return c._type
+}
+
+func (c *Credential) PasswordDetails() (*CredentialPasswordDetails, error) {
+	if c._type != CredentialTypePassword {
+		return nil, fmt.Errorf("expected password credential, got %s: %w", c._type, ErrWrongCredentialCast)
+	}
+
+	detailBytes, ok := c.details.([]byte)
+	if !ok {
+		return nil, fmt.Errorf("cannot access detail bytes: %w", ErrWrongCredentialCast)
+	}
+
+	passwordDetails := CredentialPasswordDetails{}
+	err := json.Unmarshal(detailBytes, &passwordDetails)
+	if err != nil {
+		return nil, fmt.Errorf("cannot unmarshal password details: %w", err)
+	}
+
+	return &passwordDetails, nil
 }
 
 // CredentialType represents a credential type.
