@@ -5,12 +5,14 @@ import (
 	"Keyline/ioc"
 	"Keyline/jsonTypes"
 	"Keyline/middlewares"
+	"Keyline/repositories"
 	"Keyline/services"
 	"Keyline/utils"
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
 	"net/http"
+	"time"
 )
 
 type GetLoginStateResponseDto struct {
@@ -93,6 +95,11 @@ func VerifyPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if loginInfo.Step != jsonTypes.LoginStepPasswordVerification {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
 	var dto VerifyPasswordRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
@@ -106,5 +113,62 @@ func VerifyPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: call business logic handler
+	userRepository := ioc.GetDependency[repositories.UserRepository](scope)
+	userFilter := repositories.NewUserFilter().Username(dto.Username)
+	user, err := userRepository.First(ctx, userFilter)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+	if user == nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	credentialRepository := ioc.GetDependency[repositories.CredentialRepository](scope)
+	credentialFilter := repositories.NewCredentialFilter().
+		UserId(user.Id()).
+		Type(repositories.CredentialTypePassword)
+	credential, err := credentialRepository.Single(ctx, credentialFilter)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	passwordDetails, err := credential.PasswordDetails()
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	if !utils.CompareHash(dto.Password, passwordDetails.HashedPassword) {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	switch {
+	case passwordDetails.Temporary:
+		loginInfo.Step = jsonTypes.LoginStepTemporaryPassword
+		break
+
+	case !user.EmailVerified():
+		loginInfo.Step = jsonTypes.LoginStepEmailVerification
+		break
+
+	// TODO: check if totp onboarding is needed
+	// TODO: check if totp verification is needed
+
+	default:
+		// TODO: set login to success (not sure)
+		break
+	}
+
+	loginInfoString, err := json.Marshal(loginInfo)
+	err = tokenService.UpdateToken(ctx, services.LoginSessionTokenType, loginToken, string(loginInfoString), time.Minute*15)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
