@@ -204,7 +204,7 @@ func (r *applicationRepository) Update(ctx context.Context, application *Applica
 		return fmt.Errorf("scanning row: %w", err)
 	}
 
-	application.ClearChanges()
+	application.clearChanges()
 	return nil
 }
 
@@ -278,7 +278,7 @@ func (r *applicationRepository) Insert(ctx context.Context, application *Applica
 		return fmt.Errorf("scanning row: %w", err)
 	}
 
-	application.ClearChanges()
+	application.clearChanges()
 	return nil
 }
 

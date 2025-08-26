@@ -204,6 +204,6 @@ func (r *virtualServerRepository) Insert(ctx context.Context, virtualServer *Vir
 		return fmt.Errorf("scanning row: %w", err)
 	}
 
-	virtualServer.ClearChanges()
+	virtualServer.clearChanges()
 	return nil
 }

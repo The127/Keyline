@@ -194,6 +194,6 @@ func (r *templateRepository) Insert(ctx context.Context, template *Template) err
 		return fmt.Errorf("scanning row: %w", err)
 	}
 
-	template.ClearChanges()
+	template.clearChanges()
 	return nil
 }
