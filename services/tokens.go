@@ -25,6 +25,7 @@ var ErrTokenNotFound = fmt.Errorf("token: %w", utils.ErrHttpNotFound)
 
 type TokenService interface {
 	GenerateAndStoreToken(ctx context.Context, tokenType TokenType, value string, expiration time.Duration) (string, error)
+	UpdateToken(ctx context.Context, tokenType TokenType, token string, value string, expiration time.Duration) error
 	GetToken(ctx context.Context, tokenType TokenType, token string) (string, error)
 	DeleteToken(ctx context.Context, tokenType TokenType, token string) error
 }
@@ -48,6 +49,17 @@ func (t *tokenService) GenerateAndStoreToken(ctx context.Context, tokenType Toke
 	}
 
 	return token, nil
+}
+
+func (t *tokenService) UpdateToken(ctx context.Context, tokenType TokenType, token string, value string, expiration time.Duration) error {
+	rdb := utils.NewRedisClient()
+	statusCmd := rdb.Set(ctx, tokenType.Key(token), value, expiration)
+	err := statusCmd.Err()
+	if err != nil {
+		return fmt.Errorf("updating token in redis: %w", err)
+	}
+
+	return nil
 }
 
 func (t *tokenService) GetToken(ctx context.Context, tokenType TokenType, token string) (string, error) {
