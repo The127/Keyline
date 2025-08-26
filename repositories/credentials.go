@@ -96,6 +96,7 @@ func (d *CredentialTotpDetails) Scan(value any) error {
 
 type CredentialFilter struct {
 	userId *uuid.UUID
+	_type  *CredentialType
 }
 
 func NewCredentialFilter() CredentialFilter {
@@ -109,6 +110,12 @@ func (f CredentialFilter) Clone() CredentialFilter {
 func (f CredentialFilter) UserId(userId uuid.UUID) CredentialFilter {
 	filter := f.Clone()
 	filter.userId = &userId
+	return filter
+}
+
+func (f CredentialFilter) Type(credentialType CredentialType) CredentialFilter {
+	filter := f.Clone()
+	filter._type = &credentialType
 	return filter
 }
 
