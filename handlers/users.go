@@ -15,7 +15,7 @@ type RegisterUserRequestDto struct {
 	Username    string `json:"username" validate:"required,min=1,max=255"`
 	DisplayName string `json:"displayName" validate:"required,min=1,max=255"`
 	Password    string `json:"password" validate:"required"`
-	Email       string `json:"email" validate:"required,email"`
+	Email       string `json:"email" validate:"required"`
 }
 
 var (
