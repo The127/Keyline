@@ -5,9 +5,12 @@ import (
 	"Keyline/ioc"
 	"Keyline/logging"
 	"Keyline/middlewares"
+	"Keyline/utils"
 	"context"
+	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/huandu/go-sqlbuilder"
@@ -30,6 +33,26 @@ func NewCredential(userId uuid.UUID, details CredentialDetails) *Credential {
 		_type:     details.CredentialDetailType(),
 		details:   details,
 	}
+}
+
+func (c *Credential) getScanPointers() []any {
+	return []any{
+		&c.id,
+		&c.auditCreatedAt,
+		&c.auditUpdatedAt,
+		&c.version,
+		&c.userId,
+		&c._type,
+		&c.details,
+	}
+}
+
+func (c *Credential) UserId() uuid.UUID {
+	return c.userId
+}
+
+func (c *Credential) Type() CredentialType {
+	return c._type
 }
 
 // CredentialType represents a credential type.
@@ -120,6 +143,9 @@ func (f CredentialFilter) Type(credentialType CredentialType) CredentialFilter {
 }
 
 type CredentialRepository interface {
+	Single(ctx context.Context, filter CredentialFilter) (*Credential, error)
+	First(ctx context.Context, filter CredentialFilter) (*Credential, error)
+	List(ctx context.Context, filter CredentialFilter) ([]*Credential, error)
 	Insert(ctx context.Context, credential *Credential) error
 }
 
@@ -128,6 +154,104 @@ type credentialRepository struct {
 
 func NewCredentialRepository() CredentialRepository {
 	return &credentialRepository{}
+}
+
+func (r *credentialRepository) selectQuery(filter CredentialFilter) *sqlbuilder.SelectBuilder {
+	s := sqlbuilder.Select(
+		"id",
+		"audit_created_at",
+		"audit_updated_at",
+		"version",
+		"user_id",
+		"type",
+		"details",
+	).From("credentials")
+
+	if filter.userId != nil {
+		s.Where(s.Equal("user_id", filter.userId))
+	}
+
+	if filter._type != nil {
+		s.Where(s.Equal("type", filter._type))
+	}
+
+	return s
+}
+
+func (r *credentialRepository) Single(ctx context.Context, filter CredentialFilter) (*Credential, error) {
+	credential, err := r.First(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	if credential == nil {
+		return nil, utils.ErrCredentialNotFound
+	}
+	return credential, nil
+}
+
+func (r *credentialRepository) First(ctx context.Context, filter CredentialFilter) (*Credential, error) {
+	scope := middlewares.GetScope(ctx)
+	dbService := ioc.GetDependency[database.DbService](scope)
+
+	tx, err := dbService.GetTx()
+	if err != nil {
+		return nil, fmt.Errorf("failed to open tx: %w", err)
+	}
+
+	s := r.selectQuery(filter)
+	s.Limit(1)
+
+	query, args := s.Build()
+	logging.Logger.Debug("executing sql: ", query)
+	row := tx.QueryRowContext(ctx, query, args...)
+
+	credential := Credential{
+		ModelBase: NewModelBase(),
+	}
+	err = row.Scan(credential.getScanPointers()...)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return nil, nil
+
+	case err != nil:
+		return nil, fmt.Errorf("scanning row: %w", err)
+	}
+
+	return &credential, nil
+}
+
+func (r *credentialRepository) List(ctx context.Context, filter CredentialFilter) ([]*Credential, error) {
+	scope := middlewares.GetScope(ctx)
+	dbService := ioc.GetDependency[database.DbService](scope)
+
+	tx, err := dbService.GetTx()
+	if err != nil {
+		return nil, fmt.Errorf("failed to open tx: %w", err)
+	}
+
+	s := r.selectQuery(filter)
+
+	query, args := s.Build()
+	logging.Logger.Debug("executing sql: ", query)
+	rows, err := tx.Query(query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("querying db: %w", err)
+	}
+	defer rows.Close()
+
+	var credentials []*Credential
+	for rows.Next() {
+		credential := Credential{
+			ModelBase: NewModelBase(),
+		}
+		err = rows.Scan(credential.getScanPointers()...)
+		if err != nil {
+			return nil, fmt.Errorf("scanning row: %w", err)
+		}
+		credentials = append(credentials, &credential)
+	}
+
+	return credentials, nil
 }
 
 func (r *credentialRepository) Insert(ctx context.Context, credential *Credential) error {
