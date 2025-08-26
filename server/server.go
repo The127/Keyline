@@ -16,6 +16,7 @@ import (
 func Serve(dp *ioc.DependencyProvider) {
 	r := mux.NewRouter()
 
+	r.Use(middlewares.LoggingMiddleware())
 	r.Use(gh.CORS(
 		gh.AllowedOrigins([]string{"*", "http://localhost:5173"}),
 		gh.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "PATCH"}),
@@ -23,7 +24,6 @@ func Serve(dp *ioc.DependencyProvider) {
 		gh.AllowCredentials(),
 		gh.MaxAge(3600),
 	))
-	r.Use(middlewares.LoggingMiddleware())
 	r.Use(middlewares.RecoverMiddleware())
 	r.Use(middlewares.ScopeMiddleware(dp))
 
