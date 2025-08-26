@@ -277,6 +277,6 @@ func (r *credentialRepository) Insert(ctx context.Context, credential *Credentia
 		return fmt.Errorf("scanning row: %w", err)
 	}
 
-	credential.ClearChanges()
+	credential.clearChanges()
 	return nil
 }

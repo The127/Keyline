@@ -30,7 +30,7 @@ func (m *ModelBase) TrackChange(fieldName string, value any) {
 	m.changes[fieldName] = value
 }
 
-func (m *ModelBase) ClearChanges() {
+func (m *ModelBase) clearChanges() {
 	m.changes = make(map[string]any)
 }
 
