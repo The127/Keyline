@@ -7,15 +7,17 @@ import (
 	"Keyline/logging"
 	"Keyline/middlewares"
 	"fmt"
+	"net/http"
+
 	gh "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"net/http"
 )
 
 func Serve(dp *ioc.DependencyProvider) {
 	r := mux.NewRouter()
 
+	r.Use(middlewares.RecoverMiddleware())
 	r.Use(middlewares.LoggingMiddleware())
 	r.Use(gh.CORS(
 		gh.AllowedOrigins([]string{"*", "http://localhost:5173"}),
@@ -24,7 +26,6 @@ func Serve(dp *ioc.DependencyProvider) {
 		gh.AllowCredentials(),
 		gh.MaxAge(3600),
 	))
-	r.Use(middlewares.RecoverMiddleware())
 	r.Use(middlewares.ScopeMiddleware(dp))
 
 	r.HandleFunc("/health", handlers.ApplicationHealth).Methods(http.MethodGet, http.MethodOptions)
