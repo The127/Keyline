@@ -7,3 +7,6 @@ Content-Type: application/json
   "displayName": "A",
   "enableRegistration": true
 }
+
+### get virtual server public info
+GET http://127.0.0.1:8081/api/virtual-servers/keyline/public-info
