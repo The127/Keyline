@@ -5,6 +5,7 @@ import (
 	"Keyline/ioc"
 	"Keyline/mediator"
 	"Keyline/middlewares"
+	"Keyline/queries"
 	"Keyline/utils"
 	"encoding/json"
 	"net/http"
@@ -18,6 +19,9 @@ type CreateVirtualSeverRequestDto struct {
 }
 
 func CreateVirtualSever(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	scope := middlewares.GetScope(ctx)
+
 	var dto CreateVirtualSeverRequestDto
 	err := json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
@@ -30,10 +34,8 @@ func CreateVirtualSever(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, err)
 		return
 	}
-
-	scope := middlewares.GetScope(r.Context())
 	m := ioc.GetDependency[*mediator.Mediator](scope)
-	_, err = mediator.Send[*commands.CreateVirtualServerResponse](r.Context(), m, commands.CreateVirtualServer{
+	_, err = mediator.Send[*commands.CreateVirtualServerResponse](ctx, m, commands.CreateVirtualServer{
 		Name:               dto.Name,
 		DisplayName:        dto.DisplayName,
 		EnableRegistration: dto.EnableRegistration,
@@ -48,10 +50,40 @@ func CreateVirtualSever(w http.ResponseWriter, r *http.Request) {
 }
 
 type GetVirtualServerListResponseDto struct {
-	Name        string `json:"name"`
-	DisplayName string `json:"displayName"`
+	Name                string `json:"name"`
+	DisplayName         string `json:"displayName"`
+	RegistrationEnabled bool   `json:"registrationEnabled"`
 }
 
 func GetVirtualServerPublicInfo(w http.ResponseWriter, r *http.Request) {
-	// TODO: implement me!
+	ctx := r.Context()
+	scope := middlewares.GetScope(ctx)
+
+	vsName, err := middlewares.GetVirtualServerName(r.Context())
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	m := ioc.GetDependency[*mediator.Mediator](scope)
+
+	response, err := mediator.Send[*queries.GetVirtualServerPublicInfoResponse](ctx, m, queries.GetVirtualServerPublicInfo{
+		VirtualServerName: vsName,
+	})
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	err = json.NewEncoder(w).Encode(GetVirtualServerListResponseDto{
+		Name:                response.Name,
+		DisplayName:         response.DisplayName,
+		RegistrationEnabled: response.RegistrationEnabled,
+	})
+	if err != nil {
+		utils.HandleHttpError(w, err)
+	}
 }
