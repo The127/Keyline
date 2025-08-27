@@ -224,6 +224,10 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 	if ok {
 		// TODO: authorize user
 		// TODO: consent page/isue code
+
+		w.WriteHeader(http.StatusFound)
+		w.Write([]byte("login success, TODO: implement next steps"))
+
 		return
 	}
 
