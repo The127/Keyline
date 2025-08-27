@@ -3,8 +3,9 @@ package repositories
 import (
 	"Keyline/utils"
 	"fmt"
-	"github.com/google/uuid"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 var ErrVersionMismatch = fmt.Errorf("version mismatch: %w", utils.ErrHttpConflict)
@@ -48,4 +49,11 @@ func (m *ModelBase) AuditUpdatedAt() time.Time {
 
 func (m *ModelBase) Version() int64 {
 	return m.version
+}
+
+func (m *ModelBase) Mock() {
+	m.id = uuid.New()
+	m.auditCreatedAt = time.Now()
+	m.auditUpdatedAt = time.Now()
+	m.version = 0
 }
