@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"Keyline/commands"
+	"Keyline/config"
 	"Keyline/ioc"
 	"Keyline/mediator"
 	"Keyline/middlewares"
@@ -47,7 +48,7 @@ func VerifyEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	http.Redirect(w, r, fmt.Sprintf("%s/%s/email-verified", config.C.Frontend.ExternalUrl, vsName), http.StatusFound)
 }
 
 func RegisterUser(w http.ResponseWriter, r *http.Request) {
