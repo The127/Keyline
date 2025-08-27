@@ -59,6 +59,13 @@ func (c *Credential) Type() CredentialType {
 	return c._type
 }
 
+func (c *Credential) SetDetails(details CredentialDetails) {
+	c._type = details.CredentialDetailType()
+	c.details = details
+	c.TrackChange("type", details.CredentialDetailType())
+	c.TrackChange("details", details)
+}
+
 func (c *Credential) PasswordDetails() (*CredentialPasswordDetails, error) {
 	if c._type != CredentialTypePassword {
 		return nil, fmt.Errorf("expected password credential, got %s: %w", c._type, ErrWrongCredentialCast)
@@ -316,9 +323,9 @@ func (r *credentialRepository) Update(ctx context.Context, credential *Credentia
 
 	s := sqlbuilder.Update("credentials")
 	for fieldName, value := range credential.changes {
-		s.Set(s.Assign(fieldName, value))
+		s.SetMore(s.Assign(fieldName, value))
 	}
-	s.Set(s.Assign("version", credential.version+1))
+	s.SetMore(s.Assign("version", credential.version+1))
 
 	s.Where(s.Equal("id", credential.id))
 	s.Where(s.Equal("version", credential.version))
