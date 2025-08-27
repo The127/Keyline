@@ -1,6 +1,7 @@
 package middlewares
 
 import (
+	"Keyline/config"
 	"Keyline/ioc"
 	"Keyline/utils"
 	"context"
@@ -9,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"net/http"
+	"time"
 )
 
 type CurrentSession struct {
@@ -86,4 +88,39 @@ func ContextWithSession(ctx context.Context, session *CurrentSession) context.Co
 func GetSession(ctx context.Context) (*CurrentSession, bool) {
 	value, ok := ctx.Value(currentSessionCtxKey).(*CurrentSession)
 	return value, ok
+}
+
+func CreateSession(w http.ResponseWriter, r *http.Request, userId uuid.UUID) error {
+	ctx := r.Context()
+	scope := GetScope(ctx)
+
+	vsName, err := GetVirtualServerName(ctx)
+	if err != nil {
+		return fmt.Errorf("getting virtual server name: %w", err)
+	}
+
+	sessionService := ioc.GetDependency[SessionService](scope)
+	sessionToken, err := sessionService.NewSession(ctx, vsName, userId)
+	if err != nil {
+		return fmt.Errorf("creating session: %w", err)
+	}
+
+	maxAge := int((24 * 14 * time.Hour).Seconds())
+	setCookie(w, GetSessionCookieName(vsName), sessionToken.Encode(), maxAge)
+
+	return nil
+}
+
+func setCookie(w http.ResponseWriter, name string, value string, maxAge int) {
+	cookie := http.Cookie{
+		Name:     name,
+		Value:    value,
+		Path:     "/",
+		Domain:   config.C.Server.ExternalUrl,
+		MaxAge:   maxAge,
+		Secure:   true,
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+	}
+	http.SetCookie(w, &cookie)
 }
