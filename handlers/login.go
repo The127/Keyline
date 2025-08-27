@@ -13,6 +13,7 @@ import (
 	"Keyline/templates"
 	"Keyline/utils"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -37,8 +38,13 @@ func GetLoginState(w http.ResponseWriter, r *http.Request) {
 
 	tokenService := ioc.GetDependency[services.TokenService](scope)
 	redisValueString, err := tokenService.GetToken(ctx, services.LoginSessionTokenType, loginToken)
-	if err != nil {
-		http.Error(w, "invalid login token", http.StatusBadRequest)
+	switch {
+	case errors.Is(err, services.ErrTokenNotFound):
+		http.Error(w, "unknown token", http.StatusUnauthorized)
+		return
+
+	case err != nil:
+		http.Error(w, "error getting token", http.StatusBadRequest)
 		return
 	}
 
