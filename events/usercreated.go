@@ -8,6 +8,7 @@ import (
 	"Keyline/repositories"
 	"Keyline/services"
 	"Keyline/templates"
+	"Keyline/utils"
 	"context"
 	"fmt"
 	"github.com/google/uuid"
@@ -55,6 +56,7 @@ func QueueEmailVerificationJobOnUserCreatedEvent(ctx context.Context, event User
 				virtualServer.Name(),
 				token,
 			),
+			VerificationCode: utils.GenerateCodeFromBytes([]byte(token)),
 		},
 	)
 	if err != nil {

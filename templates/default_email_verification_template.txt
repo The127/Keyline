@@ -1,1 +1,2 @@
-Please verify your email by clicking the following link: {{.VerificationLink}}
+Please verify your email by clicking the following link: {{.VerificationLink}}.
+Alternatively enter the following code in the login ui: {{.VerificationCode}}.
