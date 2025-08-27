@@ -165,7 +165,7 @@ func VerifyPassword(w http.ResponseWriter, r *http.Request) {
 	// TODO: check if totp verification is needed
 
 	default:
-		// TODO: set login to success (not sure)
+		loginInfo.Step = jsonTypes.LoginStepFinish
 		break
 	}
 
