@@ -114,6 +114,7 @@ func (f SessionFilter) Id(id uuid.UUID) SessionFilter {
 type SessionRepository interface {
 	Single(ctx context.Context, filter SessionFilter) (*Session, error)
 	First(ctx context.Context, filter SessionFilter) (*Session, error)
+	Insert(ctx context.Context, session *Session) error
 }
 
 type sessionRepository struct {
@@ -191,4 +192,42 @@ func (r *sessionRepository) First(ctx context.Context, filter SessionFilter) (*S
 	}
 
 	return &session, nil
+}
+
+func (r *sessionRepository) Insert(ctx context.Context, session *Session) error {
+	scope := middlewares.GetScope(ctx)
+	dbService := ioc.GetDependency[database.DbService](scope)
+
+	tx, err := dbService.GetTx()
+	if err != nil {
+		return fmt.Errorf("failed to open tx: %w", err)
+	}
+
+	s := sqlbuilder.InsertInto("sessions").
+		Cols(
+			"virtual_server_id",
+			"user_id",
+			"hashed_token",
+			"expires_at",
+			"last_used_at",
+		).
+		Values(
+			session.virtualServerId,
+			session.userId,
+			session.hashedToken,
+			session.expiresAt,
+			session.lastUsedAt,
+		).Returning("id", "audit_created_at", "audit_updated_at", "version")
+
+	query, args := s.Build()
+	logging.Logger.Debug("executing sql: ", query)
+	row := tx.QueryRowContext(ctx, query, args...)
+
+	err = row.Scan(&session.id, &session.auditCreatedAt, &session.auditUpdatedAt, &session.version)
+	if err != nil {
+		return fmt.Errorf("scanning row: %w", err)
+	}
+
+	session.clearChanges()
+	return nil
 }
