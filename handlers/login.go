@@ -165,9 +165,6 @@ func VerifyPassword(w http.ResponseWriter, r *http.Request) {
 		break
 	}
 
-	// TODO: remove
-	loginInfo.Step = jsonTypes.LoginStepFinish
-
 	loginInfoString, err := json.Marshal(loginInfo)
 	err = tokenService.UpdateToken(ctx, services.LoginSessionTokenType, loginToken, string(loginInfoString), time.Minute*15)
 	if err != nil {
