@@ -170,6 +170,7 @@ type CredentialRepository interface {
 	First(ctx context.Context, filter CredentialFilter) (*Credential, error)
 	List(ctx context.Context, filter CredentialFilter) ([]*Credential, error)
 	Insert(ctx context.Context, credential *Credential) error
+	Update(ctx context.Context, credential *Credential) error
 }
 
 type credentialRepository struct {
@@ -297,6 +298,41 @@ func (r *credentialRepository) Insert(ctx context.Context, credential *Credentia
 
 	err = row.Scan(&credential.id, &credential.auditCreatedAt, &credential.auditUpdatedAt, &credential.version)
 	if err != nil {
+		return fmt.Errorf("scanning row: %w", err)
+	}
+
+	credential.clearChanges()
+	return nil
+}
+
+func (r *credentialRepository) Update(ctx context.Context, credential *Credential) error {
+	scope := middlewares.GetScope(ctx)
+	dbService := ioc.GetDependency[database.DbService](scope)
+
+	tx, err := dbService.GetTx()
+	if err != nil {
+		return fmt.Errorf("failed to open tx: %w", err)
+	}
+
+	s := sqlbuilder.Update("credentials")
+	for fieldName, value := range credential.changes {
+		s.Set(s.Assign(fieldName, value))
+	}
+	s.Set(s.Assign("version", credential.version+1))
+
+	s.Where(s.Equal("id", credential.id))
+	s.Where(s.Equal("version", credential.version))
+	s.Returning("audit_updated_at", "version")
+
+	query, args := s.Build()
+	logging.Logger.Debug("executing sql: ", query)
+	row := tx.QueryRowContext(ctx, query, args...)
+
+	err = row.Scan(&credential.auditUpdatedAt, &credential.version)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return fmt.Errorf("updating credential: %w", ErrVersionMismatch)
+	case err != nil:
 		return fmt.Errorf("scanning row: %w", err)
 	}
 
