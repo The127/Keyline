@@ -23,14 +23,16 @@ type LoginInfo struct {
 	VirtualServerName        string    `json:"virtualServerName"`
 	RegistrationEnabled      bool      `json:"registrationEnabled"`
 	UserId                   uuid.UUID `json:"userId"`
+	OriginalUrl              string    `json:"originalUrl"`
 }
 
-func NewLoginInfo(virtualServer *repositories.VirtualServer, application *repositories.Application) LoginInfo {
+func NewLoginInfo(virtualServer *repositories.VirtualServer, application *repositories.Application, originalUrl string) LoginInfo {
 	return LoginInfo{
 		Step:                     LoginStepPasswordVerification,
 		VirtualServerDisplayName: virtualServer.DisplayName(),
 		VirtualServerName:        virtualServer.Name(),
 		RegistrationEnabled:      virtualServer.EnableRegistration(),
 		ApplicationDisplayName:   application.DisplayName(),
+		OriginalUrl:              originalUrl,
 	}
 }

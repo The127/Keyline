@@ -231,6 +231,7 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 	loginInfo := jsonTypes.NewLoginInfo(
 		virtualServer,
 		application,
+		r.URL.String(),
 	)
 	loginInfoString, err := json.Marshal(loginInfo)
 	loginSessionToken, err := tokenService.GenerateAndStoreToken(ctx, services.LoginSessionTokenType, string(loginInfoString), time.Minute*15)
