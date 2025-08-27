@@ -25,8 +25,8 @@ type Session struct {
 	lastUsedAt      *time.Time
 }
 
-func NewSession(virtualServerId uuid.UUID, userId uuid.UUID, expiresAt time.Time) Session {
-	return Session{
+func NewSession(virtualServerId uuid.UUID, userId uuid.UUID, expiresAt time.Time) *Session {
+	return &Session{
 		virtualServerId: virtualServerId,
 		userId:          userId,
 		expiresAt:       expiresAt,
