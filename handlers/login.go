@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"Keyline/commands"
 	"Keyline/config"
 	"Keyline/ioc"
 	"Keyline/jsonTypes"
+	"Keyline/mediator"
 	"Keyline/middlewares"
 	"Keyline/repositories"
 	"Keyline/services"
@@ -236,5 +238,75 @@ func FinishLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// TODO: delete login in redis
+
 	http.Redirect(w, r, loginInfo.OriginalUrl, http.StatusFound)
+}
+
+type ResetTemporaryPasswordRequestDto struct {
+	NewPassword string `json:"newPassword" validate:"required"`
+}
+
+func ResetTemporaryPassword(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	scope := middlewares.GetScope(ctx)
+
+	vars := mux.Vars(r)
+	loginToken := vars["loginToken"]
+
+	tokenService := ioc.GetDependency[services.TokenService](scope)
+	redisValueString, err := tokenService.GetToken(ctx, services.LoginSessionTokenType, loginToken)
+	if err != nil {
+		http.Error(w, "invalid login token", http.StatusBadRequest)
+		return
+	}
+
+	var loginInfo jsonTypes.LoginInfo
+	err = json.Unmarshal([]byte(redisValueString), &loginInfo)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	if loginInfo.Step != jsonTypes.LoginStepTemporaryPassword {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	var dto ResetTemporaryPasswordRequestDto
+	err = json.NewDecoder(r.Body).Decode(&dto)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	err = utils.ValidateDto(dto)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	m := ioc.GetDependency[*mediator.Mediator](scope)
+	_, err = mediator.Send[*commands.ResetPasswordResponse](ctx, m, commands.ResetPassword{
+		UserId:      loginInfo.UserId,
+		NewPassword: dto.NewPassword,
+		Temporary:   false,
+	})
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	// TODO: Figure out next step to be done, prepare it if needed
+
+	loginInfo.Step = jsonTypes.LoginStepFinish
+
+	loginInfoString, err := json.Marshal(loginInfo)
+	err = tokenService.UpdateToken(ctx, services.LoginSessionTokenType, loginToken, string(loginInfoString), time.Minute*15)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
