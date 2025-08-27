@@ -22,11 +22,11 @@ import (
 )
 
 type GetLoginStateResponseDto struct {
-	Step                     string  `json:"step"`
-	ApplicationDisplayName   string  `json:"applicationDisplayName"`
-	VirtualServerDisplayName string  `json:"virtualServerDisplayName"`
-	VirtualServerName        string  `json:"virtualServerName"`
-	SignUpUrl                *string `json:"signUpUrl"`
+	Step                     string `json:"step"`
+	ApplicationDisplayName   string `json:"applicationDisplayName"`
+	VirtualServerDisplayName string `json:"virtualServerDisplayName"`
+	VirtualServerName        string `json:"virtualServerName"`
+	SignupEnabled            bool   `json:"signupEnabled"`
 }
 
 func GetLoginState(w http.ResponseWriter, r *http.Request) {
@@ -55,21 +55,12 @@ func GetLoginState(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var signUpUrl *string = nil
-	if loginInfo.RegistrationEnabled {
-		signUpUrl = utils.Ptr(fmt.Sprintf(
-			"%s/%s/signup",
-			config.C.Frontend.ExternalUrl,
-			loginInfo.VirtualServerName,
-		))
-	}
-
 	response := GetLoginStateResponseDto{
 		Step:                     string(loginInfo.Step),
 		ApplicationDisplayName:   loginInfo.ApplicationDisplayName,
 		VirtualServerDisplayName: loginInfo.VirtualServerDisplayName,
 		VirtualServerName:        loginInfo.VirtualServerName,
-		SignUpUrl:                signUpUrl,
+		SignupEnabled:            loginInfo.RegistrationEnabled,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
