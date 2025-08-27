@@ -1,7 +1,9 @@
 package commands
 
 import (
+	"Keyline/events"
 	"Keyline/ioc"
+	"Keyline/mediator"
 	"Keyline/middlewares"
 	"Keyline/repositories"
 	"Keyline/utils"
@@ -39,6 +41,14 @@ func HandleResetPassword(ctx context.Context, command ResetPassword) (*ResetPass
 	err = credentialRepository.Update(ctx, credential)
 	if err != nil {
 		return nil, fmt.Errorf("updating credential: %w", err)
+	}
+
+	m := ioc.GetDependency[*mediator.Mediator](scope)
+	err = mediator.SendEvent(ctx, m, events.PasswordChangedEvent{
+		UserId: command.UserId,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("raising event: %w", err)
 	}
 
 	return &ResetPasswordResponse{}, nil
