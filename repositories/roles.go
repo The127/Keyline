@@ -11,9 +11,10 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/huandu/go-sqlbuilder"
-	"time"
 )
 
 type Role struct {
@@ -130,6 +131,7 @@ func (f RoleFilter) VirtualServerId(virtualServerId uuid.UUID) RoleFilter {
 	return filter
 }
 
+//go:generate mockgen -destination=./mocks/role_repository.go -package=mocks Keyline/repositories RoleRepository
 type RoleRepository interface {
 	Single(ctx context.Context, filter RoleFilter) (*Role, error)
 	First(ctx context.Context, filter RoleFilter) (*Role, error)

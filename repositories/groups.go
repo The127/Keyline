@@ -67,6 +67,7 @@ func (f GroupFilter) Id(id uuid.UUID) GroupFilter {
 	return filter
 }
 
+//go:generate mockgen -destination=./mocks/group_repository.go -package=mocks Keyline/repositories GroupRepository
 type GroupRepository interface {
 }
 

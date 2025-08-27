@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
 	"github.com/google/uuid"
 	"github.com/huandu/go-sqlbuilder"
 	"github.com/pquerna/otp"
@@ -172,6 +173,7 @@ func (f CredentialFilter) Type(credentialType CredentialType) CredentialFilter {
 	return filter
 }
 
+//go:generate mockgen -destination=./mocks/credential_repository.go -package=mocks Keyline/repositories CredentialRepository
 type CredentialRepository interface {
 	Single(ctx context.Context, filter CredentialFilter) (*Credential, error)
 	First(ctx context.Context, filter CredentialFilter) (*Credential, error)

@@ -10,6 +10,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+
 	"github.com/google/uuid"
 	"github.com/huandu/go-sqlbuilder"
 )
@@ -107,6 +108,7 @@ func (f UserFilter) Username(username string) UserFilter {
 	return filter
 }
 
+//go:generate mockgen -destination=./mocks/user_repository.go -package=mocks Keyline/repositories UserRepository
 type UserRepository interface {
 	List(ctx context.Context, filter UserFilter) ([]*User, error)
 	Single(ctx context.Context, filter UserFilter) (*User, error)

@@ -10,6 +10,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+
 	"github.com/google/uuid"
 	"github.com/huandu/go-sqlbuilder"
 )
@@ -97,6 +98,7 @@ func (f VirtualServerFilter) Id(id uuid.UUID) VirtualServerFilter {
 	return filter
 }
 
+//go:generate mockgen -destination=./mocks/virtualserver_repository.go -package=mocks Keyline/repositories VirtualServerRepository
 type VirtualServerRepository interface {
 	Single(ctx context.Context, filter VirtualServerFilter) (*VirtualServer, error)
 	First(ctx context.Context, filter VirtualServerFilter) (*VirtualServer, error)

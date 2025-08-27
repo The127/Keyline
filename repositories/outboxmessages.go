@@ -7,6 +7,7 @@ import (
 	"Keyline/middlewares"
 	"context"
 	"fmt"
+
 	"github.com/google/uuid"
 	"github.com/huandu/go-sqlbuilder"
 )
@@ -65,6 +66,7 @@ func (f OutboxMessageFilter) Id(id uuid.UUID) OutboxMessageFilter {
 	return filter
 }
 
+//go:generate mockgen -destination=./mocks/outboxmessage_repository.go -package=mocks Keyline/repositories OutboxMessageRepository
 type OutboxMessageRepository interface {
 	List(ctx context.Context, filter OutboxMessageFilter) ([]*OutboxMessage, error)
 	Insert(ctx context.Context, outboxMessage *OutboxMessage) error
