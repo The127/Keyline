@@ -9,6 +9,7 @@ import (
 	"Keyline/utils"
 	"context"
 	"fmt"
+
 	"github.com/google/uuid"
 )
 
@@ -35,6 +36,9 @@ func HandleResetPassword(ctx context.Context, command ResetPassword) (*ResetPass
 	}
 
 	details, err := credential.PasswordDetails()
+	if err != nil {
+		return nil, fmt.Errorf("getting password details: %w", err)
+	}
 	details.Temporary = command.Temporary
 	details.HashedPassword = hashedPassword
 	credential.SetDetails(details)
