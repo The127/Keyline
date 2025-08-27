@@ -37,6 +37,7 @@ func HandleResetPassword(ctx context.Context, command ResetPassword) (*ResetPass
 	details, err := credential.PasswordDetails()
 	details.Temporary = command.Temporary
 	details.HashedPassword = hashedPassword
+	credential.SetDetails(details)
 
 	err = credentialRepository.Update(ctx, credential)
 	if err != nil {
