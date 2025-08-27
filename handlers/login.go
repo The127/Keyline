@@ -14,15 +14,17 @@ import (
 	"Keyline/utils"
 	"encoding/json"
 	"fmt"
-	"github.com/gorilla/mux"
 	"net/http"
 	"time"
+
+	"github.com/gorilla/mux"
 )
 
 type GetLoginStateResponseDto struct {
 	Step                     string  `json:"step"`
 	ApplicationDisplayName   string  `json:"applicationDisplayName"`
 	VirtualServerDisplayName string  `json:"virtualServerDisplayName"`
+	VirtualServerName        string  `json:"virtualServerName"`
 	SignUpUrl                *string `json:"signUpUrl"`
 }
 
@@ -60,6 +62,7 @@ func GetLoginState(w http.ResponseWriter, r *http.Request) {
 		Step:                     string(loginInfo.Step),
 		ApplicationDisplayName:   loginInfo.ApplicationDisplayName,
 		VirtualServerDisplayName: loginInfo.VirtualServerDisplayName,
+		VirtualServerName:        loginInfo.VirtualServerName,
 		SignUpUrl:                signUpUrl,
 	}
 
