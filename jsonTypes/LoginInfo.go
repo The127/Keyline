@@ -10,6 +10,7 @@ const (
 	LoginStepEmailVerification    LoginStep = "emailVerification"
 	LoginStepTotpOnboarding       LoginStep = "totpOnboarding"
 	LoginStepTotpVerification     LoginStep = "totpVerification"
+	LoginStepFinish               LoginStep = "finish"
 )
 
 type LoginInfo struct {

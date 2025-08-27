@@ -172,3 +172,59 @@ func VerifyPassword(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusNoContent)
 }
+
+func VerifyEmailToken(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	scope := middlewares.GetScope(ctx)
+
+	vars := mux.Vars(r)
+	loginToken := vars["loginToken"]
+
+	tokenService := ioc.GetDependency[services.TokenService](scope)
+	redisValueString, err := tokenService.GetToken(ctx, services.LoginSessionTokenType, loginToken)
+	if err != nil {
+		http.Error(w, "invalid login token", http.StatusBadRequest)
+		return
+	}
+
+	var loginInfo jsonTypes.LoginInfo
+	err = json.Unmarshal([]byte(redisValueString), &loginInfo)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	if loginInfo.Step != jsonTypes.LoginStepEmailVerification {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	// TODO: implement me
+}
+
+func FinishLogin(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	scope := middlewares.GetScope(ctx)
+
+	vars := mux.Vars(r)
+	loginToken := vars["loginToken"]
+
+	tokenService := ioc.GetDependency[services.TokenService](scope)
+	redisValueString, err := tokenService.GetToken(ctx, services.LoginSessionTokenType, loginToken)
+	if err != nil {
+		http.Error(w, "invalid login token", http.StatusBadRequest)
+		return
+	}
+
+	var loginInfo jsonTypes.LoginInfo
+	err = json.Unmarshal([]byte(redisValueString), &loginInfo)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	if loginInfo.Step != jsonTypes.LoginStepFinish {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+}
