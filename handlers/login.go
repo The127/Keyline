@@ -6,9 +6,11 @@ import (
 	"Keyline/ioc"
 	"Keyline/jsonTypes"
 	"Keyline/mediator"
+	"Keyline/messages"
 	"Keyline/middlewares"
 	"Keyline/repositories"
 	"Keyline/services"
+	"Keyline/templates"
 	"Keyline/utils"
 	"encoding/json"
 	"fmt"
@@ -305,6 +307,86 @@ func ResetTemporaryPassword(w http.ResponseWriter, r *http.Request) {
 	err = tokenService.UpdateToken(ctx, services.LoginSessionTokenType, loginToken, string(loginInfoString), time.Minute*15)
 	if err != nil {
 		utils.HandleHttpError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func ResendEmailVerification(w http.ResponseWriter, r *http.Request) {
+	// TODO: add "cooldown" for sending emails
+
+	ctx := r.Context()
+	scope := middlewares.GetScope(ctx)
+
+	vars := mux.Vars(r)
+	loginToken := vars["loginToken"]
+
+	tokenService := ioc.GetDependency[services.TokenService](scope)
+	redisValueString, err := tokenService.GetToken(ctx, services.LoginSessionTokenType, loginToken)
+	if err != nil {
+		http.Error(w, "invalid login token", http.StatusBadRequest)
+		return
+	}
+
+	var loginInfo jsonTypes.LoginInfo
+	err = json.Unmarshal([]byte(redisValueString), &loginInfo)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	if loginInfo.Step != jsonTypes.LoginStepEmailVerification {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	// retrigger email verification sending
+	token, err := tokenService.GenerateAndStoreToken(ctx, services.EmailVerificationTokenType, loginInfo.UserId.String(), time.Minute*15)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("storing email verification token: %w", err))
+		return
+	}
+
+	templateService := ioc.GetDependency[services.TemplateService](scope)
+	mailBody, err := templateService.Template(
+		ctx,
+		loginInfo.VirtualServerId,
+		repositories.EmailVerificationMailTemplate,
+		templates.EmailVerificationTemplateData{
+			VerificationLink: fmt.Sprintf(
+				"%s/api/virtual-servers/%s/users/verify-email?token=%s",
+				config.C.Server.ExternalUrl,
+				loginInfo.VirtualServerName,
+				token,
+			),
+			VerificationCode: utils.GenerateCodeFromBytes([]byte(token)),
+		},
+	)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("templating email verification mail: %w", err))
+		return
+	}
+
+	userRepository := ioc.GetDependency[repositories.UserRepository](scope)
+	userFilter := repositories.NewUserFilter().Id(loginInfo.UserId)
+	user, err := userRepository.Single(ctx, userFilter)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("getting user: %w", err))
+		return
+	}
+
+	message := &messages.SendEmailMessage{
+		VirtualServerId: loginInfo.VirtualServerId,
+		To:              user.PrimaryEmail(),
+		Subject:         "Email verification",
+		Body:            mailBody,
+	}
+
+	outboxMessageRepository := ioc.GetDependency[repositories.OutboxMessageRepository](scope)
+	err = outboxMessageRepository.Insert(ctx, repositories.NewOutboxMessage(message))
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("creating email outbox message: %w", err))
 		return
 	}
 
