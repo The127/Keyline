@@ -1,6 +1,7 @@
 package middlewares
 
 import (
+	"Keyline/utils"
 	"context"
 	"github.com/google/uuid"
 )
@@ -27,4 +28,5 @@ func (s *Session) HashedSecret() string {
 
 type SessionService interface {
 	GetSession(ctx context.Context, virtualServername string, id uuid.UUID) (*Session, error)
+	NewSession(ctx context.Context, virtualServername string, userId uuid.UUID) (*utils.SplitToken, error)
 }
