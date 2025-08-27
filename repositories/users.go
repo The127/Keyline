@@ -237,9 +237,9 @@ func (r *userRepository) Update(ctx context.Context, user *User) error {
 
 	s := sqlbuilder.Update("users")
 	for fieldName, value := range user.changes {
-		s.Set(s.Assign(fieldName, value))
+		s.SetMore(s.Assign(fieldName, value))
 	}
-	s.Set(s.Assign("version", user.version+1))
+	s.SetMore(s.Assign("version", user.version+1))
 
 	s.Where(s.Equal("id", user.id))
 	s.Where(s.Equal("version", user.version))
