@@ -96,16 +96,28 @@ func (f UserFilter) VirtualServerId(virtualServerId uuid.UUID) UserFilter {
 	return filter
 }
 
+func (f UserFilter) GetVirtualServerId() *uuid.UUID {
+	return f.virtualServerId
+}
+
 func (f UserFilter) Id(id uuid.UUID) UserFilter {
 	filter := f.Clone()
 	filter.id = &id
 	return filter
 }
 
+func (f UserFilter) GetId() *uuid.UUID {
+	return f.id
+}
+
 func (f UserFilter) Username(username string) UserFilter {
 	filter := f.Clone()
 	filter.username = &username
 	return filter
+}
+
+func (f UserFilter) GetUsername() *string {
+	return f.username
 }
 
 //go:generate mockgen -destination=./mocks/user_repository.go -package=mocks Keyline/repositories UserRepository

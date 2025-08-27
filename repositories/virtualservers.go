@@ -92,10 +92,18 @@ func (f VirtualServerFilter) Name(name string) VirtualServerFilter {
 	return filter
 }
 
+func (f VirtualServerFilter) GetName() *string {
+	return f.name
+}
+
 func (f VirtualServerFilter) Id(id uuid.UUID) VirtualServerFilter {
 	filter := f.Clone()
 	filter.id = &id
 	return filter
+}
+
+func (f VirtualServerFilter) GetId() *uuid.UUID {
+	return f.id
 }
 
 //go:generate mockgen -destination=./mocks/virtualserver_repository.go -package=mocks Keyline/repositories VirtualServerRepository

@@ -119,16 +119,28 @@ func (f RoleFilter) Name(name string) RoleFilter {
 	return filter
 }
 
+func (f RoleFilter) GetName() *string {
+	return f.name
+}
+
 func (f RoleFilter) Id(id uuid.UUID) RoleFilter {
 	filter := f.Clone()
 	filter.id = &id
 	return filter
 }
 
+func (f RoleFilter) GetId() *uuid.UUID {
+	return f.id
+}
+
 func (f RoleFilter) VirtualServerId(virtualServerId uuid.UUID) RoleFilter {
 	filter := f.Clone()
 	filter.virtualServerId = &virtualServerId
 	return filter
+}
+
+func (f RoleFilter) GetVirtualServerId() *uuid.UUID {
+	return f.virtualServerId
 }
 
 //go:generate mockgen -destination=./mocks/role_repository.go -package=mocks Keyline/repositories RoleRepository
