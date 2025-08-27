@@ -47,7 +47,7 @@ func NewSplitToken(id string, secret string) SplitToken {
 }
 
 func (t *SplitToken) Encode() string {
-	return fmt.Sprintf("%s:%s", t.id, t.secret)
+	return base64.RawURLEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", t.id, t.secret)))
 }
 
 func (t *SplitToken) Id() string {

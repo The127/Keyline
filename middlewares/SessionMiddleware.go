@@ -73,7 +73,7 @@ func SessionMiddleware() mux.MiddlewareFunc {
 				currentSession := CurrentSession{
 					userId: session.userId,
 				}
-				r = r.WithContext(ContextWithSession(r.Context(), &currentSession))
+				r = r.WithContext(ContextWithSession(r.Context(), currentSession))
 			}
 
 			next.ServeHTTP(w, r)
@@ -81,23 +81,18 @@ func SessionMiddleware() mux.MiddlewareFunc {
 	}
 }
 
-func ContextWithSession(ctx context.Context, session *CurrentSession) context.Context {
-	return context.WithValue(ctx, currentSessionCtxKey, &session)
+func ContextWithSession(ctx context.Context, session CurrentSession) context.Context {
+	return context.WithValue(ctx, currentSessionCtxKey, session)
 }
 
-func GetSession(ctx context.Context) (*CurrentSession, bool) {
-	value, ok := ctx.Value(currentSessionCtxKey).(*CurrentSession)
+func GetSession(ctx context.Context) (CurrentSession, bool) {
+	value, ok := ctx.Value(currentSessionCtxKey).(CurrentSession)
 	return value, ok
 }
 
-func CreateSession(w http.ResponseWriter, r *http.Request, userId uuid.UUID) error {
+func CreateSession(w http.ResponseWriter, r *http.Request, vsName string, userId uuid.UUID) error {
 	ctx := r.Context()
 	scope := GetScope(ctx)
-
-	vsName, err := GetVirtualServerName(ctx)
-	if err != nil {
-		return fmt.Errorf("getting virtual server name: %w", err)
-	}
 
 	sessionService := ioc.GetDependency[SessionService](scope)
 	sessionToken, err := sessionService.NewSession(ctx, vsName, userId)
