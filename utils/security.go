@@ -6,6 +6,10 @@ import (
 	"fmt"
 )
 
+func GenerateCodeFromBytes(bytes []byte) string {
+	return fmt.Sprintf("%x", bytes)[:6]
+}
+
 func GetSecureRandomBytes(length int) []byte {
 	bytes := make([]byte, length)
 	_, _ = rand.Read(bytes)

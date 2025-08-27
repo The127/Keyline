@@ -7,4 +7,5 @@ var DefaultEmailVerificationTemplate []byte
 
 type EmailVerificationTemplateData struct {
 	VerificationLink string
+	VerificationCode string
 }
