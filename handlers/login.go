@@ -233,7 +233,7 @@ func FinishLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = middlewares.CreateSession(w, r, loginInfo.UserId)
+	err = middlewares.CreateSession(w, r, loginInfo.VirtualServerName, loginInfo.UserId)
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
