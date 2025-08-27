@@ -205,7 +205,28 @@ func VerifyEmailToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: implement me
+	userRepository := ioc.GetDependency[repositories.UserRepository](scope)
+	userFilter := repositories.NewUserFilter().Id(loginInfo.UserId)
+	user, err := userRepository.Single(ctx, userFilter)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	if !user.EmailVerified() {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	loginInfo.Step = jsonTypes.LoginStepFinish
+	loginInfoString, err := json.Marshal(loginInfo)
+	err = tokenService.UpdateToken(ctx, services.LoginSessionTokenType, loginToken, string(loginInfoString), time.Minute*15)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func FinishLogin(w http.ResponseWriter, r *http.Request) {
@@ -360,7 +381,6 @@ func ResendEmailVerification(w http.ResponseWriter, r *http.Request) {
 				loginInfo.VirtualServerName,
 				token,
 			),
-			VerificationCode: utils.GenerateCodeFromBytes([]byte(token)),
 		},
 	)
 	if err != nil {
