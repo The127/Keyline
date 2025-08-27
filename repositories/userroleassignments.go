@@ -7,6 +7,7 @@ import (
 	"Keyline/middlewares"
 	"context"
 	"fmt"
+
 	"github.com/google/uuid"
 	"github.com/huandu/go-sqlbuilder"
 )
@@ -72,6 +73,7 @@ func (f UserRoleAssignmentFilter) GroupId(groupId uuid.UUID) UserRoleAssignmentF
 	return filter
 }
 
+//go:generate mockgen -destination=./mocks/userroleassignment_repository.go -package=mocks Keyline/repositories UserRoleAssignmentRepository
 type UserRoleAssignmentRepository interface {
 	Insert(ctx context.Context, userRoleAssignment *UserRoleAssignment) error
 }

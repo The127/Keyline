@@ -10,6 +10,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+
 	"github.com/google/uuid"
 	"github.com/huandu/go-sqlbuilder"
 )
@@ -86,6 +87,7 @@ func (f TemplateFilter) TemplateType(templateType TemplateType) TemplateFilter {
 	return filter
 }
 
+//go:generate mockgen -destination=./mocks/template_repository.go -package=mocks Keyline/repositories TemplateRepository
 type TemplateRepository interface {
 	Single(ctx context.Context, filter TemplateFilter) (*Template, error)
 	First(ctx context.Context, filter TemplateFilter) (*Template, error)

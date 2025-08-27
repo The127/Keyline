@@ -11,6 +11,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+
 	"github.com/google/uuid"
 	"github.com/huandu/go-sqlbuilder"
 	"github.com/lib/pq"
@@ -131,6 +132,7 @@ func (f ApplicationFilter) VirtualServerId(virtualServerId uuid.UUID) Applicatio
 	return filter
 }
 
+//go:generate mockgen -destination=./mocks/application_repository.go -package=mocks Keyline/repositories ApplicationRepository
 type ApplicationRepository interface {
 	Single(ctx context.Context, filter ApplicationFilter) (*Application, error)
 	First(ctx context.Context, filter ApplicationFilter) (*Application, error)

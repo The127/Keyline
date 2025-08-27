@@ -10,6 +10,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+
 	"github.com/google/uuid"
 	"github.com/huandu/go-sqlbuilder"
 )
@@ -73,6 +74,7 @@ func (f FileFilter) Id(id uuid.UUID) FileFilter {
 	return filter
 }
 
+//go:generate mockgen -destination=./mocks/file_repository.go -package=mocks Keyline/repositories FileRepository
 type FileRepository interface {
 	Single(ctx context.Context, filter FileFilter) (*File, error)
 	First(ctx context.Context, filter FileFilter) (*File, error)
