@@ -146,6 +146,8 @@ func VerifyPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	loginInfo.UserId = user.Id()
+
 	switch {
 	case passwordDetails.Temporary:
 		loginInfo.Step = jsonTypes.LoginStepTemporaryPassword
@@ -162,6 +164,9 @@ func VerifyPassword(w http.ResponseWriter, r *http.Request) {
 		// TODO: set login to success (not sure)
 		break
 	}
+
+	// TODO: remove
+	loginInfo.Step = jsonTypes.LoginStepFinish
 
 	loginInfoString, err := json.Marshal(loginInfo)
 	err = tokenService.UpdateToken(ctx, services.LoginSessionTokenType, loginToken, string(loginInfoString), time.Minute*15)
@@ -227,4 +232,12 @@ func FinishLogin(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
+
+	err = middlewares.CreateSession(w, r, loginInfo.UserId)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }

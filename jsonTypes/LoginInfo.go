@@ -1,6 +1,9 @@
 package jsonTypes
 
-import "Keyline/repositories"
+import (
+	"Keyline/repositories"
+	"github.com/google/uuid"
+)
 
 type LoginStep string
 
@@ -19,6 +22,7 @@ type LoginInfo struct {
 	VirtualServerDisplayName string    `json:"virtualServerDisplayName"`
 	VirtualServerName        string    `json:"virtualServerName"`
 	RegistrationEnabled      bool      `json:"registrationEnabled"`
+	UserId                   uuid.UUID `json:"userId"`
 }
 
 func NewLoginInfo(virtualServer *repositories.VirtualServer, application *repositories.Application) LoginInfo {
