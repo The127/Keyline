@@ -1,0 +1,62 @@
+package commands
+
+import (
+	"Keyline/ioc"
+	"Keyline/middlewares"
+	"Keyline/repositories"
+	"Keyline/repositories/mocks"
+	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
+	"testing"
+)
+
+func TestHandleCreateApplication(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
+	virtualServer.Mock()
+	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
+	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories.VirtualServerFilter) bool {
+		return *x.GetName() == virtualServer.Name()
+	})).Return(virtualServer, nil)
+
+	applicationRepository := mocks.NewMockApplicationRepository(ctrl)
+	applicationRepository.EXPECT().Insert(gomock.Any(), gomock.Cond(func(x *repositories.Application) bool {
+		return x.Name() == "applicationName" &&
+			x.DisplayName() == "Display Name" &&
+			x.RedirectUris()[0] == "redirectUri1" &&
+			x.RedirectUris()[1] == "redirectUri2"
+	}))
+
+	dc := ioc.NewDependencyCollection()
+	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.VirtualServerRepository {
+		return virtualServerRepository
+	})
+	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.ApplicationRepository {
+		return applicationRepository
+	})
+	scope := dc.BuildProvider()
+	defer scope.Close()
+	ctx := middlewares.ContextWithScope(t.Context(), scope)
+
+	cmd := CreateApplication{
+		VirtualServerName: virtualServer.Name(),
+		Name:              "applicationName",
+		DisplayName:       "Display Name",
+		RedirectUris: []string{
+			"redirectUri1",
+			"redirectUri2",
+		},
+	}
+
+	// act
+	resp, err := HandleCreateApplication(ctx, cmd)
+
+	// assert
+	assert.NoError(t, err)
+	assert.NotNil(t, resp)
+}
