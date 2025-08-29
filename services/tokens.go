@@ -16,6 +16,7 @@ const (
 	EmailVerificationTokenType TokenType = "email_verification"
 	LoginSessionTokenType      TokenType = "login_session"
 	OidcCodeTokenType          TokenType = "oidc_code"
+	OidcRefreshTokenTokenType  TokenType = "oidc_refresh_token"
 )
 
 func (t TokenType) Key(token string) string {
