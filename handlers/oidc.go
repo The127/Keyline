@@ -282,3 +282,33 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 	)
 	http.Redirect(w, r, redirectUrl, http.StatusFound)
 }
+
+func OidcToken(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	grantType := r.Form.Get("grant_type")
+
+	switch grantType {
+	case "authorization_code":
+		// deal with code related stuff
+		// create the jwt
+
+	case "refresh_token":
+		// deal with refresh token related stuff
+		// create the jwt
+
+	default:
+		utils.HandleHttpError(w, fmt.Errorf("unsupported grant type: %s", grantType))
+		return
+	}
+
+	w.Header().Set("Cache-Control", "no-store")
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	// send the response body
+}

@@ -39,6 +39,7 @@ func Serve(dp *ioc.DependencyProvider) {
 	oidcRouter.HandleFunc("/.well-known/openid-configuration", handlers.WellKnownOpenIdConfiguration).Methods(http.MethodGet, http.MethodOptions)
 	oidcRouter.HandleFunc("/.well-known/jwks.json", handlers.WellKnownJwks).Methods(http.MethodGet, http.MethodOptions)
 	oidcRouter.HandleFunc("/authorize", handlers.BeginAuthorizationFlow).Methods(http.MethodGet, http.MethodPost, http.MethodOptions)
+	oidcRouter.HandleFunc("/token", handlers.OidcToken).Methods(http.MethodPost, http.MethodOptions)
 
 	r.HandleFunc("/logins/{loginToken}", handlers.GetLoginState).Methods(http.MethodGet, http.MethodOptions)
 	r.HandleFunc("/logins/{loginToken}/verify-password", handlers.VerifyPassword).Methods(http.MethodPost, http.MethodOptions)
