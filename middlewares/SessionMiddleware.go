@@ -17,6 +17,10 @@ type CurrentSession struct {
 	userId uuid.UUID
 }
 
+func (s *CurrentSession) UserId() uuid.UUID {
+	return s.userId
+}
+
 type currentSessionCtxKeyType string
 
 const (
