@@ -97,7 +97,7 @@ func WellKnownOpenIdConfiguration(w http.ResponseWriter, r *http.Request) {
 		Issuer: fmt.Sprintf("%s/virtual-servers/%s", config.C.Server.ExternalUrl, vsName),
 
 		AuthorizationEndpoint: fmt.Sprintf("%s/virtual-servers/%s/authorize", config.C.Server.ExternalUrl, vsName),
-		TokenEndpoint:         "todo", // TODO:
+		TokenEndpoint:         fmt.Sprintf("%s/virtual-servers/%s/token", config.C.Server.ExternalUrl, vsName),
 		UserinfoEndpoint:      "todo", // TODO:
 		JwksUri:               fmt.Sprintf("%s/virtual-servers/%s/.well-known/jwks.json", config.C.Server.ExternalUrl, vsName),
 
