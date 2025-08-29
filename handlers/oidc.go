@@ -231,7 +231,7 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 
 		codeInfo := jsonTypes.NewCodeInfo(
 			virtualServer.Name(),
-			[]string{"email", "oidc", "sub"},
+			[]string{"email", "openid", "sub"},
 			s.UserId(),
 		)
 
