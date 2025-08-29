@@ -8,11 +8,13 @@ import (
 	"Keyline/repositories"
 	"Keyline/services"
 	"Keyline/utils"
+	"context"
 	"crypto/ed25519"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/golang-jwt/jwt/v5"
 	"net/http"
 	"net/url"
 	"slices"
@@ -223,11 +225,15 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 
 	tokenService := ioc.GetDependency[services.TokenService](scope)
 
-	_, ok := middlewares.GetSession(ctx)
+	s, ok := middlewares.GetSession(ctx)
 	if ok {
 		// TODO: consent page
 
-		codeInfo := jsonTypes.NewCodeInfo()
+		codeInfo := jsonTypes.NewCodeInfo(
+			virtualServer.Name(),
+			[]string{"email", "oidc", "sub"},
+			s.UserId(),
+		)
 
 		codeInfoString, err := json.Marshal(codeInfo)
 		if err != nil {
@@ -294,15 +300,151 @@ func OidcToken(w http.ResponseWriter, r *http.Request) {
 
 	switch grantType {
 	case "authorization_code":
-		// deal with code related stuff
-		// create the jwt
+		handleAuthorizationCode(w, r)
 
 	case "refresh_token":
-		// deal with refresh token related stuff
-		// create the jwt
+		handleRefreshToken(w, r)
 
 	default:
 		utils.HandleHttpError(w, fmt.Errorf("unsupported grant type: %s", grantType))
+		return
+	}
+}
+
+func authenticateApplication(ctx context.Context, applicationName string, applicationSecret string) (*repositories.Application, error) {
+	scope := middlewares.GetScope(ctx)
+
+	applicationRepository := ioc.GetDependency[repositories.ApplicationRepository](scope)
+	applicationFilter := repositories.NewApplicationFilter().Name(applicationName)
+	application, err := applicationRepository.First(ctx, applicationFilter)
+	if err != nil {
+		return nil, fmt.Errorf("getting application: %w", err)
+	}
+	if application == nil {
+		return nil, fmt.Errorf("application not found")
+	}
+
+	if applicationSecret == "" {
+		// TODO: do pkce
+		return application, nil
+	}
+
+	hashedSecret := application.HashedSecret()
+	if utils.CheapCompareHash(hashedSecret, applicationSecret) {
+		return application, nil
+	}
+
+	return nil, fmt.Errorf("invalid secret")
+}
+
+type CodeFlowResponse struct {
+	TokenType    string `json:"token_type"`
+	IdToken      string `json:"id_token"`
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	Scope        string `json:"scope"`
+	ExpiresIn    int    `json:"expires_in"`
+}
+
+func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	scope := middlewares.GetScope(ctx)
+
+	code := r.Form.Get("code")
+
+	tokenService := ioc.GetDependency[services.TokenService](scope)
+	valueString, err := tokenService.GetToken(ctx, services.OidcCodeTokenType, code)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("getting token: %w", err))
+		return
+	}
+
+	var codeInfo jsonTypes.CodeInfo
+	err = json.Unmarshal([]byte(valueString), &codeInfo)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("unmarshaling code info: %w", err))
+		return
+	}
+
+	clientId, clientSecret, hasBasicAuth := r.BasicAuth()
+	if !hasBasicAuth {
+		clientId = r.Form.Get("client_id")
+	}
+
+	_, err = authenticateApplication(ctx, clientId, clientSecret)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("authenticating application: %w", err))
+		return
+	}
+
+	userRepository := ioc.GetDependency[repositories.UserRepository](scope)
+	userFilter := repositories.NewUserFilter().Id(codeInfo.UserId)
+	user, err := userRepository.First(ctx, userFilter)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("getting user: %w", err))
+		return
+	}
+	if user == nil {
+		utils.HandleHttpError(w, fmt.Errorf("user not found"))
+		return
+	}
+
+	// TODO: add pkce challenge
+
+	// TODO: get claims from scopes
+
+	now := time.Now() // TODO: add clock service for testing/mocking
+
+	keyService := ioc.GetDependency[services.KeyService](scope)
+	keyPair := keyService.GetKey(codeInfo.VirtualServerName)
+	key := keyPair.PrivateKey()
+
+	idTokenClaims := jwt.MapClaims{
+		"sub":   codeInfo.UserId,
+		"iss":   config.C.Server.ExternalUrl,
+		"aud":   clientId,
+		"iat":   now.Unix(),
+		"exp":   now.Add(time.Hour).Unix(), // TODO: make this configurable per virtual server
+		"name":  user.DisplayName(),
+		"email": user.PrimaryEmail(),
+	}
+
+	idToken := jwt.NewWithClaims(jwt.SigningMethodEdDSA, idTokenClaims)
+	idTokenString, err := idToken.SignedString(key)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("signing id token: %w", err))
+		return
+	}
+
+	accessToken := jwt.NewWithClaims(jwt.SigningMethodEdDSA, jwt.MapClaims{
+		"sub":    codeInfo.UserId,
+		"scopes": codeInfo.GrantedScopes,
+		"iat":    now.Unix(),
+		"exp":    now.Add(time.Hour).Unix(), // TODO: make this configurable per virtual server
+	})
+	accessTokenString, err := accessToken.SignedString(key)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("signing access token: %w", err))
+		return
+	}
+
+	refreshTokenInfo := jsonTypes.RefreshTokenInfo{
+		// TODO: populate with information as we need
+	}
+	refreshTokenInfoJson, err := json.Marshal(refreshTokenInfo)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("marshaling refresh token info: %w", err))
+		return
+	}
+
+	refreshTokenString, err := tokenService.GenerateAndStoreToken(
+		ctx,
+		services.OidcRefreshTokenTokenType,
+		string(refreshTokenInfoJson),
+		time.Hour, // TODO: make this configurable per virtual server
+	)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("generating refresh token: %w", err))
 		return
 	}
 
@@ -310,5 +452,27 @@ func OidcToken(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
-	// send the response body
+	scopeString := strings.Join(codeInfo.GrantedScopes, " ")
+	response := CodeFlowResponse{
+		TokenType:    "Bearer",
+		IdToken:      idTokenString,
+		AccessToken:  accessTokenString,
+		RefreshToken: refreshTokenString,
+		Scope:        scopeString,
+		ExpiresIn:    int(time.Hour.Seconds()), // TODO: make this configurable per virtual server
+	}
+	err = json.NewEncoder(w).Encode(response)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("encoding response: %w", err))
+		return
+	}
+}
+
+func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
+
+	// TODO: implement
+
+	w.Header().Set("Cache-Control", "no-store")
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 }
