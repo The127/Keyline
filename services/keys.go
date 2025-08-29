@@ -12,6 +12,7 @@ import (
 
 var ErrKeyPairNotFound = errors.New("KeyPair not found")
 
+//go:generate mockgen -destination=./mocks/key_store.go -package=mocks Keyline/services KeyStore
 type KeyStore interface {
 	Store(virtualServerName string, keyPair KeyPair) error
 	Load(virtualServerName string) (KeyPair, error)
@@ -74,6 +75,7 @@ func (k *KeyPair) PrivateKey() ed25519.PrivateKey {
 	return k.privateKey
 }
 
+//go:generate mockgen -destination=./mocks/key_service.go -package=mocks Keyline/services KeyService
 type KeyService interface {
 	Generate(virtualServerName string) (KeyPair, error)
 	GetKey(virtualServerName string) KeyPair
