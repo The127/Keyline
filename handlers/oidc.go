@@ -14,6 +14,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"slices"
 	"strings"
 	"time"
@@ -220,24 +221,54 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 
 	// TODO: check the scopes for email and profile
 
+	tokenService := ioc.GetDependency[services.TokenService](scope)
+
 	_, ok := middlewares.GetSession(ctx)
 	if ok {
-		// TODO: authorize user
-		// TODO: consent page/isue code
+		// TODO: consent page
 
-		w.WriteHeader(http.StatusFound)
-		w.Write([]byte("login success, TODO: implement next steps"))
+		codeInfo := jsonTypes.NewCodeInfo()
 
+		codeInfoString, err := json.Marshal(codeInfo)
+		if err != nil {
+			utils.HandleHttpError(w, fmt.Errorf("marshaling code info: %w", err))
+			return
+		}
+
+		code, err := tokenService.GenerateAndStoreToken(ctx, services.OidcCodeTokenType, string(codeInfoString), time.Second*30)
+		if err != nil {
+			utils.HandleHttpError(w, fmt.Errorf("generating code: %w", err))
+			return
+		}
+
+		redirectUri, err := url.Parse(authRequest.RedirectUri)
+		if err != nil {
+			utils.HandleHttpError(w, fmt.Errorf("parsing redirect uri: %w", err))
+			return
+		}
+
+		query := redirectUri.Query()
+		query.Set("code", code)
+
+		redirectUri.RawQuery = query.Encode()
+
+		// redirect to that uri with code
+		http.Redirect(w, r, redirectUri.String(), http.StatusFound)
 		return
 	}
 
-	tokenService := ioc.GetDependency[services.TokenService](scope)
 	loginInfo := jsonTypes.NewLoginInfo(
 		virtualServer,
 		application,
 		r.URL.String(),
 	)
+
 	loginInfoString, err := json.Marshal(loginInfo)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("marshaling login info: %w", err))
+		return
+	}
+
 	loginSessionToken, err := tokenService.GenerateAndStoreToken(ctx, services.LoginSessionTokenType, string(loginInfoString), time.Minute*15)
 	if err != nil {
 		utils.HandleHttpError(w, fmt.Errorf("generating login session token: %w", err))
