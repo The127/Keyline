@@ -19,5 +19,13 @@ Content-Type: application/x-www-form-urlencoded
 grant_type = authorization_code &
 client_id = admin-ui &
 redirect_uri = http://localhost:5173/debugRedirectTarget &
-code = ZrJDWOcZGbFNm53XYI6k7w==
+code = NRNvT8WR8vq7_DACEmVzhA==
+
+### refresh token
+POST http://127.0.0.1:8081/oidc/keyline/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type = refresh_token &
+client_id = admin-ui &
+refresh_token = JuTNZ5aFU7CN9uGP3j0aHw==
 

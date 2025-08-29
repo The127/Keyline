@@ -389,8 +389,6 @@ func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: add pkce challenge
-
 	// TODO: get claims from scopes
 
 	now := time.Now() // TODO: add clock service for testing/mocking
@@ -428,9 +426,12 @@ func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	refreshTokenInfo := jsonTypes.RefreshTokenInfo{
-		// TODO: populate with information as we need
-	}
+	refreshTokenInfo := jsonTypes.NewRefreshTokenInfo(
+		codeInfo.VirtualServerName,
+		clientId,
+		codeInfo.UserId,
+		codeInfo.GrantedScopes,
+	)
 	refreshTokenInfoJson, err := json.Marshal(refreshTokenInfo)
 	if err != nil {
 		utils.HandleHttpError(w, fmt.Errorf("marshaling refresh token info: %w", err))
@@ -468,11 +469,138 @@ func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
+type RefreshTokenResponse struct {
+	TokenType    string `json:"token_type"`
+	IdToken      string `json:"id_token"`
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	ExpiresIn    int    `json:"expires_in"`
+}
 
-	// TODO: implement
+func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	scope := middlewares.GetScope(ctx)
+
+	clientId, clientSecret, hasBasicAuth := r.BasicAuth()
+	if !hasBasicAuth {
+		clientId = r.Form.Get("client_id")
+	}
+
+	_, err := authenticateApplication(ctx, clientId, clientSecret)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("authenticating application: %w", err))
+		return
+	}
+
+	tokenService := ioc.GetDependency[services.TokenService](scope)
+	refreshTokenInfoString, err := tokenService.GetToken(ctx, services.OidcRefreshTokenTokenType, r.Form.Get("refresh_token"))
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("getting refresh token: %w", err))
+		return
+	}
+
+	var refreshTokenInfo jsonTypes.RefreshTokenInfo
+	err = json.Unmarshal([]byte(refreshTokenInfoString), &refreshTokenInfo)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("unmarshaling refresh token info: %w", err))
+		return
+	}
+
+	if refreshTokenInfo.ClientId != clientId {
+		utils.HandleHttpError(w, fmt.Errorf("invalid client id"))
+		return
+	}
+
+	err = tokenService.DeleteToken(ctx, services.OidcRefreshTokenTokenType, r.Form.Get("refresh_token"))
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("deleting refresh token: %w", err))
+		return
+	}
+
+	userRepository := ioc.GetDependency[repositories.UserRepository](scope)
+	userFilter := repositories.NewUserFilter().Id(refreshTokenInfo.UserId)
+	user, err := userRepository.First(ctx, userFilter)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("getting user: %w", err))
+		return
+	}
+	if user == nil {
+		utils.HandleHttpError(w, fmt.Errorf("user not found"))
+		return
+	}
+
+	now := time.Now() // TODO: add clock service for testing/mocking
+
+	keyService := ioc.GetDependency[services.KeyService](scope)
+	keyPair := keyService.GetKey(refreshTokenInfo.VirtualServerName)
+	key := keyPair.PrivateKey()
+
+	idTokenClaims := jwt.MapClaims{
+		"sub":   refreshTokenInfo.UserId,
+		"iss":   config.C.Server.ExternalUrl,
+		"aud":   clientId,
+		"iat":   now.Unix(),
+		"exp":   now.Add(time.Hour).Unix(), // TODO: make this configurable per virtual server
+		"name":  user.DisplayName(),
+		"email": user.PrimaryEmail(),
+	}
+
+	idToken := jwt.NewWithClaims(jwt.SigningMethodEdDSA, idTokenClaims)
+	idTokenString, err := idToken.SignedString(key)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("signing id token: %w", err))
+		return
+	}
+
+	accessToken := jwt.NewWithClaims(jwt.SigningMethodEdDSA, jwt.MapClaims{
+		"sub":    refreshTokenInfo.UserId,
+		"scopes": refreshTokenInfo.GrantedScopes,
+		"iat":    now.Unix(),
+		"exp":    now.Add(time.Hour).Unix(), // TODO: make this configurable per virtual server
+	})
+	accessTokenString, err := accessToken.SignedString(key)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("signing access token: %w", err))
+		return
+	}
+
+	refreshTokenInfo = jsonTypes.NewRefreshTokenInfo(
+		refreshTokenInfo.VirtualServerName,
+		refreshTokenInfo.ClientId,
+		refreshTokenInfo.UserId,
+		refreshTokenInfo.GrantedScopes,
+	)
+	refreshTokenInfoJson, err := json.Marshal(refreshTokenInfo)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("marshaling refresh token info: %w", err))
+		return
+	}
+
+	refreshTokenString, err := tokenService.GenerateAndStoreToken(
+		ctx,
+		services.OidcRefreshTokenTokenType,
+		string(refreshTokenInfoJson),
+		time.Hour, // TODO: make this configurable per virtual server
+	)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("generating refresh token: %w", err))
+		return
+	}
 
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
+
+	response := RefreshTokenResponse{
+		TokenType:    "Bearer",
+		IdToken:      idTokenString,
+		AccessToken:  accessTokenString,
+		RefreshToken: refreshTokenString,
+		ExpiresIn:    int(time.Hour.Seconds()), // TODO: make this configurable per virtual server
+	}
+	err = json.NewEncoder(w).Encode(response)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("encoding response: %w", err))
+		return
+	}
 }
