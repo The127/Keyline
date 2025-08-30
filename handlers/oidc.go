@@ -150,7 +150,6 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// get form data (auth request)
 	authRequest := AuthorizationRequest{
 		ResponseTypes:       strings.Split(r.Form.Get("response_type"), " "),
 		VirtualServerName:   vsName,
@@ -165,7 +164,6 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 
 	// TODO: use validation annotations to validate the auth request
 
-	// validate the auth request
 	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(vsName)
 	virtualServer, err := virtualServerRepository.First(ctx, virtualServerFilter)
@@ -255,6 +253,10 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 
 		query := redirectUri.Query()
 		query.Set("code", code)
+
+		if authRequest.State != "" {
+			query.Set("state", authRequest.State)
+		}
 
 		redirectUri.RawQuery = query.Encode()
 
