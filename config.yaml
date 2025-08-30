@@ -1,6 +1,6 @@
 server:
   host: "127.0.0.1"
-  externalUrl: "127.0.0.1:8081"
+  externalUrl: "http://127.0.0.1:8081"
 database:
   host: "localhost"
   port: 5732
