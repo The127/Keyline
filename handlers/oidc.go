@@ -96,12 +96,12 @@ func WellKnownOpenIdConfiguration(w http.ResponseWriter, r *http.Request) {
 	}
 
 	responseDto := OpenIdConfigurationResponseDto{
-		Issuer: fmt.Sprintf("%s/virtual-servers/%s", config.C.Server.ExternalUrl, vsName),
+		Issuer: fmt.Sprintf("%s/oidc/%s", config.C.Server.ExternalUrl, vsName),
 
-		AuthorizationEndpoint: fmt.Sprintf("%s/virtual-servers/%s/authorize", config.C.Server.ExternalUrl, vsName),
-		TokenEndpoint:         fmt.Sprintf("%s/virtual-servers/%s/token", config.C.Server.ExternalUrl, vsName),
+		AuthorizationEndpoint: fmt.Sprintf("%s/oidc/%s/authorize", config.C.Server.ExternalUrl, vsName),
+		TokenEndpoint:         fmt.Sprintf("%s/oidc/%s/token", config.C.Server.ExternalUrl, vsName),
 		UserinfoEndpoint:      "todo", // TODO:
-		JwksUri:               fmt.Sprintf("%s/virtual-servers/%s/.well-known/jwks.json", config.C.Server.ExternalUrl, vsName),
+		JwksUri:               fmt.Sprintf("%s/oidc/%s/.well-known/jwks.json", config.C.Server.ExternalUrl, vsName),
 
 		ResponseTypesSupported:           []string{"code"}, // TODO: maybe support more
 		SubjectTypesSupported:            []string{"public"},
