@@ -100,7 +100,7 @@ func WellKnownOpenIdConfiguration(w http.ResponseWriter, r *http.Request) {
 
 		AuthorizationEndpoint: fmt.Sprintf("%s/oidc/%s/authorize", config.C.Server.ExternalUrl, vsName),
 		TokenEndpoint:         fmt.Sprintf("%s/oidc/%s/token", config.C.Server.ExternalUrl, vsName),
-		UserinfoEndpoint:      "todo", // TODO:
+		UserinfoEndpoint:      fmt.Sprintf("%s/oidc/%s/userinfo", config.C.Server.ExternalUrl, vsName),
 		JwksUri:               fmt.Sprintf("%s/oidc/%s/.well-known/jwks.json", config.C.Server.ExternalUrl, vsName),
 
 		ResponseTypesSupported:           []string{"code"}, // TODO: maybe support more
@@ -289,6 +289,42 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 		loginSessionToken,
 	)
 	http.Redirect(w, r, redirectUrl, http.StatusFound)
+}
+
+type OidcUserInfoResponseDto struct {
+	Sub   string `json:"sub"`
+	Email string `json:"email"`
+	Name  string `json:"name"`
+}
+
+func OidcUserinfo(w http.ResponseWriter, r *http.Request) {
+	// TODO: implement this properly
+	err := r.ParseForm()
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	bearer := r.Header.Get("Authorization")
+	if bearer == "" {
+		utils.HandleHttpError(w, fmt.Errorf("authorization header not found"))
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	tempResult := OidcUserInfoResponseDto{
+		Sub:   "d70ed017-468f-4472-875e-699601024151",
+		Email: "test@home.arpa",
+		Name:  "Test",
+	}
+
+	err = json.NewEncoder(w).Encode(tempResult)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
 }
 
 func OidcToken(w http.ResponseWriter, r *http.Request) {
