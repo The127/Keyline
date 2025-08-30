@@ -107,8 +107,8 @@ func WellKnownOpenIdConfiguration(w http.ResponseWriter, r *http.Request) {
 		SubjectTypesSupported:            []string{"public"},
 		IdTokenSigningAlgValuesSupported: []string{"EdDSA"},
 
-		ScopesSupported: []string{"oidc", "email", "profile"}, // TODO: get from db
-		ClaimsSupported: []string{"sub", "name", "email"},     // TODO: get from db
+		ScopesSupported: []string{"openid", "email", "profile"}, // TODO: get from db
+		ClaimsSupported: []string{"sub", "name", "email"},       // TODO: get from db
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -401,7 +401,7 @@ func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 
 	idTokenClaims := jwt.MapClaims{
 		"sub":   codeInfo.UserId,
-		"iss":   config.C.Server.ExternalUrl,
+		"iss":   fmt.Sprintf("%s/oidc/%s", config.C.Server.ExternalUrl, codeInfo.VirtualServerName),
 		"aud":   clientId,
 		"iat":   now.Unix(),
 		"exp":   now.Add(time.Hour).Unix(), // TODO: make this configurable per virtual server
@@ -539,7 +539,7 @@ func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 
 	idTokenClaims := jwt.MapClaims{
 		"sub":   refreshTokenInfo.UserId,
-		"iss":   config.C.Server.ExternalUrl,
+		"iss":   fmt.Sprintf("%s/oidc/%s", config.C.Server.ExternalUrl, refreshTokenInfo.VirtualServerName),
 		"aud":   clientId,
 		"iat":   now.Unix(),
 		"exp":   now.Add(time.Hour).Unix(), // TODO: make this configurable per virtual server
