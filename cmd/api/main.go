@@ -37,7 +37,9 @@ func main() {
 		return database.ConnectToDatabase()
 	})
 
-	ioc.RegisterScoped(dc, database.NewDbService)
+	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) database.DbService {
+		return database.NewDbService(dp)
+	})
 	ioc.RegisterCloseHandler(dc, func(dbService database.DbService) error {
 		return dbService.Close()
 	})
