@@ -57,6 +57,9 @@ func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer)
 	}
 
 	err = initializeDefaultApplications(ctx, virtualServer)
+	if err != nil {
+		return nil, fmt.Errorf("initializing default applications: %w", err)
+	}
 
 	return &CreateVirtualServerResponse{
 		Id: virtualServer.Id(),

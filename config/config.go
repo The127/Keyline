@@ -152,11 +152,9 @@ func setKeyStoreDefaultsOrPanic() {
 	switch C.KeyStore.Mode {
 	case KeyStoreModeOpenBao:
 		setKeyStoreModeOpenBaoDefaultsOrPanic()
-		break
 
 	case KeyStoreModeDirectory:
 		setKeyStoreModeDirectoryDefaultsOrPanic()
-		break
 
 	default:
 		panic("key store mode missing or not supported")
