@@ -73,10 +73,13 @@ func initializeDefaultApplications(ctx context.Context, virtualServer *repositor
 		AdminApplicationName,
 		"Admin Application",
 		[]string{
-			"http://localhost:3000",
+			fmt.Sprintf("http://localhost:5173/mgmt/%s/auth", virtualServer.Name()),
 		},
 	)
 	adminUiApplication.GenerateSecret()
+	adminUiApplication.SetPostLogoutRedirectUris([]string{
+		fmt.Sprintf("http://localhost:5173/mgmt/%s/logout", virtualServer.Name()),
+	})
 
 	err := applicationRepository.Insert(ctx, adminUiApplication)
 	if err != nil {

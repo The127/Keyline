@@ -25,8 +25,9 @@ type Application struct {
 	name        string
 	displayName string
 
-	hashedSecret string
-	redirectUris []string
+	hashedSecret           string
+	redirectUris           []string
+	postLogoutRedirectUris []string
 }
 
 func NewApplication(
@@ -36,11 +37,12 @@ func NewApplication(
 	redirectUris []string,
 ) *Application {
 	return &Application{
-		ModelBase:       NewModelBase(),
-		virtualServerId: virtualServerId,
-		name:            name,
-		displayName:     displayName,
-		redirectUris:    redirectUris,
+		ModelBase:              NewModelBase(),
+		virtualServerId:        virtualServerId,
+		name:                   name,
+		displayName:            displayName,
+		redirectUris:           redirectUris,
+		postLogoutRedirectUris: make([]string, 0),
 	}
 }
 
@@ -55,6 +57,7 @@ func (a *Application) getScanPointers() []any {
 		&a.displayName,
 		&a.hashedSecret,
 		pq.Array(&a.redirectUris),
+		pq.Array(&a.postLogoutRedirectUris),
 	}
 }
 
@@ -98,6 +101,15 @@ func (a *Application) RedirectUris() []string {
 func (a *Application) SetRedirectUris(redirectUris []string) {
 	a.TrackChange("redirect_uris", redirectUris)
 	a.redirectUris = redirectUris
+}
+
+func (a *Application) PostLogoutRedirectUris() []string {
+	return a.postLogoutRedirectUris
+}
+
+func (a *Application) SetPostLogoutRedirectUris(postLogoutRedirectUris []string) {
+	a.TrackChange("post_logout_redirect_uris", postLogoutRedirectUris)
+	a.postLogoutRedirectUris = postLogoutRedirectUris
 }
 
 type ApplicationFilter struct {
@@ -158,6 +170,7 @@ func (r *applicationRepository) selectQuery(filter ApplicationFilter) *sqlbuilde
 		"display_name",
 		"hashed_secret",
 		"redirect_uris",
+		"post_logout_redirect_uris",
 	).From("applications")
 
 	if filter.name != nil {
