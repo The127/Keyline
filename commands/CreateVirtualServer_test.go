@@ -8,6 +8,7 @@ import (
 	"Keyline/services"
 	serviceMocks "Keyline/services/mocks"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 	"testing"
 )
@@ -86,6 +87,6 @@ func TestHandleCreateVirtualServer(t *testing.T) {
 	resp, err := HandleCreateVirtualServer(ctx, cmd)
 
 	// assert
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, resp)
 }

@@ -7,6 +7,7 @@ import (
 	"Keyline/repositories/mocks"
 	"Keyline/utils"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 	"testing"
 )
@@ -58,6 +59,6 @@ func TestHandleCreateApplication(t *testing.T) {
 	resp, err := HandleCreateApplication(ctx, cmd)
 
 	// assert
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, resp)
 }

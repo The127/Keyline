@@ -2,6 +2,7 @@ package ioc
 
 import (
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"testing"
 )
 
@@ -70,7 +71,7 @@ func TestDependencyIsResolved(t *testing.T) {
 	distance, err := rocketLauncher.Launch()
 
 	// assert
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Greater(t, distance, 100_000)
 }
 
@@ -187,6 +188,6 @@ func TestCloseHandler(t *testing.T) {
 	err := scope1.Close()
 
 	// assert
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.False(t, connector.IsOpen())
 }
