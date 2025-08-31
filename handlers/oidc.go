@@ -295,6 +295,12 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 func OidcEndSession(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
+	err := r.ParseForm()
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -307,7 +313,8 @@ func OidcEndSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, "/", http.StatusFound)
+	redirectUri := r.Form.Get("post_logout_redirect_uri")
+	http.Redirect(w, r, redirectUri, http.StatusFound)
 }
 
 type OidcUserInfoResponseDto struct {
