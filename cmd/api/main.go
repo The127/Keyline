@@ -192,6 +192,6 @@ func initApplication(dp *ioc.DependencyProvider) {
 		EnableRegistration: config.C.InitialVirtualServer.EnableRegistration,
 	})
 	if err != nil {
-		logging.Logger.Fatalf("failed to create intial virtual server: %v", err)
+		logging.Logger.Fatalf("failed to create initial virtual server: %v", err)
 	}
 }

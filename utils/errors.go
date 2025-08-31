@@ -20,7 +20,7 @@ var ErrTemplateNotFound = fmt.Errorf("template: %w", ErrHttpNotFound)
 var ErrCredentialNotFound = fmt.Errorf("credential: %w", ErrHttpNotFound)
 
 var ErrHttpBadRequest = errors.New("bad request")
-var ErrRegistrationNotEnabled = fmt.Errorf("registartion is not enabled: %w", ErrHttpBadRequest)
+var ErrRegistrationNotEnabled = fmt.Errorf("registration is not enabled: %w", ErrHttpBadRequest)
 var ErrInvalidUuid = fmt.Errorf("invalid uuid: %w", ErrHttpBadRequest)
 
 var ErrHttpConflict = errors.New("conflict")
