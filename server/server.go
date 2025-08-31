@@ -61,6 +61,7 @@ func Serve(dp *ioc.DependencyProvider) {
 
 	vsApiRouter.HandleFunc("/users/register", handlers.RegisterUser).Methods(http.MethodPost, http.MethodOptions)
 	vsApiRouter.HandleFunc("/users/verify-email", handlers.VerifyEmail).Methods(http.MethodGet, http.MethodOptions)
+	vsApiRouter.HandleFunc("/users/{userId}", handlers.GetUserById).Methods(http.MethodGet, http.MethodOptions)
 
 	vsApiRouter.HandleFunc("/roles", handlers.CreateRole).Methods(http.MethodPost, http.MethodOptions)
 	vsApiRouter.HandleFunc("/roles/{roleId}/assign", handlers.AssignRole).Methods(http.MethodPost, http.MethodOptions)
