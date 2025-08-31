@@ -147,3 +147,46 @@ func GetUserById(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, err)
 	}
 }
+
+type PatchUserRequestDto struct {
+	DisplayName *string `json:"displayName"`
+}
+
+func PatchUser(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	scope := middlewares.GetScope(ctx)
+
+	vsName, err := middlewares.GetVirtualServerName(ctx)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	vars := mux.Vars(r)
+	userIdString := vars["userId"]
+	userId, err := uuid.Parse(userIdString)
+	if err != nil {
+		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+		return
+	}
+
+	var dto PatchUserRequestDto
+	err = json.NewDecoder(r.Body).Decode(&dto)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+	}
+
+	m := ioc.GetDependency[*mediator.Mediator](scope)
+	command := commands.PatchUser{
+		UserId:            userId,
+		VirtualServerName: vsName,
+		DisplayName:       dto.DisplayName,
+	}
+	_, err = mediator.Send[*commands.PatchUserResponse](ctx, m, command)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
