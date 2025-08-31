@@ -35,12 +35,9 @@ linters:
       rules:
         - name: exported
           disabled: true
-
-  gocritic:
-    disabled-checks:
-      - commentedOutCode
-      - hugeParam
-      - unnamedResult
+    gocritic:
+      disabled-checks:
+        - unlambda
 
 issues:
   exclude-use-default: false
