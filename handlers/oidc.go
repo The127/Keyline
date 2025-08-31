@@ -15,6 +15,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"net/http"
 	"net/url"
 	"slices"
@@ -396,8 +397,19 @@ type OidcUserInfoResponseDto struct {
 }
 
 func OidcUserinfo(w http.ResponseWriter, r *http.Request) {
-	// TODO: implement this properly
-	err := r.ParseForm()
+	ctx := r.Context()
+	scope := middlewares.GetScope(ctx)
+
+	vsName, err := middlewares.GetVirtualServerName(ctx)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	keyService := ioc.GetDependency[services.KeyService](scope)
+	keyPair := keyService.GetKey(vsName)
+
+	err = r.ParseForm()
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
@@ -409,13 +421,68 @@ func OidcUserinfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !strings.HasPrefix(bearer, "Bearer ") {
+		utils.HandleHttpError(w, fmt.Errorf("authorization header is not a bearer token"))
+		return
+	}
+
+	tokenString := strings.TrimPrefix(bearer, "Bearer ")
+	if tokenString == "" {
+		utils.HandleHttpError(w, fmt.Errorf("token not found"))
+		return
+	}
+
+	tokenJwt, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		return keyPair.PublicKey(), nil
+	})
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("parsing token: %w", err))
+		return
+	}
+
+	subject, err := tokenJwt.Claims.GetSubject()
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("getting subject: %w", err))
+		return
+	}
+
+	userId, err := uuid.Parse(subject)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("parsing subject: %w", err))
+		return
+	}
+
+	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
+	virtualServerFilter := repositories.NewVirtualServerFilter().Name(vsName)
+	virtualServer, err := virtualServerRepository.First(ctx, virtualServerFilter)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
+		return
+	}
+	if virtualServer == nil {
+		utils.HandleHttpError(w, fmt.Errorf("virtual server not found"))
+		return
+	}
+
+	userRepository := ioc.GetDependency[repositories.UserRepository](scope)
+	userFilter := repositories.NewUserFilter().Id(userId).VirtualServerId(virtualServer.Id())
+	user, err := userRepository.First(ctx, userFilter)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("getting user: %w", err))
+		return
+	}
+	if user == nil {
+		utils.HandleHttpError(w, fmt.Errorf("user not found"))
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
 	tempResult := OidcUserInfoResponseDto{
-		Sub:   "d70ed017-468f-4472-875e-699601024151",
-		Email: "test@home.arpa",
-		Name:  "Test",
+		Sub:   userId.String(),
+		Email: user.PrimaryEmail(),
+		Name:  user.DisplayName(),
 	}
 
 	err = json.NewEncoder(w).Encode(tempResult)
