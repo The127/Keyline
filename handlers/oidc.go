@@ -80,6 +80,7 @@ type OpenIdConfigurationResponseDto struct {
 	AuthorizationEndpoint            string   `json:"authorization_endpoint"`
 	TokenEndpoint                    string   `json:"token_endpoint"`
 	UserinfoEndpoint                 string   `json:"userinfo_endpoint"`
+	EndSessionEndpoint               string   `json:"end_session_endpoint"`
 	JwksUri                          string   `json:"jwks_uri"`
 	ResponseTypesSupported           []string `json:"response_types_supported"`
 	SubjectTypesSupported            []string `json:"subject_types_supported"`
@@ -101,6 +102,7 @@ func WellKnownOpenIdConfiguration(w http.ResponseWriter, r *http.Request) {
 		AuthorizationEndpoint: fmt.Sprintf("%s/oidc/%s/authorize", config.C.Server.ExternalUrl, vsName),
 		TokenEndpoint:         fmt.Sprintf("%s/oidc/%s/token", config.C.Server.ExternalUrl, vsName),
 		UserinfoEndpoint:      fmt.Sprintf("%s/oidc/%s/userinfo", config.C.Server.ExternalUrl, vsName),
+		EndSessionEndpoint:    fmt.Sprintf("%s/oidc/%s/end_session", config.C.Server.ExternalUrl, vsName),
 		JwksUri:               fmt.Sprintf("%s/oidc/%s/.well-known/jwks.json", config.C.Server.ExternalUrl, vsName),
 
 		ResponseTypesSupported:           []string{"code"}, // TODO: maybe support more
@@ -143,7 +145,6 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// get the virtual server
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -289,6 +290,24 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 		loginSessionToken,
 	)
 	http.Redirect(w, r, redirectUrl, http.StatusFound)
+}
+
+func OidcEndSession(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	vsName, err := middlewares.GetVirtualServerName(ctx)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	err = middlewares.DeleteSession(w, r, vsName)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 type OidcUserInfoResponseDto struct {

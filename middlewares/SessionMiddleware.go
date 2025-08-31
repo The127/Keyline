@@ -14,11 +14,16 @@ import (
 )
 
 type CurrentSession struct {
-	userId uuid.UUID
+	userId    uuid.UUID
+	sessionId uuid.UUID
 }
 
 func (s *CurrentSession) UserId() uuid.UUID {
 	return s.userId
+}
+
+func (s *CurrentSession) SessionId() uuid.UUID {
+	return s.sessionId
 }
 
 type currentSessionCtxKeyType string
@@ -75,7 +80,8 @@ func SessionMiddleware() mux.MiddlewareFunc {
 
 			if utils.CheapCompareHash(token.Secret(), session.HashedSecret()) {
 				currentSession := CurrentSession{
-					userId: session.userId,
+					userId:    session.userId,
+					sessionId: tokenId,
 				}
 				r = r.WithContext(ContextWithSession(r.Context(), currentSession))
 			}
@@ -92,6 +98,26 @@ func ContextWithSession(ctx context.Context, session CurrentSession) context.Con
 func GetSession(ctx context.Context) (CurrentSession, bool) {
 	value, ok := ctx.Value(currentSessionCtxKey).(CurrentSession)
 	return value, ok
+}
+
+func DeleteSession(w http.ResponseWriter, r *http.Request, vsName string) error {
+	ctx := r.Context()
+	scope := GetScope(ctx)
+
+	s, ok := GetSession(ctx)
+	if !ok {
+		return nil
+	}
+
+	sessionService := ioc.GetDependency[SessionService](scope)
+	err := sessionService.DeleteSession(ctx, vsName, s.SessionId())
+	if err != nil {
+		return fmt.Errorf("deleting session: %w", err)
+	}
+
+	setCookie(w, GetSessionCookieName(vsName), "", -1)
+
+	return nil
 }
 
 func CreateSession(w http.ResponseWriter, r *http.Request, vsName string, userId uuid.UUID) error {

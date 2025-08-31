@@ -102,6 +102,46 @@ func (s *sessionService) GetSession(ctx context.Context, virtualServerName strin
 	), nil
 }
 
+func (s *sessionService) DeleteSession(ctx context.Context, virtualServerName string, id uuid.UUID) error {
+	scope := middlewares.GetScope(ctx)
+
+	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
+	vsFilter := repositories.NewVirtualServerFilter().Name(virtualServerName)
+	virtualServer, err := virtualServerRepository.Single(ctx, vsFilter)
+	if err != nil {
+		return fmt.Errorf("getting virtual server: %w", err)
+	}
+
+	sessionRepository := ioc.GetDependency[repositories.SessionRepository](scope)
+	sessionFilter := repositories.NewSessionFilter().Id(id)
+	dbSession, err := sessionRepository.First(ctx, sessionFilter)
+	if err != nil {
+		return fmt.Errorf("getting session from db: %w", err)
+	}
+	if dbSession == nil {
+		return nil
+	}
+
+	if dbSession.VirtualServerId() != virtualServer.Id() {
+		return fmt.Errorf("session does not belong to virtual server")
+	}
+
+	redisClient := utils.NewRedisClient()
+	redisKey := getRedisSessionKey(virtualServerName, id)
+	intCmd := redisClient.Del(ctx, redisKey)
+	err = intCmd.Err()
+	if err != nil {
+		return fmt.Errorf("deleting session token from cache: %w", err)
+	}
+
+	err = sessionRepository.Delete(ctx, id)
+	if err != nil {
+		return fmt.Errorf("deleting session: %w", err)
+	}
+
+	return nil
+}
+
 func (s *sessionService) loadSessionFromDatabase(ctx context.Context, virtualServerName string, id uuid.UUID) (*middlewares.Session, error) {
 	scope := middlewares.GetScope(ctx)
 
