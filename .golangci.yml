@@ -28,6 +28,7 @@ linters:
     - funlen         # disable too strict function length
     - depguard       # optional dependency guard
     - lll            # line length, IDEs usually handle it
+    - dupl           #
   settings:
     revive:
       severity: warning
