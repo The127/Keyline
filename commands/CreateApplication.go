@@ -10,10 +10,11 @@ import (
 )
 
 type CreateApplication struct {
-	VirtualServerName string
-	Name              string
-	DisplayName       string
-	RedirectUris      []string
+	VirtualServerName      string
+	Name                   string
+	DisplayName            string
+	RedirectUris           []string
+	PostLogoutRedirectUris []string
 }
 
 type CreateApplicationResponse struct {
@@ -39,6 +40,7 @@ func HandleCreateApplication(ctx context.Context, command CreateApplication) (*C
 		command.RedirectUris,
 	)
 	secret := application.GenerateSecret()
+	application.SetPostLogoutRedirectUris(command.PostLogoutRedirectUris)
 	err = applicationRepository.Insert(ctx, application)
 	if err != nil {
 		return nil, fmt.Errorf("inserting application: %w", err)
