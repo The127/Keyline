@@ -96,13 +96,12 @@ func ListApplications(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var response []GetApplicationListResponseDto
-	for _, application := range applications {
-		response = append(response, GetApplicationListResponseDto{
-			Name:        application.Name,
-			DisplayName: application.DisplayName,
-		})
-	}
+	response := utils.MapSlice(applications, func(x queries.GetApplicationsResponse) GetApplicationListResponseDto {
+		return GetApplicationListResponseDto{
+			Name:        x.Name,
+			DisplayName: x.DisplayName,
+		}
+	})
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
