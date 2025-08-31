@@ -96,6 +96,7 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 type GetUserByIdResponseDto struct {
 	Id            uuid.UUID `json:"id"`
 	Username      string    `json:"username"`
+	DisplayName   string    `json:"displayName"`
 	PrimaryEmail  string    `json:"primaryEmail"`
 	EmailVerified bool      `json:"emailVerified"`
 }
@@ -136,6 +137,7 @@ func GetUserById(w http.ResponseWriter, r *http.Request) {
 	response := GetUserByIdResponseDto{
 		Id:            queryResult.Id,
 		Username:      queryResult.Username,
+		DisplayName:   queryResult.DisplayName,
 		PrimaryEmail:  queryResult.PrimaryEmail,
 		EmailVerified: queryResult.EmailVerified,
 	}
