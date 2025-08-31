@@ -270,7 +270,7 @@ func (r *credentialRepository) List(ctx context.Context, filter CredentialFilter
 	if err != nil {
 		return nil, fmt.Errorf("querying db: %w", err)
 	}
-	defer rows.Close()
+	defer utils.PanicOnError(rows.Close, "closing rows")
 
 	var credentials []*Credential
 	for rows.Next() {

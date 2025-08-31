@@ -5,6 +5,7 @@ import (
 	"Keyline/ioc"
 	"Keyline/logging"
 	"Keyline/middlewares"
+	"Keyline/utils"
 	"context"
 	"fmt"
 
@@ -114,7 +115,7 @@ func (r *outboxMessageRepository) List(ctx context.Context, filter OutboxMessage
 	if err != nil {
 		return nil, fmt.Errorf("querying db: %w", err)
 	}
-	defer rows.Close()
+	defer utils.PanicOnError(rows.Close, "closing rows")
 
 	var outboxMessages []*OutboxMessage
 	for rows.Next() {

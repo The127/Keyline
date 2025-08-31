@@ -5,6 +5,7 @@ import (
 	"Keyline/middlewares"
 	"Keyline/repositories"
 	"Keyline/repositories/mocks"
+	"Keyline/utils"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 	"testing"
@@ -40,7 +41,7 @@ func TestHandleCreateApplication(t *testing.T) {
 		return applicationRepository
 	})
 	scope := dc.BuildProvider()
-	defer scope.Close()
+	defer utils.PanicOnError(scope.Close, "closing scope")
 	ctx := middlewares.ContextWithScope(t.Context(), scope)
 
 	cmd := CreateApplication{
