@@ -33,17 +33,14 @@ func HandleHttpError(w http.ResponseWriter, err error) {
 	case errors.Is(err, ErrHttpBadRequest):
 		status = http.StatusBadRequest
 		msg = err.Error()
-		break
 
 	case errors.Is(err, ErrHttpNotFound):
 		status = http.StatusNotFound
 		msg = err.Error()
-		break
 
 	case errors.Is(err, ErrHttpConflict):
 		status = http.StatusConflict
 		msg = err.Error()
-		break
 
 	default:
 		status = http.StatusInternalServerError

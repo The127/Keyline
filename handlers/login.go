@@ -155,21 +155,23 @@ func VerifyPassword(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case passwordDetails.Temporary:
 		loginInfo.Step = jsonTypes.LoginStepTemporaryPassword
-		break
 
 	case !user.EmailVerified():
 		loginInfo.Step = jsonTypes.LoginStepEmailVerification
-		break
 
 	// TODO: check if totp onboarding is needed
 	// TODO: check if totp verification is needed
 
 	default:
 		loginInfo.Step = jsonTypes.LoginStepFinish
-		break
 	}
 
 	loginInfoString, err := json.Marshal(loginInfo)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
 	err = tokenService.UpdateToken(ctx, services.LoginSessionTokenType, loginToken, string(loginInfoString), time.Minute*15)
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -220,6 +222,11 @@ func VerifyEmailToken(w http.ResponseWriter, r *http.Request) {
 
 	loginInfo.Step = jsonTypes.LoginStepFinish
 	loginInfoString, err := json.Marshal(loginInfo)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
 	err = tokenService.UpdateToken(ctx, services.LoginSessionTokenType, loginToken, string(loginInfoString), time.Minute*15)
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -325,6 +332,11 @@ func ResetTemporaryPassword(w http.ResponseWriter, r *http.Request) {
 	loginInfo.Step = jsonTypes.LoginStepFinish
 
 	loginInfoString, err := json.Marshal(loginInfo)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
 	err = tokenService.UpdateToken(ctx, services.LoginSessionTokenType, loginToken, string(loginInfoString), time.Minute*15)
 	if err != nil {
 		utils.HandleHttpError(w, err)
