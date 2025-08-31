@@ -7,6 +7,7 @@ import (
 	"Keyline/repositories"
 	"Keyline/repositories/mocks"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 	"testing"
 )
@@ -62,7 +63,7 @@ func TestHandleRegisterUser(t *testing.T) {
 	user, err := HandleRegisterUser(ctx, cmd)
 
 	// assert
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, user)
 }
 
@@ -100,6 +101,6 @@ func TestHandleRegisterUser_RegistrationNotEnabled(t *testing.T) {
 	user, err := HandleRegisterUser(ctx, cmd)
 
 	// assert
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Nil(t, user)
 }

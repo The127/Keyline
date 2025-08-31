@@ -6,6 +6,7 @@ import (
 	"Keyline/repositories"
 	"Keyline/repositories/mocks"
 	"Keyline/utils"
+	"github.com/stretchr/testify/require"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -72,6 +73,6 @@ func TestHandleAssignRoleToUser(t *testing.T) {
 	resp, err := HandleAssignRoleToUser(ctx, cmd)
 
 	// assert
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, resp)
 }

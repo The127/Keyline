@@ -7,6 +7,7 @@ import (
 	"Keyline/repositories"
 	"Keyline/repositories/mocks"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 	"testing"
 	"time"
@@ -59,6 +60,6 @@ func TestHandleCreateRole(t *testing.T) {
 	resp, err := HandleCreateRole(ctx, cmd)
 
 	// assert
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, resp)
 }

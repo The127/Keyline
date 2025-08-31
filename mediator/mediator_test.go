@@ -3,6 +3,7 @@ package mediator
 import (
 	"context"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"testing"
 )
 
@@ -17,7 +18,7 @@ func TestRequestHandlerGetsCalled(t *testing.T) {
 	response, err := Send[string](t.Context(), m, "bar")
 
 	// assert
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "foo", response)
 }
 
@@ -38,7 +39,7 @@ func TestBehaviourCalled(t *testing.T) {
 	response, err := Send[string](t.Context(), m, "bar")
 
 	// assert
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "foo", response)
 	assert.True(t, behaviourCalled)
 }
@@ -56,6 +57,6 @@ func TestEventHandlerGetsCalled(t *testing.T) {
 	err := SendEvent(t.Context(), m, "foo")
 
 	// assert
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t, evtHandlerCalled)
 }
