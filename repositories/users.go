@@ -49,6 +49,11 @@ func (m *User) DisplayName() string {
 	return m.displayName
 }
 
+func (m *User) SetDisplayName(displayName string) {
+	m.displayName = displayName
+	m.TrackChange("display_name", displayName)
+}
+
 func (m *User) PrimaryEmail() string {
 	return m.primaryEmail
 }
