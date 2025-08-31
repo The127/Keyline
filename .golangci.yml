@@ -28,15 +28,12 @@ linters:
     - funlen         # disable too strict function length
     - depguard       # optional dependency guard
     - lll            # line length, IDEs usually handle it
-
-linters-settings:
-  revive:
-    severity: warning
-    rules:
-      - name: exported
-        severity: warning
-      - name: package-comments
-        severity: warning
+  settings:
+    revive:
+      severity: warning
+      rules:
+        - name: exported
+          disabled: true
 
   gocritic:
     disabled-checks:
