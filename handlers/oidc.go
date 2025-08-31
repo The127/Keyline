@@ -447,6 +447,7 @@ func OidcToken(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+//nolint:unparam
 func authenticateApplication(ctx context.Context, applicationName string, applicationSecret string) (*repositories.Application, error) {
 	scope := middlewares.GetScope(ctx)
 
