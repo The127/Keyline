@@ -314,7 +314,7 @@ func (r *applicationRepository) List(ctx context.Context, filter ApplicationFilt
 	if err != nil {
 		return nil, fmt.Errorf("querying db: %w", err)
 	}
-	defer rows.Close()
+	defer utils.PanicOnError(rows.Close, "closing rows")
 
 	var applications []*Application
 	for rows.Next() {

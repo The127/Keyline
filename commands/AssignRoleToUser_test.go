@@ -5,6 +5,7 @@ import (
 	"Keyline/middlewares"
 	"Keyline/repositories"
 	"Keyline/repositories/mocks"
+	"Keyline/utils"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -58,7 +59,7 @@ func TestHandleAssignRoleToUser(t *testing.T) {
 		return userRoleAssignmentRepository
 	})
 	scope := dc.BuildProvider()
-	defer scope.Close()
+	defer utils.PanicOnError(scope.Close, "closing scope")
 	ctx := middlewares.ContextWithScope(t.Context(), scope)
 
 	cmd := AssignRoleToUser{

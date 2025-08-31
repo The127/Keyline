@@ -181,7 +181,7 @@ func (r *userRepository) List(ctx context.Context, filter UserFilter) ([]*User, 
 	if err != nil {
 		return nil, fmt.Errorf("querying db: %w", err)
 	}
-	defer rows.Close()
+	defer utils.PanicOnError(rows.Close, "closing rows")
 
 	var users []*User
 	for rows.Next() {
