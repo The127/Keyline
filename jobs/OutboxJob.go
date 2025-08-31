@@ -37,8 +37,7 @@ func OutboxSendingJob(dp *ioc.DependencyProvider) JobFn {
 func handleMessage(ctx context.Context, message *repositories.OutboxMessage, repository repositories.OutboxMessageRepository) error {
 	// TODO: send to rabbitmq
 
-	filter := repositories.NewOutboxMessageFilter().Id(message.Id())
-	err := repository.Delete(ctx, filter)
+	err := repository.Delete(ctx, message.Id())
 	if err != nil {
 		return fmt.Errorf("failed to delete message in database: %w", err)
 	}

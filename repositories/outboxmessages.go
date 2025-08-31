@@ -70,7 +70,7 @@ func (f OutboxMessageFilter) Id(id uuid.UUID) OutboxMessageFilter {
 type OutboxMessageRepository interface {
 	List(ctx context.Context, filter OutboxMessageFilter) ([]*OutboxMessage, error)
 	Insert(ctx context.Context, outboxMessage *OutboxMessage) error
-	Delete(ctx context.Context, filter OutboxMessageFilter) error
+	Delete(ctx context.Context, id uuid.UUID) error
 }
 
 type outboxMessageRepository struct {
@@ -163,7 +163,7 @@ func (r *outboxMessageRepository) Insert(ctx context.Context, outboxMessage *Out
 	return nil
 }
 
-func (r *outboxMessageRepository) Delete(ctx context.Context, filter OutboxMessageFilter) error {
+func (r *outboxMessageRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -174,9 +174,7 @@ func (r *outboxMessageRepository) Delete(ctx context.Context, filter OutboxMessa
 
 	s := sqlbuilder.DeleteFrom("outbox_messages")
 
-	if filter.id != nil {
-		s.Where(s.Equal("id", filter.id))
-	}
+	s.Where(s.Equal("id", id))
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
