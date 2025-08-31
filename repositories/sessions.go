@@ -117,6 +117,7 @@ type SessionRepository interface {
 	Single(ctx context.Context, filter SessionFilter) (*Session, error)
 	First(ctx context.Context, filter SessionFilter) (*Session, error)
 	Insert(ctx context.Context, session *Session) error
+	Delete(ctx context.Context, id uuid.UUID) error
 }
 
 type sessionRepository struct {
@@ -231,5 +232,27 @@ func (r *sessionRepository) Insert(ctx context.Context, session *Session) error 
 	}
 
 	session.clearChanges()
+	return nil
+}
+
+func (r *sessionRepository) Delete(ctx context.Context, id uuid.UUID) error {
+	scope := middlewares.GetScope(ctx)
+	dbService := ioc.GetDependency[database.DbService](scope)
+
+	tx, err := dbService.GetTx()
+	if err != nil {
+		return fmt.Errorf("failed to open tx: %w", err)
+	}
+
+	s := sqlbuilder.DeleteFrom("sessions")
+	s.Where(s.Equal("id", id))
+
+	query, args := s.Build()
+	logging.Logger.Debug("executing sql: ", query)
+	_, err = tx.ExecContext(ctx, query, args...)
+	if err != nil {
+		return fmt.Errorf("executing sql: %w", err)
+	}
+
 	return nil
 }
