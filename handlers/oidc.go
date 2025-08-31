@@ -294,6 +294,7 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 
 func OidcEndSession(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	scope := middlewares.GetScope(ctx)
 
 	err := r.ParseForm()
 	if err != nil {
@@ -301,9 +302,67 @@ func OidcEndSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	state := r.Form.Get("state")
+
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
 		utils.HandleHttpError(w, err)
+		return
+	}
+
+	keyService := ioc.GetDependency[services.KeyService](scope)
+	keyPair := keyService.GetKey(vsName)
+	key := keyPair.PrivateKey()
+
+	idTokenString := r.Form.Get("id_token_hint")
+	if idTokenString == "" {
+		utils.HandleHttpError(w, fmt.Errorf("id token hint not found"))
+		return
+	}
+
+	idToken, err := jwt.Parse(idTokenString, func(token *jwt.Token) (interface{}, error) {
+		// Ensure the signing method is EdDSA
+		if _, ok := token.Method.(*jwt.SigningMethodEd25519); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return key.Public(), nil
+	})
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("parsing id token: %w", err))
+		return
+	}
+
+	if !idToken.Valid {
+		utils.HandleHttpError(w, fmt.Errorf("id token is not valid"))
+		return
+	}
+
+	idTokenClaims := idToken.Claims.(jwt.MapClaims)
+	clientId := idTokenClaims["aud"].(string)
+	if clientId == "" {
+		utils.HandleHttpError(w, fmt.Errorf("client id not found"))
+		return
+	}
+
+	applicationRepository := ioc.GetDependency[repositories.ApplicationRepository](scope)
+	applicationFilter := repositories.NewApplicationFilter().Name(clientId)
+	application, err := applicationRepository.First(ctx, applicationFilter)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("getting application: %w", err))
+		return
+	}
+	if application == nil {
+		utils.HandleHttpError(w, fmt.Errorf("application not found"))
+		return
+	}
+
+	redirectUriString := r.Form.Get("post_logout_redirect_uri")
+	if redirectUriString == "" {
+		redirectUriString = application.RedirectUris()[0]
+	}
+
+	if !slices.Contains(application.PostLogoutRedirectUris(), redirectUriString) {
+		utils.HandleHttpError(w, fmt.Errorf("redirect uri not found"))
 		return
 	}
 
@@ -313,8 +372,21 @@ func OidcEndSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	redirectUri := r.Form.Get("post_logout_redirect_uri")
-	http.Redirect(w, r, redirectUri, http.StatusFound)
+	redirectUri, err := url.Parse(redirectUriString)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("parsing redirect uri: %w", err))
+		return
+	}
+
+	query := redirectUri.Query()
+
+	if state != "" {
+		query.Set("state", state)
+	}
+
+	redirectUri.RawQuery = query.Encode()
+
+	http.Redirect(w, r, redirectUriString, http.StatusFound)
 }
 
 type OidcUserInfoResponseDto struct {
