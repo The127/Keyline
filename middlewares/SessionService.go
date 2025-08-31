@@ -27,6 +27,7 @@ func (s *Session) HashedSecret() string {
 }
 
 type SessionService interface {
-	GetSession(ctx context.Context, virtualServername string, id uuid.UUID) (*Session, error)
-	NewSession(ctx context.Context, virtualServername string, userId uuid.UUID) (*utils.SplitToken, error)
+	GetSession(ctx context.Context, virtualServerName string, id uuid.UUID) (*Session, error)
+	NewSession(ctx context.Context, virtualServerName string, userId uuid.UUID) (*utils.SplitToken, error)
+	DeleteSession(ctx context.Context, virtualServerName string, id uuid.UUID) error
 }
