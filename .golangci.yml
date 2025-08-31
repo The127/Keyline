@@ -41,11 +41,6 @@ linters:
       - hugeParam
       - unnamedResult
 
-  testifylint:
-    enable-all: true
-    disable:
-      - require-error  # often too strict for tests
-
 issues:
   exclude-use-default: false
   max-same-issues: 3
