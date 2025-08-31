@@ -4,6 +4,7 @@ import (
 	"Keyline/ioc"
 	"Keyline/middlewares"
 	"Keyline/repositories"
+	"Keyline/utils"
 	"context"
 	"fmt"
 )
@@ -34,13 +35,12 @@ func HandleGetApplications(ctx context.Context, _ GetApplications) ([]GetApplica
 		return nil, fmt.Errorf("searching applications: %w", err)
 	}
 
-	var result []GetApplicationsResponse
-	for _, application := range applications {
-		result = append(result, GetApplicationsResponse{
-			Name:        application.Name(),
-			DisplayName: application.DisplayName(),
-		})
-	}
+	result := utils.MapSlice(applications, func(t *repositories.Application) GetApplicationsResponse {
+		return GetApplicationsResponse{
+			Name:        t.Name(),
+			DisplayName: t.DisplayName(),
+		}
+	})
 
 	return result, nil
 }
