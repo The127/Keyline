@@ -1,0 +1,64 @@
+version: 2
+
+run:
+  timeout: 5m
+  tests: true
+  concurrency: 4
+  skip-dirs:
+    - vendor
+    - mocks
+
+linters:
+  enable:
+    - govet          # vet checks
+    - staticcheck    # modern catch-all linter
+    - errcheck       # check ignored errors
+    - ineffassign    # detect ineffectual assignments
+    - unused         # unused variables/constants
+    - revive         # style and best practices
+    - gocritic       # deep Go-specific checks
+    - unparam        # unused function parameters
+    - dogsled        # too many assignments to same variable
+    - nakedret       # naked returns
+    - prealloc       # slice/map preallocation
+    - misspell       # typos
+    - dupl           # duplicate code
+    - testifylint    # test hygiene
+  disable:
+    - funlen         # disable too strict function length
+    - depguard       # optional dependency guard
+    - lll            # line length, IDEs usually handle it
+
+linters-settings:
+  revive:
+    severity: warning
+    rules:
+      - name: exported
+        severity: warning
+      - name: package-comments
+        severity: warning
+
+  gocritic:
+    disabled-checks:
+      - commentedOutCode
+      - hugeParam
+      - unnamedResult
+
+  testifylint:
+    enable-all: true
+    disable:
+      - require-error  # often too strict for tests
+
+issues:
+  exclude-use-default: false
+  max-same-issues: 3
+  max-issues-per-linter: 50
+  max-issues-per-run: 100
+  exclude:
+    - "Error return value of .*(Close|Log|Print). is not checked"
+    - "should have comment or be unexported"
+
+# Optional: add formatters if you want to enforce gofumpt/gci auto-formatting
+# formatters:
+#   - gofumpt
+#   - gci
