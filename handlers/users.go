@@ -6,9 +6,12 @@ import (
 	"Keyline/ioc"
 	"Keyline/mediator"
 	"Keyline/middlewares"
+	"Keyline/queries"
 	"Keyline/utils"
 	"encoding/json"
 	"fmt"
+	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 	"net/http"
 )
 
@@ -88,4 +91,57 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+type GetUserByIdResponseDto struct {
+	Id            uuid.UUID `json:"id"`
+	Username      string    `json:"username"`
+	PrimaryEmail  string    `json:"primaryEmail"`
+	EmailVerified bool      `json:"emailVerified"`
+}
+
+func GetUserById(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	scope := middlewares.GetScope(ctx)
+
+	vsName, err := middlewares.GetVirtualServerName(ctx)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	vars := mux.Vars(r)
+	userIdString := vars["userId"]
+
+	userId, err := uuid.Parse(userIdString)
+	if err != nil {
+		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+		return
+	}
+
+	m := ioc.GetDependency[*mediator.Mediator](scope)
+	query := queries.GetUserQuery{
+		UserId:            userId,
+		VirtualServerName: vsName,
+	}
+	queryResult, err := mediator.Send[*queries.GetUserQueryResult](ctx, m, query)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	response := GetUserByIdResponseDto{
+		Id:            queryResult.Id,
+		Username:      queryResult.Username,
+		PrimaryEmail:  queryResult.PrimaryEmail,
+		EmailVerified: queryResult.EmailVerified,
+	}
+
+	err = json.NewEncoder(w).Encode(response)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+	}
 }
