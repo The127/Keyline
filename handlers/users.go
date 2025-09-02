@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"net/http"
+	"time"
 )
 
 type RegisterUserRequestDto struct {
@@ -99,6 +100,8 @@ type GetUserByIdResponseDto struct {
 	DisplayName   string    `json:"displayName"`
 	PrimaryEmail  string    `json:"primaryEmail"`
 	EmailVerified bool      `json:"emailVerified"`
+	CreatedAt     time.Time `json:"createdAt"`
+	UpdatedAt     time.Time `json:"updatedAt"`
 }
 
 func GetUserById(w http.ResponseWriter, r *http.Request) {
@@ -140,6 +143,8 @@ func GetUserById(w http.ResponseWriter, r *http.Request) {
 		DisplayName:   queryResult.DisplayName,
 		PrimaryEmail:  queryResult.PrimaryEmail,
 		EmailVerified: queryResult.EmailVerified,
+		CreatedAt:     queryResult.CreatedAt,
+		UpdatedAt:     queryResult.UpdatedAt,
 	}
 
 	err = json.NewEncoder(w).Encode(response)

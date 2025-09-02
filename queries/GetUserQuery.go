@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/uuid"
+	"time"
 )
 
 type GetUserQuery struct {
@@ -20,6 +21,8 @@ type GetUserQueryResult struct {
 	DisplayName   string
 	PrimaryEmail  string
 	EmailVerified bool
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
 }
 
 func HandleGetUserQuery(ctx context.Context, query GetUserQuery) (*GetUserQueryResult, error) {
@@ -47,5 +50,7 @@ func HandleGetUserQuery(ctx context.Context, query GetUserQuery) (*GetUserQueryR
 		DisplayName:   user.DisplayName(),
 		PrimaryEmail:  user.PrimaryEmail(),
 		EmailVerified: user.EmailVerified(),
+		CreatedAt:     user.AuditCreatedAt(),
+		UpdatedAt:     user.AuditUpdatedAt(),
 	}, nil
 }
