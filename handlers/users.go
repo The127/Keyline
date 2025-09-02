@@ -180,7 +180,7 @@ func PatchUser(w http.ResponseWriter, r *http.Request) {
 	command := commands.PatchUser{
 		UserId:            userId,
 		VirtualServerName: vsName,
-		DisplayName:       dto.DisplayName,
+		DisplayName:       utils.TrimSpace(dto.DisplayName),
 	}
 	_, err = mediator.Send[*commands.PatchUserResponse](ctx, m, command)
 	if err != nil {
