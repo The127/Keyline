@@ -113,6 +113,7 @@ func (a *Application) SetPostLogoutRedirectUris(postLogoutRedirectUris []string)
 }
 
 type ApplicationFilter struct {
+	pagingInfo
 	name            *string
 	id              *uuid.UUID
 	virtualServerId *uuid.UUID
@@ -124,6 +125,15 @@ func NewApplicationFilter() ApplicationFilter {
 
 func (f ApplicationFilter) Clone() ApplicationFilter {
 	return f
+}
+
+func (f ApplicationFilter) Pagination(page int, size int) ApplicationFilter {
+	filter := f.Clone()
+	filter.pagingInfo = pagingInfo{
+		page: page,
+		size: size,
+	}
+	return filter
 }
 
 func (f ApplicationFilter) Name(name string) ApplicationFilter {
@@ -148,7 +158,7 @@ func (f ApplicationFilter) VirtualServerId(virtualServerId uuid.UUID) Applicatio
 type ApplicationRepository interface {
 	Single(ctx context.Context, filter ApplicationFilter) (*Application, error)
 	First(ctx context.Context, filter ApplicationFilter) (*Application, error)
-	List(ctx context.Context, filter ApplicationFilter) ([]*Application, error)
+	List(ctx context.Context, filter ApplicationFilter) ([]*Application, int, error)
 	Insert(ctx context.Context, application *Application) error
 	Update(ctx context.Context, application *Application) error
 }
@@ -297,36 +307,45 @@ func (r *applicationRepository) Insert(ctx context.Context, application *Applica
 	return nil
 }
 
-func (r *applicationRepository) List(ctx context.Context, filter ApplicationFilter) ([]*Application, error) {
+func (r *applicationRepository) List(ctx context.Context, filter ApplicationFilter) ([]*Application, int, error) {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
 	tx, err := dbService.GetTx()
 	if err != nil {
-		return nil, fmt.Errorf("failed to open tx: %w", err)
+		return nil, 0, fmt.Errorf("failed to open tx: %w", err)
 	}
 
 	s := r.selectQuery(filter)
+	s.SelectMore("count(*) over()")
+
+	if filter.page > 0 {
+		s.Offset(filter.offset())
+		s.Limit(filter.size)
+	}
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
 	rows, err := tx.Query(query, args...)
 	if err != nil {
-		return nil, fmt.Errorf("querying db: %w", err)
+		return nil, 0, fmt.Errorf("querying db: %w", err)
 	}
 	defer utils.PanicOnError(rows.Close, "closing rows")
 
 	var applications []*Application
+	var totalCount int
 	for rows.Next() {
 		application := Application{
 			ModelBase: NewModelBase(),
 		}
-		err = rows.Scan(application.getScanPointers()...)
+
+		err = rows.Scan(append(application.getScanPointers(), &totalCount)...)
 		if err != nil {
-			return nil, fmt.Errorf("scanning row: %w", err)
+			return nil, 0, fmt.Errorf("scanning row: %w", err)
 		}
+
 		applications = append(applications, &application)
 	}
 
-	return applications, nil
+	return applications, totalCount, nil
 }

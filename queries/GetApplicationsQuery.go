@@ -7,40 +7,52 @@ import (
 	"Keyline/utils"
 	"context"
 	"fmt"
+	"github.com/google/uuid"
 )
 
 type GetApplications struct {
+	PagedQuery
 	VirtualServerName string
 }
 
 type GetApplicationsResponse struct {
+	PagedResponse[GetApplicationsResponseItem]
+}
+
+type GetApplicationsResponseItem struct {
+	Id          uuid.UUID
 	Name        string
 	DisplayName string
 }
 
-func HandleGetApplications(ctx context.Context, _ GetApplications) ([]GetApplicationsResponse, error) {
+func HandleGetApplications(ctx context.Context, query GetApplications) (*GetApplicationsResponse, error) {
 	scope := middlewares.GetScope(ctx)
 
 	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
-	virtualServer, err := virtualServerRepository.Single(ctx, repositories.NewVirtualServerFilter())
+	virtualServerFilter := repositories.NewVirtualServerFilter().
+		Name(query.VirtualServerName)
+	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("searching virtual servers: %w", err)
 	}
 
 	applicationRepository := ioc.GetDependency[repositories.ApplicationRepository](scope)
 	applicationFilter := repositories.NewApplicationFilter().
-		VirtualServerId(virtualServer.Id())
-	applications, err := applicationRepository.List(ctx, applicationFilter)
+		VirtualServerId(virtualServer.Id()).
+		Pagination(query.Page, query.PageSize)
+	applications, total, err := applicationRepository.List(ctx, applicationFilter)
 	if err != nil {
 		return nil, fmt.Errorf("searching applications: %w", err)
 	}
 
-	result := utils.MapSlice(applications, func(t *repositories.Application) GetApplicationsResponse {
-		return GetApplicationsResponse{
+	items := utils.MapSlice(applications, func(t *repositories.Application) GetApplicationsResponseItem {
+		return GetApplicationsResponseItem{
 			Name:        t.Name(),
 			DisplayName: t.DisplayName(),
 		}
 	})
 
-	return result, nil
+	return &GetApplicationsResponse{
+		PagedResponse: NewPagedResponse(items, total),
+	}, nil
 }

@@ -1,0 +1,67 @@
+package handlers
+
+import (
+	"Keyline/queries"
+	"fmt"
+	"net/http"
+	"strconv"
+)
+
+type QueryOps struct {
+	PageSize int
+	Page     int
+}
+
+func (q *QueryOps) ToPagedQuery() queries.PagedQuery {
+	return queries.PagedQuery{
+		PageSize: q.PageSize,
+		Page:     q.Page,
+	}
+}
+
+func ParseQueryOps(r *http.Request) (*QueryOps, error) {
+	err := r.ParseForm()
+	if err != nil {
+		return nil, fmt.Errorf("parsing form: %w", err)
+	}
+
+	pageSize := 0
+	page := 0
+
+	pageSizeString := r.Form.Get("pageSize")
+	if pageSizeString != "" {
+		pageSize, err = strconv.Atoi(pageSizeString)
+		if err != nil {
+			return nil, fmt.Errorf("parsing page size: %w", err)
+		}
+
+		if pageSize < 0 {
+			pageSize = 0
+		}
+	}
+
+	pageString := r.Form.Get("page")
+	if pageString != "" {
+		page, err = strconv.Atoi(pageString)
+		if err != nil {
+			return nil, fmt.Errorf("parsing page: %w", err)
+		}
+
+		if page < 0 {
+			page = 0
+		}
+	}
+
+	if pageSize > 0 && page == 0 {
+		page = 1
+	}
+
+	if page > 0 && pageSize == 0 {
+		pageSize = 10
+	}
+
+	return &QueryOps{
+		PageSize: pageSize,
+		Page:     page,
+	}, nil
+}

@@ -79,6 +79,12 @@ type GetApplicationListResponseDto struct {
 func ListApplications(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
+	queryOps, err := ParseQueryOps(r)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
 	vsName, err := middlewares.GetVirtualServerName(r.Context())
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -88,15 +94,16 @@ func ListApplications(w http.ResponseWriter, r *http.Request) {
 	scope := middlewares.GetScope(ctx)
 	m := ioc.GetDependency[*mediator.Mediator](scope)
 
-	applications, err := mediator.Send[[]queries.GetApplicationsResponse](ctx, m, queries.GetApplications{
+	applications, err := mediator.Send[*queries.GetApplicationsResponse](ctx, m, queries.GetApplications{
 		VirtualServerName: vsName,
+		PagedQuery:        queryOps.ToPagedQuery(),
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
 	}
 
-	response := utils.MapSlice(applications, func(x queries.GetApplicationsResponse) GetApplicationListResponseDto {
+	items := utils.MapSlice(applications.Items, func(x queries.GetApplicationsResponseItem) GetApplicationListResponseDto {
 		return GetApplicationListResponseDto{
 			Name:        x.Name,
 			DisplayName: x.DisplayName,
@@ -106,7 +113,11 @@ func ListApplications(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
-	err = json.NewEncoder(w).Encode(response)
+	err = json.NewEncoder(w).Encode(NewPagedResponseDto(
+		items,
+		queryOps,
+		applications.TotalCount,
+	))
 	if err != nil {
 		utils.HandleHttpError(w, err)
 	}
