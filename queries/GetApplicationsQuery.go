@@ -47,6 +47,7 @@ func HandleGetApplications(ctx context.Context, query GetApplications) (*GetAppl
 
 	items := utils.MapSlice(applications, func(t *repositories.Application) GetApplicationsResponseItem {
 		return GetApplicationsResponseItem{
+			Id:          t.Id(),
 			Name:        t.Name(),
 			DisplayName: t.DisplayName(),
 		}

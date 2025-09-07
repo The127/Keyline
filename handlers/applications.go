@@ -72,8 +72,9 @@ func CreateApplication(w http.ResponseWriter, r *http.Request) {
 }
 
 type GetApplicationListResponseDto struct {
-	Name        string `json:"name"`
-	DisplayName string `json:"displayName"`
+	Id          uuid.UUID `json:"id"`
+	Name        string    `json:"name"`
+	DisplayName string    `json:"displayName"`
 }
 
 func ListApplications(w http.ResponseWriter, r *http.Request) {
@@ -105,6 +106,7 @@ func ListApplications(w http.ResponseWriter, r *http.Request) {
 
 	items := utils.MapSlice(applications.Items, func(x queries.GetApplicationsResponseItem) GetApplicationListResponseDto {
 		return GetApplicationListResponseDto{
+			Id:          x.Id,
 			Name:        x.Name,
 			DisplayName: x.DisplayName,
 		}
