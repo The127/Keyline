@@ -10,6 +10,8 @@ import (
 type QueryOps struct {
 	PageSize int
 	Page     int
+	OrderBy  string
+	OrderDir string
 }
 
 func (q *QueryOps) ToPagedQuery() queries.PagedQuery {
@@ -60,8 +62,16 @@ func ParseQueryOps(r *http.Request) (*QueryOps, error) {
 		pageSize = 10
 	}
 
+	orderBy := r.Form.Get("orderBy")
+	orderDir := r.Form.Get("orderDir")
+	if orderDir != "asc" && orderDir != "desc" {
+		orderDir = "asc"
+	}
+
 	return &QueryOps{
 		PageSize: pageSize,
 		Page:     page,
+		OrderBy:  orderBy,
+		OrderDir: orderDir,
 	}, nil
 }
