@@ -98,6 +98,7 @@ func ListApplications(w http.ResponseWriter, r *http.Request) {
 	applications, err := mediator.Send[*queries.GetApplicationsResponse](ctx, m, queries.GetApplications{
 		VirtualServerName: vsName,
 		PagedQuery:        queryOps.ToPagedQuery(),
+		OrderedQuery:      queryOps.ToOrderedQuery(),
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)
