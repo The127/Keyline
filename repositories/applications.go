@@ -114,6 +114,7 @@ func (a *Application) SetPostLogoutRedirectUris(postLogoutRedirectUris []string)
 
 type ApplicationFilter struct {
 	pagingInfo
+	orderInfo
 	name            *string
 	id              *uuid.UUID
 	virtualServerId *uuid.UUID
@@ -132,6 +133,15 @@ func (f ApplicationFilter) Pagination(page int, size int) ApplicationFilter {
 	filter.pagingInfo = pagingInfo{
 		page: page,
 		size: size,
+	}
+	return filter
+}
+
+func (f ApplicationFilter) Order(by string, direction string) ApplicationFilter {
+	filter := f.Clone()
+	filter.orderInfo = orderInfo{
+		orderBy:  by,
+		orderDir: direction,
 	}
 	return filter
 }
@@ -319,10 +329,8 @@ func (r *applicationRepository) List(ctx context.Context, filter ApplicationFilt
 	s := r.selectQuery(filter)
 	s.SelectMore("count(*) over()")
 
-	if filter.page > 0 {
-		s.Offset(filter.offset())
-		s.Limit(filter.size)
-	}
+	filter.orderInfo.apply(s)
+	filter.pagingInfo.apply(s)
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)

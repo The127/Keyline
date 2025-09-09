@@ -21,6 +21,13 @@ func (q *QueryOps) ToPagedQuery() queries.PagedQuery {
 	}
 }
 
+func (q *QueryOps) ToOrderedQuery() queries.OrderedQuery {
+	return queries.OrderedQuery{
+		OrderBy:  q.OrderBy,
+		OrderDir: q.OrderDir,
+	}
+}
+
 func ParseQueryOps(r *http.Request) (*QueryOps, error) {
 	err := r.ParseForm()
 	if err != nil {

@@ -12,6 +12,7 @@ import (
 
 type GetApplications struct {
 	PagedQuery
+	OrderedQuery
 	VirtualServerName string
 }
 
@@ -39,7 +40,8 @@ func HandleGetApplications(ctx context.Context, query GetApplications) (*GetAppl
 	applicationRepository := ioc.GetDependency[repositories.ApplicationRepository](scope)
 	applicationFilter := repositories.NewApplicationFilter().
 		VirtualServerId(virtualServer.Id()).
-		Pagination(query.Page, query.PageSize)
+		Pagination(query.Page, query.PageSize).
+		Order(query.OrderBy, query.OrderDir)
 	applications, total, err := applicationRepository.List(ctx, applicationFilter)
 	if err != nil {
 		return nil, fmt.Errorf("searching applications: %w", err)
