@@ -154,7 +154,7 @@ func setupMediator(dc *ioc.DependencyCollection) {
 	mediator.RegisterHandler(m, commands.HandlePatchUser)
 
 	mediator.RegisterHandler(m, commands.HandleCreateApplication)
-	mediator.RegisterHandler(m, queries.HandleGetApplications)
+	mediator.RegisterHandler(m, queries.HandleListApplications)
 	mediator.RegisterHandler(m, queries.HandleGetApplication)
 
 	mediator.RegisterHandler(m, commands.HandleCreateRole)
