@@ -9,6 +9,7 @@ import (
 	"Keyline/utils"
 	"encoding/json"
 	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 	"net/http"
 	"time"
 )
@@ -90,7 +91,8 @@ func GetApplication(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	appIdString := r.URL.Query().Get("appId")
+	vars := mux.Vars(r)
+	appIdString := vars["appId"]
 	appId, err := uuid.Parse(appIdString)
 	if err != nil {
 		utils.HandleHttpError(w, utils.ErrInvalidUuid)
