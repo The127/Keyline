@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"github.com/google/uuid"
 	"net/http"
+	"time"
 )
 
 type CreateApplicationRequestDto struct {
@@ -65,6 +66,64 @@ func CreateApplication(w http.ResponseWriter, r *http.Request) {
 	err = json.NewEncoder(w).Encode(CreateApplicationResponseDto{
 		Id:     response.Id,
 		Secret: response.Secret,
+	})
+	if err != nil {
+		utils.HandleHttpError(w, err)
+	}
+}
+
+type GetApplicationResponseDto struct {
+	Id           uuid.UUID `json:"id"`
+	Name         string    `json:"name"`
+	DisplayName  string    `json:"displayName"`
+	RedirectUris []string  `json:"redirectUris"`
+	CreatedAt    time.Time `json:"createdAt"`
+	UpdatedAt    time.Time `json:"updatedAt"`
+}
+
+func GetApplication(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	vsName, err := middlewares.GetVirtualServerName(r.Context())
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	appIdString := r.URL.Query().Get("appId")
+	appId, err := uuid.Parse(appIdString)
+	if err != nil {
+		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+		return
+	}
+
+	scope := middlewares.GetScope(ctx)
+	m := ioc.GetDependency[*mediator.Mediator](scope)
+
+	application, err := mediator.Send[*queries.GetApplicationResult](ctx, m, queries.GetApplication{
+		VirtualServerName: vsName,
+		ApplicationId:     appId,
+	})
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	if application == nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	err = json.NewEncoder(w).Encode(GetApplicationResponseDto{
+		Id:           application.Id,
+		Name:         application.Name,
+		DisplayName:  application.DisplayName,
+		RedirectUris: application.RedirectUris,
+		CreatedAt:    application.CreatedAt,
+		UpdatedAt:    application.UpdatedAt,
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)
