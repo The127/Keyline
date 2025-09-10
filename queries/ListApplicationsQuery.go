@@ -10,24 +10,24 @@ import (
 	"github.com/google/uuid"
 )
 
-type GetApplications struct {
+type ListApplications struct {
 	PagedQuery
 	OrderedQuery
 	VirtualServerName string
 	SearchText        string
 }
 
-type GetApplicationsResponse struct {
-	PagedResponse[GetApplicationsResponseItem]
+type ListApplicationsResponse struct {
+	PagedResponse[ListApplicationsResponseItem]
 }
 
-type GetApplicationsResponseItem struct {
+type ListApplicationsResponseItem struct {
 	Id          uuid.UUID
 	Name        string
 	DisplayName string
 }
 
-func HandleGetApplications(ctx context.Context, query GetApplications) (*GetApplicationsResponse, error) {
+func HandleListApplications(ctx context.Context, query ListApplications) (*ListApplicationsResponse, error) {
 	scope := middlewares.GetScope(ctx)
 
 	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
@@ -49,15 +49,15 @@ func HandleGetApplications(ctx context.Context, query GetApplications) (*GetAppl
 		return nil, fmt.Errorf("searching applications: %w", err)
 	}
 
-	items := utils.MapSlice(applications, func(t *repositories.Application) GetApplicationsResponseItem {
-		return GetApplicationsResponseItem{
+	items := utils.MapSlice(applications, func(t *repositories.Application) ListApplicationsResponseItem {
+		return ListApplicationsResponseItem{
 			Id:          t.Id(),
 			Name:        t.Name(),
 			DisplayName: t.DisplayName(),
 		}
 	})
 
-	return &GetApplicationsResponse{
+	return &ListApplicationsResponse{
 		PagedResponse: NewPagedResponse(items, total),
 	}, nil
 }

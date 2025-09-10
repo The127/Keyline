@@ -156,7 +156,7 @@ func ListApplications(w http.ResponseWriter, r *http.Request) {
 	scope := middlewares.GetScope(ctx)
 	m := ioc.GetDependency[*mediator.Mediator](scope)
 
-	applications, err := mediator.Send[*queries.GetApplicationsResponse](ctx, m, queries.GetApplications{
+	applications, err := mediator.Send[*queries.ListApplicationsResponse](ctx, m, queries.ListApplications{
 		VirtualServerName: vsName,
 		PagedQuery:        queryOps.ToPagedQuery(),
 		OrderedQuery:      queryOps.ToOrderedQuery(),
@@ -167,7 +167,7 @@ func ListApplications(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	items := utils.MapSlice(applications.Items, func(x queries.GetApplicationsResponseItem) ListApplicationsResponseDto {
+	items := utils.MapSlice(applications.Items, func(x queries.ListApplicationsResponseItem) ListApplicationsResponseDto {
 		return ListApplicationsResponseDto{
 			Id:          x.Id,
 			Name:        x.Name,
