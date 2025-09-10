@@ -99,6 +99,7 @@ func ListApplications(w http.ResponseWriter, r *http.Request) {
 		VirtualServerName: vsName,
 		PagedQuery:        queryOps.ToPagedQuery(),
 		OrderedQuery:      queryOps.ToOrderedQuery(),
+		SearchText:        queryOps.Search,
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)

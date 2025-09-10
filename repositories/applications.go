@@ -118,6 +118,7 @@ type ApplicationFilter struct {
 	name            *string
 	id              *uuid.UUID
 	virtualServerId *uuid.UUID
+	search          *string
 }
 
 func NewApplicationFilter() ApplicationFilter {
@@ -143,6 +144,12 @@ func (f ApplicationFilter) Order(by string, direction string) ApplicationFilter 
 		orderBy:  by,
 		orderDir: direction,
 	}
+	return filter
+}
+
+func (f ApplicationFilter) Search(search string) ApplicationFilter {
+	filter := f.Clone()
+	filter.search = &search
 	return filter
 }
 
@@ -204,6 +211,17 @@ func (r *applicationRepository) selectQuery(filter ApplicationFilter) *sqlbuilde
 	if filter.virtualServerId != nil {
 		s.Where(s.Equal("virtual_server_id", filter.virtualServerId))
 	}
+
+	if filter.search != nil {
+		term := "%" + *filter.search + "%"
+		s.Where(s.Or(
+			s.ILike("name", term),
+			s.ILike("display_name", term),
+		))
+	}
+
+	filter.orderInfo.apply(s)
+	filter.pagingInfo.apply(s)
 
 	return s
 }
@@ -328,9 +346,6 @@ func (r *applicationRepository) List(ctx context.Context, filter ApplicationFilt
 
 	s := r.selectQuery(filter)
 	s.SelectMore("count(*) over()")
-
-	filter.orderInfo.apply(s)
-	filter.pagingInfo.apply(s)
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
