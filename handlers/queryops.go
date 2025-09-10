@@ -12,6 +12,7 @@ type QueryOps struct {
 	Page     int
 	OrderBy  string
 	OrderDir string
+	Search   string
 }
 
 func (q *QueryOps) ToPagedQuery() queries.PagedQuery {
@@ -75,10 +76,13 @@ func ParseQueryOps(r *http.Request) (*QueryOps, error) {
 		orderDir = "asc"
 	}
 
+	search := r.Form.Get("search")
+
 	return &QueryOps{
 		PageSize: pageSize,
 		Page:     page,
 		OrderBy:  orderBy,
 		OrderDir: orderDir,
+		Search:   search,
 	}, nil
 }

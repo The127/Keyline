@@ -14,6 +14,7 @@ type GetApplications struct {
 	PagedQuery
 	OrderedQuery
 	VirtualServerName string
+	SearchText        string
 }
 
 type GetApplicationsResponse struct {
@@ -41,7 +42,8 @@ func HandleGetApplications(ctx context.Context, query GetApplications) (*GetAppl
 	applicationFilter := repositories.NewApplicationFilter().
 		VirtualServerId(virtualServer.Id()).
 		Pagination(query.Page, query.PageSize).
-		Order(query.OrderBy, query.OrderDir)
+		Order(query.OrderBy, query.OrderDir).
+		Search(query.SearchText)
 	applications, total, err := applicationRepository.List(ctx, applicationFilter)
 	if err != nil {
 		return nil, fmt.Errorf("searching applications: %w", err)
