@@ -152,6 +152,7 @@ func setupMediator(dc *ioc.DependencyCollection) {
 	mediator.RegisterHandler(m, commands.HandleResetPassword)
 	mediator.RegisterHandler(m, queries.HandleGetUserQuery)
 	mediator.RegisterHandler(m, commands.HandlePatchUser)
+	mediator.RegisterHandler(m, queries.HandleListUsers)
 
 	mediator.RegisterHandler(m, commands.HandleCreateApplication)
 	mediator.RegisterHandler(m, queries.HandleListApplications)
