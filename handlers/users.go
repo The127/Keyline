@@ -94,6 +94,64 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+type ListUsersResponseDto struct {
+	Id           uuid.UUID `json:"id"`
+	Username     string    `json:"username"`
+	DisplayName  string    `json:"displayName"`
+	PrimaryEmail string    `json:"primaryEmail"`
+}
+
+func ListUsers(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	queryOps, err := ParseQueryOps(r)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	vsName, err := middlewares.GetVirtualServerName(ctx)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	scope := middlewares.GetScope(ctx)
+	m := ioc.GetDependency[*mediator.Mediator](scope)
+
+	users, err := mediator.Send[*queries.ListUsersResponse](ctx, m, queries.ListUsers{
+		VirtualServerName: vsName,
+		PagedQuery:        queryOps.ToPagedQuery(),
+		OrderedQuery:      queryOps.ToOrderedQuery(),
+		SearchText:        queryOps.Search,
+	})
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	items := utils.MapSlice(users.Items, func(x queries.ListUsersResponseItem) ListUsersResponseDto {
+		return ListUsersResponseDto{
+			Id:           x.Id,
+			Username:     x.Username,
+			DisplayName:  x.DisplayName,
+			PrimaryEmail: x.Email,
+		}
+	})
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	err = json.NewEncoder(w).Encode(NewPagedResponseDto(
+		items,
+		queryOps,
+		users.TotalCount,
+	))
+	if err != nil {
+		utils.HandleHttpError(w, err)
+	}
+}
+
 type GetUserByIdResponseDto struct {
 	Id            uuid.UUID `json:"id"`
 	Username      string    `json:"username"`

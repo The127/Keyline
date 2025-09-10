@@ -82,9 +82,12 @@ func (m *User) getScanPointers() []any {
 }
 
 type UserFilter struct {
+	pagingInfo
+	orderInfo
 	virtualServerId *uuid.UUID
 	id              *uuid.UUID
 	username        *string
+	search          *string
 }
 
 func NewUserFilter() UserFilter {
@@ -121,13 +124,37 @@ func (f UserFilter) Username(username string) UserFilter {
 	return filter
 }
 
+func (f UserFilter) Pagination(page int, size int) UserFilter {
+	filter := f.Clone()
+	filter.pagingInfo = pagingInfo{
+		page: page,
+		size: size,
+	}
+	return filter
+}
+
+func (f UserFilter) Order(by string, direction string) UserFilter {
+	filter := f.Clone()
+	filter.orderInfo = orderInfo{
+		orderBy:  by,
+		orderDir: direction,
+	}
+	return filter
+}
+
+func (f UserFilter) Search(search string) UserFilter {
+	filter := f.Clone()
+	filter.search = &search
+	return filter
+}
+
 func (f UserFilter) GetUsername() *string {
 	return f.username
 }
 
 //go:generate mockgen -destination=./mocks/user_repository.go -package=mocks Keyline/repositories UserRepository
 type UserRepository interface {
-	List(ctx context.Context, filter UserFilter) ([]*User, error)
+	List(ctx context.Context, filter UserFilter) ([]*User, int, error)
 	Single(ctx context.Context, filter UserFilter) (*User, error)
 	First(ctx context.Context, filter UserFilter) (*User, error)
 	Update(ctx context.Context, user *User) error
@@ -166,41 +193,56 @@ func (r *userRepository) selectQuery(filter UserFilter) *sqlbuilder.SelectBuilde
 		s.Where(s.Equal("id", filter.id))
 	}
 
+	if filter.search != nil {
+		term := "%" + *filter.search + "%"
+		s.Where(s.Or(
+			s.ILike("username", term),
+			s.ILike("display_name", term),
+		))
+	}
+
+	filter.orderInfo.apply(s)
+	filter.pagingInfo.apply(s)
+
 	return s
 }
 
-func (r *userRepository) List(ctx context.Context, filter UserFilter) ([]*User, error) {
+func (r *userRepository) List(ctx context.Context, filter UserFilter) ([]*User, int, error) {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
 	tx, err := dbService.GetTx()
 	if err != nil {
-		return nil, fmt.Errorf("failed to open tx: %w", err)
+		return nil, 0, fmt.Errorf("failed to open tx: %w", err)
 	}
 
 	s := r.selectQuery(filter)
+	s.SelectMore("count(*) over()")
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
 	rows, err := tx.Query(query, args...)
 	if err != nil {
-		return nil, fmt.Errorf("querying db: %w", err)
+		return nil, 0, fmt.Errorf("querying db: %w", err)
 	}
 	defer utils.PanicOnError(rows.Close, "closing rows")
 
 	var users []*User
+	var totalCount int
 	for rows.Next() {
 		user := User{
 			ModelBase: NewModelBase(),
 		}
-		err = rows.Scan(user.getScanPointers()...)
+
+		err = rows.Scan(append(user.getScanPointers(), &totalCount)...)
 		if err != nil {
-			return nil, fmt.Errorf("scanning row: %w", err)
+			return nil, 0, fmt.Errorf("scanning row: %w", err)
 		}
+
 		users = append(users, &user)
 	}
 
-	return users, nil
+	return users, totalCount, nil
 }
 
 func (r *userRepository) Single(ctx context.Context, filter UserFilter) (*User, error) {
