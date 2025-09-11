@@ -9,6 +9,11 @@ database:
   sslMode: "disable"
 initialVirtualServer:
   enableRegistration: true
+  initialAdmin:
+    username: admin
+    displayName: Admin
+    primaryEmail: foo@bar.com
+    passwordHash: "$argon2id$v=19$m=16,t=2,p=1$MTIzNDU2Nzg$QWu7e+sjG5knAdNLoKdLDg"
 keyStore:
   mode: "directory"
   directory:
