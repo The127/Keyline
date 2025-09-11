@@ -148,6 +148,7 @@ func setupMediator(dc *ioc.DependencyCollection) {
 	mediator.RegisterHandler(m, commands.HandleCreateVirtualServer)
 
 	mediator.RegisterHandler(m, commands.HandleRegisterUser)
+	mediator.RegisterHandler(m, commands.HandleCreateUser)
 	mediator.RegisterHandler(m, commands.HandleVerifyEmail)
 	mediator.RegisterHandler(m, commands.HandleResetPassword)
 	mediator.RegisterHandler(m, queries.HandleGetUserQuery)
@@ -197,5 +198,26 @@ func initApplication(dp *ioc.DependencyProvider) {
 	})
 	if err != nil {
 		logging.Logger.Fatalf("failed to create initial virtual server: %v", err)
+	}
+
+	initialAdminUserInfo, err := mediator.Send[*commands.CreateUserResponse](ctx, m, commands.CreateUser{
+		VirtualServerName: config.C.InitialVirtualServer.Name,
+		DisplayName:       config.C.InitialVirtualServer.InitialAdmin.DisplayName,
+		Username:          config.C.InitialVirtualServer.InitialAdmin.Username,
+		Email:             config.C.InitialVirtualServer.InitialAdmin.PrimaryEmail,
+		EmailVerified:     true,
+	})
+	if err != nil {
+		logging.Logger.Fatalf("failed to create initial admin user: %v", err)
+	}
+
+	credentialRepository := ioc.GetDependency[repositories.CredentialRepository](scope)
+	initialAdminCredential := repositories.NewCredential(initialAdminUserInfo.Id, &repositories.CredentialPasswordDetails{
+		HashedPassword: config.C.InitialVirtualServer.InitialAdmin.PasswordHash,
+		Temporary:      false,
+	})
+	err = credentialRepository.Insert(ctx, initialAdminCredential)
+	if err != nil {
+		logging.Logger.Fatalf("failed to create initial admin credential: %v", err)
 	}
 }

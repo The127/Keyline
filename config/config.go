@@ -35,6 +35,12 @@ type Config struct {
 		Name               string
 		DisplayName        string
 		EnableRegistration bool
+		InitialAdmin       struct {
+			Username     string
+			DisplayName  string
+			PrimaryEmail string
+			PasswordHash string
+		}
 	}
 	KeyStore struct {
 		Mode    KeyStoreMode
@@ -179,6 +185,26 @@ func setInitialVirtualServerDefaultsOrPanic() {
 
 	if C.InitialVirtualServer.DisplayName == "" {
 		C.InitialVirtualServer.DisplayName = "Keyline"
+	}
+
+	setInitialAdminDefaultsOrPanic()
+}
+
+func setInitialAdminDefaultsOrPanic() {
+	if C.InitialVirtualServer.InitialAdmin.Username == "" {
+		C.InitialVirtualServer.InitialAdmin.Username = "admin"
+	}
+
+	if C.InitialVirtualServer.InitialAdmin.DisplayName == "" {
+		C.InitialVirtualServer.InitialAdmin.DisplayName = "Administrator"
+	}
+
+	if C.InitialVirtualServer.InitialAdmin.PrimaryEmail == "" {
+		panic("missing initial admin primary email")
+	}
+
+	if C.InitialVirtualServer.InitialAdmin.PasswordHash == "" {
+		panic("missing initial admin password hash")
 	}
 }
 
