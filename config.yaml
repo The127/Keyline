@@ -9,6 +9,7 @@ database:
   sslMode: "disable"
 initialVirtualServer:
   enableRegistration: true
+  createInitialAdmin: true
   initialAdmin:
     username: admin
     displayName: Admin

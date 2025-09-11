@@ -200,24 +200,28 @@ func initApplication(dp *ioc.DependencyProvider) {
 		logging.Logger.Fatalf("failed to create initial virtual server: %v", err)
 	}
 
-	initialAdminUserInfo, err := mediator.Send[*commands.CreateUserResponse](ctx, m, commands.CreateUser{
-		VirtualServerName: config.C.InitialVirtualServer.Name,
-		DisplayName:       config.C.InitialVirtualServer.InitialAdmin.DisplayName,
-		Username:          config.C.InitialVirtualServer.InitialAdmin.Username,
-		Email:             config.C.InitialVirtualServer.InitialAdmin.PrimaryEmail,
-		EmailVerified:     true,
-	})
-	if err != nil {
-		logging.Logger.Fatalf("failed to create initial admin user: %v", err)
-	}
+	if config.C.InitialVirtualServer.CreateInitialAdmin {
+		logging.Logger.Infof("Creating initial admin user")
 
-	credentialRepository := ioc.GetDependency[repositories.CredentialRepository](scope)
-	initialAdminCredential := repositories.NewCredential(initialAdminUserInfo.Id, &repositories.CredentialPasswordDetails{
-		HashedPassword: config.C.InitialVirtualServer.InitialAdmin.PasswordHash,
-		Temporary:      false,
-	})
-	err = credentialRepository.Insert(ctx, initialAdminCredential)
-	if err != nil {
-		logging.Logger.Fatalf("failed to create initial admin credential: %v", err)
+		initialAdminUserInfo, err := mediator.Send[*commands.CreateUserResponse](ctx, m, commands.CreateUser{
+			VirtualServerName: config.C.InitialVirtualServer.Name,
+			DisplayName:       config.C.InitialVirtualServer.InitialAdmin.DisplayName,
+			Username:          config.C.InitialVirtualServer.InitialAdmin.Username,
+			Email:             config.C.InitialVirtualServer.InitialAdmin.PrimaryEmail,
+			EmailVerified:     true,
+		})
+		if err != nil {
+			logging.Logger.Fatalf("failed to create initial admin user: %v", err)
+		}
+
+		credentialRepository := ioc.GetDependency[repositories.CredentialRepository](scope)
+		initialAdminCredential := repositories.NewCredential(initialAdminUserInfo.Id, &repositories.CredentialPasswordDetails{
+			HashedPassword: config.C.InitialVirtualServer.InitialAdmin.PasswordHash,
+			Temporary:      false,
+		})
+		err = credentialRepository.Insert(ctx, initialAdminCredential)
+		if err != nil {
+			logging.Logger.Fatalf("failed to create initial admin credential: %v", err)
+		}
 	}
 }
