@@ -35,6 +35,7 @@ type Config struct {
 		Name               string
 		DisplayName        string
 		EnableRegistration bool
+		CreateInitialAdmin bool
 		InitialAdmin       struct {
 			Username     string
 			DisplayName  string
@@ -191,6 +192,10 @@ func setInitialVirtualServerDefaultsOrPanic() {
 }
 
 func setInitialAdminDefaultsOrPanic() {
+	if !C.InitialVirtualServer.CreateInitialAdmin {
+		return
+	}
+
 	if C.InitialVirtualServer.InitialAdmin.Username == "" {
 		C.InitialVirtualServer.InitialAdmin.Username = "admin"
 	}
