@@ -6,12 +6,67 @@ import (
 	"Keyline/jsonTypes"
 	"Keyline/mediator"
 	"Keyline/middlewares"
+	"Keyline/queries"
 	"Keyline/utils"
 	"encoding/json"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"net/http"
 )
+
+type ListRolesResponseDto struct {
+	Id   uuid.UUID `json:"id"`
+	Name string    `json:"name"`
+}
+
+func ListRoles(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	queryOps, err := ParseQueryOps(r)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	vsName, err := middlewares.GetVirtualServerName(ctx)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	scope := middlewares.GetScope(ctx)
+	m := ioc.GetDependency[*mediator.Mediator](scope)
+
+	roles, err := mediator.Send[*queries.ListRolesResponse](ctx, m, queries.ListRoles{
+		VirtualServerName: vsName,
+		PagedQuery:        queryOps.ToPagedQuery(),
+		OrderedQuery:      queryOps.ToOrderedQuery(),
+		SearchText:        queryOps.Search,
+	})
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	items := utils.MapSlice(roles.Items, func(x queries.ListRolesResponseItem) ListRolesResponseDto {
+		return ListRolesResponseDto{
+			Id:   x.Id,
+			Name: x.Name,
+		}
+	})
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	err = json.NewEncoder(w).Encode(NewPagedResponseDto(
+		items,
+		queryOps,
+		roles.TotalCount,
+	))
+	if err != nil {
+		utils.HandleHttpError(w, err)
+	}
+}
 
 type CreateRoleRequestDto struct {
 	Name        string             `json:"name" validate:"required,min=1,max=255"`
