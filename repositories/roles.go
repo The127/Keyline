@@ -172,6 +172,7 @@ func (f RoleFilter) GetVirtualServerId() *uuid.UUID {
 
 //go:generate mockgen -destination=./mocks/role_repository.go -package=mocks Keyline/repositories RoleRepository
 type RoleRepository interface {
+	List(ctx context.Context, filter RoleFilter) ([]*Role, int, error)
 	Single(ctx context.Context, filter RoleFilter) (*Role, error)
 	First(ctx context.Context, filter RoleFilter) (*Role, error)
 	Insert(ctx context.Context, role *Role) error
@@ -221,6 +222,43 @@ func (r *roleRepository) selectQuery(filter RoleFilter) *sqlbuilder.SelectBuilde
 	filter.pagingInfo.apply(s)
 
 	return s
+}
+
+func (r *roleRepository) List(ctx context.Context, filter RoleFilter) ([]*Role, int, error) {
+	scope := middlewares.GetScope(ctx)
+	dbService := ioc.GetDependency[database.DbService](scope)
+
+	tx, err := dbService.GetTx()
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to open tx: %w", err)
+	}
+
+	s := r.selectQuery(filter)
+	s.SelectMore("count(*) over()")
+
+	query, args := s.Build()
+	logging.Logger.Debug("executing sql: ", query)
+	rows, err := tx.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, 0, fmt.Errorf("querying rows: %w", err)
+	}
+	defer utils.PanicOnError(rows.Close, "closing rows")
+
+	var roles []*Role
+	var totalCount int
+	for rows.Next() {
+		role := Role{
+			ModelBase: NewModelBase(),
+		}
+		err = rows.Scan(append(role.getScanPointers(), &totalCount)...)
+		if err != nil {
+			return nil, 0, fmt.Errorf("scanning row: %w", err)
+		}
+
+		roles = append(roles, &role)
+	}
+
+	return roles, totalCount, nil
 }
 
 func (r *roleRepository) Single(ctx context.Context, filter RoleFilter) (*Role, error) {
