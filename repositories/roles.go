@@ -100,9 +100,12 @@ func (r *Role) SetMaxTokenAge(maxTokenAge *time.Duration) {
 }
 
 type RoleFilter struct {
+	pagingInfo
+	orderInfo
 	name            *string
 	id              *uuid.UUID
 	virtualServerId *uuid.UUID
+	search          *string
 }
 
 func NewRoleFilter() RoleFilter {
@@ -126,6 +129,30 @@ func (f RoleFilter) GetName() *string {
 func (f RoleFilter) Id(id uuid.UUID) RoleFilter {
 	filter := f.Clone()
 	filter.id = &id
+	return filter
+}
+
+func (f RoleFilter) Search(search string) RoleFilter {
+	filter := f.Clone()
+	filter.search = &search
+	return filter
+}
+
+func (f RoleFilter) Pagination(page int, size int) RoleFilter {
+	filter := f.Clone()
+	filter.pagingInfo = pagingInfo{
+		page: page,
+		size: size,
+	}
+	return filter
+}
+
+func (f RoleFilter) Order(by string, direction string) RoleFilter {
+	filter := f.Clone()
+	filter.orderInfo = orderInfo{
+		orderBy:  by,
+		orderDir: direction,
+	}
 	return filter
 }
 
@@ -182,6 +209,16 @@ func (r *roleRepository) selectQuery(filter RoleFilter) *sqlbuilder.SelectBuilde
 	if filter.virtualServerId != nil {
 		s.Where(s.Equal("virtual_server_id", filter.virtualServerId))
 	}
+
+	if filter.search != nil {
+		term := "%" + *filter.search + "%"
+		s.Where(s.Or(
+			s.ILike("name", term),
+		))
+	}
+
+	filter.orderInfo.apply(s)
+	filter.pagingInfo.apply(s)
 
 	return s
 }
