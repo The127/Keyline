@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"net/http"
+	"time"
 )
 
 type GetRoleByIdResponseDto struct {
@@ -20,6 +21,8 @@ type GetRoleByIdResponseDto struct {
 	Description string              `json:"description"`
 	RequireMfa  bool                `json:"requireMfa"`
 	MaxTokenAge *jsonTypes.Duration `json:"maxTokenAge"`
+	CreatedAt   time.Time           `json:"createdAt"`
+	UpdatedAt   time.Time           `json:"updatedAt"`
 }
 
 func GetRoleById(w http.ResponseWriter, r *http.Request) {
@@ -61,6 +64,8 @@ func GetRoleById(w http.ResponseWriter, r *http.Request) {
 		Description: queryResult.Description,
 		RequireMfa:  queryResult.RequireMfa,
 		MaxTokenAge: utils.MapPtr(queryResult.MaxTokenAge, jsonTypes.NewDuration),
+		CreatedAt:   queryResult.CreatedAt,
+		UpdatedAt:   queryResult.UpdatedAt,
 	}
 
 	err = json.NewEncoder(w).Encode(response)
