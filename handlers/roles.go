@@ -14,6 +14,61 @@ import (
 	"net/http"
 )
 
+type GetRoleByIdResponseDto struct {
+	Id          uuid.UUID           `json:"id"`
+	Name        string              `json:"name"`
+	Description string              `json:"description"`
+	RequireMfa  bool                `json:"requireMfa"`
+	MaxTokenAge *jsonTypes.Duration `json:"maxTokenAge"`
+}
+
+func GetRoleById(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	scope := middlewares.GetScope(ctx)
+
+	vsName, err := middlewares.GetVirtualServerName(ctx)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	vars := mux.Vars(r)
+	roleIdString := vars["roleId"]
+
+	roleId, err := uuid.Parse(roleIdString)
+	if err != nil {
+		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+		return
+	}
+
+	m := ioc.GetDependency[*mediator.Mediator](scope)
+	query := queries.GetRoleQuery{
+		VirtualServerName: vsName,
+		RoleId:            roleId,
+	}
+	queryResult, err := mediator.Send[*queries.GetRoleQueryResult](ctx, m, query)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	response := GetRoleByIdResponseDto{
+		Id:          queryResult.Id,
+		Name:        queryResult.Name,
+		Description: queryResult.Description,
+		RequireMfa:  queryResult.RequireMfa,
+		MaxTokenAge: utils.MapPtr(queryResult.MaxTokenAge, jsonTypes.NewDuration),
+	}
+
+	err = json.NewEncoder(w).Encode(response)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+	}
+}
+
 type ListRolesResponseDto struct {
 	Id   uuid.UUID `json:"id"`
 	Name string    `json:"name"`

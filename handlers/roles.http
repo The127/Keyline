@@ -1,6 +1,9 @@
 ### list roles
 GET http://127.0.0.1:8081/api/virtual-servers/keyline/roles
 
+### get a role
+GET http://127.0.0.1:8081/api/virtual-servers/keyline/roles/a9f98fe3-85b4-4b91-8aae-a86969c20dbc
+
 ### create a role
 POST http://127.0.0.1:8081/api/virtual-servers/keyline/roles
 Content-Type: application/json
