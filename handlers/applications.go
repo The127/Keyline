@@ -94,6 +94,7 @@ type GetApplicationResponseDto struct {
 	Id           uuid.UUID `json:"id"`
 	Name         string    `json:"name"`
 	DisplayName  string    `json:"displayName"`
+	Type         string    `json:"type"`
 	RedirectUris []string  `json:"redirectUris"`
 	CreatedAt    time.Time `json:"createdAt"`
 	UpdatedAt    time.Time `json:"updatedAt"`
@@ -153,6 +154,7 @@ func GetApplication(w http.ResponseWriter, r *http.Request) {
 		Id:           application.Id,
 		Name:         application.Name,
 		DisplayName:  application.DisplayName,
+		Type:         string(application.Type),
 		RedirectUris: application.RedirectUris,
 		CreatedAt:    application.CreatedAt,
 		UpdatedAt:    application.UpdatedAt,
@@ -168,6 +170,7 @@ type ListApplicationsResponseDto struct {
 	Id          uuid.UUID `json:"id"`
 	Name        string    `json:"name"`
 	DisplayName string    `json:"displayName"`
+	Type        string    `json:"type"`
 }
 
 // ListApplications lists applications in a virtual server
@@ -220,6 +223,7 @@ func ListApplications(w http.ResponseWriter, r *http.Request) {
 			Id:          x.Id,
 			Name:        x.Name,
 			DisplayName: x.DisplayName,
+			Type:        string(x.Type),
 		}
 	})
 
