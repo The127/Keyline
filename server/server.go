@@ -7,13 +7,21 @@ import (
 	"Keyline/logging"
 	"Keyline/middlewares"
 	"fmt"
+	httpSwagger "github.com/swaggo/http-swagger"
 	"net/http"
 
 	gh "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+
+	_ "Keyline/docs"
 )
 
+// @title Keyline API
+// @version 1.0
+// @description Open source OIDC/IDP server.
+// @host localhost:8080
+// @BasePath /api
 func Serve(dp *ioc.DependencyProvider) {
 	r := mux.NewRouter()
 
@@ -73,6 +81,8 @@ func Serve(dp *ioc.DependencyProvider) {
 	vsApiRouter.HandleFunc("/applications", handlers.CreateApplication).Methods(http.MethodPost, http.MethodOptions)
 	vsApiRouter.HandleFunc("/applications", handlers.ListApplications).Methods(http.MethodGet, http.MethodOptions)
 	vsApiRouter.HandleFunc("/applications/{appId}", handlers.GetApplication).Methods(http.MethodGet, http.MethodOptions)
+
+	r.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
 
 	addr := fmt.Sprintf("%s:%d", config.C.Server.Host, config.C.Server.Port)
 	logging.Logger.Infof("running server at %s", addr)

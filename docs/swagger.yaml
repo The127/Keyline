@@ -1,0 +1,199 @@
+basePath: /api
+definitions:
+  handlers.CreateApplicationRequestDto:
+    properties:
+      displayName:
+        maxLength: 255
+        minLength: 1
+        type: string
+      name:
+        maxLength: 255
+        minLength: 1
+        type: string
+      postLogoutUris:
+        items:
+          type: string
+        type: array
+      redirectUris:
+        items:
+          type: string
+        type: array
+      type:
+        enum:
+        - public
+        - confidential
+        type: string
+    required:
+    - displayName
+    - name
+    - redirectUris
+    - type
+    type: object
+  handlers.CreateApplicationResponseDto:
+    properties:
+      id:
+        type: string
+      secret:
+        type: string
+    type: object
+  handlers.GetApplicationResponseDto:
+    properties:
+      createdAt:
+        type: string
+      displayName:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      redirectUris:
+        items:
+          type: string
+        type: array
+      updatedAt:
+        type: string
+    type: object
+  handlers.ListApplicationsResponseDto:
+    properties:
+      displayName:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  handlers.PagedApplicationsResponseDto:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/handlers.ListApplicationsResponseDto'
+        type: array
+      pagination:
+        $ref: '#/definitions/handlers.Pagination'
+    type: object
+  handlers.Pagination:
+    properties:
+      page:
+        type: integer
+      size:
+        type: integer
+      totalItems:
+        type: integer
+      totalPages:
+        type: integer
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: Open source OIDC/IDP server.
+  title: Keyline API
+  version: "1.0"
+paths:
+  /api/virtual-servers/{vsName}/applications:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a paginated list of applications (OIDC clients)
+      parameters:
+      - description: Virtual Server Name
+        in: path
+        name: vsName
+        required: true
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: pageSize
+        type: integer
+      - description: Order by field
+        in: query
+        name: orderBy
+        type: string
+      - description: Order direction (asc|desc)
+        in: query
+        name: orderDir
+        type: string
+      - description: Search term
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.PagedApplicationsResponseDto'
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      summary: List applications
+      tags:
+      - applications
+    post:
+      consumes:
+      - application/json
+      description: Create a new OIDC application/client with redirect URIs and type
+      parameters:
+      - description: Virtual Server Name
+        in: path
+        name: vsName
+        required: true
+        type: string
+      - description: Application data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateApplicationRequestDto'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/handlers.CreateApplicationResponseDto'
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      summary: Create application
+      tags:
+      - applications
+  /api/virtual-servers/{vsName}/applications/{appId}:
+    get:
+      consumes:
+      - application/json
+      description: Get an application by ID from a virtual server
+      parameters:
+      - description: Virtual Server Name
+        in: path
+        name: vsName
+        required: true
+        type: string
+      - description: Application ID (UUID)
+        in: path
+        name: appId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.GetApplicationResponseDto'
+        "400":
+          description: Bad Request
+        "404":
+          description: Application not found
+        "500":
+          description: Internal Server Error
+      summary: Get application
+      tags:
+      - applications
+swagger: "2.0"

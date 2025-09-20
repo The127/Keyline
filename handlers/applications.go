@@ -28,6 +28,18 @@ type CreateApplicationResponseDto struct {
 	Secret *string   `json:"secret,omitempty"`
 }
 
+// CreateApplication creates a new application (OIDC client) in a virtual server
+// @Summary Create application
+// @Description Create a new OIDC application/client with redirect URIs and type
+// @Tags applications
+// @Accept json
+// @Produce json
+// @Param vsName path string true "Virtual Server Name"
+// @Param request body CreateApplicationRequestDto true "Application data"
+// @Success 201 {object} CreateApplicationResponseDto
+// @Failure 400
+// @Failure 500
+// @Router /api/virtual-servers/{vsName}/applications [post]
 func CreateApplication(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -87,6 +99,19 @@ type GetApplicationResponseDto struct {
 	UpdatedAt    time.Time `json:"updatedAt"`
 }
 
+// GetApplication retrieves details of a specific application by ID
+// @Summary Get application
+// @Description Get an application by ID from a virtual server
+// @Tags applications
+// @Accept json
+// @Produce json
+// @Param vsName path string true "Virtual Server Name"
+// @Param appId path string true "Application ID (UUID)"
+// @Success 200 {object} GetApplicationResponseDto
+// @Failure 400
+// @Failure 404 "Application not found"
+// @Failure 500
+// @Router /api/virtual-servers/{vsName}/applications/{appId} [get]
 func GetApplication(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -137,12 +162,30 @@ func GetApplication(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+type PagedApplicationsResponseDto = PagedResponseDto[ListApplicationsResponseDto]
+
 type ListApplicationsResponseDto struct {
 	Id          uuid.UUID `json:"id"`
 	Name        string    `json:"name"`
 	DisplayName string    `json:"displayName"`
 }
 
+// ListApplications lists applications in a virtual server
+// @Summary List applications
+// @Description Retrieve a paginated list of applications (OIDC clients)
+// @Tags applications
+// @Accept json
+// @Produce json
+// @Param vsName path string true "Virtual Server Name"
+// @Param page query int false "Page number"
+// @Param pageSize query int false "Page size"
+// @Param orderBy query string false "Order by field"
+// @Param orderDir query string false "Order direction (asc|desc)"
+// @Param search query string false "Search term"
+// @Success 200 {object} PagedApplicationsResponseDto
+// @Failure 400
+// @Failure 500
+// @Router /api/virtual-servers/{vsName}/applications [get]
 func ListApplications(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
