@@ -19,6 +19,7 @@ type GetApplicationResult struct {
 	Id           uuid.UUID
 	Name         string
 	DisplayName  string
+	Type         repositories.ApplicationType
 	RedirectUris []string
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
@@ -52,6 +53,7 @@ func HandleGetApplication(ctx context.Context, query GetApplication) (*GetApplic
 		Id:           application.Id(),
 		Name:         application.Name(),
 		DisplayName:  application.DisplayName(),
+		Type:         application.Type(),
 		RedirectUris: application.RedirectUris(),
 		CreatedAt:    application.AuditCreatedAt(),
 		UpdatedAt:    application.AuditUpdatedAt(),

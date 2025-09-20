@@ -3,12 +3,13 @@ POST http://127.0.0.1:8081/api/virtual-servers/keyline/applications
 Content-Type: application/json
 
 {
-  "name": "foo",
+  "name": "foo8",
   "displayName": "Foo Application",
   "redirectUris": [
     "http://localhost:1234",
     "http://localhost:3245"
-  ]
+  ],
+  "type": "confidential"
 }
 
 ### list all applicaitons

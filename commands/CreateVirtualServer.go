@@ -75,6 +75,7 @@ func initializeDefaultApplications(ctx context.Context, virtualServer *repositor
 		virtualServer.Id(),
 		AdminApplicationName,
 		"Admin Application",
+		repositories.ApplicationTypePublic,
 		[]string{
 			fmt.Sprintf("http://localhost:5173/mgmt/%s/auth", virtualServer.Name()),
 		},

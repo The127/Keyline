@@ -71,12 +71,13 @@ func (mr *MockUserRepositoryMockRecorder) Insert(ctx, user any) *gomock.Call {
 }
 
 // List mocks base method.
-func (m *MockUserRepository) List(ctx context.Context, filter repositories.UserFilter) ([]*repositories.User, error) {
+func (m *MockUserRepository) List(ctx context.Context, filter repositories.UserFilter) ([]*repositories.User, int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "List", ctx, filter)
 	ret0, _ := ret[0].([]*repositories.User)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(int)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // List indicates an expected call of List.

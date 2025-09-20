@@ -49,6 +49,7 @@ func TestHandleCreateApplication(t *testing.T) {
 		VirtualServerName: virtualServer.Name(),
 		Name:              "applicationName",
 		DisplayName:       "Display Name",
+		Type:              repositories.ApplicationTypePublic,
 		RedirectUris: []string{
 			"redirectUri1",
 			"redirectUri2",
