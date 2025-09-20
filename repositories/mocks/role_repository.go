@@ -70,6 +70,22 @@ func (mr *MockRoleRepositoryMockRecorder) Insert(ctx, role any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockRoleRepository)(nil).Insert), ctx, role)
 }
 
+// List mocks base method.
+func (m *MockRoleRepository) List(ctx context.Context, filter repositories.RoleFilter) ([]*repositories.Role, int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "List", ctx, filter)
+	ret0, _ := ret[0].([]*repositories.Role)
+	ret1, _ := ret[1].(int)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// List indicates an expected call of List.
+func (mr *MockRoleRepositoryMockRecorder) List(ctx, filter any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockRoleRepository)(nil).List), ctx, filter)
+}
+
 // Single mocks base method.
 func (m *MockRoleRepository) Single(ctx context.Context, filter repositories.RoleFilter) (*repositories.Role, error) {
 	m.ctrl.T.Helper()

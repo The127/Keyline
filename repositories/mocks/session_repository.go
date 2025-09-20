@@ -14,6 +14,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	uuid "github.com/google/uuid"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -39,6 +40,20 @@ func NewMockSessionRepository(ctrl *gomock.Controller) *MockSessionRepository {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockSessionRepository) EXPECT() *MockSessionRepositoryMockRecorder {
 	return m.recorder
+}
+
+// Delete mocks base method.
+func (m *MockSessionRepository) Delete(ctx context.Context, id uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Delete", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Delete indicates an expected call of Delete.
+func (mr *MockSessionRepositoryMockRecorder) Delete(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockSessionRepository)(nil).Delete), ctx, id)
 }
 
 // First mocks base method.

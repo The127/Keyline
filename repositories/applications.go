@@ -17,6 +17,13 @@ import (
 	"github.com/lib/pq"
 )
 
+type ApplicationType string
+
+const (
+	ApplicationTypePublic       ApplicationType = "public"
+	ApplicationTypeConfidential ApplicationType = "confidential"
+)
+
 type Application struct {
 	ModelBase
 
@@ -24,6 +31,7 @@ type Application struct {
 
 	name        string
 	displayName string
+	type_       ApplicationType
 
 	hashedSecret           string
 	redirectUris           []string
@@ -34,6 +42,7 @@ func NewApplication(
 	virtualServerId uuid.UUID,
 	name string,
 	displayName string,
+	type_ ApplicationType,
 	redirectUris []string,
 ) *Application {
 	return &Application{
@@ -41,6 +50,7 @@ func NewApplication(
 		virtualServerId:        virtualServerId,
 		name:                   name,
 		displayName:            displayName,
+		type_:                  type_,
 		redirectUris:           redirectUris,
 		postLogoutRedirectUris: make([]string, 0),
 	}
@@ -55,6 +65,7 @@ func (a *Application) getScanPointers() []any {
 		&a.virtualServerId,
 		&a.name,
 		&a.displayName,
+		&a.type_,
 		&a.hashedSecret,
 		pq.Array(&a.redirectUris),
 		pq.Array(&a.postLogoutRedirectUris),
@@ -65,6 +76,7 @@ func (a *Application) GenerateSecret() string {
 	secretBytes := utils.GetSecureRandomBytes(16)
 	secretBase64 := base64.RawURLEncoding.EncodeToString(secretBytes)
 	a.hashedSecret = utils.CheapHash(secretBase64)
+	a.TrackChange("hashed_secret", a.hashedSecret)
 	return secretBase64
 }
 
@@ -83,6 +95,10 @@ func (a *Application) DisplayName() string {
 func (a *Application) SetDisplayName(displayName string) {
 	a.TrackChange("display_name", displayName)
 	a.displayName = displayName
+}
+
+func (a *Application) Type() ApplicationType {
+	return a.type_
 }
 
 func (a *Application) HashedSecret() string {
@@ -195,6 +211,7 @@ func (r *applicationRepository) selectQuery(filter ApplicationFilter) *sqlbuilde
 		"virtual_server_id",
 		"name",
 		"display_name",
+		"type",
 		"hashed_secret",
 		"redirect_uris",
 		"post_logout_redirect_uris",
@@ -313,11 +330,12 @@ func (r *applicationRepository) Insert(ctx context.Context, application *Applica
 	}
 
 	s := sqlbuilder.InsertInto("applications").
-		Cols("virtual_server_id", "name", "display_name", "hashed_secret", "redirect_uris").
+		Cols("virtual_server_id", "name", "display_name", "type", "hashed_secret", "redirect_uris").
 		Values(
 			application.virtualServerId,
 			application.name,
 			application.displayName,
+			application.type_,
 			application.hashedSecret,
 			pq.Array(application.redirectUris),
 		).Returning("id", "audit_created_at", "audit_updated_at", "version")

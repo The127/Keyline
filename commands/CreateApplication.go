@@ -4,6 +4,7 @@ import (
 	"Keyline/ioc"
 	"Keyline/middlewares"
 	"Keyline/repositories"
+	"Keyline/utils"
 	"context"
 	"fmt"
 	"github.com/google/uuid"
@@ -13,13 +14,14 @@ type CreateApplication struct {
 	VirtualServerName      string
 	Name                   string
 	DisplayName            string
+	Type                   repositories.ApplicationType
 	RedirectUris           []string
 	PostLogoutRedirectUris []string
 }
 
 type CreateApplicationResponse struct {
 	Id     uuid.UUID
-	Secret string
+	Secret *string
 }
 
 func HandleCreateApplication(ctx context.Context, command CreateApplication) (*CreateApplicationResponse, error) {
@@ -37,9 +39,15 @@ func HandleCreateApplication(ctx context.Context, command CreateApplication) (*C
 		virtualServer.Id(),
 		command.Name,
 		command.DisplayName,
+		command.Type,
 		command.RedirectUris,
 	)
-	secret := application.GenerateSecret()
+
+	var secret *string = nil
+	if command.Type == repositories.ApplicationTypeConfidential {
+		secret = utils.Ptr(application.GenerateSecret())
+	}
+
 	application.SetPostLogoutRedirectUris(command.PostLogoutRedirectUris)
 	err = applicationRepository.Insert(ctx, application)
 	if err != nil {

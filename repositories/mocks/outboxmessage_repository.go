@@ -14,6 +14,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	uuid "github.com/google/uuid"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -42,17 +43,17 @@ func (m *MockOutboxMessageRepository) EXPECT() *MockOutboxMessageRepositoryMockR
 }
 
 // Delete mocks base method.
-func (m *MockOutboxMessageRepository) Delete(ctx context.Context, filter repositories.OutboxMessageFilter) error {
+func (m *MockOutboxMessageRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", ctx, filter)
+	ret := m.ctrl.Call(m, "Delete", ctx, id)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockOutboxMessageRepositoryMockRecorder) Delete(ctx, filter any) *gomock.Call {
+func (mr *MockOutboxMessageRepositoryMockRecorder) Delete(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockOutboxMessageRepository)(nil).Delete), ctx, filter)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockOutboxMessageRepository)(nil).Delete), ctx, id)
 }
 
 // Insert mocks base method.

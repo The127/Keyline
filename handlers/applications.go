@@ -6,6 +6,7 @@ import (
 	"Keyline/mediator"
 	"Keyline/middlewares"
 	"Keyline/queries"
+	"Keyline/repositories"
 	"Keyline/utils"
 	"encoding/json"
 	"github.com/google/uuid"
@@ -15,14 +16,16 @@ import (
 )
 
 type CreateApplicationRequestDto struct {
-	Name         string   `json:"name" validate:"required,min=1,max=255"`
-	DisplayName  string   `json:"displayName" validate:"required,min=1,max=255"`
-	RedirectUris []string `json:"redirectUris" validate:"required,dive,url,min=1"`
+	Name           string   `json:"name" validate:"required,min=1,max=255"`
+	DisplayName    string   `json:"displayName" validate:"required,min=1,max=255"`
+	RedirectUris   []string `json:"redirectUris" validate:"required,dive,url,min=1"`
+	PostLogoutUris []string `json:"postLogoutUris" validate:"dive,url"`
+	Type           string   `json:"type" validate:"required,oneof=public confidential"`
 }
 
 type CreateApplicationResponseDto struct {
-	Id     uuid.UUID
-	Secret string
+	Id     uuid.UUID `json:"id"`
+	Secret *string   `json:"secret,omitempty"`
 }
 
 func CreateApplication(w http.ResponseWriter, r *http.Request) {
@@ -51,10 +54,12 @@ func CreateApplication(w http.ResponseWriter, r *http.Request) {
 	m := ioc.GetDependency[*mediator.Mediator](scope)
 
 	response, err := mediator.Send[*commands.CreateApplicationResponse](ctx, m, commands.CreateApplication{
-		VirtualServerName: vsName,
-		Name:              dto.Name,
-		DisplayName:       dto.DisplayName,
-		RedirectUris:      dto.RedirectUris,
+		VirtualServerName:      vsName,
+		Name:                   dto.Name,
+		DisplayName:            dto.DisplayName,
+		Type:                   repositories.ApplicationType(dto.Type),
+		RedirectUris:           dto.RedirectUris,
+		PostLogoutRedirectUris: dto.PostLogoutUris,
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)
