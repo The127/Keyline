@@ -25,6 +25,7 @@ type ListApplicationsResponseItem struct {
 	Id          uuid.UUID
 	Name        string
 	DisplayName string
+	Type        repositories.ApplicationType
 }
 
 func HandleListApplications(ctx context.Context, query ListApplications) (*ListApplicationsResponse, error) {
@@ -54,6 +55,7 @@ func HandleListApplications(ctx context.Context, query ListApplications) (*ListA
 			Id:          t.Id(),
 			Name:        t.Name(),
 			DisplayName: t.DisplayName(),
+			Type:        t.Type(),
 		}
 	})
 
