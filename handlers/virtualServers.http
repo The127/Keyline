@@ -10,3 +10,6 @@ Content-Type: application/json
 
 ### get virtual server public info
 GET http://127.0.0.1:8081/api/virtual-servers/keyline/public-info
+
+### get virtual server
+GET http://127.0.0.1:8081/api/virtual-servers/keyline

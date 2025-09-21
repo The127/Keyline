@@ -8,7 +8,9 @@ import (
 	"Keyline/queries"
 	"Keyline/utils"
 	"encoding/json"
+	"github.com/google/uuid"
 	"net/http"
+	"time"
 )
 
 type CreateVirtualSeverRequestDto struct {
@@ -47,6 +49,50 @@ func CreateVirtualSever(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+type GetVirtualServerResponseDto struct {
+	Id                  uuid.UUID `json:"id"`
+	Name                string    `json:"name"`
+	DisplayName         string    `json:"displayName"`
+	RegistrationEnabled bool      `json:"registrationEnabled"`
+	CreatedAt           time.Time `json:"createdAt"`
+	UpdatedAt           time.Time `json:"updatedAt"`
+}
+
+func GetVirtualServer(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	scope := middlewares.GetScope(ctx)
+
+	vsName, err := middlewares.GetVirtualServerName(r.Context())
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	m := ioc.GetDependency[*mediator.Mediator](scope)
+	response, err := mediator.Send[*queries.GetVirtualServerResponse](ctx, m, queries.GetVirtualServerQuery{
+		VirtualServerName: vsName,
+	})
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	err = json.NewEncoder(w).Encode(GetVirtualServerResponseDto{
+		Id:                  response.Id,
+		Name:                response.Name,
+		DisplayName:         response.DisplayName,
+		RegistrationEnabled: response.RegistrationEnabled,
+		CreatedAt:           response.CreatedAt,
+		UpdatedAt:           response.UpdatedAt,
+	})
+	if err != nil {
+		utils.HandleHttpError(w, err)
+	}
 }
 
 type GetVirtualServerListResponseDto struct {

@@ -61,11 +61,12 @@ func Serve(dp *ioc.DependencyProvider) {
 
 	r.HandleFunc("/api/virtual-servers", handlers.CreateVirtualSever).Methods(http.MethodPost, http.MethodOptions)
 
-	vsApiRouter := r.PathPrefix("/api/virtual-servers/{virtualServerName}/").Subrouter()
+	vsApiRouter := r.PathPrefix("/api/virtual-servers/{virtualServerName}").Subrouter()
 	vsApiRouter.Use(middlewares.VirtualServerMiddleware())
 	vsApiRouter.Use(middlewares.SessionMiddleware())
 	vsApiRouter.HandleFunc("/health", handlers.VirtualServerHealth).Methods(http.MethodGet, http.MethodOptions)
 
+	vsApiRouter.HandleFunc("", handlers.GetVirtualServer).Methods(http.MethodGet, http.MethodOptions)
 	vsApiRouter.HandleFunc("/public-info", handlers.GetVirtualServerPublicInfo).Methods(http.MethodGet, http.MethodOptions)
 
 	vsApiRouter.HandleFunc("/users/register", handlers.RegisterUser).Methods(http.MethodPost, http.MethodOptions)
