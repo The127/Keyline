@@ -17,6 +17,7 @@ import (
 	_ "Keyline/docs"
 )
 
+// Serve serves the http server.
 // @title Keyline API
 // @version 1.0
 // @description Open source OIDC/IDP server.
