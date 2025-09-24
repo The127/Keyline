@@ -38,13 +38,8 @@ linters:
         - unlambda
 
 issues:
-  exclude-use-default: false
   max-same-issues: 3
   max-issues-per-linter: 50
-  max-issues-per-run: 100
-  exclude:
-    - "Error return value of .*(Close|Log|Print). is not checked"
-    - "should have comment or be unexported"
 
 # Optional: add formatters if you want to enforce gofumpt/gci auto-formatting
 # formatters:
