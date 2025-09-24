@@ -3,30 +3,28 @@ name: Go CI
 on:
   push:
     branches: ["main"]
+  pull_request:
+    branches: ["main"]
 
 jobs:
-  build:
+  lint-test:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v5
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
-          go-version: '1.24'
+          go-version: "1.24"
 
-      - name: Install dependencies
-        run: go mod download
-
-      - name: Build
-        run: go build ./...
+      - name: Run golangci-lint (v2)
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.1.6
 
       - name: Run tests
         run: go test -v ./...
 
-      - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v6
-        with:
-          version: latest
+      - name: Build
+        run: go build ./...
