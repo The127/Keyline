@@ -165,7 +165,7 @@ func (f ApplicationFilter) Order(by string, direction string) ApplicationFilter 
 
 func (f ApplicationFilter) Search(search string) ApplicationFilter {
 	filter := f.Clone()
-	filter.search = &search
+	filter.search = utils.NilIfZero(search)
 	return filter
 }
 
