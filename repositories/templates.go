@@ -63,8 +63,11 @@ func (t *Template) getScanPointers() []any {
 }
 
 type TemplateFilter struct {
+	pagingInfo
+	orderInfo
 	virtualServerId *uuid.UUID
 	templateType    *TemplateType
+	search          *string
 }
 
 func NewTemplateFilter() TemplateFilter {
@@ -84,6 +87,30 @@ func (f TemplateFilter) VirtualServerId(virtualServerId uuid.UUID) TemplateFilte
 func (f TemplateFilter) TemplateType(templateType TemplateType) TemplateFilter {
 	filter := f.Clone()
 	filter.templateType = &templateType
+	return filter
+}
+
+func (f TemplateFilter) Search(search string) TemplateFilter {
+	filter := f.Clone()
+	filter.search = utils.NilIfZero(search)
+	return filter
+}
+
+func (f TemplateFilter) Pagination(page int, size int) TemplateFilter {
+	filter := f.Clone()
+	filter.pagingInfo = pagingInfo{
+		page: page,
+		size: size,
+	}
+	return filter
+}
+
+func (f TemplateFilter) Order(by string, direction string) TemplateFilter {
+	filter := f.Clone()
+	filter.orderInfo = orderInfo{
+		orderBy:  by,
+		orderDir: direction,
+	}
 	return filter
 }
 
@@ -119,6 +146,16 @@ func (r *templateRepository) selectQuery(filter TemplateFilter) *sqlbuilder.Sele
 	if filter.templateType != nil {
 		s.Where(s.Equal("type", filter.templateType))
 	}
+
+	if filter.search != nil {
+		term := "%" + *filter.search + "%"
+		s.Where(s.Or(
+			s.ILike("type", term),
+		))
+	}
+
+	filter.orderInfo.apply(s)
+	filter.pagingInfo.apply(s)
 
 	return s
 }
