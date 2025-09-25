@@ -144,7 +144,7 @@ func (f UserFilter) Order(by string, direction string) UserFilter {
 
 func (f UserFilter) Search(search string) UserFilter {
 	filter := f.Clone()
-	filter.search = &search
+	filter.search = utils.NilIfZero(search)
 	return filter
 }
 

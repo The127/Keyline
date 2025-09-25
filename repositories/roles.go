@@ -134,7 +134,7 @@ func (f RoleFilter) Id(id uuid.UUID) RoleFilter {
 
 func (f RoleFilter) Search(search string) RoleFilter {
 	filter := f.Clone()
-	filter.search = &search
+	filter.search = utils.NilIfZero(search)
 	return filter
 }
 
