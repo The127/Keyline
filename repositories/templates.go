@@ -119,6 +119,7 @@ type TemplateRepository interface {
 	Single(ctx context.Context, filter TemplateFilter) (*Template, error)
 	First(ctx context.Context, filter TemplateFilter) (*Template, error)
 	Insert(ctx context.Context, template *Template) error
+	List(ctx context.Context, filter TemplateFilter) ([]*Template, int, error)
 }
 
 type templateRepository struct {
@@ -235,4 +236,41 @@ func (r *templateRepository) Insert(ctx context.Context, template *Template) err
 
 	template.clearChanges()
 	return nil
+}
+
+func (r *templateRepository) List(ctx context.Context, filter TemplateFilter) ([]*Template, int, error) {
+	scope := middlewares.GetScope(ctx)
+	dbService := ioc.GetDependency[database.DbService](scope)
+
+	tx, err := dbService.GetTx()
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to open tx: %w", err)
+	}
+
+	s := r.selectQuery(filter)
+	s.SelectMore("count(*) over()")
+
+	query, args := s.Build()
+	logging.Logger.Debug("executing sql: ", query)
+	rows, err := tx.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, 0, fmt.Errorf("querying rows: %w", err)
+	}
+	defer utils.PanicOnError(rows.Close, "closing rows")
+
+	var templates []*Template
+	var totalCount int
+	for rows.Next() {
+		template := Template{
+			ModelBase: NewModelBase(),
+		}
+		err = rows.Scan(append(template.getScanPointers(), &totalCount)...)
+		if err != nil {
+			return nil, 0, fmt.Errorf("scanning row: %w", err)
+		}
+
+		templates = append(templates, &template)
+	}
+
+	return templates, totalCount, nil
 }
