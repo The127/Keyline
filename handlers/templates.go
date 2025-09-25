@@ -14,8 +14,8 @@ import (
 )
 
 type ListTemplatesReponseDto struct {
-	Id   uuid.UUID `json:"id"`
-	Type repositories.TemplateType
+	Id   uuid.UUID                 `json:"id"`
+	Type repositories.TemplateType `json:"type"`
 }
 
 func ListTemplates(w http.ResponseWriter, r *http.Request) {
