@@ -18,10 +18,11 @@ import (
 	"Keyline/utils"
 	"context"
 	"database/sql"
-	"github.com/huandu/go-sqlbuilder"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/huandu/go-sqlbuilder"
 )
 
 func main() {
@@ -147,6 +148,8 @@ func setupMediator(dc *ioc.DependencyCollection) {
 	mediator.RegisterHandler(m, queries.HandleGetVirtualServerPublicInfo)
 	mediator.RegisterHandler(m, queries.HandleGetVirtualServerQuery)
 	mediator.RegisterHandler(m, commands.HandleCreateVirtualServer)
+
+	mediator.RegisterHandler(m, queries.HandleListTemplates)
 
 	mediator.RegisterHandler(m, commands.HandleRegisterUser)
 	mediator.RegisterHandler(m, commands.HandleCreateUser)
