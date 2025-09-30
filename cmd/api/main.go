@@ -150,6 +150,7 @@ func setupMediator(dc *ioc.DependencyCollection) {
 	mediator.RegisterHandler(m, commands.HandleCreateVirtualServer)
 
 	mediator.RegisterHandler(m, queries.HandleListTemplates)
+	mediator.RegisterHandler(m, queries.HandleGetTemplate)
 
 	mediator.RegisterHandler(m, commands.HandleRegisterUser)
 	mediator.RegisterHandler(m, commands.HandleCreateUser)

@@ -11,9 +11,59 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 )
 
-type ListTemplatesReponseDto struct {
+type GetTemplateResponseDto struct {
+	Id   uuid.UUID                 `json:"id"`
+	Type repositories.TemplateType `json:"type"`
+	Text string                    `json:"text"`
+}
+
+func GetTemplate(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	scope := middlewares.GetScope(ctx)
+
+	vsName, err := middlewares.GetVirtualServerName(ctx)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	vars := mux.Vars(r)
+	templateType, ok := vars["templateType"]
+	if !ok {
+		utils.HandleHttpError(w, utils.ErrTemplateNotFound)
+		return
+	}
+
+	m := ioc.GetDependency[*mediator.Mediator](scope)
+	query := queries.GetTemplate{
+		VirtualServerName: vsName,
+		Type:              repositories.TemplateType(templateType),
+	}
+	queryResult, err := mediator.Send[*queries.GetTemplateResult](ctx, m, query)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	response := GetTemplateResponseDto{
+		Id:   queryResult.Id,
+		Type: query.Type,
+		Text: queryResult.Text,
+	}
+
+	err = json.NewEncoder(w).Encode(response)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+	}
+}
+
+type ListTemplatesResponseDto struct {
 	Id   uuid.UUID                 `json:"id"`
 	Type repositories.TemplateType `json:"type"`
 }
@@ -47,8 +97,8 @@ func ListTemplates(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	items := utils.MapSlice(templates.Items, func(x queries.ListTemplatesResponseItem) ListTemplatesReponseDto {
-		return ListTemplatesReponseDto{
+	items := utils.MapSlice(templates.Items, func(x queries.ListTemplatesResponseItem) ListTemplatesResponseDto {
+		return ListTemplatesResponseDto{
 			Id:   x.Id,
 			Type: x.Type,
 		}
