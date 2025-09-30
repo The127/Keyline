@@ -70,6 +70,22 @@ func (mr *MockTemplateRepositoryMockRecorder) Insert(ctx, template any) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockTemplateRepository)(nil).Insert), ctx, template)
 }
 
+// List mocks base method.
+func (m *MockTemplateRepository) List(ctx context.Context, filter repositories.TemplateFilter) ([]*repositories.Template, int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "List", ctx, filter)
+	ret0, _ := ret[0].([]*repositories.Template)
+	ret1, _ := ret[1].(int)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// List indicates an expected call of List.
+func (mr *MockTemplateRepositoryMockRecorder) List(ctx, filter any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockTemplateRepository)(nil).List), ctx, filter)
+}
+
 // Single mocks base method.
 func (m *MockTemplateRepository) Single(ctx context.Context, filter repositories.TemplateFilter) (*repositories.Template, error) {
 	m.ctrl.T.Helper()
