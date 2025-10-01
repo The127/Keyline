@@ -5,8 +5,9 @@ import (
 	"Keyline/middlewares"
 	"Keyline/repositories"
 	"context"
-	"github.com/google/uuid"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type GetVirtualServerQuery struct {
@@ -14,12 +15,14 @@ type GetVirtualServerQuery struct {
 }
 
 type GetVirtualServerResponse struct {
-	Id                  uuid.UUID
-	Name                string
-	DisplayName         string
-	RegistrationEnabled bool
-	CreatedAt           time.Time
-	UpdatedAt           time.Time
+	Id                       uuid.UUID
+	Name                     string
+	DisplayName              string
+	RegistrationEnabled      bool
+	Require2fa               bool
+	RequireEmailVerification bool
+	CreatedAt                time.Time
+	UpdatedAt                time.Time
 }
 
 func HandleGetVirtualServerQuery(ctx context.Context, command GetVirtualServerQuery) (*GetVirtualServerResponse, error) {
@@ -33,11 +36,13 @@ func HandleGetVirtualServerQuery(ctx context.Context, command GetVirtualServerQu
 	}
 
 	return &GetVirtualServerResponse{
-		Id:                  virtualServer.Id(),
-		Name:                virtualServer.Name(),
-		DisplayName:         virtualServer.DisplayName(),
-		RegistrationEnabled: virtualServer.EnableRegistration(),
-		CreatedAt:           virtualServer.AuditCreatedAt(),
-		UpdatedAt:           virtualServer.AuditUpdatedAt(),
+		Id:                       virtualServer.Id(),
+		Name:                     virtualServer.Name(),
+		DisplayName:              virtualServer.DisplayName(),
+		RegistrationEnabled:      virtualServer.EnableRegistration(),
+		Require2fa:               virtualServer.Require2fa(),
+		RequireEmailVerification: virtualServer.RequireEmailVerification(),
+		CreatedAt:                virtualServer.AuditCreatedAt(),
+		UpdatedAt:                virtualServer.AuditUpdatedAt(),
 	}, nil
 }
