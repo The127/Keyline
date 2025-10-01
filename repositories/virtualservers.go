@@ -21,8 +21,9 @@ type VirtualServer struct {
 	name        string
 	displayName string
 
-	require2fa         bool
-	enableRegistration bool
+	enableRegistration       bool
+	require2fa               bool
+	requireEmailVerification bool
 }
 
 func NewVirtualServer(name string, displayName string) *VirtualServer {
@@ -44,6 +45,7 @@ func (m *VirtualServer) getScanPointers() []any {
 		&m.name,
 		&m.enableRegistration,
 		&m.require2fa,
+		&m.requireEmailVerification,
 	}
 }
 
@@ -71,6 +73,15 @@ func (m *VirtualServer) Require2fa() bool {
 func (m *VirtualServer) SetRequire2fa(require2fa bool) {
 	m.require2fa = require2fa
 	m.TrackChange("require_2fa", require2fa)
+}
+
+func (m *VirtualServer) RequireEmailVerification() bool {
+	return m.requireEmailVerification
+}
+
+func (m *VirtualServer) SetRequireEmailVerification(requireEmailVerification bool) {
+	m.requireEmailVerification = requireEmailVerification
+	m.TrackChange("require_email_verification", requireEmailVerification)
 }
 
 type VirtualServerFilter struct {
@@ -130,6 +141,7 @@ func (r *virtualServerRepository) selectQuery(filter VirtualServerFilter) *sqlbu
 		"name",
 		"enable_registration",
 		"require_2fa",
+		"require_email_verification",
 	).From("virtual_servers")
 
 	if filter.name != nil {
