@@ -8,9 +8,10 @@ import (
 	"Keyline/queries"
 	"Keyline/utils"
 	"encoding/json"
-	"github.com/google/uuid"
 	"net/http"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type CreateVirtualSeverRequestDto struct {
@@ -52,12 +53,14 @@ func CreateVirtualSever(w http.ResponseWriter, r *http.Request) {
 }
 
 type GetVirtualServerResponseDto struct {
-	Id                  uuid.UUID `json:"id"`
-	Name                string    `json:"name"`
-	DisplayName         string    `json:"displayName"`
-	RegistrationEnabled bool      `json:"registrationEnabled"`
-	CreatedAt           time.Time `json:"createdAt"`
-	UpdatedAt           time.Time `json:"updatedAt"`
+	Id                       uuid.UUID `json:"id"`
+	Name                     string    `json:"name"`
+	DisplayName              string    `json:"displayName"`
+	RegistrationEnabled      bool      `json:"registrationEnabled"`
+	Require2fa               bool      `json:"require2fa"`
+	RequireEmailVerification bool      `json:"requireEmailVerification"`
+	CreatedAt                time.Time `json:"createdAt"`
+	UpdatedAt                time.Time `json:"updatedAt"`
 }
 
 func GetVirtualServer(w http.ResponseWriter, r *http.Request) {
@@ -83,12 +86,14 @@ func GetVirtualServer(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	err = json.NewEncoder(w).Encode(GetVirtualServerResponseDto{
-		Id:                  response.Id,
-		Name:                response.Name,
-		DisplayName:         response.DisplayName,
-		RegistrationEnabled: response.RegistrationEnabled,
-		CreatedAt:           response.CreatedAt,
-		UpdatedAt:           response.UpdatedAt,
+		Id:                       response.Id,
+		Name:                     response.Name,
+		DisplayName:              response.DisplayName,
+		RegistrationEnabled:      response.RegistrationEnabled,
+		Require2fa:               response.Require2fa,
+		RequireEmailVerification: response.RequireEmailVerification,
+		CreatedAt:                response.CreatedAt,
+		UpdatedAt:                response.UpdatedAt,
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)
