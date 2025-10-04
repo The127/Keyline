@@ -1,0 +1,30 @@
+name: Build & Publish Go API Image
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout source
+      - uses: actions/checkout@v4
+
+      # 2. Log in to GHCR
+      - uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_PAT }}
+
+      # 3. Build image
+      - name: Build container
+        run: |
+          docker build -f Containerfile -t ghcr.io/the127/keyline:${{ github.ref_name }} .
+
+      # 4. Push image
+      - name: Push container
+        run: |
+          docker push ghcr.io/the127/keyline:${{ github.ref_name }}
