@@ -42,6 +42,8 @@ func Serve(dp *ioc.DependencyProvider) {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			origin := r.Header.Get("Origin")
 
+			logging.Logger.Debugf("request from %s", origin)
+
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH")
 			w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
 			w.Header().Set("Access-Control-Allow-Credentials", "true")
@@ -65,7 +67,9 @@ func Serve(dp *ioc.DependencyProvider) {
 	oidcRouter.HandleFunc("/userinfo", handlers.OidcUserinfo).Methods(http.MethodGet, http.MethodOptions)
 	oidcRouter.HandleFunc("/end_session", handlers.OidcEndSession).Methods(http.MethodGet, http.MethodOptions)
 
-	r.Use(gh.CORS(
+	loginRouter := r.PathPrefix("/logins").Subrouter()
+
+	loginRouter.Use(gh.CORS(
 		gh.AllowedOrigins(config.C.Server.AllowedOrigins),
 		gh.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "PATCH"}),
 		gh.AllowedHeaders([]string{"Authorization", "Content-Type"}),
@@ -73,16 +77,26 @@ func Serve(dp *ioc.DependencyProvider) {
 		gh.MaxAge(3600),
 	))
 
-	r.HandleFunc("/logins/{loginToken}", handlers.GetLoginState).Methods(http.MethodGet, http.MethodOptions)
-	r.HandleFunc("/logins/{loginToken}/verify-password", handlers.VerifyPassword).Methods(http.MethodPost, http.MethodOptions)
-	r.HandleFunc("/logins/{loginToken}/reset-temporary-password", handlers.ResetTemporaryPassword).Methods(http.MethodPost, http.MethodOptions)
-	r.HandleFunc("/logins/{loginToken}/resend-email-verification", handlers.ResendEmailVerification).Methods(http.MethodPost, http.MethodOptions)
-	r.HandleFunc("/logins/{loginToken}/verify-email", handlers.VerifyEmailToken).Methods(http.MethodPost, http.MethodOptions)
-	r.HandleFunc("/logins/{loginToken}/finish-login", handlers.FinishLogin).Methods(http.MethodPost, http.MethodOptions)
+	loginRouter.HandleFunc("/{loginToken}", handlers.GetLoginState).Methods(http.MethodGet, http.MethodOptions)
+	loginRouter.HandleFunc("/{loginToken}/verify-password", handlers.VerifyPassword).Methods(http.MethodPost, http.MethodOptions)
+	loginRouter.HandleFunc("/{loginToken}/reset-temporary-password", handlers.ResetTemporaryPassword).Methods(http.MethodPost, http.MethodOptions)
+	loginRouter.HandleFunc("/{loginToken}/resend-email-verification", handlers.ResendEmailVerification).Methods(http.MethodPost, http.MethodOptions)
+	loginRouter.HandleFunc("/{loginToken}/verify-email", handlers.VerifyEmailToken).Methods(http.MethodPost, http.MethodOptions)
+	loginRouter.HandleFunc("/{loginToken}/finish-login", handlers.FinishLogin).Methods(http.MethodPost, http.MethodOptions)
 
-	r.HandleFunc("/api/virtual-servers", handlers.CreateVirtualSever).Methods(http.MethodPost, http.MethodOptions)
+	apiRouter := r.PathPrefix("/api").Subrouter()
 
-	vsApiRouter := r.PathPrefix("/api/virtual-servers/{virtualServerName}").Subrouter()
+	apiRouter.Use(gh.CORS(
+		gh.AllowedOrigins(config.C.Server.AllowedOrigins),
+		gh.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "PATCH"}),
+		gh.AllowedHeaders([]string{"Authorization", "Content-Type"}),
+		gh.AllowCredentials(),
+		gh.MaxAge(3600),
+	))
+
+	apiRouter.HandleFunc("/virtual-servers", handlers.CreateVirtualSever).Methods(http.MethodPost, http.MethodOptions)
+
+	vsApiRouter := apiRouter.PathPrefix("/virtual-servers/{virtualServerName}").Subrouter()
 	vsApiRouter.Use(middlewares.VirtualServerMiddleware())
 	vsApiRouter.Use(middlewares.SessionMiddleware())
 	vsApiRouter.HandleFunc("/health", handlers.VirtualServerHealth).Methods(http.MethodGet, http.MethodOptions)
