@@ -7,10 +7,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/gorilla/mux"
 	"net/http"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 )
 
 type CurrentSession struct {
@@ -75,6 +76,11 @@ func SessionMiddleware() mux.MiddlewareFunc {
 			session, err := sessionService.GetSession(ctx, vsName, tokenId)
 			if err != nil {
 				utils.HandleHttpError(w, fmt.Errorf("getting session: %w", err))
+				return
+			}
+
+			if session == nil {
+				next.ServeHTTP(w, r)
 				return
 			}
 

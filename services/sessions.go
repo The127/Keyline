@@ -10,9 +10,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
-	"time"
 )
 
 type sessionService struct {
@@ -83,6 +84,8 @@ func (s *sessionService) GetSession(ctx context.Context, virtualServerName strin
 				dbSession.UserId(),
 				dbSession.HashedSecret(),
 			), nil
+		} else {
+			return nil, nil
 		}
 
 	case err != nil:
