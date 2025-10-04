@@ -30,7 +30,7 @@ func Serve(dp *ioc.DependencyProvider) {
 	r.Use(middlewares.RecoverMiddleware())
 	r.Use(middlewares.LoggingMiddleware())
 	r.Use(gh.CORS(
-		gh.AllowedOrigins([]string{"*", "http://localhost:5173"}),
+		gh.AllowedOrigins(config.C.Server.AllowedOrigins),
 		gh.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "PATCH"}),
 		gh.AllowedHeaders([]string{"Authorization", "Content-Type"}),
 		gh.AllowCredentials(),
