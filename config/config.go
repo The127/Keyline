@@ -3,6 +3,8 @@ package config
 import (
 	"flag"
 	"fmt"
+	"os"
+
 	"github.com/spf13/viper"
 )
 
@@ -89,9 +91,12 @@ func readConfigFile() {
 	v.SetEnvPrefix("KEYLINE")
 	v.AutomaticEnv()
 
-	v.SetConfigFile(configFilePath)
+	_, err := os.Stat(configFilePath)
+	if err == nil {
+		v.SetConfigFile(configFilePath)
+	}
 
-	err := v.ReadInConfig()
+	err = v.ReadInConfig()
 	if err != nil {
 		panic(err)
 	}
