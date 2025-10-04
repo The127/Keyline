@@ -3,6 +3,7 @@ package config
 import (
 	"flag"
 	"fmt"
+
 	"github.com/spf13/viper"
 )
 
@@ -42,6 +43,12 @@ type Config struct {
 			PrimaryEmail string
 			PasswordHash string
 		}
+		Mail struct {
+			Host     string
+			Port     int
+			Username string
+			Password string
+		}
 	}
 	KeyStore struct {
 		Mode    KeyStoreMode
@@ -51,12 +58,6 @@ type Config struct {
 		Directory struct {
 			Path string
 		}
-	}
-	Mail struct {
-		Host     string
-		Port     int
-		Username string
-		Password string
 	}
 	Redis struct {
 		Host     string
@@ -110,7 +111,6 @@ func setDefaultsOrPanic() {
 	setDatabaseDefaultsOrPanic()
 	setInitialVirtualServerDefaultsOrPanic()
 	setKeyStoreDefaultsOrPanic()
-	setMailDefaultsOrPanic()
 	setRedisDefaultsOrPanic()
 }
 
@@ -134,24 +134,6 @@ func setRedisDefaultsOrPanic() {
 
 	if C.Redis.Port == 0 {
 		C.Redis.Port = 6379
-	}
-}
-
-func setMailDefaultsOrPanic() {
-	if C.Mail.Host == "" {
-		panic("missing mail server host")
-	}
-
-	if C.Mail.Port == 0 {
-		panic("missing mail server port")
-	}
-
-	if C.Mail.Username == "" {
-		panic("missing mail server user")
-	}
-
-	if C.Mail.Password == "" {
-		panic("missing mail server passwort")
 	}
 }
 
