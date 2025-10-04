@@ -9,9 +9,9 @@ import (
 	"fmt"
 	"net/http"
 
+	gh "github.com/gorilla/handlers"
 	httpSwagger "github.com/swaggo/http-swagger"
 
-	gh "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
@@ -29,13 +29,6 @@ func Serve(dp *ioc.DependencyProvider) {
 
 	r.Use(middlewares.RecoverMiddleware())
 	r.Use(middlewares.LoggingMiddleware())
-	r.Use(gh.CORS(
-		gh.AllowedOrigins(config.C.Server.AllowedOrigins),
-		gh.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "PATCH"}),
-		gh.AllowedHeaders([]string{"Authorization", "Content-Type"}),
-		gh.AllowCredentials(),
-		gh.MaxAge(3600),
-	))
 	r.Use(middlewares.ScopeMiddleware(dp))
 
 	r.HandleFunc("/health", handlers.ApplicationHealth).Methods(http.MethodGet, http.MethodOptions)
@@ -44,6 +37,20 @@ func Serve(dp *ioc.DependencyProvider) {
 	r.Handle("/metrics", promhttp.Handler()).Methods(http.MethodGet, http.MethodOptions)
 
 	oidcRouter := r.PathPrefix("/oidc/{virtualServerName}/").Subrouter()
+
+	oidcRouter.Use(func(handler http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			r.Header.Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH")
+			r.Header.Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
+			r.Header.Set("Access-Control-Allow-Credentials", "true")
+
+			origin := r.Header.Get("Origin")
+
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+			handler.ServeHTTP(w, r)
+		})
+	})
+
 	oidcRouter.Use(middlewares.VirtualServerMiddleware())
 	oidcRouter.Use(middlewares.SessionMiddleware())
 	oidcRouter.HandleFunc("/.well-known/openid-configuration", handlers.WellKnownOpenIdConfiguration).Methods(http.MethodGet, http.MethodOptions)
@@ -52,6 +59,14 @@ func Serve(dp *ioc.DependencyProvider) {
 	oidcRouter.HandleFunc("/token", handlers.OidcToken).Methods(http.MethodPost, http.MethodOptions)
 	oidcRouter.HandleFunc("/userinfo", handlers.OidcUserinfo).Methods(http.MethodGet, http.MethodOptions)
 	oidcRouter.HandleFunc("/end_session", handlers.OidcEndSession).Methods(http.MethodGet, http.MethodOptions)
+
+	r.Use(gh.CORS(
+		gh.AllowedOrigins(config.C.Server.AllowedOrigins),
+		gh.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "PATCH"}),
+		gh.AllowedHeaders([]string{"Authorization", "Content-Type"}),
+		gh.AllowCredentials(),
+		gh.MaxAge(3600),
+	))
 
 	r.HandleFunc("/logins/{loginToken}", handlers.GetLoginState).Methods(http.MethodGet, http.MethodOptions)
 	r.HandleFunc("/logins/{loginToken}/verify-password", handlers.VerifyPassword).Methods(http.MethodPost, http.MethodOptions)
