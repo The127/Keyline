@@ -17,9 +17,10 @@ const (
 
 type Config struct {
 	Server struct {
-		ExternalUrl string
-		Host        string
-		Port        int
+		ExternalUrl    string
+		Host           string
+		Port           int
+		AllowedOrigins []string
 	}
 	Frontend struct {
 		ExternalUrl string
@@ -214,6 +215,14 @@ func setServerDefaultsOrPanic() {
 		}
 
 		C.Server.ExternalUrl = fmt.Sprintf("%s:%d", C.Server.Host, C.Server.Port)
+	}
+
+	if len(C.Server.AllowedOrigins) == 0 {
+		if IsProduction() {
+			panic("missing allowed origins")
+		}
+
+		C.Server.AllowedOrigins = []string{"*", "http://localhost:5173"}
 	}
 }
 
