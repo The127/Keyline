@@ -3,6 +3,7 @@ package services
 import (
 	"Keyline/config"
 	"fmt"
+
 	gomail "gopkg.in/mail.v2"
 )
 
@@ -18,11 +19,12 @@ func NewMailService() MailService {
 }
 
 func (s *mailService) Send(m ...*gomail.Message) error {
+	//TODO: per tenant credentials from database
 	dialer := gomail.NewDialer(
-		config.C.Mail.Host,
-		config.C.Mail.Port,
-		config.C.Mail.Username,
-		config.C.Mail.Password,
+		config.C.InitialVirtualServer.Mail.Host,
+		config.C.InitialVirtualServer.Mail.Port,
+		config.C.InitialVirtualServer.Mail.Username,
+		config.C.InitialVirtualServer.Mail.Password,
 	)
 
 	if err := dialer.DialAndSend(m...); err != nil {
