@@ -59,6 +59,4 @@ func PanicOnError(f func() error, msg string) {
 	if err != nil {
 		logging.Logger.Fatalf("%s: %v", msg, err)
 	}
-
-	errors.Is(err, ErrHttpNotFound)
 }
