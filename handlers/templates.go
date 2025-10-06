@@ -9,15 +9,18 @@ import (
 	"Keyline/utils"
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
 
 type GetTemplateResponseDto struct {
-	Id   uuid.UUID                 `json:"id"`
-	Type repositories.TemplateType `json:"type"`
-	Text string                    `json:"text"`
+	Id        uuid.UUID                 `json:"id"`
+	Type      repositories.TemplateType `json:"type"`
+	Text      string                    `json:"text"`
+	CreatedAt time.Time                 `json:"createdAt"`
+	UpdatedAt time.Time                 `json:"updatedAt"`
 }
 
 func GetTemplate(w http.ResponseWriter, r *http.Request) {
@@ -52,9 +55,11 @@ func GetTemplate(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	response := GetTemplateResponseDto{
-		Id:   queryResult.Id,
-		Type: query.Type,
-		Text: queryResult.Text,
+		Id:        queryResult.Id,
+		Type:      query.Type,
+		Text:      queryResult.Text,
+		CreatedAt: queryResult.CreatedAt,
+		UpdatedAt: queryResult.UpdatedAt,
 	}
 
 	err = json.NewEncoder(w).Encode(response)
