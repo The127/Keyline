@@ -152,11 +152,19 @@ func VerifyPassword(w http.ResponseWriter, r *http.Request) {
 
 	loginInfo.UserId = user.Id()
 
+	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
+	virtualServerFilter := repositories.NewVirtualServerFilter().Id(user.VirtualServerId())
+	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
 	switch {
 	case passwordDetails.Temporary:
 		loginInfo.Step = jsonTypes.LoginStepTemporaryPassword
 
-	case !user.EmailVerified():
+	case !user.EmailVerified() && virtualServer.RequireEmailVerification():
 		loginInfo.Step = jsonTypes.LoginStepEmailVerification
 
 	// TODO: check if totp onboarding is needed
