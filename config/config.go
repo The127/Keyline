@@ -206,7 +206,7 @@ func setServerDefaultsOrPanic() {
 	}
 
 	if C.Server.Port == 0 {
-		C.Server.Port = 8081
+		C.Server.Port = 8080
 	}
 
 	if C.Server.ExternalUrl == "" {
