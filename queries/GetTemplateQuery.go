@@ -6,6 +6,7 @@ import (
 	"Keyline/repositories"
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -16,8 +17,10 @@ type GetTemplate struct {
 }
 
 type GetTemplateResult struct {
-	Id   uuid.UUID
-	Text string
+	Id        uuid.UUID
+	Text      string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 func HandleGetTemplate(ctx context.Context, query GetTemplate) (*GetTemplateResult, error) {
@@ -48,7 +51,9 @@ func HandleGetTemplate(ctx context.Context, query GetTemplate) (*GetTemplateResu
 	}
 
 	return &GetTemplateResult{
-		Id:   template.Id(),
-		Text: string(file.Content()),
+		Id:        template.Id(),
+		Text:      string(file.Content()),
+		CreatedAt: template.AuditCreatedAt(),
+		UpdatedAt: template.AuditUpdatedAt(),
 	}, nil
 }
