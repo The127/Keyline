@@ -78,8 +78,8 @@ func TestGenerateIdToken_HasExpectedClaims(t *testing.T) {
 	assert.Equal(t, "test-client", claims["aud"])
 	assert.Equal(t, "Test User", claims["name"])
 	assert.Equal(t, "test@example.com", claims["email"])
-	assert.Equal(t, float64(now.Unix()), claims["iat"])
-	assert.Equal(t, float64(now.Add(time.Hour).Unix()), claims["exp"])
+	assert.Equal(t, now.Unix(), int64(claims["iat"].(float64)))
+	assert.Equal(t, now.Add(time.Hour).Unix(), int64(claims["exp"].(float64)))
 }
 
 func TestGenerateIdToken_HasExpectedHeaders(t *testing.T) {
