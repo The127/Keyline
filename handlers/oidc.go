@@ -602,6 +602,8 @@ func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 	keyPair := keyService.GetKey(codeInfo.VirtualServerName)
 	key := keyPair.PrivateKey()
 
+	kid := computeKID(keyPair.PublicKey())
+
 	idTokenClaims := jwt.MapClaims{
 		"sub":   codeInfo.UserId,
 		"iss":   fmt.Sprintf("%s/oidc/%s", config.C.Server.ExternalUrl, codeInfo.VirtualServerName),
@@ -613,6 +615,7 @@ func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 	}
 
 	idToken := jwt.NewWithClaims(jwt.SigningMethodEdDSA, idTokenClaims)
+	idToken.Header["kid"] = kid
 	idTokenString, err := idToken.SignedString(key)
 	if err != nil {
 		utils.HandleHttpError(w, fmt.Errorf("signing id token: %w", err))
@@ -625,6 +628,7 @@ func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 		"iat":    now.Unix(),
 		"exp":    now.Add(time.Hour).Unix(), // TODO: make this configurable per virtual server
 	})
+	idToken.Header["kid"] = kid
 	accessTokenString, err := accessToken.SignedString(key)
 	if err != nil {
 		utils.HandleHttpError(w, fmt.Errorf("signing access token: %w", err))
@@ -750,7 +754,10 @@ func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 		"email": user.PrimaryEmail(),
 	}
 
+	kid := computeKID(keyPair.PublicKey())
+
 	idToken := jwt.NewWithClaims(jwt.SigningMethodEdDSA, idTokenClaims)
+	idToken.Header["kid"] = kid
 	idTokenString, err := idToken.SignedString(key)
 	if err != nil {
 		utils.HandleHttpError(w, fmt.Errorf("signing id token: %w", err))
@@ -764,6 +771,7 @@ func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 		"iat":    now.Unix(),
 		"exp":    now.Add(time.Hour).Unix(), // TODO: make this configurable per virtual server
 	})
+	idToken.Header["kid"] = kid
 	accessTokenString, err := accessToken.SignedString(key)
 	if err != nil {
 		utils.HandleHttpError(w, fmt.Errorf("signing access token: %w", err))
