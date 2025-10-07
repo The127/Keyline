@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"Keyline/config"
 	"Keyline/database"
 	"Keyline/ioc"
 	"Keyline/logging"
@@ -24,6 +25,8 @@ type VirtualServer struct {
 	enableRegistration       bool
 	require2fa               bool
 	requireEmailVerification bool
+
+	signingAlgorithm config.SigningAlgorithm
 }
 
 func NewVirtualServer(name string, displayName string) *VirtualServer {
@@ -46,6 +49,7 @@ func (m *VirtualServer) getScanPointers() []any {
 		&m.enableRegistration,
 		&m.require2fa,
 		&m.requireEmailVerification,
+		&m.signingAlgorithm,
 	}
 }
 
@@ -82,6 +86,15 @@ func (m *VirtualServer) RequireEmailVerification() bool {
 func (m *VirtualServer) SetRequireEmailVerification(requireEmailVerification bool) {
 	m.requireEmailVerification = requireEmailVerification
 	m.TrackChange("require_email_verification", requireEmailVerification)
+}
+
+func (m *VirtualServer) SigningAlgorithm() config.SigningAlgorithm {
+	return m.signingAlgorithm
+}
+
+func (m *VirtualServer) SetSigningAlgorithm(signingAlgorithm config.SigningAlgorithm) {
+	m.signingAlgorithm = signingAlgorithm
+	m.TrackChange("signing_algorithm", signingAlgorithm)
 }
 
 type VirtualServerFilter struct {
@@ -142,6 +155,7 @@ func (r *virtualServerRepository) selectQuery(filter VirtualServerFilter) *sqlbu
 		"enable_registration",
 		"require_2fa",
 		"require_email_verification",
+		"signing_algorithm",
 	).From("virtual_servers")
 
 	if filter.name != nil {
@@ -209,12 +223,14 @@ func (r *virtualServerRepository) Insert(ctx context.Context, virtualServer *Vir
 			"display_name",
 			"enable_registration",
 			"require_2fa",
+			"signing_algorithm",
 		).
 		Values(
 			virtualServer.name,
 			virtualServer.displayName,
 			virtualServer.enableRegistration,
 			virtualServer.require2fa,
+			virtualServer.signingAlgorithm,
 		).Returning("id", "audit_created_at", "audit_updated_at", "version")
 
 	query, args := s.Build()

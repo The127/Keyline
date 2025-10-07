@@ -4,6 +4,8 @@ import (
 	"Keyline/config"
 	"Keyline/utils"
 	"crypto/ed25519"
+	"crypto/rsa"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"os"
@@ -15,7 +17,7 @@ var ErrKeyPairNotFound = errors.New("KeyPair not found")
 //go:generate mockgen -destination=./mocks/key_store.go -package=mocks Keyline/services KeyStore
 type KeyStore interface {
 	Store(virtualServerName string, keyPair KeyPair) error
-	Load(virtualServerName string) (KeyPair, error)
+	Load(virtualServerName string, algorithm config.SigningAlgorithm) (KeyPair, error)
 }
 
 type directoryKeyStore struct {
@@ -31,7 +33,7 @@ func (d *directoryKeyStore) getPath(virtualServerName string) string {
 
 func (d *directoryKeyStore) Store(virtualServerName string, keyPair KeyPair) error {
 	path := d.getPath(virtualServerName)
-	privateKeyBytes := utils.ExportPrivateKey(keyPair.privateKey)
+	privateKeyBytes := keyPair.PrivateKeyBytes()
 
 	dir := filepath.Dir(path)
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
@@ -41,7 +43,7 @@ func (d *directoryKeyStore) Store(virtualServerName string, keyPair KeyPair) err
 	return os.WriteFile(path, privateKeyBytes, 0600)
 }
 
-func (d *directoryKeyStore) Load(virtualServerName string) (KeyPair, error) {
+func (d *directoryKeyStore) Load(virtualServerName string, algorithm config.SigningAlgorithm) (KeyPair, error) {
 	path := d.getPath(virtualServerName)
 
 	privateKeyBytes, err := os.ReadFile(path)
@@ -52,9 +54,10 @@ func (d *directoryKeyStore) Load(virtualServerName string) (KeyPair, error) {
 		return KeyPair{}, err
 	}
 
-	privateKey, publicKey := utils.ImportPrivateKey(privateKeyBytes)
+	privateKey, publicKey := utils.ImportPrivateKey(privateKeyBytes, algorithm)
 
 	return KeyPair{
+		algorithm:  algorithm,
 		privateKey: privateKey,
 		publicKey:  publicKey,
 	}, nil
@@ -63,22 +66,64 @@ func (d *directoryKeyStore) Load(virtualServerName string) (KeyPair, error) {
 type KeyCache Cache[string, KeyPair]
 
 type KeyPair struct {
-	publicKey  ed25519.PublicKey
-	privateKey ed25519.PrivateKey
+	algorithm  config.SigningAlgorithm
+	publicKey  any
+	privateKey any
 }
 
-func (k *KeyPair) PublicKey() ed25519.PublicKey {
-	return k.publicKey
+func NewKeyPair(algorithm config.SigningAlgorithm, publicKey any, privateKey any) KeyPair {
+	return KeyPair{
+		algorithm:  algorithm,
+		publicKey:  publicKey,
+		privateKey: privateKey,
+	}
 }
 
-func (k *KeyPair) PrivateKey() ed25519.PrivateKey {
+func (k *KeyPair) PublicKeyBytes() []byte {
+	switch k.algorithm {
+	case config.SigningAlgorithmECDSA:
+		return k.publicKey.(ed25519.PublicKey)
+
+	case config.SigningAlgorithmRS256:
+		var rsaPubKey = k.publicKey.(*rsa.PublicKey)
+		rsaPubKeyBytes, err := x509.MarshalPKIXPublicKey(rsaPubKey)
+		if err != nil {
+			panic(fmt.Errorf("marshaling public key: %w", err))
+		}
+		return rsaPubKeyBytes
+	default:
+		panic(fmt.Sprintf("not implemented for algorithm: %s", k.algorithm))
+	}
+}
+
+func (k *KeyPair) PrivateKey() any {
 	return k.privateKey
+}
+
+func (k *KeyPair) Algorithm() config.SigningAlgorithm {
+	return k.algorithm
+}
+
+func (k *KeyPair) PrivateKeyBytes() []byte {
+	switch k.algorithm {
+	case config.SigningAlgorithmECDSA:
+		return k.privateKey.(ed25519.PrivateKey)
+	case config.SigningAlgorithmRS256:
+		rsaKey := k.privateKey.(*rsa.PrivateKey)
+		return x509.MarshalPKCS1PrivateKey(rsaKey)
+	default:
+		panic(fmt.Sprintf("not implemented for algorithm: %s", k.algorithm))
+	}
+}
+
+func (k *KeyPair) PublicKey() any {
+	return k.publicKey
 }
 
 //go:generate mockgen -destination=./mocks/key_service.go -package=mocks Keyline/services KeyService
 type KeyService interface {
-	Generate(virtualServerName string) (KeyPair, error)
-	GetKey(virtualServerName string) KeyPair
+	Generate(virtualServerName string, algorithm config.SigningAlgorithm) (KeyPair, error)
+	GetKey(virtualServerName string, algorithm config.SigningAlgorithm) KeyPair
 }
 
 type keyServiceImpl struct {
@@ -93,10 +138,11 @@ func NewKeyService(cache KeyCache, store KeyStore) KeyService {
 	}
 }
 
-func (s *keyServiceImpl) Generate(virtualServerName string) (KeyPair, error) {
-	privateKey, publicKey := utils.GenerateKeyPair()
+func (s *keyServiceImpl) Generate(virtualServerName string, algorithm config.SigningAlgorithm) (KeyPair, error) {
+	privateKey, publicKey := utils.GenerateKeyPair(algorithm)
 
 	keyPair := KeyPair{
+		algorithm:  algorithm,
 		publicKey:  publicKey,
 		privateKey: privateKey,
 	}
@@ -109,11 +155,11 @@ func (s *keyServiceImpl) Generate(virtualServerName string) (KeyPair, error) {
 	return keyPair, nil
 }
 
-func (s *keyServiceImpl) GetKey(virtualServerName string) KeyPair {
+func (s *keyServiceImpl) GetKey(virtualServerName string, algorithm config.SigningAlgorithm) KeyPair {
 	keyPair, ok := s.cache.TryGet(virtualServerName)
 	if !ok {
 		var err error
-		keyPair, err = s.store.Load(virtualServerName)
+		keyPair, err = s.store.Load(virtualServerName, algorithm)
 		switch {
 		case errors.Is(err, ErrKeyPairNotFound):
 			// TODO: regenerate

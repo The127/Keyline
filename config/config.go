@@ -15,6 +15,13 @@ const (
 	KeyStoreModeOpenBao   KeyStoreMode = "openbao"
 )
 
+type SigningAlgorithm string
+
+const (
+	SigningAlgorithmRS256 SigningAlgorithm = "RS256"
+	SigningAlgorithmECDSA SigningAlgorithm = "ECDSA"
+)
+
 type Config struct {
 	Server struct {
 		ExternalUrl    string
@@ -37,6 +44,7 @@ type Config struct {
 		Name               string
 		DisplayName        string
 		EnableRegistration bool
+		SigningAlgorithm   SigningAlgorithm
 		CreateInitialAdmin bool
 		InitialAdmin       struct {
 			Username     string
@@ -169,6 +177,10 @@ func setInitialVirtualServerDefaultsOrPanic() {
 
 	if C.InitialVirtualServer.DisplayName == "" {
 		C.InitialVirtualServer.DisplayName = "Keyline"
+	}
+
+	if C.InitialVirtualServer.SigningAlgorithm == "" {
+		C.InitialVirtualServer.SigningAlgorithm = SigningAlgorithmECDSA
 	}
 
 	setInitialAdminDefaultsOrPanic()

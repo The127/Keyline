@@ -9,7 +9,6 @@ import (
 	"Keyline/services"
 	"Keyline/utils"
 	"context"
-	"crypto/ed25519"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
@@ -47,9 +46,17 @@ func WellKnownJwks(w http.ResponseWriter, r *http.Request) {
 	scope := middlewares.GetScope(r.Context())
 	keyService := ioc.GetDependency[services.KeyService](scope)
 
-	keyPair := keyService.GetKey(vsName)
+	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
+	virtualServerFilter := repositories.NewVirtualServerFilter().Name(vsName)
+	virtualServer, err := virtualServerRepository.First(r.Context(), virtualServerFilter)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
+		return
+	}
 
-	kid := computeKID(keyPair.PublicKey())
+	keyPair := keyService.GetKey(vsName, virtualServer.SigningAlgorithm())
+
+	kid := computeKID(keyPair.PublicKeyBytes())
 
 	jwk := Ed25519JWK{
 		Kty: "OKP",
@@ -57,7 +64,7 @@ func WellKnownJwks(w http.ResponseWriter, r *http.Request) {
 		Alg: "EdDSA",
 		Use: "sig",
 		Kid: kid,
-		X:   base64.RawURLEncoding.EncodeToString(keyPair.PublicKey()),
+		X:   base64.RawURLEncoding.EncodeToString(keyPair.PublicKeyBytes()),
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -72,7 +79,7 @@ func WellKnownJwks(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func computeKID(pub ed25519.PublicKey) string {
+func computeKID(pub []byte) string {
 	hash := sha256.Sum256(pub)
 	return base64.RawURLEncoding.EncodeToString(hash[:])
 }
@@ -312,9 +319,16 @@ func OidcEndSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
+	virtualServerFilter := repositories.NewVirtualServerFilter().Name(vsName)
+	virtualServer, err := virtualServerRepository.First(r.Context(), virtualServerFilter)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
+		return
+	}
+
 	keyService := ioc.GetDependency[services.KeyService](scope)
-	keyPair := keyService.GetKey(vsName)
-	key := keyPair.PrivateKey()
+	keyPair := keyService.GetKey(vsName, virtualServer.SigningAlgorithm())
 
 	idTokenString := r.Form.Get("id_token_hint")
 	if idTokenString == "" {
@@ -323,11 +337,17 @@ func OidcEndSession(w http.ResponseWriter, r *http.Request) {
 	}
 
 	idToken, err := jwt.Parse(idTokenString, func(token *jwt.Token) (interface{}, error) {
-		// Ensure the signing method is EdDSA
-		if _, ok := token.Method.(*jwt.SigningMethodEd25519); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		jwtSigningMethod, err := getJwtSigningMethod(virtualServer.SigningAlgorithm())
+		if err != nil {
+			return nil, fmt.Errorf("getting jwt signing method: %w", err)
 		}
-		return key.Public(), nil
+
+		tokenMethodAlgorithm := token.Method.Alg()
+		if jwtSigningMethod.Alg() != tokenMethodAlgorithm {
+			return nil, fmt.Errorf("unexpected signing method: %v", tokenMethodAlgorithm)
+		}
+
+		return keyPair.PublicKey(), nil
 	})
 	if err != nil {
 		utils.HandleHttpError(w, fmt.Errorf("parsing id token: %w", err))
@@ -407,8 +427,16 @@ func OidcUserinfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
+	virtualServerFilter := repositories.NewVirtualServerFilter().Name(vsName)
+	virtualServer, err := virtualServerRepository.First(r.Context(), virtualServerFilter)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
+		return
+	}
+
 	keyService := ioc.GetDependency[services.KeyService](scope)
-	keyPair := keyService.GetKey(vsName)
+	keyPair := keyService.GetKey(vsName, virtualServer.SigningAlgorithm())
 
 	err = r.ParseForm()
 	if err != nil {
@@ -450,18 +478,6 @@ func OidcUserinfo(w http.ResponseWriter, r *http.Request) {
 	userId, err := uuid.Parse(subject)
 	if err != nil {
 		utils.HandleHttpError(w, fmt.Errorf("parsing subject: %w", err))
-		return
-	}
-
-	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
-	virtualServerFilter := repositories.NewVirtualServerFilter().Name(vsName)
-	virtualServer, err := virtualServerRepository.First(ctx, virtualServerFilter)
-	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
-		return
-	}
-	if virtualServer == nil {
-		utils.HandleHttpError(w, fmt.Errorf("virtual server not found"))
 		return
 	}
 
@@ -598,8 +614,16 @@ func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 
 	now := time.Now() // TODO: add clock service for testing/mocking
 
+	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
+	virtualServerFilter := repositories.NewVirtualServerFilter().Name(codeInfo.VirtualServerName)
+	virtualServer, err := virtualServerRepository.First(r.Context(), virtualServerFilter)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
+		return
+	}
+
 	keyService := ioc.GetDependency[services.KeyService](scope)
-	keyPair := keyService.GetKey(codeInfo.VirtualServerName)
+	keyPair := keyService.GetKey(codeInfo.VirtualServerName, virtualServer.SigningAlgorithm())
 
 	tokenDuration := time.Hour // TODO: make this configurable per virtual server
 
@@ -611,8 +635,7 @@ func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 		UserDisplayName:    user.DisplayName(),
 		UserPrimaryEmail:   user.PrimaryEmail(),
 		ExternalUrl:        config.C.Server.ExternalUrl,
-		PrivateKey:         keyPair.PrivateKey(),
-		PublicKey:          keyPair.PublicKey(),
+		KeyPair:            keyPair,
 		IssuedAt:           now,
 		AccessTokenExpiry:  tokenDuration,
 		IdTokenExpiry:      tokenDuration,
@@ -645,6 +668,19 @@ func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func getJwtSigningMethod(algorithm config.SigningAlgorithm) (jwt.SigningMethod, error) {
+	switch algorithm {
+	case config.SigningAlgorithmECDSA:
+		return jwt.SigningMethodEdDSA, nil
+
+	case config.SigningAlgorithmRS256:
+		return jwt.SigningMethodRS256, nil
+
+	default:
+		return nil, fmt.Errorf("unsupported signing algorithm: %s", algorithm)
+	}
+}
+
 type RefreshTokenResponse struct {
 	TokenType    string `json:"token_type"`
 	IdToken      string `json:"id_token"`
@@ -661,8 +697,7 @@ type TokenGenerationParams struct {
 	UserDisplayName    string
 	UserPrimaryEmail   string
 	ExternalUrl        string
-	PrivateKey         ed25519.PrivateKey
-	PublicKey          ed25519.PublicKey
+	KeyPair            services.KeyPair
 	IssuedAt           time.Time
 	AccessTokenExpiry  time.Duration
 	IdTokenExpiry      time.Duration
@@ -677,7 +712,12 @@ type GeneratedTokens struct {
 }
 
 func generateIdToken(params TokenGenerationParams) (string, error) {
-	kid := computeKID(params.PublicKey)
+	kid := computeKID(params.KeyPair.PublicKeyBytes())
+
+	jwtSigningMethod, err := getJwtSigningMethod(params.KeyPair.Algorithm())
+	if err != nil {
+		return "", fmt.Errorf("getting jwt signing method: %w", err)
+	}
 
 	idTokenClaims := jwt.MapClaims{
 		"sub":   params.UserId,
@@ -689,13 +729,18 @@ func generateIdToken(params TokenGenerationParams) (string, error) {
 		"email": params.UserPrimaryEmail,
 	}
 
-	idToken := jwt.NewWithClaims(jwt.SigningMethodEdDSA, idTokenClaims)
+	idToken := jwt.NewWithClaims(jwtSigningMethod, idTokenClaims)
 	idToken.Header["kid"] = kid
-	return idToken.SignedString(params.PrivateKey)
+	return idToken.SignedString(params.KeyPair.PrivateKey())
 }
 
 func generateAccessToken(params TokenGenerationParams) (string, error) {
-	kid := computeKID(params.PublicKey)
+	kid := computeKID(params.KeyPair.PublicKeyBytes())
+
+	jwtSigningMethod, err := getJwtSigningMethod(params.KeyPair.Algorithm())
+	if err != nil {
+		return "", fmt.Errorf("getting jwt signing method: %w", err)
+	}
 
 	accessTokenClaims := jwt.MapClaims{
 		"sub":    params.UserId,
@@ -705,10 +750,10 @@ func generateAccessToken(params TokenGenerationParams) (string, error) {
 		"exp":    params.IssuedAt.Add(params.AccessTokenExpiry).Unix(),
 	}
 
-	accessToken := jwt.NewWithClaims(jwt.SigningMethodEdDSA, accessTokenClaims)
+	accessToken := jwt.NewWithClaims(jwtSigningMethod, accessTokenClaims)
 	accessToken.Header["kid"] = kid
 	accessToken.Header["typ"] = "at+jwt" // RFC 9068
-	return accessToken.SignedString(params.PrivateKey)
+	return accessToken.SignedString(params.KeyPair.PrivateKey())
 }
 
 func generateRefreshTokenInfo(params TokenGenerationParams) (string, error) {
@@ -813,8 +858,16 @@ func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 
 	now := time.Now() // TODO: add clock service for testing/mocking
 
+	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
+	virtualServerFilter := repositories.NewVirtualServerFilter().Name(refreshTokenInfo.VirtualServerName)
+	virtualServer, err := virtualServerRepository.First(r.Context(), virtualServerFilter)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
+		return
+	}
+
 	keyService := ioc.GetDependency[services.KeyService](scope)
-	keyPair := keyService.GetKey(refreshTokenInfo.VirtualServerName)
+	keyPair := keyService.GetKey(refreshTokenInfo.VirtualServerName, virtualServer.SigningAlgorithm())
 
 	tokenDuration := time.Hour // TODO: make this configurable per virtual server
 
@@ -826,8 +879,7 @@ func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 		UserDisplayName:    user.DisplayName(),
 		UserPrimaryEmail:   user.PrimaryEmail(),
 		ExternalUrl:        config.C.Server.ExternalUrl,
-		PrivateKey:         keyPair.PrivateKey(),
-		PublicKey:          keyPair.PublicKey(),
+		KeyPair:            keyPair,
 		IssuedAt:           now,
 		AccessTokenExpiry:  tokenDuration,
 		IdTokenExpiry:      tokenDuration,

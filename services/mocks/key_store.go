@@ -10,6 +10,7 @@
 package mocks
 
 import (
+	config "Keyline/config"
 	services "Keyline/services"
 	reflect "reflect"
 
@@ -41,18 +42,18 @@ func (m *MockKeyStore) EXPECT() *MockKeyStoreMockRecorder {
 }
 
 // Load mocks base method.
-func (m *MockKeyStore) Load(virtualServerName string) (services.KeyPair, error) {
+func (m *MockKeyStore) Load(virtualServerName string, algorithm config.SigningAlgorithm) (services.KeyPair, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Load", virtualServerName)
+	ret := m.ctrl.Call(m, "Load", virtualServerName, algorithm)
 	ret0, _ := ret[0].(services.KeyPair)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Load indicates an expected call of Load.
-func (mr *MockKeyStoreMockRecorder) Load(virtualServerName any) *gomock.Call {
+func (mr *MockKeyStoreMockRecorder) Load(virtualServerName, algorithm any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Load", reflect.TypeOf((*MockKeyStore)(nil).Load), virtualServerName)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Load", reflect.TypeOf((*MockKeyStore)(nil).Load), virtualServerName, algorithm)
 }
 
 // Store mocks base method.

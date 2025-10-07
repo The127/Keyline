@@ -1,8 +1,11 @@
 package handlers
 
 import (
+	"Keyline/config"
+	"Keyline/services"
 	"crypto/ed25519"
 	"crypto/rand"
+	"crypto/rsa"
 	"testing"
 	"time"
 
@@ -12,7 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func newDefaultParams(pub ed25519.PublicKey, priv ed25519.PrivateKey) TokenGenerationParams {
+func newDefaultParams(pub any, priv any, algorithm config.SigningAlgorithm) TokenGenerationParams {
 	return TokenGenerationParams{
 		UserId:            uuid.New(),
 		VirtualServerName: "test-server",
@@ -21,15 +24,14 @@ func newDefaultParams(pub ed25519.PublicKey, priv ed25519.PrivateKey) TokenGener
 		UserDisplayName:   "Test User",
 		UserPrimaryEmail:  "test@example.com",
 		ExternalUrl:       "https://example.com",
-		PrivateKey:        priv,
-		PublicKey:         pub,
+		KeyPair:           services.NewKeyPair(algorithm, pub, priv),
 		IssuedAt:          time.Now(),
 		IdTokenExpiry:     time.Hour,
 		AccessTokenExpiry: time.Hour,
 	}
 }
 
-func parseToken(t *testing.T, tokenString string, pub ed25519.PublicKey) *jwt.Token {
+func parseToken(t *testing.T, tokenString string, pub any) *jwt.Token {
 	t.Helper()
 	token, err := jwt.Parse(tokenString, func(tk *jwt.Token) (interface{}, error) {
 		return pub, nil
@@ -44,7 +46,7 @@ func TestGenerateIdToken_SignsWithPrivateKey(t *testing.T) {
 
 	// Arrange
 	pub, priv, _ := ed25519.GenerateKey(rand.Reader)
-	params := newDefaultParams(pub, priv)
+	params := newDefaultParams(pub, priv, config.SigningAlgorithmECDSA)
 
 	// Act
 	tokenString, err := generateIdToken(params)
@@ -57,13 +59,31 @@ func TestGenerateIdToken_SignsWithPrivateKey(t *testing.T) {
 	assert.True(t, token.Valid)
 }
 
+func TestGenerateIdToken_SignsWithRSAKey(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	priv, _ := rsa.GenerateKey(rand.Reader, 1024)
+	params := newDefaultParams(&priv.PublicKey, priv, config.SigningAlgorithmRS256)
+
+	// Act
+	tokenString, err := generateIdToken(params)
+
+	// Assert
+	require.NoError(t, err)
+	require.NotEmpty(t, tokenString)
+
+	token := parseToken(t, tokenString, &priv.PublicKey)
+	assert.True(t, token.Valid)
+}
+
 func TestGenerateIdToken_HasExpectedClaims(t *testing.T) {
 	t.Parallel()
 
 	// Arrange
 	pub, priv, _ := ed25519.GenerateKey(rand.Reader)
 	now := time.Now()
-	params := newDefaultParams(pub, priv)
+	params := newDefaultParams(pub, priv, config.SigningAlgorithmECDSA)
 	params.IssuedAt = now
 	params.IdTokenExpiry = time.Hour
 
@@ -87,7 +107,7 @@ func TestGenerateIdToken_HasExpectedHeaders(t *testing.T) {
 
 	// Arrange
 	pub, priv, _ := ed25519.GenerateKey(rand.Reader)
-	params := newDefaultParams(pub, priv)
+	params := newDefaultParams(pub, priv, config.SigningAlgorithmECDSA)
 
 	// Act
 	tokenString, _ := generateIdToken(params)
@@ -104,7 +124,7 @@ func TestGenerateAccessToken_SignsWithPrivateKey(t *testing.T) {
 
 	// Arrange
 	pub, priv, _ := ed25519.GenerateKey(rand.Reader)
-	params := newDefaultParams(pub, priv)
+	params := newDefaultParams(pub, priv, config.SigningAlgorithmECDSA)
 
 	// Act
 	tokenString, err := generateAccessToken(params)
@@ -123,7 +143,7 @@ func TestGenerateAccessToken_HasExpectedClaims(t *testing.T) {
 	// Arrange
 	pub, priv, _ := ed25519.GenerateKey(rand.Reader)
 	now := time.Now()
-	params := newDefaultParams(pub, priv)
+	params := newDefaultParams(pub, priv, config.SigningAlgorithmECDSA)
 	params.IssuedAt = now
 	params.GrantedScopes = []string{"openid", "email", "profile"}
 
@@ -150,7 +170,7 @@ func TestGenerateAccessToken_HasExpectedHeaders(t *testing.T) {
 
 	// Arrange
 	pub, priv, _ := ed25519.GenerateKey(rand.Reader)
-	params := newDefaultParams(pub, priv)
+	params := newDefaultParams(pub, priv, config.SigningAlgorithmECDSA)
 
 	// Act
 	tokenString, _ := generateAccessToken(params)

@@ -1,8 +1,11 @@
 package utils
 
 import (
+	"Keyline/config"
 	"crypto/ed25519"
 	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
 	"fmt"
 )
 
@@ -16,25 +19,50 @@ func GetSecureRandomBytes(length int) []byte {
 	return bytes
 }
 
-func GenerateKeyPair() (ed25519.PrivateKey, ed25519.PublicKey) {
-	publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
-	if err != nil {
-		panic(fmt.Errorf("failed to generate key pair: %w", err))
+func GenerateKeyPair(algorithm config.SigningAlgorithm) (any, any) {
+	switch algorithm {
+	case config.SigningAlgorithmECDSA:
+		publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
+		if err != nil {
+			panic(fmt.Errorf("failed to generate key pair: %w", err))
+		}
+		return privateKey, publicKey
+
+	case config.SigningAlgorithmRS256:
+		key, err := rsa.GenerateKey(rand.Reader, 4096)
+		if err != nil {
+			panic(fmt.Errorf("failed to generate key pair: %w", err))
+		}
+		return key, key.Public()
+
+	default:
+		panic(fmt.Errorf("invalid signing algorithm: %s", algorithm))
 	}
-	return privateKey, publicKey
 }
 
 func ExportPrivateKey(privateKey ed25519.PrivateKey) []byte {
 	return privateKey
 }
 
-func ImportPrivateKey(privateKeyBytes []byte) (ed25519.PrivateKey, ed25519.PublicKey) {
-	if len(privateKeyBytes) != ed25519.PrivateKeySize {
-		panic(fmt.Errorf("invalid private key size: expected %d bytes, got %d bytes", ed25519.PrivateKeySize, len(privateKeyBytes)))
+func ImportPrivateKey(privateKeyBytes []byte, algorithm config.SigningAlgorithm) (any, any) {
+	switch algorithm {
+	case config.SigningAlgorithmECDSA:
+		if len(privateKeyBytes) != ed25519.PrivateKeySize {
+			panic(fmt.Errorf("invalid private key size: expected %d bytes, got %d bytes", ed25519.PrivateKeySize, len(privateKeyBytes)))
+		}
+
+		privateKey := ed25519.PrivateKey(privateKeyBytes)
+		publicKey := privateKey.Public().(ed25519.PublicKey)
+		return privateKey, publicKey
+
+	case config.SigningAlgorithmRS256:
+		privKey, err := x509.ParsePKCS1PrivateKey(privateKeyBytes)
+		if err != nil {
+			panic(err)
+		}
+		return privKey, privKey.Public()
+
+	default:
+		panic(fmt.Errorf("invalid signing algorithm: %s", algorithm))
 	}
-
-	privateKey := ed25519.PrivateKey(privateKeyBytes)
-	publicKey := privateKey.Public().(ed25519.PublicKey)
-
-	return privateKey, publicKey
 }
