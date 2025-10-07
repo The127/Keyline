@@ -51,6 +51,7 @@ func HandleHttpError(w http.ResponseWriter, err error) {
 		}
 	}
 
+	logging.Logger.Errorf("HTTP ERROR: %s: %v", msg, err)
 	http.Error(w, msg, status)
 }
 
