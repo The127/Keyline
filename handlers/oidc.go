@@ -624,11 +624,12 @@ func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodEdDSA, jwt.MapClaims{
 		"sub":    codeInfo.UserId,
+		"iss":    fmt.Sprintf("%s/oidc/%s", config.C.Server.ExternalUrl, codeInfo.VirtualServerName),
 		"scopes": codeInfo.GrantedScopes,
 		"iat":    now.Unix(),
 		"exp":    now.Add(time.Hour).Unix(), // TODO: make this configurable per virtual server
 	})
-	idToken.Header["kid"] = kid
+	accessToken.Header["kid"] = kid
 	accessTokenString, err := accessToken.SignedString(key)
 	if err != nil {
 		utils.HandleHttpError(w, fmt.Errorf("signing access token: %w", err))
@@ -771,7 +772,7 @@ func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 		"iat":    now.Unix(),
 		"exp":    now.Add(time.Hour).Unix(), // TODO: make this configurable per virtual server
 	})
-	idToken.Header["kid"] = kid
+	accessToken.Header["kid"] = kid
 	accessTokenString, err := accessToken.SignedString(key)
 	if err != nil {
 		utils.HandleHttpError(w, fmt.Errorf("signing access token: %w", err))
