@@ -95,7 +95,7 @@ func TestGenerateIdToken_HasExpectedClaims(t *testing.T) {
 	// Assert
 	assert.Equal(t, params.UserId.String(), claims["sub"])
 	assert.Equal(t, "https://example.com/oidc/test-server", claims["iss"])
-	assert.Equal(t, "test-client", claims["aud"])
+	assert.Equal(t, []interface{}{"test-client"}, claims["aud"])
 	assert.Equal(t, "Test User", claims["name"])
 	assert.Equal(t, "test@example.com", claims["email"])
 	assert.Equal(t, now.Unix(), int64(claims["iat"].(float64)))
