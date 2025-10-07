@@ -161,6 +161,7 @@ func TestGenerateAccessToken_HasExpectedClaims(t *testing.T) {
 	assert.Contains(t, scopes, "openid")
 	assert.Contains(t, scopes, "email")
 	assert.Contains(t, scopes, "profile")
+	assert.Equal(t, "test-client", claims["aud"])
 	assert.Equal(t, now.Unix(), int64(claims["iat"].(float64)))
 	assert.Equal(t, now.Add(time.Hour).Unix(), int64(claims["exp"].(float64)))
 }
