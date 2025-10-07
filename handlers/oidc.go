@@ -792,6 +792,7 @@ func generateAccessToken(params TokenGenerationParams) (string, error) {
 	accessTokenClaims := jwt.MapClaims{
 		"sub":    params.UserId,
 		"iss":    fmt.Sprintf("%s/oidc/%s", params.ExternalUrl, params.VirtualServerName),
+		"aud":    params.ClientId,
 		"scopes": params.GrantedScopes,
 		"iat":    params.IssuedAt.Unix(),
 		"exp":    params.IssuedAt.Add(params.AccessTokenExpiry).Unix(),
