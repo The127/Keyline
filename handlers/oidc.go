@@ -600,62 +600,28 @@ func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 
 	keyService := ioc.GetDependency[services.KeyService](scope)
 	keyPair := keyService.GetKey(codeInfo.VirtualServerName)
-	key := keyPair.PrivateKey()
 
-	kid := computeKID(keyPair.PublicKey())
+	tokenDuration := time.Hour // TODO: make this configurable per virtual server
 
-	idTokenClaims := jwt.MapClaims{
-		"sub":   codeInfo.UserId,
-		"iss":   fmt.Sprintf("%s/oidc/%s", config.C.Server.ExternalUrl, codeInfo.VirtualServerName),
-		"aud":   clientId,
-		"iat":   now.Unix(),
-		"exp":   now.Add(time.Hour).Unix(), // TODO: make this configurable per virtual server
-		"name":  user.DisplayName(),
-		"email": user.PrimaryEmail(),
+	params := TokenGenerationParams{
+		UserId:             codeInfo.UserId,
+		VirtualServerName:  codeInfo.VirtualServerName,
+		ClientId:           clientId,
+		GrantedScopes:      codeInfo.GrantedScopes,
+		UserDisplayName:    user.DisplayName(),
+		UserPrimaryEmail:   user.PrimaryEmail(),
+		ExternalUrl:        config.C.Server.ExternalUrl,
+		PrivateKey:         keyPair.PrivateKey(),
+		PublicKey:          keyPair.PublicKey(),
+		IssuedAt:           now,
+		AccessTokenExpiry:  tokenDuration,
+		IdTokenExpiry:      tokenDuration,
+		RefreshTokenExpiry: tokenDuration,
 	}
 
-	idToken := jwt.NewWithClaims(jwt.SigningMethodEdDSA, idTokenClaims)
-	idToken.Header["kid"] = kid
-	idTokenString, err := idToken.SignedString(key)
+	tokens, err := generateTokens(ctx, params, tokenService)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("signing id token: %w", err))
-		return
-	}
-
-	accessToken := jwt.NewWithClaims(jwt.SigningMethodEdDSA, jwt.MapClaims{
-		"sub":    codeInfo.UserId,
-		"iss":    fmt.Sprintf("%s/oidc/%s", config.C.Server.ExternalUrl, codeInfo.VirtualServerName),
-		"scopes": codeInfo.GrantedScopes,
-		"iat":    now.Unix(),
-		"exp":    now.Add(time.Hour).Unix(), // TODO: make this configurable per virtual server
-	})
-	accessToken.Header["kid"] = kid
-	accessTokenString, err := accessToken.SignedString(key)
-	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("signing access token: %w", err))
-		return
-	}
-
-	refreshTokenInfo := jsonTypes.NewRefreshTokenInfo(
-		codeInfo.VirtualServerName,
-		clientId,
-		codeInfo.UserId,
-		codeInfo.GrantedScopes,
-	)
-	refreshTokenInfoJson, err := json.Marshal(refreshTokenInfo)
-	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("marshaling refresh token info: %w", err))
-		return
-	}
-
-	refreshTokenString, err := tokenService.GenerateAndStoreToken(
-		ctx,
-		services.OidcRefreshTokenTokenType,
-		string(refreshTokenInfoJson),
-		time.Hour, // TODO: make this configurable per virtual server
-	)
-	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("generating refresh token: %w", err))
+		utils.HandleHttpError(w, err)
 		return
 	}
 
@@ -666,11 +632,11 @@ func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 	scopeString := strings.Join(codeInfo.GrantedScopes, " ")
 	response := CodeFlowResponse{
 		TokenType:    "Bearer",
-		IdToken:      idTokenString,
-		AccessToken:  accessTokenString,
-		RefreshToken: refreshTokenString,
+		IdToken:      tokens.IdToken,
+		AccessToken:  tokens.AccessToken,
+		RefreshToken: tokens.RefreshToken,
 		Scope:        scopeString,
-		ExpiresIn:    int(time.Hour.Seconds()), // TODO: make this configurable per virtual server
+		ExpiresIn:    tokens.ExpiresIn,
 	}
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
@@ -685,6 +651,111 @@ type RefreshTokenResponse struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
 	ExpiresIn    int    `json:"expires_in"`
+}
+
+type TokenGenerationParams struct {
+	UserId             uuid.UUID
+	VirtualServerName  string
+	ClientId           string
+	GrantedScopes      []string
+	UserDisplayName    string
+	UserPrimaryEmail   string
+	ExternalUrl        string
+	PrivateKey         ed25519.PrivateKey
+	PublicKey          ed25519.PublicKey
+	IssuedAt           time.Time
+	AccessTokenExpiry  time.Duration
+	IdTokenExpiry      time.Duration
+	RefreshTokenExpiry time.Duration
+}
+
+type GeneratedTokens struct {
+	IdToken      string
+	AccessToken  string
+	RefreshToken string
+	ExpiresIn    int
+}
+
+func generateIdToken(params TokenGenerationParams) (string, error) {
+	kid := computeKID(params.PublicKey)
+
+	idTokenClaims := jwt.MapClaims{
+		"sub":   params.UserId,
+		"iss":   fmt.Sprintf("%s/oidc/%s", params.ExternalUrl, params.VirtualServerName),
+		"aud":   params.ClientId,
+		"iat":   params.IssuedAt.Unix(),
+		"exp":   params.IssuedAt.Add(params.IdTokenExpiry).Unix(),
+		"name":  params.UserDisplayName,
+		"email": params.UserPrimaryEmail,
+	}
+
+	idToken := jwt.NewWithClaims(jwt.SigningMethodEdDSA, idTokenClaims)
+	idToken.Header["kid"] = kid
+	return idToken.SignedString(params.PrivateKey)
+}
+
+func generateAccessToken(params TokenGenerationParams) (string, error) {
+	kid := computeKID(params.PublicKey)
+
+	accessTokenClaims := jwt.MapClaims{
+		"sub":    params.UserId,
+		"iss":    fmt.Sprintf("%s/oidc/%s", params.ExternalUrl, params.VirtualServerName),
+		"scopes": params.GrantedScopes,
+		"iat":    params.IssuedAt.Unix(),
+		"exp":    params.IssuedAt.Add(params.AccessTokenExpiry).Unix(),
+	}
+
+	accessToken := jwt.NewWithClaims(jwt.SigningMethodEdDSA, accessTokenClaims)
+	accessToken.Header["kid"] = kid
+	return accessToken.SignedString(params.PrivateKey)
+}
+
+func generateRefreshTokenInfo(params TokenGenerationParams) (string, error) {
+	refreshTokenInfo := jsonTypes.NewRefreshTokenInfo(
+		params.VirtualServerName,
+		params.ClientId,
+		params.UserId,
+		params.GrantedScopes,
+	)
+	refreshTokenInfoJson, err := json.Marshal(refreshTokenInfo)
+	if err != nil {
+		return "", fmt.Errorf("marshaling refresh token info: %w", err)
+	}
+	return string(refreshTokenInfoJson), nil
+}
+
+func generateTokens(ctx context.Context, params TokenGenerationParams, tokenService services.TokenService) (*GeneratedTokens, error) {
+	idTokenString, err := generateIdToken(params)
+	if err != nil {
+		return nil, fmt.Errorf("signing id token: %w", err)
+	}
+
+	accessTokenString, err := generateAccessToken(params)
+	if err != nil {
+		return nil, fmt.Errorf("signing access token: %w", err)
+	}
+
+	refreshTokenInfoString, err := generateRefreshTokenInfo(params)
+	if err != nil {
+		return nil, err
+	}
+
+	refreshTokenString, err := tokenService.GenerateAndStoreToken(
+		ctx,
+		services.OidcRefreshTokenTokenType,
+		refreshTokenInfoString,
+		params.RefreshTokenExpiry,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("generating refresh token: %w", err)
+	}
+
+	return &GeneratedTokens{
+		IdToken:      idTokenString,
+		AccessToken:  accessTokenString,
+		RefreshToken: refreshTokenString,
+		ExpiresIn:    int(params.AccessTokenExpiry.Seconds()),
+	}, nil
 }
 
 func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
@@ -743,62 +814,28 @@ func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 
 	keyService := ioc.GetDependency[services.KeyService](scope)
 	keyPair := keyService.GetKey(refreshTokenInfo.VirtualServerName)
-	key := keyPair.PrivateKey()
 
-	idTokenClaims := jwt.MapClaims{
-		"sub":   refreshTokenInfo.UserId,
-		"iss":   fmt.Sprintf("%s/oidc/%s", config.C.Server.ExternalUrl, refreshTokenInfo.VirtualServerName),
-		"aud":   clientId,
-		"iat":   now.Unix(),
-		"exp":   now.Add(time.Hour).Unix(), // TODO: make this configurable per virtual server
-		"name":  user.DisplayName(),
-		"email": user.PrimaryEmail(),
+	tokenDuration := time.Hour // TODO: make this configurable per virtual server
+
+	params := TokenGenerationParams{
+		UserId:             refreshTokenInfo.UserId,
+		VirtualServerName:  refreshTokenInfo.VirtualServerName,
+		ClientId:           clientId,
+		GrantedScopes:      refreshTokenInfo.GrantedScopes,
+		UserDisplayName:    user.DisplayName(),
+		UserPrimaryEmail:   user.PrimaryEmail(),
+		ExternalUrl:        config.C.Server.ExternalUrl,
+		PrivateKey:         keyPair.PrivateKey(),
+		PublicKey:          keyPair.PublicKey(),
+		IssuedAt:           now,
+		AccessTokenExpiry:  tokenDuration,
+		IdTokenExpiry:      tokenDuration,
+		RefreshTokenExpiry: tokenDuration,
 	}
 
-	kid := computeKID(keyPair.PublicKey())
-
-	idToken := jwt.NewWithClaims(jwt.SigningMethodEdDSA, idTokenClaims)
-	idToken.Header["kid"] = kid
-	idTokenString, err := idToken.SignedString(key)
+	tokens, err := generateTokens(ctx, params, tokenService)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("signing id token: %w", err))
-		return
-	}
-
-	accessToken := jwt.NewWithClaims(jwt.SigningMethodEdDSA, jwt.MapClaims{
-		"sub":    refreshTokenInfo.UserId,
-		"iss":    fmt.Sprintf("%s/oidc/%s", config.C.Server.ExternalUrl, refreshTokenInfo.VirtualServerName),
-		"scopes": refreshTokenInfo.GrantedScopes,
-		"iat":    now.Unix(),
-		"exp":    now.Add(time.Hour).Unix(), // TODO: make this configurable per virtual server
-	})
-	accessToken.Header["kid"] = kid
-	accessTokenString, err := accessToken.SignedString(key)
-	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("signing access token: %w", err))
-		return
-	}
-
-	refreshTokenInfo = jsonTypes.NewRefreshTokenInfo(
-		refreshTokenInfo.VirtualServerName,
-		refreshTokenInfo.ClientId,
-		refreshTokenInfo.UserId,
-		refreshTokenInfo.GrantedScopes,
-	)
-	refreshTokenInfoJson, err := json.Marshal(refreshTokenInfo)
-	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("marshaling refresh token info: %w", err))
-		return
-	}
-
-	refreshTokenString, err := tokenService.GenerateAndStoreToken(
-		ctx,
-		services.OidcRefreshTokenTokenType,
-		string(refreshTokenInfoJson),
-		time.Hour, // TODO: make this configurable per virtual server
-	)
-	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("generating refresh token: %w", err))
+		utils.HandleHttpError(w, err)
 		return
 	}
 
@@ -808,10 +845,10 @@ func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 
 	response := RefreshTokenResponse{
 		TokenType:    "Bearer",
-		IdToken:      idTokenString,
-		AccessToken:  accessTokenString,
-		RefreshToken: refreshTokenString,
-		ExpiresIn:    int(time.Hour.Seconds()), // TODO: make this configurable per virtual server
+		IdToken:      tokens.IdToken,
+		AccessToken:  tokens.AccessToken,
+		RefreshToken: tokens.RefreshToken,
+		ExpiresIn:    tokens.ExpiresIn,
 	}
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
