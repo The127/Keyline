@@ -707,6 +707,7 @@ func generateAccessToken(params TokenGenerationParams) (string, error) {
 
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodEdDSA, accessTokenClaims)
 	accessToken.Header["kid"] = kid
+	accessToken.Header["typ"] = "at+jwt" // RFC 9068
 	return accessToken.SignedString(params.PrivateKey)
 }
 
