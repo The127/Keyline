@@ -14,13 +14,14 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/golang-jwt/jwt/v5"
-	"github.com/google/uuid"
 	"net/http"
 	"net/url"
 	"slices"
 	"strings"
 	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
 type Ed25519JWK struct {
@@ -758,6 +759,7 @@ func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodEdDSA, jwt.MapClaims{
 		"sub":    refreshTokenInfo.UserId,
+		"iss":    fmt.Sprintf("%s/oidc/%s", config.C.Server.ExternalUrl, refreshTokenInfo.VirtualServerName),
 		"scopes": refreshTokenInfo.GrantedScopes,
 		"iat":    now.Unix(),
 		"exp":    now.Add(time.Hour).Unix(), // TODO: make this configurable per virtual server
