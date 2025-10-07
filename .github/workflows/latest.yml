@@ -1,16 +1,15 @@
-name: Release Tagged Image
+name: Build & Push Latest Image
 
 on:
   push:
-    tags:
-      - "v*"
+    branches:
+      - main
 
 permissions:
-  contents: write
   packages: write
 
 jobs:
-  build-and-release:
+  build-and-push-latest:
     runs-on: ubuntu-latest
 
     steps:
@@ -22,16 +21,10 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build & Push versioned image
+      - name: Build & Push latest image
         uses: docker/build-push-action@v5
         with:
           context: .
           file: Containerfile
           push: true
-          tags: ghcr.io/the127/keyline:${{ github.ref_name }}
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.ref_name }}
-          generate_release_notes: true
+          tags: ghcr.io/the127/keyline:latest
