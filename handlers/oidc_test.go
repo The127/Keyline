@@ -129,6 +129,11 @@ func TestGenerateAccessToken(t *testing.T) {
 	// Verify kid matches computed value
 	expectedKid := computeKID(pub)
 	assert.Equal(t, expectedKid, kid)
+
+	// Verify typ header is "at+jwt" per RFC 9068
+	typ, exists := parsedToken.Header["typ"]
+	assert.True(t, exists, "Access token should have 'typ' header")
+	assert.Equal(t, "at+jwt", typ, "Access token 'typ' should be 'at+jwt' per RFC 9068")
 }
 
 func TestGenerateRefreshTokenInfo(t *testing.T) {
@@ -216,6 +221,7 @@ func TestTokenGeneration_HasIssAndKid(t *testing.T) {
 	accessClaims := accessToken.Claims.(jwt.MapClaims)
 	assert.Equal(t, "https://example.com/oidc/test-server", accessClaims["iss"], "Access token should have 'iss' claim")
 	assert.NotEmpty(t, accessToken.Header["kid"], "Access token should have 'kid' header")
+	assert.Equal(t, "at+jwt", accessToken.Header["typ"], "Access token should have 'typ' header set to 'at+jwt' per RFC 9068")
 
 	// Verify both tokens have the same 'kid' (from same key)
 	assert.Equal(t, idToken.Header["kid"], accessToken.Header["kid"], "ID and access tokens should have same 'kid'")
