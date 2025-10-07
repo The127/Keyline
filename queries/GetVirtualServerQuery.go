@@ -1,6 +1,7 @@
 package queries
 
 import (
+	"Keyline/config"
 	"Keyline/ioc"
 	"Keyline/middlewares"
 	"Keyline/repositories"
@@ -21,6 +22,7 @@ type GetVirtualServerResponse struct {
 	RegistrationEnabled      bool
 	Require2fa               bool
 	RequireEmailVerification bool
+	SigningAlgorithm         config.SigningAlgorithm
 	CreatedAt                time.Time
 	UpdatedAt                time.Time
 }
@@ -42,6 +44,7 @@ func HandleGetVirtualServerQuery(ctx context.Context, command GetVirtualServerQu
 		RegistrationEnabled:      virtualServer.EnableRegistration(),
 		Require2fa:               virtualServer.Require2fa(),
 		RequireEmailVerification: virtualServer.RequireEmailVerification(),
+		SigningAlgorithm:         virtualServer.SigningAlgorithm(),
 		CreatedAt:                virtualServer.AuditCreatedAt(),
 		UpdatedAt:                virtualServer.AuditUpdatedAt(),
 	}, nil
