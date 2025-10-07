@@ -9,8 +9,10 @@ import (
 	"Keyline/services"
 	"Keyline/utils"
 	"context"
+	"crypto/rsa"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -32,8 +34,26 @@ type Ed25519JWK struct {
 	X   string `json:"x"`   // Public key (base64url)
 }
 
+type RS256JWK struct {
+	Kty string `json:"kty"` // Key Type, e.g. "RSA"
+	Alg string `json:"alg"` // Algorithm, e.g. "RS256"
+	Use string `json:"use"` // Public key use, usually "sig"
+	Kid string `json:"kid"` // Key ID
+	N   string `json:"n"`   // Modulus, base64url encoded
+	E   string `json:"e"`   // Exponent, base64url encoded
+}
+
 type JwksResponseDto struct {
-	Keys []Ed25519JWK `json:"keys"`
+	Keys []any `json:"keys"`
+}
+
+func trimLeadingZeros(b []byte) []byte {
+	for i := 0; i < len(b); i++ {
+		if b[i] != 0 {
+			return b[i:]
+		}
+	}
+	return []byte{0}
 }
 
 func WellKnownJwks(w http.ResponseWriter, r *http.Request) {
@@ -58,20 +78,47 @@ func WellKnownJwks(w http.ResponseWriter, r *http.Request) {
 
 	kid := computeKID(keyPair.PublicKeyBytes())
 
-	jwk := Ed25519JWK{
-		Kty: "OKP",
-		Crv: "Ed25519",
-		Alg: "EdDSA",
-		Use: "sig",
-		Kid: kid,
-		X:   base64.RawURLEncoding.EncodeToString(keyPair.PublicKeyBytes()),
+	keys := make([]any, 0)
+
+	switch virtualServer.SigningAlgorithm() {
+	case config.SigningAlgorithmECDSA:
+		keys = append(keys, Ed25519JWK{
+			Kty: "OKP",
+			Crv: "Ed25519",
+			Alg: "EdDSA",
+			Use: "sig",
+			Kid: kid,
+			X:   base64.RawURLEncoding.EncodeToString(keyPair.PublicKeyBytes()),
+		})
+
+	case config.SigningAlgorithmRS256:
+		rsaPublicKey := keyPair.PublicKey().(*rsa.PublicKey)
+
+		eBytes := make([]byte, 8)
+		binary.BigEndian.PutUint64(eBytes, uint64(rsaPublicKey.E))
+
+		// trim leading zero bytes (JWK requires minimal representation)
+		eBytes = trimLeadingZeros(eBytes)
+
+		keys = append(keys, RS256JWK{
+			Kty: "RSA",
+			Alg: "RS256",
+			Use: "sig",
+			Kid: kid,
+			N:   base64.RawURLEncoding.EncodeToString(rsaPublicKey.N.Bytes()),
+			E:   base64.RawURLEncoding.EncodeToString(eBytes),
+		})
+
+	default:
+		utils.HandleHttpError(w, fmt.Errorf("unsupported signing algorithm: %s", virtualServer.SigningAlgorithm()))
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
 	err = json.NewEncoder(w).Encode(JwksResponseDto{
-		Keys: []Ed25519JWK{jwk},
+		Keys: keys,
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)
