@@ -68,6 +68,7 @@ type GetVirtualServerResponseDto struct {
 	RegistrationEnabled      bool      `json:"registrationEnabled"`
 	Require2fa               bool      `json:"require2fa"`
 	RequireEmailVerification bool      `json:"requireEmailVerification"`
+	SigningAlgorithm         string    `json:"signingAlgorithm"`
 	CreatedAt                time.Time `json:"createdAt"`
 	UpdatedAt                time.Time `json:"updatedAt"`
 }
@@ -101,6 +102,7 @@ func GetVirtualServer(w http.ResponseWriter, r *http.Request) {
 		RegistrationEnabled:      response.RegistrationEnabled,
 		Require2fa:               response.Require2fa,
 		RequireEmailVerification: response.RequireEmailVerification,
+		SigningAlgorithm:         string(response.SigningAlgorithm),
 		CreatedAt:                response.CreatedAt,
 		UpdatedAt:                response.UpdatedAt,
 	})
