@@ -14,7 +14,8 @@ import (
 )
 
 func TestGenerateIdToken(t *testing.T) {
-	// Generate test key pair
+	t.Parallel()
+
 	pub, priv, err := ed25519.GenerateKey(rand.Reader)
 	require.NoError(t, err)
 
@@ -71,6 +72,8 @@ func TestGenerateIdToken(t *testing.T) {
 }
 
 func TestGenerateAccessToken(t *testing.T) {
+	t.Parallel()
+
 	// Generate test key pair
 	pub, priv, err := ed25519.GenerateKey(rand.Reader)
 	require.NoError(t, err)
@@ -137,6 +140,8 @@ func TestGenerateAccessToken(t *testing.T) {
 }
 
 func TestGenerateRefreshTokenInfo(t *testing.T) {
+	t.Parallel()
+
 	userId := uuid.New()
 	params := TokenGenerationParams{
 		UserId:            userId,
@@ -156,6 +161,8 @@ func TestGenerateRefreshTokenInfo(t *testing.T) {
 }
 
 func TestComputeKID(t *testing.T) {
+	t.Parallel()
+
 	pub, _, err := ed25519.GenerateKey(rand.Reader)
 	require.NoError(t, err)
 
@@ -175,6 +182,8 @@ func TestComputeKID(t *testing.T) {
 
 // Integration test: verify that both ID token and access token have 'iss' claim and 'kid' header
 func TestTokenGeneration_HasIssAndKid(t *testing.T) {
+	t.Parallel()
+
 	pub, priv, err := ed25519.GenerateKey(rand.Reader)
 	require.NoError(t, err)
 
@@ -229,6 +238,8 @@ func TestTokenGeneration_HasIssAndKid(t *testing.T) {
 
 // Integration test: verify token expiry times are set correctly
 func TestTokenGeneration_ExpiryTimes(t *testing.T) {
+	t.Parallel()
+
 	pub, priv, err := ed25519.GenerateKey(rand.Reader)
 	require.NoError(t, err)
 
