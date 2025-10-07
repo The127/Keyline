@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"Keyline/commands"
+	"Keyline/config"
 	"Keyline/ioc"
 	"Keyline/mediator"
 	"Keyline/middlewares"
@@ -15,10 +16,11 @@ import (
 )
 
 type CreateVirtualSeverRequestDto struct {
-	Name               string `json:"name" validate:"required,min=1,max=255,alphanum"`
-	DisplayName        string `json:"displayName" validate:"required,min=1,max=255"`
-	EnableRegistration bool   `json:"enableRegistration"`
-	Require2fa         bool   `json:"require2fa"`
+	Name               string  `json:"name" validate:"required,min=1,max=255,alphanum"`
+	DisplayName        string  `json:"displayName" validate:"required,min=1,max=255"`
+	EnableRegistration bool    `json:"enableRegistration"`
+	Require2fa         bool    `json:"require2fa"`
+	SigningAlgorithm   *string `json:"signingAlgorithm" validate:"oneof=RS256 ECDSA"`
 }
 
 func CreateVirtualSever(w http.ResponseWriter, r *http.Request) {
@@ -38,11 +40,18 @@ func CreateVirtualSever(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	m := ioc.GetDependency[*mediator.Mediator](scope)
+
+	signingAlgorithm := config.SigningAlgorithmECDSA
+	if dto.SigningAlgorithm != nil {
+		signingAlgorithm = config.SigningAlgorithm(*dto.SigningAlgorithm)
+	}
+
 	_, err = mediator.Send[*commands.CreateVirtualServerResponse](ctx, m, commands.CreateVirtualServer{
 		Name:               dto.Name,
 		DisplayName:        dto.DisplayName,
 		EnableRegistration: dto.EnableRegistration,
 		Require2fa:         dto.Require2fa,
+		SigningAlgorithm:   signingAlgorithm,
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)

@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"Keyline/config"
 	"Keyline/ioc"
 	"Keyline/middlewares"
 	"Keyline/repositories"
@@ -8,6 +9,7 @@ import (
 	"Keyline/templates"
 	"context"
 	"fmt"
+
 	"github.com/google/uuid"
 )
 
@@ -22,6 +24,7 @@ type CreateVirtualServer struct {
 	DisplayName        string
 	EnableRegistration bool
 	Require2fa         bool
+	SigningAlgorithm   config.SigningAlgorithm
 }
 
 type CreateVirtualServerResponse struct {
@@ -32,16 +35,19 @@ func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer)
 	scope := middlewares.GetScope(ctx)
 
 	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
+
 	virtualServer := repositories.NewVirtualServer(command.Name, command.DisplayName)
 	virtualServer.SetEnableRegistration(command.EnableRegistration)
 	virtualServer.SetRequire2fa(command.Require2fa)
+	virtualServer.SetSigningAlgorithm(command.SigningAlgorithm)
+
 	err := virtualServerRepository.Insert(ctx, virtualServer)
 	if err != nil {
 		return nil, fmt.Errorf("inserting virtual server: %w", err)
 	}
 
 	keyService := ioc.GetDependency[services.KeyService](scope)
-	_, err = keyService.Generate(command.Name)
+	_, err = keyService.Generate(command.Name, command.SigningAlgorithm)
 	if err != nil {
 		return nil, fmt.Errorf("generating keypair: %w", err)
 	}

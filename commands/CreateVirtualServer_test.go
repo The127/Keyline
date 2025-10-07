@@ -7,10 +7,11 @@ import (
 	repoMocks "Keyline/repositories/mocks"
 	"Keyline/services"
 	serviceMocks "Keyline/services/mocks"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
-	"testing"
 )
 
 func TestHandleCreateVirtualServer(t *testing.T) {
@@ -45,7 +46,7 @@ func TestHandleCreateVirtualServer(t *testing.T) {
 
 	keyService := serviceMocks.NewMockKeyService(ctrl)
 	keyService.EXPECT().
-		Generate("virtualServer").
+		Generate("virtualServer", gomock.Any()).
 		Return(services.KeyPair{}, nil)
 
 	applicationRepository := repoMocks.NewMockApplicationRepository(ctrl)

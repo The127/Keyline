@@ -10,6 +10,7 @@
 package mocks
 
 import (
+	config "Keyline/config"
 	services "Keyline/services"
 	reflect "reflect"
 
@@ -41,30 +42,30 @@ func (m *MockKeyService) EXPECT() *MockKeyServiceMockRecorder {
 }
 
 // Generate mocks base method.
-func (m *MockKeyService) Generate(virtualServerName string) (services.KeyPair, error) {
+func (m *MockKeyService) Generate(virtualServerName string, algorithm config.SigningAlgorithm) (services.KeyPair, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Generate", virtualServerName)
+	ret := m.ctrl.Call(m, "Generate", virtualServerName, algorithm)
 	ret0, _ := ret[0].(services.KeyPair)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Generate indicates an expected call of Generate.
-func (mr *MockKeyServiceMockRecorder) Generate(virtualServerName any) *gomock.Call {
+func (mr *MockKeyServiceMockRecorder) Generate(virtualServerName, algorithm any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Generate", reflect.TypeOf((*MockKeyService)(nil).Generate), virtualServerName)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Generate", reflect.TypeOf((*MockKeyService)(nil).Generate), virtualServerName, algorithm)
 }
 
 // GetKey mocks base method.
-func (m *MockKeyService) GetKey(virtualServerName string) services.KeyPair {
+func (m *MockKeyService) GetKey(virtualServerName string, algorithm config.SigningAlgorithm) services.KeyPair {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetKey", virtualServerName)
+	ret := m.ctrl.Call(m, "GetKey", virtualServerName, algorithm)
 	ret0, _ := ret[0].(services.KeyPair)
 	return ret0
 }
 
 // GetKey indicates an expected call of GetKey.
-func (mr *MockKeyServiceMockRecorder) GetKey(virtualServerName any) *gomock.Call {
+func (mr *MockKeyServiceMockRecorder) GetKey(virtualServerName, algorithm any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKey", reflect.TypeOf((*MockKeyService)(nil).GetKey), virtualServerName)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKey", reflect.TypeOf((*MockKeyService)(nil).GetKey), virtualServerName, algorithm)
 }
