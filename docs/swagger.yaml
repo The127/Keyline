@@ -357,6 +357,17 @@ definitions:
       displayName:
         type: string
     type: object
+  handlers.PatchVirtualServerRequestDto:
+    properties:
+      displayName:
+        type: string
+      enableRegistration:
+        type: boolean
+      require2fa:
+        type: boolean
+      requireEmailVerification:
+        type: boolean
+    type: object
   handlers.RefreshTokenResponse:
     properties:
       access_token:
@@ -419,11 +430,14 @@ definitions:
         - 1000000000
         - 60000000000
         - 3600000000000
+        - -9223372036854775808
+        - 9223372036854775807
         - 1
         - 1000
         - 1000000
         - 1000000000
         - 60000000000
+        - 3600000000000
         format: int64
         type: integer
         x-enum-varnames:
@@ -435,11 +449,14 @@ definitions:
         - Second
         - Minute
         - Hour
+        - minDuration
+        - maxDuration
         - Nanosecond
         - Microsecond
         - Millisecond
         - Second
         - Minute
+        - Hour
     type: object
   repositories.TemplateType:
     enum:
@@ -500,6 +517,36 @@ paths:
       summary: Get virtual server
       tags:
       - Admin
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - default: keyline
+        description: Virtual server name
+        in: path
+        name: virtualServerName
+        required: true
+        type: string
+      - description: Patch document
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.PatchVirtualServerRequestDto'
+      produces:
+      - text/plain
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      summary: Patch virtual server
+      tags:
+      - Admin
   /api/virtual-servers/{virtualServerName}/health:
     get:
       parameters:
@@ -540,28 +587,6 @@ paths:
           schema:
             type: string
       summary: Get virtual server public info
-      tags:
-      - Admin
-    patch:
-      parameters:
-      - default: keyline
-        description: Virtual server name
-        in: path
-        name: virtualServerName
-        required: true
-        type: string
-      produces:
-      - text/plain
-      responses:
-        "204":
-          description: No Content
-          schema:
-            type: string
-        "404":
-          description: Not Found
-          schema:
-            type: string
-      summary: Patch virtual server
       tags:
       - Admin
   /api/virtual-servers/{virtualServerName}/roles:
