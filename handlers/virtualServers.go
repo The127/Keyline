@@ -20,7 +20,7 @@ type CreateVirtualSeverRequestDto struct {
 	DisplayName        string  `json:"displayName" validate:"required,min=1,max=255"`
 	EnableRegistration bool    `json:"enableRegistration"`
 	Require2fa         bool    `json:"require2fa"`
-	SigningAlgorithm   *string `json:"signingAlgorithm" validate:"oneof=RS256 ECDSA"`
+	SigningAlgorithm   *string `json:"signingAlgorithm" validate:"oneof=RS256 EdDSA"`
 }
 
 // CreateVirtualSever creates a new virtual server.

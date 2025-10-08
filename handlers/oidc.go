@@ -186,18 +186,6 @@ func WellKnownOpenIdConfiguration(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Map the signing algorithm to OIDC algorithm name
-	var signingAlg string
-	switch virtualServer.SigningAlgorithm() {
-	case config.SigningAlgorithmEdDSA:
-		signingAlg = "EdDSA"
-	case config.SigningAlgorithmRS256:
-		signingAlg = "RS256"
-	default:
-		utils.HandleHttpError(w, fmt.Errorf("unsupported signing algorithm: %s", virtualServer.SigningAlgorithm()))
-		return
-	}
-
 	responseDto := OpenIdConfigurationResponseDto{
 		Issuer: fmt.Sprintf("%s/oidc/%s", config.C.Server.ExternalUrl, vsName),
 
@@ -209,7 +197,7 @@ func WellKnownOpenIdConfiguration(w http.ResponseWriter, r *http.Request) {
 
 		ResponseTypesSupported:           []string{"code"}, // TODO: maybe support more
 		SubjectTypesSupported:            []string{"public"},
-		IdTokenSigningAlgValuesSupported: []string{signingAlg},
+		IdTokenSigningAlgValuesSupported: []string{string(virtualServer.SigningAlgorithm())},
 
 		ScopesSupported: []string{"openid", "email", "profile"}, // TODO: get from db
 		ClaimsSupported: []string{"sub", "name", "email"},       // TODO: get from db

@@ -1781,7 +1781,7 @@ const docTemplate = `{
                     "type": "string",
                     "enum": [
                         "RS256",
-                        "ECDSA"
+                        "EdDSA"
                     ]
                 }
             }
