@@ -61,6 +61,11 @@ func (m *VirtualServer) DisplayName() string {
 	return m.displayName
 }
 
+func (m *VirtualServer) SetDisplayName(displayName string) {
+	m.displayName = displayName
+	m.TrackChange("display_name", displayName)
+}
+
 func (m *VirtualServer) EnableRegistration() bool {
 	return m.enableRegistration
 }
@@ -135,6 +140,7 @@ type VirtualServerRepository interface {
 	Single(ctx context.Context, filter VirtualServerFilter) (*VirtualServer, error)
 	First(ctx context.Context, filter VirtualServerFilter) (*VirtualServer, error)
 	Insert(ctx context.Context, virtualServer *VirtualServer) error
+	Update(ctx context.Context, virtualServer *VirtualServer) error
 }
 
 type virtualServerRepository struct {
@@ -163,6 +169,41 @@ func (r *virtualServerRepository) selectQuery(filter VirtualServerFilter) *sqlbu
 	}
 
 	return s
+}
+
+func (r *virtualServerRepository) Update(ctx context.Context, virtualServer *VirtualServer) error {
+	scope := middlewares.GetScope(ctx)
+	dbService := ioc.GetDependency[database.DbService](scope)
+
+	tx, err := dbService.GetTx()
+	if err != nil {
+		return fmt.Errorf("failed to open tx: %w", err)
+	}
+
+	s := sqlbuilder.Update("virtual_servers")
+	for fieldName, value := range virtualServer.changes {
+		s.SetMore(s.Assign(fieldName, value))
+	}
+	s.SetMore(s.Assign("version", virtualServer.version+1))
+
+	s.Where(s.Equal("id", virtualServer.id))
+	s.Where(s.Equal("version", virtualServer.version))
+	s.Returning("audit_updated_at", "version")
+
+	query, args := s.Build()
+	logging.Logger.Debug("executing sql: ", query)
+	row := tx.QueryRowContext(ctx, query, args...)
+
+	err = row.Scan(&virtualServer.auditUpdatedAt, &virtualServer.version)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return fmt.Errorf("updating virtual server: %w", ErrVersionMismatch)
+	case err != nil:
+		return fmt.Errorf("scanning row: %w", err)
+	}
+
+	virtualServer.clearChanges()
+	return nil
 }
 
 func (r *virtualServerRepository) Single(ctx context.Context, filter VirtualServerFilter) (*VirtualServer, error) {

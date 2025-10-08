@@ -293,6 +293,7 @@ func PatchUser(w http.ResponseWriter, r *http.Request) {
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
 		utils.HandleHttpError(w, err)
+		return
 	}
 
 	m := ioc.GetDependency[*mediator.Mediator](scope)

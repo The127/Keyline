@@ -84,3 +84,17 @@ func (mr *MockVirtualServerRepositoryMockRecorder) Single(ctx, filter any) *gomo
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Single", reflect.TypeOf((*MockVirtualServerRepository)(nil).Single), ctx, filter)
 }
+
+// Update mocks base method.
+func (m *MockVirtualServerRepository) Update(ctx context.Context, virtualServer *repositories.VirtualServer) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Update", ctx, virtualServer)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Update indicates an expected call of Update.
+func (mr *MockVirtualServerRepositoryMockRecorder) Update(ctx, virtualServer any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockVirtualServerRepository)(nil).Update), ctx, virtualServer)
+}
