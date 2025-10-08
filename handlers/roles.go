@@ -9,12 +9,17 @@ import (
 	"Keyline/queries"
 	"Keyline/utils"
 	"encoding/json"
-	"github.com/google/uuid"
-	"github.com/gorilla/mux"
 	"net/http"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 )
 
+type PagedRolesResponseDto struct {
+	Items      []ListRolesResponseDto `json:"items"`
+	Pagination Pagination             `json:"pagination"`
+}
 type GetRoleByIdResponseDto struct {
 	Id          uuid.UUID           `json:"id"`
 	Name        string              `json:"name"`
@@ -25,6 +30,18 @@ type GetRoleByIdResponseDto struct {
 	UpdatedAt   time.Time           `json:"updatedAt"`
 }
 
+// GetRoleById
+// @summary     Get role
+// @description Get a role by its ID within a virtual server.
+// @tags        Roles
+// @produce     application/json
+// @param       virtualServerName  path  string  true  "Virtual server name"
+// @param       roleId             path  string  true  "Role ID (UUID)"
+// @security    BearerAuth
+// @success     200  {object}  handlers.GetRoleByIdResponseDto
+// @failure     400  {string}  string "Bad Request"
+// @failure     404  {string}  string "Not Found"
+// @router      /api/virtual-servers/{virtualServerName}/roles/{roleId} [get]
 func GetRoleById(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	scope := middlewares.GetScope(ctx)
@@ -79,6 +96,21 @@ type ListRolesResponseDto struct {
 	Name string    `json:"name"`
 }
 
+// ListRoles
+// @summary     List roles
+// @description Retrieve a paginated list of roles within a virtual server.
+// @tags        Roles
+// @produce     application/json
+// @param       virtualServerName  path   string  true  "Virtual server name"
+// @param       page               query  int     false "Page number"
+// @param       pageSize           query  int     false "Page size"
+// @param       orderBy            query  string  false "Order by field (e.g., name, createdAt)"
+// @param       orderDir           query  string  false "Order direction (asc|desc)"
+// @param       search             query  string  false "Search term"
+// @security    BearerAuth
+// @success     200  {object}  handlers.PagedRolesResponseDto
+// @failure     400  {string}  string "Bad Request"
+// @router      /api/virtual-servers/{virtualServerName}/roles [get]
 func ListRoles(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -139,6 +171,18 @@ type CreateRoleResponseDto struct {
 	Id uuid.UUID `json:"id"`
 }
 
+// CreateRole
+// @summary     Create role
+// @description Create a new role within a virtual server.
+// @tags        Roles
+// @accept      application/json
+// @produce     application/json
+// @param       virtualServerName  path   string                         true  "Virtual server name"
+// @param       body               body   handlers.CreateRoleRequestDto  true  "Role data"
+// @security    BearerAuth
+// @success     201  {object}  handlers.CreateRoleResponseDto
+// @failure     400  {string}  string "Bad Request"
+// @router      /api/virtual-servers/{virtualServerName}/roles [post]
 func CreateRole(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vsName, err := middlewares.GetVirtualServerName(ctx)
@@ -190,6 +234,19 @@ type AssignRoleRequestDto struct {
 	UserId uuid.UUID `json:"userId" validate:"required,uuid=4"`
 }
 
+// AssignRole
+// @summary     Assign role to user
+// @description Assign an existing role to a user within a virtual server.
+// @tags        Roles
+// @accept      application/json
+// @param       virtualServerName  path   string                          true  "Virtual server name"
+// @param       roleId             path   string                          true  "Role ID (UUID)"
+// @param       body               body   handlers.AssignRoleRequestDto   true  "Assignment data"
+// @security    BearerAuth
+// @success     204  {string}  string "No Content"
+// @failure     400  {string}  string "Bad Request"
+// @failure     404  {string}  string "Not Found"
+// @router      /api/virtual-servers/{virtualServerName}/roles/{roleId}/assign [post]
 func AssignRole(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vsName, err := middlewares.GetVirtualServerName(ctx)
