@@ -72,7 +72,7 @@ func CreateApplication(w http.ResponseWriter, r *http.Request) {
 		DisplayName:            dto.DisplayName,
 		Type:                   repositories.ApplicationType(dto.Type),
 		RedirectUris:           dto.RedirectUris,
-		PostLogoutRedirectUris: dto.PostLogoutUris,
+		PostLogoutRedirectUris: utils.EmptyIfNil(dto.PostLogoutUris),
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)
