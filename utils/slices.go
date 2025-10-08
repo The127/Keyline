@@ -7,3 +7,10 @@ func MapSlice[T any, R any](input []T, fn func(T) R) []R {
 	}
 	return result
 }
+
+func EmptyIfNil[T any](input []T) []T {
+	if input == nil {
+		return make([]T, 0)
+	}
+	return input
+}
