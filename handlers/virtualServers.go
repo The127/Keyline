@@ -186,11 +186,13 @@ type PatchVirtualServerRequestDto struct {
 // PatchVirtualServer patches a virtual server.
 // @Summary      Patch virtual server
 // @Tags         Admin
+// @Accept       json
 // @Produce      plain
 // @Param        virtualServerName  path  string  true  "Virtual server name"  default(keyline)
+// @Param        body  body  PatchVirtualServerRequestDto  true  "Patch document"
 // @Success      204  {string} string "No Content"
 // @Failure      404  {string}  string
-// @Router       /api/virtual-servers/{virtualServerName}/public-info [patch]
+// @Router       /api/virtual-servers/{virtualServerName} [patch]
 func PatchVirtualServer(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	scope := middlewares.GetScope(ctx)

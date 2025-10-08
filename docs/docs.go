@@ -87,6 +87,51 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "patch": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Patch virtual server",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "keyline",
+                        "description": "Virtual server name",
+                        "name": "virtualServerName",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Patch document",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.PatchVirtualServerRequestDto"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
             }
         },
         "/api/virtual-servers/{virtualServerName}/health": {
@@ -142,39 +187,6 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/handlers.GetVirtualServerListResponseDto"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            },
-            "patch": {
-                "produces": [
-                    "text/plain"
-                ],
-                "tags": [
-                    "Admin"
-                ],
-                "summary": "Patch virtual server",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "keyline",
-                        "description": "Virtual server name",
-                        "name": "virtualServerName",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No Content",
-                        "schema": {
-                            "type": "string"
                         }
                     },
                     "404": {
@@ -2209,6 +2221,23 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.PatchVirtualServerRequestDto": {
+            "type": "object",
+            "properties": {
+                "displayName": {
+                    "type": "string"
+                },
+                "enableRegistration": {
+                    "type": "boolean"
+                },
+                "require2fa": {
+                    "type": "boolean"
+                },
+                "requireEmailVerification": {
+                    "type": "boolean"
+                }
+            }
+        },
         "handlers.RefreshTokenResponse": {
             "type": "object",
             "properties": {
@@ -2297,11 +2326,14 @@ const docTemplate = `{
                         1000000000,
                         60000000000,
                         3600000000000,
+                        -9223372036854775808,
+                        9223372036854775807,
                         1,
                         1000,
                         1000000,
                         1000000000,
-                        60000000000
+                        60000000000,
+                        3600000000000
                     ],
                     "x-enum-varnames": [
                         "minDuration",
@@ -2312,11 +2344,14 @@ const docTemplate = `{
                         "Second",
                         "Minute",
                         "Hour",
+                        "minDuration",
+                        "maxDuration",
                         "Nanosecond",
                         "Microsecond",
                         "Millisecond",
                         "Second",
-                        "Minute"
+                        "Minute",
+                        "Hour"
                     ]
                 }
             }
