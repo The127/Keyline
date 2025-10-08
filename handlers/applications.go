@@ -100,6 +100,8 @@ type GetApplicationResponseDto struct {
 	RedirectUris           []string `json:"redirectUris"`
 	PostLogoutRedirectUris []string `json:"postLogoutRedirectUris"`
 
+	SystemApplication bool `json:"systemApplication"`
+
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }
@@ -161,6 +163,7 @@ func GetApplication(w http.ResponseWriter, r *http.Request) {
 		Type:                   string(application.Type),
 		RedirectUris:           application.RedirectUris,
 		PostLogoutRedirectUris: application.PostLogoutUris,
+		SystemApplication:      application.SystemApplication,
 		CreatedAt:              application.CreatedAt,
 		UpdatedAt:              application.UpdatedAt,
 	})

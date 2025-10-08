@@ -17,14 +17,15 @@ type GetApplication struct {
 }
 
 type GetApplicationResult struct {
-	Id             uuid.UUID
-	Name           string
-	DisplayName    string
-	Type           repositories.ApplicationType
-	RedirectUris   []string
-	PostLogoutUris []string
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
+	Id                uuid.UUID
+	Name              string
+	DisplayName       string
+	Type              repositories.ApplicationType
+	RedirectUris      []string
+	PostLogoutUris    []string
+	SystemApplication bool
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
 }
 
 func HandleGetApplication(ctx context.Context, query GetApplication) (*GetApplicationResult, error) {
@@ -52,13 +53,14 @@ func HandleGetApplication(ctx context.Context, query GetApplication) (*GetApplic
 	}
 
 	return &GetApplicationResult{
-		Id:             application.Id(),
-		Name:           application.Name(),
-		DisplayName:    application.DisplayName(),
-		Type:           application.Type(),
-		RedirectUris:   application.RedirectUris(),
-		PostLogoutUris: application.PostLogoutRedirectUris(),
-		CreatedAt:      application.AuditCreatedAt(),
-		UpdatedAt:      application.AuditUpdatedAt(),
+		Id:                application.Id(),
+		Name:              application.Name(),
+		DisplayName:       application.DisplayName(),
+		Type:              application.Type(),
+		RedirectUris:      application.RedirectUris(),
+		PostLogoutUris:    application.PostLogoutRedirectUris(),
+		SystemApplication: application.SystemApplication(),
+		CreatedAt:         application.AuditCreatedAt(),
+		UpdatedAt:         application.AuditUpdatedAt(),
 	}, nil
 }

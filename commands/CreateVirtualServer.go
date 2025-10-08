@@ -90,6 +90,7 @@ func initializeDefaultApplications(ctx context.Context, virtualServer *repositor
 	adminUiApplication.SetPostLogoutRedirectUris([]string{
 		fmt.Sprintf("%s/mgmt/%s/logout", config.C.Frontend.ExternalUrl, virtualServer.Name()),
 	})
+	adminUiApplication.SetSystemApplication(true)
 
 	err := applicationRepository.Insert(ctx, adminUiApplication)
 	if err != nil {
