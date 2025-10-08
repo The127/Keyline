@@ -174,3 +174,46 @@ func GetVirtualServerPublicInfo(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, err)
 	}
 }
+
+type PatchVirtualServerRequestDto struct {
+	DisplayName *string `json:"displayName"`
+}
+
+// PatchVirtualServer patches a virtual server.
+// @Summary      Patch virtual server
+// @Tags         Admin
+// @Produce      plain
+// @Param        virtualServerName  path  string  true  "Virtual server name"  default(keyline)
+// @Success      204  {string} string "No Content"
+// @Failure      404  {string}  string
+// @Router       /api/virtual-servers/{virtualServerName}/public-info [patch]
+func PatchVirtualServer(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	scope := middlewares.GetScope(ctx)
+
+	vsName, err := middlewares.GetVirtualServerName(ctx)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	var dto PatchVirtualServerRequestDto
+	err = json.NewDecoder(r.Body).Decode(&dto)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	m := ioc.GetDependency[*mediator.Mediator](scope)
+	command := commands.PatchVirtualServer{
+		VirtualServerName: vsName,
+		DisplayName:       utils.TrimSpace(dto.DisplayName),
+	}
+	_, err = mediator.Send[*commands.PatchVirtualServerResponse](ctx, m, command)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}

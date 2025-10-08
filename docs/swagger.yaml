@@ -548,6 +548,28 @@ paths:
       summary: Get virtual server public info
       tags:
       - Admin
+    patch:
+      parameters:
+      - default: keyline
+        description: Virtual server name
+        in: path
+        name: virtualServerName
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      summary: Patch virtual server
+      tags:
+      - Admin
   /api/virtual-servers/{virtualServerName}/roles:
     get:
       description: Retrieve a paginated list of roles within a virtual server.
