@@ -7,14 +7,22 @@ import (
 	"Keyline/services"
 	"Keyline/utils"
 	"fmt"
-	"github.com/google/uuid"
 	"net/http"
+
+	"github.com/google/uuid"
 )
 
 type Data struct {
 	Link string
 }
 
+// Debug renders a test email template and returns 200.
+// @Summary     Debug email template render
+// @Tags        Debug
+// @Produce     plain
+// @Success     200 {string} string "OK"
+// @Failure     500 {string} string
+// @Router      /debug [get]
 func Debug(w http.ResponseWriter, r *http.Request) {
 	scope := middlewares.GetScope(r.Context())
 	templateService := ioc.GetDependency[services.TemplateService](scope)

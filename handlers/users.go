@@ -10,10 +10,11 @@ import (
 	"Keyline/utils"
 	"encoding/json"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/gorilla/mux"
 	"net/http"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 )
 
 type RegisterUserRequestDto struct {
@@ -27,6 +28,15 @@ var (
 	ErrMissingEmailVerificationToken = fmt.Errorf("missing email verification token: %w", utils.ErrHttpBadRequest)
 )
 
+// VerifyEmail verifies a user's email via token.
+// @Summary      Verify email
+// @Tags         Users
+// @Produce      plain
+// @Param        virtualServerName  path   string true  "Virtual server name"
+// @Param        token              query  string true  "Verification token"
+// @Success      302  {string} string "Redirect to frontend confirmation page"
+// @Failure      400  {string} string
+// @Router       /api/virtual-servers/{virtualServerName}/users/verify-email [get]
 func VerifyEmail(w http.ResponseWriter, r *http.Request) {
 	vsName, err := middlewares.GetVirtualServerName(r.Context())
 	if err != nil {
@@ -55,6 +65,16 @@ func VerifyEmail(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, fmt.Sprintf("%s/%s/email-verified", config.C.Frontend.ExternalUrl, vsName), http.StatusFound)
 }
 
+// RegisterUser registers a new user.
+// @Summary      Register user
+// @Tags         Users
+// @Accept       json
+// @Produce      plain
+// @Param        virtualServerName  path  string                   true "Virtual server name"
+// @Param        body               body  RegisterUserRequestDto   true "User data"
+// @Success      204                {string} string "No Content"
+// @Failure      400                {string} string
+// @Router       /api/virtual-servers/{virtualServerName}/users/register [post]
 func RegisterUser(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vsName, err := middlewares.GetVirtualServerName(ctx)
@@ -101,6 +121,22 @@ type ListUsersResponseDto struct {
 	PrimaryEmail string    `json:"primaryEmail"`
 }
 
+type PagedUsersResponseDto struct {
+	Items      []ListUsersResponseDto `json:"items"`
+	Pagination Pagination             `json:"pagination"`
+}
+
+// ListUsers returns users with optional paging/search.
+// @Summary      List users
+// @Tags         Users
+// @Produce      json
+// @Param        virtualServerName  path   string true  "Virtual server name"
+// @Param        page               query  int    false "Page number"
+// @Param        pageSize           query  int    false "Page size"
+// @Param        search             query  string false "Search term"
+// @Success      200  {object}  PagedUsersResponseDto
+// @Failure      400  {string}  string
+// @Router       /api/virtual-servers/{virtualServerName}/users [get]
 func ListUsers(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -162,6 +198,15 @@ type GetUserByIdResponseDto struct {
 	UpdatedAt     time.Time `json:"updatedAt"`
 }
 
+// GetUserById returns a user by ID.
+// @Summary      Get user
+// @Tags         Users
+// @Produce      json
+// @Param        virtualServerName  path  string true  "Virtual server name"
+// @Param        userId             path  string true  "User ID (UUID)"
+// @Success      200  {object}  GetUserByIdResponseDto
+// @Failure      404  {string}  string
+// @Router       /api/virtual-servers/{virtualServerName}/users/{userId} [get]
 func GetUserById(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	scope := middlewares.GetScope(ctx)
@@ -215,6 +260,17 @@ type PatchUserRequestDto struct {
 	DisplayName *string `json:"displayName"`
 }
 
+// PatchUser updates fields of a user.
+// @Summary      Patch user
+// @Tags         Users
+// @Accept       json
+// @Produce      plain
+// @Param        virtualServerName  path  string                true "Virtual server name"
+// @Param        userId             path  string                true "User ID (UUID)"
+// @Param        body               body  PatchUserRequestDto   true "Patch document"
+// @Success      204  {string} string "No Content"
+// @Failure      400  {string} string
+// @Router       /api/virtual-servers/{virtualServerName}/users/{userId} [patch]
 func PatchUser(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	scope := middlewares.GetScope(ctx)
