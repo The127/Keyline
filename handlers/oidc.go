@@ -211,20 +211,23 @@ type AuthorizationRequest struct {
 
 // BeginAuthorizationFlow starts the OIDC authorization code flow.
 // @Summary      Authorize
+// @Description  Starts the Authorization Code flow. If the user is not authenticated, redirects to your login UI; otherwise redirects to the application's redirect_uri with an authorization code.
 // @Tags         OIDC
-// @Produce      json
-// @Param        virtualServerName      path   string true   "Virtual server name"
-// @Param        response_type          query  string true   "Must be 'code'"
-// @Param        client_id              query  string true   "Application (client) ID"
-// @Param        redirect_uri           query  string true   "Registered redirect URI"
-// @Param        scope                  query  string true   "Space-delimited scopes"
-// @Param        state                  query  string false  "Opaque value returned to client"
-// @Param        response_mode          query  string false  "e.g. 'query'"
-// @Param        code_challenge         query  string false  "PKCE code challenge"
-// @Param        code_challenge_method  query  string false  "S256 or plain"
+// @Produce      plain
+// @Accept       application/x-www-form-urlencoded
+// @Param        virtualServerName      path     string true   "Virtual server name"
+// @Param        response_type          query    string true   "Must be 'code'"
+// @Param        client_id              query    string true   "Application (client) ID"
+// @Param        redirect_uri           query    string true   "Registered redirect URI"
+// @Param        scope                  query    string true   "Space-delimited scopes (must include 'openid')"
+// @Param        state                  query    string false  "Opaque value returned to client"
+// @Param        response_mode          query    string false  "e.g. 'query'"
+// @Param        code_challenge         query    string false  "PKCE code challenge"
+// @Param        code_challenge_method  query    string false  "S256 or plain" Enums(S256,plain)
 // @Success      302  {string}  string  "Redirect to redirect_uri with code (& state)"
 // @Failure      400  {string}  string
 // @Router       /oidc/{virtualServerName}/authorize [get]
+// @Router       /oidc/{virtualServerName}/authorize [post]
 func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	scope := middlewares.GetScope(ctx)
@@ -305,8 +308,8 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !slices.Contains(authRequest.Scopes, "oidc") {
-		utils.HandleHttpError(w, fmt.Errorf("required oidc scope missing"))
+	if !slices.Contains(authRequest.Scopes, "openid") {
+		utils.HandleHttpError(w, fmt.Errorf("required openid scope missing"))
 		return
 	}
 

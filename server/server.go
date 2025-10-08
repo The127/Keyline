@@ -17,12 +17,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// Serve serves the http server.
-// @title Keyline API
-// @version 1.0
-// @description Open source OIDC/IDP server.
-// @host localhost:8080
-// @BasePath /
 func Serve(dp *ioc.DependencyProvider) {
 	r := mux.NewRouter()
 
