@@ -46,7 +46,7 @@ func TestGenerateIdToken_SignsWithPrivateKey(t *testing.T) {
 
 	// Arrange
 	pub, priv, _ := ed25519.GenerateKey(rand.Reader)
-	params := newDefaultParams(pub, priv, config.SigningAlgorithmECDSA)
+	params := newDefaultParams(pub, priv, config.SigningAlgorithmEdDSA)
 
 	// Act
 	tokenString, err := generateIdToken(params)
@@ -83,7 +83,7 @@ func TestGenerateIdToken_HasExpectedClaims(t *testing.T) {
 	// Arrange
 	pub, priv, _ := ed25519.GenerateKey(rand.Reader)
 	now := time.Now()
-	params := newDefaultParams(pub, priv, config.SigningAlgorithmECDSA)
+	params := newDefaultParams(pub, priv, config.SigningAlgorithmEdDSA)
 	params.IssuedAt = now
 	params.IdTokenExpiry = time.Hour
 
@@ -107,7 +107,7 @@ func TestGenerateIdToken_HasExpectedHeaders(t *testing.T) {
 
 	// Arrange
 	pub, priv, _ := ed25519.GenerateKey(rand.Reader)
-	params := newDefaultParams(pub, priv, config.SigningAlgorithmECDSA)
+	params := newDefaultParams(pub, priv, config.SigningAlgorithmEdDSA)
 
 	// Act
 	tokenString, _ := generateIdToken(params)
@@ -124,7 +124,7 @@ func TestGenerateAccessToken_SignsWithPrivateKey(t *testing.T) {
 
 	// Arrange
 	pub, priv, _ := ed25519.GenerateKey(rand.Reader)
-	params := newDefaultParams(pub, priv, config.SigningAlgorithmECDSA)
+	params := newDefaultParams(pub, priv, config.SigningAlgorithmEdDSA)
 
 	// Act
 	tokenString, err := generateAccessToken(params)
@@ -143,7 +143,7 @@ func TestGenerateAccessToken_HasExpectedClaims(t *testing.T) {
 	// Arrange
 	pub, priv, _ := ed25519.GenerateKey(rand.Reader)
 	now := time.Now()
-	params := newDefaultParams(pub, priv, config.SigningAlgorithmECDSA)
+	params := newDefaultParams(pub, priv, config.SigningAlgorithmEdDSA)
 	params.IssuedAt = now
 	params.GrantedScopes = []string{"openid", "email", "profile"}
 
@@ -171,7 +171,7 @@ func TestGenerateAccessToken_HasExpectedHeaders(t *testing.T) {
 
 	// Arrange
 	pub, priv, _ := ed25519.GenerateKey(rand.Reader)
-	params := newDefaultParams(pub, priv, config.SigningAlgorithmECDSA)
+	params := newDefaultParams(pub, priv, config.SigningAlgorithmEdDSA)
 
 	// Act
 	tokenString, _ := generateAccessToken(params)

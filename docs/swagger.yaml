@@ -96,7 +96,7 @@ definitions:
       signingAlgorithm:
         enum:
         - RS256
-        - ECDSA
+        - EdDSA
         type: string
     required:
     - displayName
