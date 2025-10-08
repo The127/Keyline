@@ -86,7 +86,7 @@ type GetVirtualServerResponseDto struct {
 // @Summary      Get virtual server
 // @Tags         Admin
 // @Produce      json
-// @Param        virtualServerName  path  string  true  "Virtual server name"
+// @Param        virtualServerName  path  string  true  "Virtual server name"  default(keyline)
 // @Success      200  {object}  handlers.GetVirtualServerResponseDto
 // @Failure      404  {string}  string
 // @Router       /api/virtual-servers/{virtualServerName} [get]
@@ -138,7 +138,7 @@ type GetVirtualServerListResponseDto struct {
 // @Summary      Get virtual server public info
 // @Tags         Admin
 // @Produce      json
-// @Param        virtualServerName  path  string  true  "Virtual server name"
+// @Param        virtualServerName  path  string  true  "Virtual server name"  default(keyline)
 // @Success      200  {object}  handlers.GetVirtualServerListResponseDto
 // @Failure      404  {string}  string
 // @Router       /api/virtual-servers/{virtualServerName}/public-info [get]

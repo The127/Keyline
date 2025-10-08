@@ -32,7 +32,7 @@ var (
 // @Summary      Verify email
 // @Tags         Users
 // @Produce      plain
-// @Param        virtualServerName  path   string true  "Virtual server name"
+// @Param        virtualServerName  path   string true  "Virtual server name"  default(keyline)
 // @Param        token              query  string true  "Verification token"
 // @Success      302  {string} string "Redirect to frontend confirmation page"
 // @Failure      400  {string} string
@@ -70,7 +70,7 @@ func VerifyEmail(w http.ResponseWriter, r *http.Request) {
 // @Tags         Users
 // @Accept       json
 // @Produce      plain
-// @Param        virtualServerName  path  string                   true "Virtual server name"
+// @Param        virtualServerName  path  string                   true "Virtual server name"  default(keyline)
 // @Param        body               body  RegisterUserRequestDto   true "User data"
 // @Success      204                {string} string "No Content"
 // @Failure      400                {string} string
@@ -130,7 +130,7 @@ type PagedUsersResponseDto struct {
 // @Summary      List users
 // @Tags         Users
 // @Produce      json
-// @Param        virtualServerName  path   string true  "Virtual server name"
+// @Param        virtualServerName  path   string true  "Virtual server name"  default(keyline)
 // @Param        page               query  int    false "Page number"
 // @Param        pageSize           query  int    false "Page size"
 // @Param        search             query  string false "Search term"
@@ -202,7 +202,7 @@ type GetUserByIdResponseDto struct {
 // @Summary      Get user
 // @Tags         Users
 // @Produce      json
-// @Param        virtualServerName  path  string true  "Virtual server name"
+// @Param        virtualServerName  path  string true  "Virtual server name"  default(keyline)
 // @Param        userId             path  string true  "User ID (UUID)"
 // @Success      200  {object}  GetUserByIdResponseDto
 // @Failure      404  {string}  string
@@ -265,7 +265,7 @@ type PatchUserRequestDto struct {
 // @Tags         Users
 // @Accept       json
 // @Produce      plain
-// @Param        virtualServerName  path  string                true "Virtual server name"
+// @Param        virtualServerName  path  string                true "Virtual server name"  default(keyline)
 // @Param        userId             path  string                true "User ID (UUID)"
 // @Param        body               body  PatchUserRequestDto   true "Patch document"
 // @Success      204  {string} string "No Content"

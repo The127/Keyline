@@ -16,7 +16,7 @@ func ApplicationHealth(w http.ResponseWriter, r *http.Request) {
 // @Summary     Virtual server health
 // @Tags        System
 // @Produce     plain
-// @Param       virtualServerName path string true "Virtual server name"
+// @Param       virtualServerName path string true "Virtual server name"  default(keyline)
 // @Success     200 {string} string "OK"
 // @Router      /api/virtual-servers/{virtualServerName}/health [get]
 func VirtualServerHealth(w http.ResponseWriter, r *http.Request) {
