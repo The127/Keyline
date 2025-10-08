@@ -6,8 +6,9 @@ import (
 	"Keyline/repositories"
 	"context"
 	"fmt"
-	"github.com/google/uuid"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type GetApplication struct {
@@ -16,13 +17,14 @@ type GetApplication struct {
 }
 
 type GetApplicationResult struct {
-	Id           uuid.UUID
-	Name         string
-	DisplayName  string
-	Type         repositories.ApplicationType
-	RedirectUris []string
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
+	Id             uuid.UUID
+	Name           string
+	DisplayName    string
+	Type           repositories.ApplicationType
+	RedirectUris   []string
+	PostLogoutUris []string
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
 }
 
 func HandleGetApplication(ctx context.Context, query GetApplication) (*GetApplicationResult, error) {
@@ -50,12 +52,13 @@ func HandleGetApplication(ctx context.Context, query GetApplication) (*GetApplic
 	}
 
 	return &GetApplicationResult{
-		Id:           application.Id(),
-		Name:         application.Name(),
-		DisplayName:  application.DisplayName(),
-		Type:         application.Type(),
-		RedirectUris: application.RedirectUris(),
-		CreatedAt:    application.AuditCreatedAt(),
-		UpdatedAt:    application.AuditUpdatedAt(),
+		Id:             application.Id(),
+		Name:           application.Name(),
+		DisplayName:    application.DisplayName(),
+		Type:           application.Type(),
+		RedirectUris:   application.RedirectUris(),
+		PostLogoutUris: application.PostLogoutRedirectUris(),
+		CreatedAt:      application.AuditCreatedAt(),
+		UpdatedAt:      application.AuditUpdatedAt(),
 	}, nil
 }
