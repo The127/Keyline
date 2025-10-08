@@ -50,7 +50,7 @@ func CreateVirtualSever(w http.ResponseWriter, r *http.Request) {
 	}
 	m := ioc.GetDependency[*mediator.Mediator](scope)
 
-	signingAlgorithm := config.SigningAlgorithmECDSA
+	signingAlgorithm := config.SigningAlgorithmEdDSA
 	if dto.SigningAlgorithm != nil {
 		signingAlgorithm = config.SigningAlgorithm(*dto.SigningAlgorithm)
 	}

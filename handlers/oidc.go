@@ -91,7 +91,7 @@ func WellKnownJwks(w http.ResponseWriter, r *http.Request) {
 	keys := make([]any, 0)
 
 	switch virtualServer.SigningAlgorithm() {
-	case config.SigningAlgorithmECDSA:
+	case config.SigningAlgorithmEdDSA:
 		keys = append(keys, Ed25519JWK{
 			Kty: "OKP",
 			Crv: "Ed25519",
@@ -164,9 +164,37 @@ type OpenIdConfigurationResponseDto struct {
 // @Failure      400  {string}  string
 // @Router       /oidc/{virtualServerName}/.well-known/openid-configuration [get]
 func WellKnownOpenIdConfiguration(w http.ResponseWriter, r *http.Request) {
-	vsName, err := middlewares.GetVirtualServerName(r.Context())
+	ctx := r.Context()
+	scope := middlewares.GetScope(ctx)
+
+	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
 		utils.HandleHttpError(w, err)
+		return
+	}
+
+	// Fetch the virtual server from database
+	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
+	virtualServerFilter := repositories.NewVirtualServerFilter().Name(vsName)
+	virtualServer, err := virtualServerRepository.First(ctx, virtualServerFilter)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
+		return
+	}
+	if virtualServer == nil {
+		utils.HandleHttpError(w, fmt.Errorf("virtual server not found"))
+		return
+	}
+
+	// Map the signing algorithm to OIDC algorithm name
+	var signingAlg string
+	switch virtualServer.SigningAlgorithm() {
+	case config.SigningAlgorithmEdDSA:
+		signingAlg = "EdDSA"
+	case config.SigningAlgorithmRS256:
+		signingAlg = "RS256"
+	default:
+		utils.HandleHttpError(w, fmt.Errorf("unsupported signing algorithm: %s", virtualServer.SigningAlgorithm()))
 		return
 	}
 
@@ -181,20 +209,20 @@ func WellKnownOpenIdConfiguration(w http.ResponseWriter, r *http.Request) {
 
 		ResponseTypesSupported:           []string{"code"}, // TODO: maybe support more
 		SubjectTypesSupported:            []string{"public"},
-		IdTokenSigningAlgValuesSupported: []string{"EdDSA"},
+		IdTokenSigningAlgValuesSupported: []string{signingAlg},
 
 		ScopesSupported: []string{"openid", "email", "profile"}, // TODO: get from db
 		ClaimsSupported: []string{"sub", "name", "email"},       // TODO: get from db
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
 	err = json.NewEncoder(w).Encode(responseDto)
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
 	}
-
-	w.WriteHeader(http.StatusOK)
 }
 
 type AuthorizationRequest struct {
@@ -788,7 +816,7 @@ func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 
 func getJwtSigningMethod(algorithm config.SigningAlgorithm) (jwt.SigningMethod, error) {
 	switch algorithm {
-	case config.SigningAlgorithmECDSA:
+	case config.SigningAlgorithmEdDSA:
 		return jwt.SigningMethodEdDSA, nil
 
 	case config.SigningAlgorithmRS256:

@@ -21,7 +21,7 @@ func GetSecureRandomBytes(length int) []byte {
 
 func GenerateKeyPair(algorithm config.SigningAlgorithm) (any, any) {
 	switch algorithm {
-	case config.SigningAlgorithmECDSA:
+	case config.SigningAlgorithmEdDSA:
 		publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
 		if err != nil {
 			panic(fmt.Errorf("failed to generate key pair: %w", err))
@@ -46,7 +46,7 @@ func ExportPrivateKey(privateKey ed25519.PrivateKey) []byte {
 
 func ImportPrivateKey(privateKeyBytes []byte, algorithm config.SigningAlgorithm) (any, any) {
 	switch algorithm {
-	case config.SigningAlgorithmECDSA:
+	case config.SigningAlgorithmEdDSA:
 		if len(privateKeyBytes) != ed25519.PrivateKeySize {
 			panic(fmt.Errorf("invalid private key size: expected %d bytes, got %d bytes", ed25519.PrivateKeySize, len(privateKeyBytes)))
 		}

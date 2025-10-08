@@ -19,7 +19,7 @@ type SigningAlgorithm string
 
 const (
 	SigningAlgorithmRS256 SigningAlgorithm = "RS256"
-	SigningAlgorithmECDSA SigningAlgorithm = "ECDSA"
+	SigningAlgorithmEdDSA SigningAlgorithm = "EdDSA"
 )
 
 type Config struct {
@@ -180,7 +180,7 @@ func setInitialVirtualServerDefaultsOrPanic() {
 	}
 
 	if C.InitialVirtualServer.SigningAlgorithm == "" {
-		C.InitialVirtualServer.SigningAlgorithm = SigningAlgorithmECDSA
+		C.InitialVirtualServer.SigningAlgorithm = SigningAlgorithmEdDSA
 	}
 
 	setInitialAdminDefaultsOrPanic()

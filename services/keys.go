@@ -81,7 +81,7 @@ func NewKeyPair(algorithm config.SigningAlgorithm, publicKey any, privateKey any
 
 func (k *KeyPair) PublicKeyBytes() []byte {
 	switch k.algorithm {
-	case config.SigningAlgorithmECDSA:
+	case config.SigningAlgorithmEdDSA:
 		return k.publicKey.(ed25519.PublicKey)
 
 	case config.SigningAlgorithmRS256:
@@ -106,7 +106,7 @@ func (k *KeyPair) Algorithm() config.SigningAlgorithm {
 
 func (k *KeyPair) PrivateKeyBytes() []byte {
 	switch k.algorithm {
-	case config.SigningAlgorithmECDSA:
+	case config.SigningAlgorithmEdDSA:
 		return k.privateKey.(ed25519.PrivateKey)
 	case config.SigningAlgorithmRS256:
 		rsaKey := k.privateKey.(*rsa.PrivateKey)
