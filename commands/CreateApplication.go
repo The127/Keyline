@@ -7,6 +7,7 @@ import (
 	"Keyline/utils"
 	"context"
 	"fmt"
+
 	"github.com/google/uuid"
 )
 
@@ -49,6 +50,7 @@ func HandleCreateApplication(ctx context.Context, command CreateApplication) (*C
 	}
 
 	application.SetPostLogoutRedirectUris(command.PostLogoutRedirectUris)
+
 	err = applicationRepository.Insert(ctx, application)
 	if err != nil {
 		return nil, fmt.Errorf("inserting application: %w", err)

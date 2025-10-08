@@ -36,6 +36,8 @@ type Application struct {
 	hashedSecret           string
 	redirectUris           []string
 	postLogoutRedirectUris []string
+
+	systemApplication bool
 }
 
 func NewApplication(
@@ -69,6 +71,7 @@ func (a *Application) getScanPointers() []any {
 		&a.hashedSecret,
 		pq.Array(&a.redirectUris),
 		pq.Array(&a.postLogoutRedirectUris),
+		&a.systemApplication,
 	}
 }
 
@@ -126,6 +129,15 @@ func (a *Application) PostLogoutRedirectUris() []string {
 func (a *Application) SetPostLogoutRedirectUris(postLogoutRedirectUris []string) {
 	a.TrackChange("post_logout_redirect_uris", postLogoutRedirectUris)
 	a.postLogoutRedirectUris = postLogoutRedirectUris
+}
+
+func (a *Application) SystemApplication() bool {
+	return a.systemApplication
+}
+
+func (a *Application) SetSystemApplication(systemApplication bool) {
+	a.TrackChange("system_application", systemApplication)
+	a.systemApplication = systemApplication
 }
 
 type ApplicationFilter struct {
@@ -215,6 +227,7 @@ func (r *applicationRepository) selectQuery(filter ApplicationFilter) *sqlbuilde
 		"hashed_secret",
 		"redirect_uris",
 		"post_logout_redirect_uris",
+		"system_application",
 	).From("applications")
 
 	if filter.name != nil {
@@ -330,7 +343,7 @@ func (r *applicationRepository) Insert(ctx context.Context, application *Applica
 	}
 
 	s := sqlbuilder.InsertInto("applications").
-		Cols("virtual_server_id", "name", "display_name", "type", "hashed_secret", "redirect_uris").
+		Cols("virtual_server_id", "name", "display_name", "type", "hashed_secret", "redirect_uris", "post_logout_redirect_uris", "system_application").
 		Values(
 			application.virtualServerId,
 			application.name,
@@ -338,6 +351,8 @@ func (r *applicationRepository) Insert(ctx context.Context, application *Applica
 			application.type_,
 			application.hashedSecret,
 			pq.Array(application.redirectUris),
+			pq.Array(application.postLogoutRedirectUris),
+			application.systemApplication,
 		).Returning("id", "audit_created_at", "audit_updated_at", "version")
 
 	query, args := s.Build()
