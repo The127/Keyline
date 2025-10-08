@@ -35,7 +35,7 @@ type GetRoleByIdResponseDto struct {
 // @description Get a role by its ID within a virtual server.
 // @tags        Roles
 // @produce     application/json
-// @param       virtualServerName  path  string  true  "Virtual server name"
+// @param       virtualServerName  path  string  true  "Virtual server name"  default(keyline)
 // @param       roleId             path  string  true  "Role ID (UUID)"
 // @security    BearerAuth
 // @success     200  {object}  handlers.GetRoleByIdResponseDto
@@ -101,7 +101,7 @@ type ListRolesResponseDto struct {
 // @description Retrieve a paginated list of roles within a virtual server.
 // @tags        Roles
 // @produce     application/json
-// @param       virtualServerName  path   string  true  "Virtual server name"
+// @param       virtualServerName  path   string  true  "Virtual server name"  default(keyline)
 // @param       page               query  int     false "Page number"
 // @param       pageSize           query  int     false "Page size"
 // @param       orderBy            query  string  false "Order by field (e.g., name, createdAt)"
@@ -177,7 +177,7 @@ type CreateRoleResponseDto struct {
 // @tags        Roles
 // @accept      application/json
 // @produce     application/json
-// @param       virtualServerName  path   string                         true  "Virtual server name"
+// @param       virtualServerName  path   string                         true  "Virtual server name"  default(keyline)
 // @param       body               body   handlers.CreateRoleRequestDto  true  "Role data"
 // @security    BearerAuth
 // @success     201  {object}  handlers.CreateRoleResponseDto
@@ -239,7 +239,7 @@ type AssignRoleRequestDto struct {
 // @description Assign an existing role to a user within a virtual server.
 // @tags        Roles
 // @accept      application/json
-// @param       virtualServerName  path   string                          true  "Virtual server name"
+// @param       virtualServerName  path   string                          true  "Virtual server name"  default(keyline)
 // @param       roleId             path   string                          true  "Role ID (UUID)"
 // @param       body               body   handlers.AssignRoleRequestDto   true  "Assignment data"
 // @security    BearerAuth

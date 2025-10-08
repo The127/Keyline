@@ -61,7 +61,7 @@ func trimLeadingZeros(b []byte) []byte {
 // @Description  Returns the public keys used to verify tokens for this virtual server.
 // @Tags         OIDC
 // @Produce      json
-// @Param        virtualServerName  path  string  true  "Virtual server name"
+// @Param        virtualServerName  path  string  true  "Virtual server name"  default(keyline)
 // @Success      200  {object}  handlers.JwksResponseDto
 // @Failure      400  {string}  string
 // @Failure      500  {string}  string
@@ -159,7 +159,7 @@ type OpenIdConfigurationResponseDto struct {
 // @Summary      OpenID Provider configuration
 // @Tags         OIDC
 // @Produce      json
-// @Param        virtualServerName  path  string  true  "Virtual server name"
+// @Param        virtualServerName  path  string  true  "Virtual server name"  default(keyline)
 // @Success      200  {object}  handlers.OpenIdConfigurationResponseDto
 // @Failure      400  {string}  string
 // @Router       /oidc/{virtualServerName}/.well-known/openid-configuration [get]
@@ -215,7 +215,7 @@ type AuthorizationRequest struct {
 // @Tags         OIDC
 // @Produce      plain
 // @Accept       application/x-www-form-urlencoded
-// @Param        virtualServerName      path     string true   "Virtual server name"
+// @Param        virtualServerName      path     string true   "Virtual server name"  default(keyline)
 // @Param        response_type          query    string true   "Must be 'code'"
 // @Param        client_id              query    string true   "Application (client) ID"
 // @Param        redirect_uri           query    string true   "Registered redirect URI"
@@ -389,7 +389,7 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 // @Summary      End session
 // @Tags         OIDC
 // @Produce      json
-// @Param        virtualServerName         path     string true  "Virtual server name"
+// @Param        virtualServerName         path     string true  "Virtual server name"  default(keyline)
 // @Param        id_token_hint             query    string true  "ID token hint of the current session"
 // @Param        post_logout_redirect_uri  query    string false "Where to redirect after logout (must be registered)"
 // @Param        state                     query    string false "Opaque value returned to client"
@@ -516,7 +516,7 @@ type OidcUserInfoResponseDto struct {
 // @Summary      Userinfo
 // @Tags         OIDC
 // @Produce      json
-// @Param        virtualServerName  path   string true  "Virtual server name"
+// @Param        virtualServerName  path   string true  "Virtual server name"  default(keyline)
 // @Security     BearerAuth
 // @Success      200  {object}  handlers.OidcUserInfoResponseDto
 // @Failure      401  {string}  string

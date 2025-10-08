@@ -32,7 +32,7 @@ type GetTemplateResponseDto struct {
 // @Summary      Get template
 // @Tags         Templates
 // @Produce      json
-// @Param        virtualServerName  path   string true  "Virtual server name"
+// @Param        virtualServerName  path   string true  "Virtual server name"  default(keyline)
 // @Param        templateType       path   string true  "Template type"
 // @Success      200  {object}  GetTemplateResponseDto
 // @Failure      404  {string}  string
@@ -91,7 +91,7 @@ type ListTemplatesResponseDto struct {
 // @Summary      List templates
 // @Tags         Templates
 // @Produce      json
-// @Param        virtualServerName  path   string true  "Virtual server name"
+// @Param        virtualServerName  path   string true  "Virtual server name"  default(keyline)
 // @Success      200  {object}  PagedTemplatesResponseDto
 // @Failure      400  {string} string
 // @Router       /api/virtual-servers/{virtualServerName}/templates [get]

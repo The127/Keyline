@@ -34,7 +34,7 @@ type CreateApplicationResponseDto struct {
 // @Tags applications
 // @Accept json
 // @Produce json
-// @Param vsName path string true "Virtual Server Name"
+// @Param vsName path string true "Virtual server name"  default(keyline)
 // @Param request body CreateApplicationRequestDto true "Application data"
 // @Success 201 {object} CreateApplicationResponseDto
 // @Failure 400
@@ -106,7 +106,7 @@ type GetApplicationResponseDto struct {
 // @Tags applications
 // @Accept json
 // @Produce json
-// @Param vsName path string true "Virtual Server Name"
+// @Param vsName path string true "Virtual server name"  default(keyline)
 // @Param appId path string true "Application ID (UUID)"
 // @Success 200 {object} GetApplicationResponseDto
 // @Failure 400
@@ -179,7 +179,7 @@ type ListApplicationsResponseDto struct {
 // @Tags applications
 // @Accept json
 // @Produce json
-// @Param vsName path string true "Virtual Server Name"
+// @Param vsName path string true "Virtual server name"  default(keyline)
 // @Param page query int false "Page number"
 // @Param pageSize query int false "Page size"
 // @Param orderBy query string false "Order by field"
