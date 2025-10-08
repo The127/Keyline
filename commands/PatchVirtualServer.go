@@ -11,6 +11,10 @@ import (
 type PatchVirtualServer struct {
 	VirtualServerName string
 	DisplayName       *string
+
+	EnableRegistration       *bool
+	Require2fa               *bool
+	RequireEmailVerification *bool
 }
 
 type PatchVirtualServerResponse struct{}
@@ -27,6 +31,18 @@ func HandlePatchVirtualServer(ctx context.Context, command PatchVirtualServer) (
 
 	if command.DisplayName != nil {
 		virtualServer.SetDisplayName(*command.DisplayName)
+	}
+
+	if command.EnableRegistration != nil {
+		virtualServer.SetEnableRegistration(*command.EnableRegistration)
+	}
+
+	if command.Require2fa != nil {
+		virtualServer.SetRequire2fa(*command.Require2fa)
+	}
+
+	if command.RequireEmailVerification != nil {
+		virtualServer.SetRequireEmailVerification(*command.RequireEmailVerification)
 	}
 
 	err = virtualServerRepository.Update(ctx, virtualServer)
