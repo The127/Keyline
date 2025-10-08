@@ -1,3 +1,12 @@
+// @title       Keyline API
+// @description Open source OIDC/IDP server.
+// @BasePath    /
+
+// Security schemes for the "Authorize" button (Swagger 2.0):
+// @securityDefinitions.basic  BasicAuth
+// @securityDefinitions.apikey BearerAuth
+// @in                         header
+// @name                       Authorization
 package main
 
 import (

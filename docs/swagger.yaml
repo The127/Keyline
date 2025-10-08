@@ -1,4 +1,12 @@
+basePath: /
 definitions:
+  handlers.AssignRoleRequestDto:
+    properties:
+      userId:
+        type: string
+    required:
+    - userId
+    type: object
   handlers.CodeFlowResponse:
     properties:
       access_token:
@@ -48,6 +56,27 @@ definitions:
       id:
         type: string
       secret:
+        type: string
+    type: object
+  handlers.CreateRoleRequestDto:
+    properties:
+      description:
+        maxLength: 1024
+        type: string
+      maxTokenAge:
+        $ref: '#/definitions/jsonTypes.Duration'
+      name:
+        maxLength: 255
+        minLength: 1
+        type: string
+      requireMfa:
+        type: boolean
+    required:
+    - name
+    type: object
+  handlers.CreateRoleResponseDto:
+    properties:
+      id:
         type: string
     type: object
   handlers.CreateVirtualSeverRequestDto:
@@ -105,6 +134,23 @@ definitions:
       virtualServerDisplayName:
         type: string
       virtualServerName:
+        type: string
+    type: object
+  handlers.GetRoleByIdResponseDto:
+    properties:
+      createdAt:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      maxTokenAge:
+        $ref: '#/definitions/jsonTypes.Duration'
+      name:
+        type: string
+      requireMfa:
+        type: boolean
+      updatedAt:
         type: string
     type: object
   handlers.GetTemplateResponseDto:
@@ -184,6 +230,13 @@ definitions:
       type:
         type: string
     type: object
+  handlers.ListRolesResponseDto:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+    type: object
   handlers.ListTemplatesResponseDto:
     properties:
       id:
@@ -251,6 +304,15 @@ definitions:
       items:
         items:
           $ref: '#/definitions/handlers.ListApplicationsResponseDto'
+        type: array
+      pagination:
+        $ref: '#/definitions/handlers.Pagination'
+    type: object
+  handlers.PagedRolesResponseDto:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/handlers.ListRolesResponseDto'
         type: array
       pagination:
         $ref: '#/definitions/handlers.Pagination'
@@ -339,6 +401,46 @@ definitions:
     - password
     - username
     type: object
+  jsonTypes.Duration:
+    properties:
+      time.Duration:
+        enum:
+        - -9223372036854775808
+        - 9223372036854775807
+        - 1
+        - 1000
+        - 1000000
+        - 1000000000
+        - 60000000000
+        - 3600000000000
+        - -9223372036854775808
+        - 9223372036854775807
+        - 1
+        - 1000
+        - 1000000
+        - 1000000000
+        - 60000000000
+        - 3600000000000
+        format: int64
+        type: integer
+        x-enum-varnames:
+        - minDuration
+        - maxDuration
+        - Nanosecond
+        - Microsecond
+        - Millisecond
+        - Second
+        - Minute
+        - Hour
+        - minDuration
+        - maxDuration
+        - Nanosecond
+        - Microsecond
+        - Millisecond
+        - Second
+        - Minute
+        - Hour
+    type: object
   repositories.TemplateType:
     enum:
     - email_verification
@@ -347,6 +449,8 @@ definitions:
     - EmailVerificationMailTemplate
 info:
   contact: {}
+  description: Open source OIDC/IDP server.
+  title: Keyline API
 paths:
   /api/virtual-servers:
     post:
@@ -435,6 +539,157 @@ paths:
       summary: Get virtual server public info
       tags:
       - Admin
+  /api/virtual-servers/{virtualServerName}/roles:
+    get:
+      description: Retrieve a paginated list of roles within a virtual server.
+      parameters:
+      - description: Virtual server name
+        in: path
+        name: virtualServerName
+        required: true
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: pageSize
+        type: integer
+      - description: Order by field (e.g., name, createdAt)
+        in: query
+        name: orderBy
+        type: string
+      - description: Order direction (asc|desc)
+        in: query
+        name: orderDir
+        type: string
+      - description: Search term
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.PagedRolesResponseDto'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: List roles
+      tags:
+      - Roles
+    post:
+      consumes:
+      - application/json
+      description: Create a new role within a virtual server.
+      parameters:
+      - description: Virtual server name
+        in: path
+        name: virtualServerName
+        required: true
+        type: string
+      - description: Role data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateRoleRequestDto'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/handlers.CreateRoleResponseDto'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Create role
+      tags:
+      - Roles
+  /api/virtual-servers/{virtualServerName}/roles/{roleId}:
+    get:
+      description: Get a role by its ID within a virtual server.
+      parameters:
+      - description: Virtual server name
+        in: path
+        name: virtualServerName
+        required: true
+        type: string
+      - description: Role ID (UUID)
+        in: path
+        name: roleId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.GetRoleByIdResponseDto'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Get role
+      tags:
+      - Roles
+  /api/virtual-servers/{virtualServerName}/roles/{roleId}/assign:
+    post:
+      consumes:
+      - application/json
+      description: Assign an existing role to a user within a virtual server.
+      parameters:
+      - description: Virtual server name
+        in: path
+        name: virtualServerName
+        required: true
+        type: string
+      - description: Role ID (UUID)
+        in: path
+        name: roleId
+        required: true
+        type: string
+      - description: Assignment data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.AssignRoleRequestDto'
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Assign role to user
+      tags:
+      - Roles
   /api/virtual-servers/{virtualServerName}/templates:
     get:
       parameters:
@@ -1021,6 +1276,11 @@ paths:
       - OIDC
   /oidc/{virtualServerName}/authorize:
     get:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: Starts the Authorization Code flow. If the user is not authenticated,
+        redirects to your login UI; otherwise redirects to the application's redirect_uri
+        with an authorization code.
       parameters:
       - description: Virtual server name
         in: path
@@ -1042,7 +1302,7 @@ paths:
         name: redirect_uri
         required: true
         type: string
-      - description: Space-delimited scopes
+      - description: Space-delimited scopes (must include 'openid')
         in: query
         name: scope
         required: true
@@ -1060,11 +1320,79 @@ paths:
         name: code_challenge
         type: string
       - description: S256 or plain
+        enum:
+        - S256
+        - plain
         in: query
         name: code_challenge_method
         type: string
       produces:
-      - application/json
+      - text/plain
+      responses:
+        "302":
+          description: Redirect to redirect_uri with code (& state)
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+      summary: Authorize
+      tags:
+      - OIDC
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: Starts the Authorization Code flow. If the user is not authenticated,
+        redirects to your login UI; otherwise redirects to the application's redirect_uri
+        with an authorization code.
+      parameters:
+      - description: Virtual server name
+        in: path
+        name: virtualServerName
+        required: true
+        type: string
+      - description: Must be 'code'
+        in: query
+        name: response_type
+        required: true
+        type: string
+      - description: Application (client) ID
+        in: query
+        name: client_id
+        required: true
+        type: string
+      - description: Registered redirect URI
+        in: query
+        name: redirect_uri
+        required: true
+        type: string
+      - description: Space-delimited scopes (must include 'openid')
+        in: query
+        name: scope
+        required: true
+        type: string
+      - description: Opaque value returned to client
+        in: query
+        name: state
+        type: string
+      - description: e.g. 'query'
+        in: query
+        name: response_mode
+        type: string
+      - description: PKCE code challenge
+        in: query
+        name: code_challenge
+        type: string
+      - description: S256 or plain
+        enum:
+        - S256
+        - plain
+        in: query
+        name: code_challenge_method
+        type: string
+      produces:
+      - text/plain
       responses:
         "302":
           description: Redirect to redirect_uri with code (& state)
@@ -1174,4 +1502,11 @@ paths:
       summary: Userinfo
       tags:
       - OIDC
+securityDefinitions:
+  BasicAuth:
+    type: basic
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"
