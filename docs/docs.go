@@ -66,6 +66,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "keyline",
                         "description": "Virtual server name",
                         "name": "virtualServerName",
                         "in": "path",
@@ -100,6 +101,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "keyline",
                         "description": "Virtual server name",
                         "name": "virtualServerName",
                         "in": "path",
@@ -128,6 +130,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "keyline",
                         "description": "Virtual server name",
                         "name": "virtualServerName",
                         "in": "path",
@@ -168,6 +171,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "keyline",
                         "description": "Virtual server name",
                         "name": "virtualServerName",
                         "in": "path",
@@ -239,6 +243,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "keyline",
                         "description": "Virtual server name",
                         "name": "virtualServerName",
                         "in": "path",
@@ -288,6 +293,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "keyline",
                         "description": "Virtual server name",
                         "name": "virtualServerName",
                         "in": "path",
@@ -341,6 +347,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "keyline",
                         "description": "Virtual server name",
                         "name": "virtualServerName",
                         "in": "path",
@@ -397,6 +404,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "keyline",
                         "description": "Virtual server name",
                         "name": "virtualServerName",
                         "in": "path",
@@ -431,6 +439,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "keyline",
                         "description": "Virtual server name",
                         "name": "virtualServerName",
                         "in": "path",
@@ -472,6 +481,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "keyline",
                         "description": "Virtual server name",
                         "name": "virtualServerName",
                         "in": "path",
@@ -527,6 +537,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "keyline",
                         "description": "Virtual server name",
                         "name": "virtualServerName",
                         "in": "path",
@@ -570,6 +581,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "keyline",
                         "description": "Virtual server name",
                         "name": "virtualServerName",
                         "in": "path",
@@ -611,6 +623,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "keyline",
                         "description": "Virtual server name",
                         "name": "virtualServerName",
                         "in": "path",
@@ -653,6 +666,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "keyline",
                         "description": "Virtual server name",
                         "name": "virtualServerName",
                         "in": "path",
@@ -707,7 +721,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Virtual Server Name",
+                        "default": "keyline",
+                        "description": "Virtual server name",
                         "name": "vsName",
                         "in": "path",
                         "required": true
@@ -773,7 +788,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Virtual Server Name",
+                        "default": "keyline",
+                        "description": "Virtual server name",
                         "name": "vsName",
                         "in": "path",
                         "required": true
@@ -820,7 +836,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Virtual Server Name",
+                        "default": "keyline",
+                        "description": "Virtual server name",
                         "name": "vsName",
                         "in": "path",
                         "required": true
@@ -1213,6 +1230,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "keyline",
                         "description": "Virtual server name",
                         "name": "virtualServerName",
                         "in": "path",
@@ -1253,6 +1271,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "keyline",
                         "description": "Virtual server name",
                         "name": "virtualServerName",
                         "in": "path",
@@ -1291,6 +1310,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "keyline",
                         "description": "Virtual server name",
                         "name": "virtualServerName",
                         "in": "path",
@@ -1383,6 +1403,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "keyline",
                         "description": "Virtual server name",
                         "name": "virtualServerName",
                         "in": "path",
@@ -1473,6 +1494,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "keyline",
                         "description": "Virtual server name",
                         "name": "virtualServerName",
                         "in": "path",
@@ -1591,6 +1613,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "keyline",
                         "description": "Virtual server name",
                         "name": "virtualServerName",
                         "in": "path",

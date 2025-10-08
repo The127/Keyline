@@ -58,6 +58,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "keyline",
                         "description": "Virtual server name",
                         "name": "virtualServerName",
                         "in": "path",
@@ -92,6 +93,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "keyline",
                         "description": "Virtual server name",
                         "name": "virtualServerName",
                         "in": "path",
@@ -120,6 +122,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "keyline",
                         "description": "Virtual server name",
                         "name": "virtualServerName",
                         "in": "path",
@@ -160,6 +163,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "keyline",
                         "description": "Virtual server name",
                         "name": "virtualServerName",
                         "in": "path",
@@ -231,6 +235,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "keyline",
                         "description": "Virtual server name",
                         "name": "virtualServerName",
                         "in": "path",
@@ -280,6 +285,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "keyline",
                         "description": "Virtual server name",
                         "name": "virtualServerName",
                         "in": "path",
@@ -333,6 +339,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "keyline",
                         "description": "Virtual server name",
                         "name": "virtualServerName",
                         "in": "path",
@@ -389,6 +396,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "keyline",
                         "description": "Virtual server name",
                         "name": "virtualServerName",
                         "in": "path",
@@ -423,6 +431,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "keyline",
                         "description": "Virtual server name",
                         "name": "virtualServerName",
                         "in": "path",
@@ -464,6 +473,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "keyline",
                         "description": "Virtual server name",
                         "name": "virtualServerName",
                         "in": "path",
@@ -519,6 +529,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "keyline",
                         "description": "Virtual server name",
                         "name": "virtualServerName",
                         "in": "path",
@@ -562,6 +573,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "keyline",
                         "description": "Virtual server name",
                         "name": "virtualServerName",
                         "in": "path",
@@ -603,6 +615,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "keyline",
                         "description": "Virtual server name",
                         "name": "virtualServerName",
                         "in": "path",
@@ -645,6 +658,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "keyline",
                         "description": "Virtual server name",
                         "name": "virtualServerName",
                         "in": "path",
@@ -699,7 +713,8 @@
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Virtual Server Name",
+                        "default": "keyline",
+                        "description": "Virtual server name",
                         "name": "vsName",
                         "in": "path",
                         "required": true
@@ -765,7 +780,8 @@
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Virtual Server Name",
+                        "default": "keyline",
+                        "description": "Virtual server name",
                         "name": "vsName",
                         "in": "path",
                         "required": true
@@ -812,7 +828,8 @@
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Virtual Server Name",
+                        "default": "keyline",
+                        "description": "Virtual server name",
                         "name": "vsName",
                         "in": "path",
                         "required": true
@@ -1205,6 +1222,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "keyline",
                         "description": "Virtual server name",
                         "name": "virtualServerName",
                         "in": "path",
@@ -1245,6 +1263,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "keyline",
                         "description": "Virtual server name",
                         "name": "virtualServerName",
                         "in": "path",
@@ -1283,6 +1302,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "keyline",
                         "description": "Virtual server name",
                         "name": "virtualServerName",
                         "in": "path",
@@ -1375,6 +1395,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "keyline",
                         "description": "Virtual server name",
                         "name": "virtualServerName",
                         "in": "path",
@@ -1465,6 +1486,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "keyline",
                         "description": "Virtual server name",
                         "name": "virtualServerName",
                         "in": "path",
@@ -1583,6 +1605,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "keyline",
                         "description": "Virtual server name",
                         "name": "virtualServerName",
                         "in": "path",
