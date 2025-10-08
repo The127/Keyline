@@ -9,10 +9,11 @@ import (
 	"Keyline/repositories"
 	"Keyline/utils"
 	"encoding/json"
-	"github.com/google/uuid"
-	"github.com/gorilla/mux"
 	"net/http"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 )
 
 type CreateApplicationRequestDto struct {
@@ -91,13 +92,16 @@ func CreateApplication(w http.ResponseWriter, r *http.Request) {
 }
 
 type GetApplicationResponseDto struct {
-	Id           uuid.UUID `json:"id"`
-	Name         string    `json:"name"`
-	DisplayName  string    `json:"displayName"`
-	Type         string    `json:"type"`
-	RedirectUris []string  `json:"redirectUris"`
-	CreatedAt    time.Time `json:"createdAt"`
-	UpdatedAt    time.Time `json:"updatedAt"`
+	Id          uuid.UUID `json:"id"`
+	Name        string    `json:"name"`
+	DisplayName string    `json:"displayName"`
+	Type        string    `json:"type"`
+
+	RedirectUris           []string `json:"redirectUris"`
+	PostLogoutRedirectUris []string `json:"postLogoutRedirectUris"`
+
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
 }
 
 // GetApplication retrieves details of a specific application by ID
@@ -151,13 +155,14 @@ func GetApplication(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	err = json.NewEncoder(w).Encode(GetApplicationResponseDto{
-		Id:           application.Id,
-		Name:         application.Name,
-		DisplayName:  application.DisplayName,
-		Type:         string(application.Type),
-		RedirectUris: application.RedirectUris,
-		CreatedAt:    application.CreatedAt,
-		UpdatedAt:    application.UpdatedAt,
+		Id:                     application.Id,
+		Name:                   application.Name,
+		DisplayName:            application.DisplayName,
+		Type:                   string(application.Type),
+		RedirectUris:           application.RedirectUris,
+		PostLogoutRedirectUris: application.PostLogoutUris,
+		CreatedAt:              application.CreatedAt,
+		UpdatedAt:              application.UpdatedAt,
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)
