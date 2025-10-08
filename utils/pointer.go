@@ -19,3 +19,11 @@ func NilIfZero[T comparable](v T) *T {
 	}
 	return &v
 }
+
+func ZeroIfNil[T comparable](v *T) T {
+	if v == nil {
+		var zero T
+		return zero
+	}
+	return *v
+}
