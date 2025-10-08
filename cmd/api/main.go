@@ -18,17 +18,23 @@ import (
 	"Keyline/utils"
 	"context"
 	"database/sql"
+	"fmt"
+	"net/url"
 	"os"
 	"os/signal"
 	"syscall"
+
+	docs "Keyline/docs"
 
 	"github.com/huandu/go-sqlbuilder"
 )
 
 func main() {
+	config.Init()
+	configureSwaggerFromConfig()
+
 	sqlbuilder.DefaultFlavor = sqlbuilder.PostgreSQL
 
-	config.Init()
 	logging.Init()
 	metrics.Init()
 	database.Migrate()
@@ -232,4 +238,26 @@ func initApplication(dp *ioc.DependencyProvider) {
 			logging.Logger.Fatalf("failed to create initial admin credential: %v", err)
 		}
 	}
+}
+func configureSwaggerFromConfig() {
+	if config.C.Server.ExternalUrl != "" {
+		if u, err := url.Parse(config.C.Server.ExternalUrl); err == nil {
+			if u.Host != "" {
+				docs.SwaggerInfo.Host = u.Host
+			}
+			if u.Scheme != "" {
+				docs.SwaggerInfo.Schemes = []string{u.Scheme}
+			}
+		}
+	}
+
+	// Fallback to internal host:port
+	if docs.SwaggerInfo.Host == "" {
+		docs.SwaggerInfo.Host = fmt.Sprintf("%s:%d", config.C.Server.Host, config.C.Server.Port)
+	}
+	if len(docs.SwaggerInfo.Schemes) == 0 {
+		docs.SwaggerInfo.Schemes = []string{"http"}
+	}
+
+	docs.SwaggerInfo.BasePath = "/"
 }

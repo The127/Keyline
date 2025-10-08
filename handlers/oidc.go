@@ -56,6 +56,16 @@ func trimLeadingZeros(b []byte) []byte {
 	return []byte{0}
 }
 
+// WellKnownJwks returns the JSON Web Key Set (JWKS) for a virtual server.
+// @Summary      JWKS for virtual server
+// @Description  Returns the public keys used to verify tokens for this virtual server.
+// @Tags         OIDC
+// @Produce      json
+// @Param        virtualServerName  path  string  true  "Virtual server name"
+// @Success      200  {object}  handlers.JwksResponseDto
+// @Failure      400  {string}  string
+// @Failure      500  {string}  string
+// @Router       /oidc/{virtualServerName}/.well-known/jwks.json [get]
 func WellKnownJwks(w http.ResponseWriter, r *http.Request) {
 	vsName, err := middlewares.GetVirtualServerName(r.Context())
 	if err != nil {
@@ -145,6 +155,14 @@ type OpenIdConfigurationResponseDto struct {
 	ClaimsSupported                  []string `json:"claims_supported"`
 }
 
+// WellKnownOpenIdConfiguration exposes the OIDC discovery document.
+// @Summary      OpenID Provider configuration
+// @Tags         OIDC
+// @Produce      json
+// @Param        virtualServerName  path  string  true  "Virtual server name"
+// @Success      200  {object}  handlers.OpenIdConfigurationResponseDto
+// @Failure      400  {string}  string
+// @Router       /oidc/{virtualServerName}/.well-known/openid-configuration [get]
 func WellKnownOpenIdConfiguration(w http.ResponseWriter, r *http.Request) {
 	vsName, err := middlewares.GetVirtualServerName(r.Context())
 	if err != nil {
@@ -191,6 +209,22 @@ type AuthorizationRequest struct {
 	PKCEChallengeMethod string
 }
 
+// BeginAuthorizationFlow starts the OIDC authorization code flow.
+// @Summary      Authorize
+// @Tags         OIDC
+// @Produce      json
+// @Param        virtualServerName      path   string true   "Virtual server name"
+// @Param        response_type          query  string true   "Must be 'code'"
+// @Param        client_id              query  string true   "Application (client) ID"
+// @Param        redirect_uri           query  string true   "Registered redirect URI"
+// @Param        scope                  query  string true   "Space-delimited scopes"
+// @Param        state                  query  string false  "Opaque value returned to client"
+// @Param        response_mode          query  string false  "e.g. 'query'"
+// @Param        code_challenge         query  string false  "PKCE code challenge"
+// @Param        code_challenge_method  query  string false  "S256 or plain"
+// @Success      302  {string}  string  "Redirect to redirect_uri with code (& state)"
+// @Failure      400  {string}  string
+// @Router       /oidc/{virtualServerName}/authorize [get]
 func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	scope := middlewares.GetScope(ctx)
@@ -348,6 +382,17 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, redirectUrl, http.StatusFound)
 }
 
+// OidcEndSession ends the user session and redirects.
+// @Summary      End session
+// @Tags         OIDC
+// @Produce      json
+// @Param        virtualServerName         path     string true  "Virtual server name"
+// @Param        id_token_hint             query    string true  "ID token hint of the current session"
+// @Param        post_logout_redirect_uri  query    string false "Where to redirect after logout (must be registered)"
+// @Param        state                     query    string false "Opaque value returned to client"
+// @Success      302  {string}  string "Redirect to post_logout_redirect_uri"
+// @Failure      400  {string}  string
+// @Router       /oidc/{virtualServerName}/end_session [get]
 func OidcEndSession(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	scope := middlewares.GetScope(ctx)
@@ -464,6 +509,15 @@ type OidcUserInfoResponseDto struct {
 	Name  string `json:"name"`
 }
 
+// OidcUserinfo returns the userinfo for the presented access token.
+// @Summary      Userinfo
+// @Tags         OIDC
+// @Produce      json
+// @Param        virtualServerName  path   string true  "Virtual server name"
+// @Security     BearerAuth
+// @Success      200  {object}  handlers.OidcUserInfoResponseDto
+// @Failure      401  {string}  string
+// @Router       /oidc/{virtualServerName}/userinfo [get]
 func OidcUserinfo(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	scope := middlewares.GetScope(ctx)
@@ -556,6 +610,20 @@ func OidcUserinfo(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// OidcToken exchanges authorization code or refresh token for tokens.
+// @Summary      Token endpoint
+// @Tags         OIDC
+// @Accept       application/x-www-form-urlencoded
+// @Produce      json
+// @Param        grant_type    formData  string true  "authorization_code | refresh_token"
+// @Param        code          formData  string false "Required when grant_type=authorization_code"
+// @Param        refresh_token formData  string false "Required when grant_type=refresh_token"
+// @Param        client_id     formData  string false "If no Authorization header"
+// @Security     BasicAuth
+// @Success      200  {object}  handlers.CodeFlowResponse      "When grant_type=authorization_code"
+// @Success      200  {object}  handlers.RefreshTokenResponse  "When grant_type=refresh_token"
+// @Failure      400  {string}  string
+// @Router       /oidc/{virtualServerName}/token [post]
 func OidcToken(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
