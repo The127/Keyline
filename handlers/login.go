@@ -22,6 +22,7 @@ import (
 )
 
 type GetLoginStateResponseDto struct {
+	// Step is one of: password_verification | temporary_password | email_verification | finish
 	Step                     string `json:"step"`
 	ApplicationDisplayName   string `json:"applicationDisplayName"`
 	VirtualServerDisplayName string `json:"virtualServerDisplayName"`
@@ -29,6 +30,15 @@ type GetLoginStateResponseDto struct {
 	SignupEnabled            bool   `json:"signupEnabled"`
 }
 
+// GetLoginState returns the current step of the login session.
+// @Summary      Get login state
+// @Tags         Logins
+// @Produce      json
+// @Param        loginToken  path   string true  "Login session token"
+// @Success      200         {object}  handlers.GetLoginStateResponseDto
+// @Failure      400         {string}  string "Bad Request"
+// @Failure      401         {string}  string "Unknown/invalid token"
+// @Router       /logins/{loginToken} [get]
 func GetLoginState(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	scope := middlewares.GetScope(ctx)
@@ -78,6 +88,17 @@ type VerifyPasswordRequestDto struct {
 	Password string `json:"password" validate:"required"`
 }
 
+// VerifyPassword verifies user credentials for the login session.
+// @Summary      Verify password
+// @Tags         Logins
+// @Accept       json
+// @Produce      plain
+// @Param        loginToken  path   string true  "Login session token"
+// @Param        body        body   handlers.VerifyPasswordRequestDto true "Credentials"
+// @Success      204         {string} string "No Content"
+// @Failure      400         {string} string "Bad Request"
+// @Failure      401         {string} string "Unauthorized or wrong step"
+// @Router       /logins/{loginToken}/verify-password [post]
 func VerifyPassword(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	scope := middlewares.GetScope(ctx)
@@ -189,6 +210,15 @@ func VerifyPassword(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// VerifyEmailToken advances the login after the user's email is verified.
+// @Summary      Verify email token (advance state)
+// @Tags         Logins
+// @Produce      plain
+// @Param        loginToken  path   string true  "Login session token"
+// @Success      204         {string} string "No Content"
+// @Failure      400         {string} string "Bad Request"
+// @Failure      401         {string} string "Unauthorized or wrong step"
+// @Router       /logins/{loginToken}/verify-email [post]
 func VerifyEmailToken(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	scope := middlewares.GetScope(ctx)
@@ -244,6 +274,15 @@ func VerifyEmailToken(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// FinishLogin creates a session and redirects to the original URL.
+// @Summary      Finish login
+// @Tags         Logins
+// @Produce      plain
+// @Param        loginToken  path   string true  "Login session token"
+// @Success      302         {string} string "Redirect to original URL"
+// @Failure      400         {string} string "Bad Request"
+// @Failure      401         {string} string "Unauthorized or wrong step"
+// @Router       /logins/{loginToken}/finish-login [post]
 func FinishLogin(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	scope := middlewares.GetScope(ctx)
@@ -285,6 +324,17 @@ type ResetTemporaryPasswordRequestDto struct {
 	NewPassword string `json:"newPassword" validate:"required"`
 }
 
+// ResetTemporaryPassword sets a new password when the current one is temporary.
+// @Summary      Reset temporary password
+// @Tags         Logins
+// @Accept       json
+// @Produce      plain
+// @Param        loginToken  path   string true  "Login session token"
+// @Param        body        body   handlers.ResetTemporaryPasswordRequestDto true "New password"
+// @Success      204         {string} string "No Content"
+// @Failure      400         {string} string "Bad Request"
+// @Failure      401         {string} string "Unauthorized or wrong step"
+// @Router       /logins/{loginToken}/reset-temporary-password [post]
 func ResetTemporaryPassword(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	scope := middlewares.GetScope(ctx)
@@ -354,6 +404,15 @@ func ResetTemporaryPassword(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// ResendEmailVerification sends a new email verification message.
+// @Summary      Resend email verification
+// @Tags         Logins
+// @Produce      plain
+// @Param        loginToken  path   string true  "Login session token"
+// @Success      204         {string} string "No Content"
+// @Failure      400         {string} string "Bad Request"
+// @Failure      401         {string} string "Unauthorized or wrong step"
+// @Router       /logins/{loginToken}/resend-email-verification [post]
 func ResendEmailVerification(w http.ResponseWriter, r *http.Request) {
 	// TODO: add "cooldown" for sending emails
 

@@ -23,6 +23,15 @@ type CreateVirtualSeverRequestDto struct {
 	SigningAlgorithm   *string `json:"signingAlgorithm" validate:"oneof=RS256 ECDSA"`
 }
 
+// CreateVirtualSever creates a new virtual server.
+// @Summary      Create virtual server
+// @Tags         Admin
+// @Accept       json
+// @Produce      json
+// @Param        body  body  handlers.CreateVirtualSeverRequestDto  true  "Virtual server"
+// @Success      204   {string}  string  "No Content"
+// @Failure      400   {string}  string
+// @Router       /api/virtual-servers [post]
 func CreateVirtualSever(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	scope := middlewares.GetScope(ctx)
@@ -73,6 +82,14 @@ type GetVirtualServerResponseDto struct {
 	UpdatedAt                time.Time `json:"updatedAt"`
 }
 
+// GetVirtualServer returns details of a virtual server.
+// @Summary      Get virtual server
+// @Tags         Admin
+// @Produce      json
+// @Param        virtualServerName  path  string  true  "Virtual server name"
+// @Success      200  {object}  handlers.GetVirtualServerResponseDto
+// @Failure      404  {string}  string
+// @Router       /api/virtual-servers/{virtualServerName} [get]
 func GetVirtualServer(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	scope := middlewares.GetScope(ctx)
@@ -117,6 +134,14 @@ type GetVirtualServerListResponseDto struct {
 	RegistrationEnabled bool   `json:"registrationEnabled"`
 }
 
+// GetVirtualServerPublicInfo returns public info of a virtual server.
+// @Summary      Get virtual server public info
+// @Tags         Admin
+// @Produce      json
+// @Param        virtualServerName  path  string  true  "Virtual server name"
+// @Success      200  {object}  handlers.GetVirtualServerListResponseDto
+// @Failure      404  {string}  string
+// @Router       /api/virtual-servers/{virtualServerName}/public-info [get]
 func GetVirtualServerPublicInfo(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	scope := middlewares.GetScope(ctx)

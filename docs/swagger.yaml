@@ -1,5 +1,19 @@
-basePath: /api
 definitions:
+  handlers.CodeFlowResponse:
+    properties:
+      access_token:
+        type: string
+      expires_in:
+        type: integer
+      id_token:
+        type: string
+      refresh_token:
+        type: string
+      scope:
+        type: string
+      token_type:
+        type: string
+    type: object
   handlers.CreateApplicationRequestDto:
     properties:
       displayName:
@@ -36,6 +50,29 @@ definitions:
       secret:
         type: string
     type: object
+  handlers.CreateVirtualSeverRequestDto:
+    properties:
+      displayName:
+        maxLength: 255
+        minLength: 1
+        type: string
+      enableRegistration:
+        type: boolean
+      name:
+        maxLength: 255
+        minLength: 1
+        type: string
+      require2fa:
+        type: boolean
+      signingAlgorithm:
+        enum:
+        - RS256
+        - ECDSA
+        type: string
+    required:
+    - displayName
+    - name
+    type: object
   handlers.GetApplicationResponseDto:
     properties:
       createdAt:
@@ -50,8 +87,91 @@ definitions:
         items:
           type: string
         type: array
+      type:
+        type: string
       updatedAt:
         type: string
+    type: object
+  handlers.GetLoginStateResponseDto:
+    properties:
+      applicationDisplayName:
+        type: string
+      signupEnabled:
+        type: boolean
+      step:
+        description: 'Step is one of: password_verification | temporary_password |
+          email_verification | finish'
+        type: string
+      virtualServerDisplayName:
+        type: string
+      virtualServerName:
+        type: string
+    type: object
+  handlers.GetTemplateResponseDto:
+    properties:
+      createdAt:
+        type: string
+      id:
+        type: string
+      text:
+        type: string
+      type:
+        $ref: '#/definitions/repositories.TemplateType'
+      updatedAt:
+        type: string
+    type: object
+  handlers.GetUserByIdResponseDto:
+    properties:
+      createdAt:
+        type: string
+      displayName:
+        type: string
+      emailVerified:
+        type: boolean
+      id:
+        type: string
+      primaryEmail:
+        type: string
+      updatedAt:
+        type: string
+      username:
+        type: string
+    type: object
+  handlers.GetVirtualServerListResponseDto:
+    properties:
+      displayName:
+        type: string
+      name:
+        type: string
+      registrationEnabled:
+        type: boolean
+    type: object
+  handlers.GetVirtualServerResponseDto:
+    properties:
+      createdAt:
+        type: string
+      displayName:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      registrationEnabled:
+        type: boolean
+      require2fa:
+        type: boolean
+      requireEmailVerification:
+        type: boolean
+      signingAlgorithm:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  handlers.JwksResponseDto:
+    properties:
+      keys:
+        items: {}
+        type: array
     type: object
   handlers.ListApplicationsResponseDto:
     properties:
@@ -61,12 +181,94 @@ definitions:
         type: string
       name:
         type: string
+      type:
+        type: string
+    type: object
+  handlers.ListTemplatesResponseDto:
+    properties:
+      id:
+        type: string
+      type:
+        $ref: '#/definitions/repositories.TemplateType'
+    type: object
+  handlers.ListUsersResponseDto:
+    properties:
+      displayName:
+        type: string
+      id:
+        type: string
+      primaryEmail:
+        type: string
+      username:
+        type: string
+    type: object
+  handlers.OidcUserInfoResponseDto:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      sub:
+        type: string
+    type: object
+  handlers.OpenIdConfigurationResponseDto:
+    properties:
+      authorization_endpoint:
+        type: string
+      claims_supported:
+        items:
+          type: string
+        type: array
+      end_session_endpoint:
+        type: string
+      id_token_signing_alg_values_supported:
+        items:
+          type: string
+        type: array
+      issuer:
+        type: string
+      jwks_uri:
+        type: string
+      response_types_supported:
+        items:
+          type: string
+        type: array
+      scopes_supported:
+        items:
+          type: string
+        type: array
+      subject_types_supported:
+        items:
+          type: string
+        type: array
+      token_endpoint:
+        type: string
+      userinfo_endpoint:
+        type: string
     type: object
   handlers.PagedApplicationsResponseDto:
     properties:
       items:
         items:
           $ref: '#/definitions/handlers.ListApplicationsResponseDto'
+        type: array
+      pagination:
+        $ref: '#/definitions/handlers.Pagination'
+    type: object
+  handlers.PagedTemplatesResponseDto:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/handlers.ListTemplatesResponseDto'
+        type: array
+      pagination:
+        $ref: '#/definitions/handlers.Pagination'
+    type: object
+  handlers.PagedUsersResponseDto:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/handlers.ListUsersResponseDto'
         type: array
       pagination:
         $ref: '#/definitions/handlers.Pagination'
@@ -82,13 +284,358 @@ definitions:
       totalPages:
         type: integer
     type: object
-host: localhost:8080
+  handlers.PatchUserRequestDto:
+    properties:
+      displayName:
+        type: string
+    type: object
+  handlers.RefreshTokenResponse:
+    properties:
+      access_token:
+        type: string
+      expires_in:
+        type: integer
+      id_token:
+        type: string
+      refresh_token:
+        type: string
+      token_type:
+        type: string
+    type: object
+  handlers.RegisterUserRequestDto:
+    properties:
+      displayName:
+        maxLength: 255
+        minLength: 1
+        type: string
+      email:
+        type: string
+      password:
+        type: string
+      username:
+        maxLength: 255
+        minLength: 1
+        type: string
+    required:
+    - displayName
+    - email
+    - password
+    - username
+    type: object
+  handlers.ResetTemporaryPasswordRequestDto:
+    properties:
+      newPassword:
+        type: string
+    required:
+    - newPassword
+    type: object
+  handlers.VerifyPasswordRequestDto:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  repositories.TemplateType:
+    enum:
+    - email_verification
+    type: string
+    x-enum-varnames:
+    - EmailVerificationMailTemplate
 info:
   contact: {}
-  description: Open source OIDC/IDP server.
-  title: Keyline API
-  version: "1.0"
 paths:
+  /api/virtual-servers:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Virtual server
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateVirtualSeverRequestDto'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+      summary: Create virtual server
+      tags:
+      - Admin
+  /api/virtual-servers/{virtualServerName}:
+    get:
+      parameters:
+      - description: Virtual server name
+        in: path
+        name: virtualServerName
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.GetVirtualServerResponseDto'
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      summary: Get virtual server
+      tags:
+      - Admin
+  /api/virtual-servers/{virtualServerName}/health:
+    get:
+      parameters:
+      - description: Virtual server name
+        in: path
+        name: virtualServerName
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Virtual server health
+      tags:
+      - System
+  /api/virtual-servers/{virtualServerName}/public-info:
+    get:
+      parameters:
+      - description: Virtual server name
+        in: path
+        name: virtualServerName
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.GetVirtualServerListResponseDto'
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      summary: Get virtual server public info
+      tags:
+      - Admin
+  /api/virtual-servers/{virtualServerName}/templates:
+    get:
+      parameters:
+      - description: Virtual server name
+        in: path
+        name: virtualServerName
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.PagedTemplatesResponseDto'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+      summary: List templates
+      tags:
+      - Templates
+  /api/virtual-servers/{virtualServerName}/templates/{templateType}:
+    get:
+      parameters:
+      - description: Virtual server name
+        in: path
+        name: virtualServerName
+        required: true
+        type: string
+      - description: Template type
+        in: path
+        name: templateType
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.GetTemplateResponseDto'
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      summary: Get template
+      tags:
+      - Templates
+  /api/virtual-servers/{virtualServerName}/users:
+    get:
+      parameters:
+      - description: Virtual server name
+        in: path
+        name: virtualServerName
+        required: true
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: pageSize
+        type: integer
+      - description: Search term
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.PagedUsersResponseDto'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+      summary: List users
+      tags:
+      - Users
+  /api/virtual-servers/{virtualServerName}/users/{userId}:
+    get:
+      parameters:
+      - description: Virtual server name
+        in: path
+        name: virtualServerName
+        required: true
+        type: string
+      - description: User ID (UUID)
+        in: path
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.GetUserByIdResponseDto'
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      summary: Get user
+      tags:
+      - Users
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Virtual server name
+        in: path
+        name: virtualServerName
+        required: true
+        type: string
+      - description: User ID (UUID)
+        in: path
+        name: userId
+        required: true
+        type: string
+      - description: Patch document
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.PatchUserRequestDto'
+      produces:
+      - text/plain
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+      summary: Patch user
+      tags:
+      - Users
+  /api/virtual-servers/{virtualServerName}/users/register:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Virtual server name
+        in: path
+        name: virtualServerName
+        required: true
+        type: string
+      - description: User data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.RegisterUserRequestDto'
+      produces:
+      - text/plain
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+      summary: Register user
+      tags:
+      - Users
+  /api/virtual-servers/{virtualServerName}/users/verify-email:
+    get:
+      parameters:
+      - description: Virtual server name
+        in: path
+        name: virtualServerName
+        required: true
+        type: string
+      - description: Verification token
+        in: query
+        name: token
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "302":
+          description: Redirect to frontend confirmation page
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+      summary: Verify email
+      tags:
+      - Users
   /api/virtual-servers/{vsName}/applications:
     get:
       consumes:
@@ -196,4 +743,435 @@ paths:
       summary: Get application
       tags:
       - applications
+  /debug:
+    get:
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Debug email template render
+      tags:
+      - Debug
+  /debug/vars:
+    get:
+      description: Exposes runtime/app stats (Go's expvar) as JSON.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: expvar JSON
+          schema:
+            type: string
+      summary: Expvar variables
+      tags:
+      - Debug
+  /health:
+    get:
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Application health
+      tags:
+      - System
+  /logins/{loginToken}:
+    get:
+      parameters:
+      - description: Login session token
+        in: path
+        name: loginToken
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.GetLoginStateResponseDto'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "401":
+          description: Unknown/invalid token
+          schema:
+            type: string
+      summary: Get login state
+      tags:
+      - Logins
+  /logins/{loginToken}/finish-login:
+    post:
+      parameters:
+      - description: Login session token
+        in: path
+        name: loginToken
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "302":
+          description: Redirect to original URL
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized or wrong step
+          schema:
+            type: string
+      summary: Finish login
+      tags:
+      - Logins
+  /logins/{loginToken}/resend-email-verification:
+    post:
+      parameters:
+      - description: Login session token
+        in: path
+        name: loginToken
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized or wrong step
+          schema:
+            type: string
+      summary: Resend email verification
+      tags:
+      - Logins
+  /logins/{loginToken}/reset-temporary-password:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Login session token
+        in: path
+        name: loginToken
+        required: true
+        type: string
+      - description: New password
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.ResetTemporaryPasswordRequestDto'
+      produces:
+      - text/plain
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized or wrong step
+          schema:
+            type: string
+      summary: Reset temporary password
+      tags:
+      - Logins
+  /logins/{loginToken}/verify-email:
+    post:
+      parameters:
+      - description: Login session token
+        in: path
+        name: loginToken
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized or wrong step
+          schema:
+            type: string
+      summary: Verify email token (advance state)
+      tags:
+      - Logins
+  /logins/{loginToken}/verify-password:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Login session token
+        in: path
+        name: loginToken
+        required: true
+        type: string
+      - description: Credentials
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.VerifyPasswordRequestDto'
+      produces:
+      - text/plain
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized or wrong step
+          schema:
+            type: string
+      summary: Verify password
+      tags:
+      - Logins
+  /metrics:
+    get:
+      description: Exposes Prometheus metrics in text exposition format.
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Prometheus exposition format (text/plain; version=0.0.4)
+          schema:
+            type: string
+      summary: Prometheus metrics
+      tags:
+      - Monitoring
+  /oidc/{virtualServerName}/.well-known/jwks.json:
+    get:
+      description: Returns the public keys used to verify tokens for this virtual
+        server.
+      parameters:
+      - description: Virtual server name
+        in: path
+        name: virtualServerName
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.JwksResponseDto'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: JWKS for virtual server
+      tags:
+      - OIDC
+  /oidc/{virtualServerName}/.well-known/openid-configuration:
+    get:
+      parameters:
+      - description: Virtual server name
+        in: path
+        name: virtualServerName
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.OpenIdConfigurationResponseDto'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+      summary: OpenID Provider configuration
+      tags:
+      - OIDC
+  /oidc/{virtualServerName}/authorize:
+    get:
+      parameters:
+      - description: Virtual server name
+        in: path
+        name: virtualServerName
+        required: true
+        type: string
+      - description: Must be 'code'
+        in: query
+        name: response_type
+        required: true
+        type: string
+      - description: Application (client) ID
+        in: query
+        name: client_id
+        required: true
+        type: string
+      - description: Registered redirect URI
+        in: query
+        name: redirect_uri
+        required: true
+        type: string
+      - description: Space-delimited scopes
+        in: query
+        name: scope
+        required: true
+        type: string
+      - description: Opaque value returned to client
+        in: query
+        name: state
+        type: string
+      - description: e.g. 'query'
+        in: query
+        name: response_mode
+        type: string
+      - description: PKCE code challenge
+        in: query
+        name: code_challenge
+        type: string
+      - description: S256 or plain
+        in: query
+        name: code_challenge_method
+        type: string
+      produces:
+      - application/json
+      responses:
+        "302":
+          description: Redirect to redirect_uri with code (& state)
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+      summary: Authorize
+      tags:
+      - OIDC
+  /oidc/{virtualServerName}/end_session:
+    get:
+      parameters:
+      - description: Virtual server name
+        in: path
+        name: virtualServerName
+        required: true
+        type: string
+      - description: ID token hint of the current session
+        in: query
+        name: id_token_hint
+        required: true
+        type: string
+      - description: Where to redirect after logout (must be registered)
+        in: query
+        name: post_logout_redirect_uri
+        type: string
+      - description: Opaque value returned to client
+        in: query
+        name: state
+        type: string
+      produces:
+      - application/json
+      responses:
+        "302":
+          description: Redirect to post_logout_redirect_uri
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+      summary: End session
+      tags:
+      - OIDC
+  /oidc/{virtualServerName}/token:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      parameters:
+      - description: authorization_code | refresh_token
+        in: formData
+        name: grant_type
+        required: true
+        type: string
+      - description: Required when grant_type=authorization_code
+        in: formData
+        name: code
+        type: string
+      - description: Required when grant_type=refresh_token
+        in: formData
+        name: refresh_token
+        type: string
+      - description: If no Authorization header
+        in: formData
+        name: client_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: When grant_type=refresh_token
+          schema:
+            $ref: '#/definitions/handlers.RefreshTokenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+      security:
+      - BasicAuth: []
+      summary: Token endpoint
+      tags:
+      - OIDC
+  /oidc/{virtualServerName}/userinfo:
+    get:
+      parameters:
+      - description: Virtual server name
+        in: path
+        name: virtualServerName
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.OidcUserInfoResponseDto'
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Userinfo
+      tags:
+      - OIDC
 swagger: "2.0"

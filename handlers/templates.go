@@ -15,6 +15,11 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// PagedTemplatesResponseDto is the paged envelope for ListTemplates.
+type PagedTemplatesResponseDto struct {
+	Items      []ListTemplatesResponseDto `json:"items"`
+	Pagination Pagination                 `json:"pagination"`
+}
 type GetTemplateResponseDto struct {
 	Id        uuid.UUID                 `json:"id"`
 	Type      repositories.TemplateType `json:"type"`
@@ -23,6 +28,15 @@ type GetTemplateResponseDto struct {
 	UpdatedAt time.Time                 `json:"updatedAt"`
 }
 
+// GetTemplate returns a single template by type.
+// @Summary      Get template
+// @Tags         Templates
+// @Produce      json
+// @Param        virtualServerName  path   string true  "Virtual server name"
+// @Param        templateType       path   string true  "Template type"
+// @Success      200  {object}  GetTemplateResponseDto
+// @Failure      404  {string}  string
+// @Router       /api/virtual-servers/{virtualServerName}/templates/{templateType} [get]
 func GetTemplate(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	scope := middlewares.GetScope(ctx)
@@ -73,6 +87,14 @@ type ListTemplatesResponseDto struct {
 	Type repositories.TemplateType `json:"type"`
 }
 
+// ListTemplates lists available templates for the virtual server.
+// @Summary      List templates
+// @Tags         Templates
+// @Produce      json
+// @Param        virtualServerName  path   string true  "Virtual server name"
+// @Success      200  {object}  PagedTemplatesResponseDto
+// @Failure      400  {string} string
+// @Router       /api/virtual-servers/{virtualServerName}/templates [get]
 func ListTemplates(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 

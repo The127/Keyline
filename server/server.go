@@ -12,10 +12,9 @@ import (
 	gh "github.com/gorilla/handlers"
 	httpSwagger "github.com/swaggo/http-swagger"
 
-	"github.com/gorilla/mux"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-
 	_ "Keyline/docs"
+
+	"github.com/gorilla/mux"
 )
 
 // Serve serves the http server.
@@ -23,7 +22,7 @@ import (
 // @version 1.0
 // @description Open source OIDC/IDP server.
 // @host localhost:8080
-// @BasePath /api
+// @BasePath /
 func Serve(dp *ioc.DependencyProvider) {
 	r := mux.NewRouter()
 
@@ -33,8 +32,8 @@ func Serve(dp *ioc.DependencyProvider) {
 
 	r.HandleFunc("/health", handlers.ApplicationHealth).Methods(http.MethodGet, http.MethodOptions)
 	r.HandleFunc("/debug", handlers.Debug).Methods(http.MethodGet, http.MethodOptions)
-	r.Handle("/debug/vars", http.DefaultServeMux).Methods(http.MethodGet, http.MethodOptions)
-	r.Handle("/metrics", promhttp.Handler()).Methods(http.MethodGet, http.MethodOptions)
+	r.HandleFunc("/debug/vars", handlers.ExpvarVars).Methods(http.MethodGet, http.MethodOptions)
+	r.HandleFunc("/metrics", handlers.PrometheusMetrics).Methods(http.MethodGet, http.MethodOptions)
 
 	oidcRouter := r.PathPrefix("/oidc/{virtualServerName}/").Subrouter()
 
