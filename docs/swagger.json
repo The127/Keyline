@@ -905,6 +905,47 @@
                     }
                 }
             },
+            "delete": {
+                "description": "Delete an application by ID from a virtual server",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "applications"
+                ],
+                "summary": "Delete application",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "keyline",
+                        "description": "Virtual server name",
+                        "name": "vsName",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Application ID (UUID)",
+                        "name": "appId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    }
+                }
+            },
             "patch": {
                 "description": "Update an application by ID from a virtual server",
                 "consumes": [

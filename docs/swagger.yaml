@@ -1035,6 +1035,34 @@ paths:
       tags:
       - applications
   /api/virtual-servers/{vsName}/applications/{appId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an application by ID from a virtual server
+      parameters:
+      - default: keyline
+        description: Virtual server name
+        in: path
+        name: vsName
+        required: true
+        type: string
+      - description: Application ID (UUID)
+        in: path
+        name: appId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+      summary: Delete application
+      tags:
+      - applications
     get:
       consumes:
       - application/json

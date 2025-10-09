@@ -229,6 +229,48 @@ func PatchApplication(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// DeleteApplication deletes a specific application by ID
+// @Summary Delete application
+// @Description Delete an application by ID from a virtual server
+// @Tags applications
+// @Accept json
+// @Produce json
+// @Param vsName path string true "Virtual server name"  default(keyline)
+// @Param appId path string true "Application ID (UUID)"
+// @Success 204 {string} string "No Content"
+// @Failure 400
+// @Router /api/virtual-servers/{vsName}/applications/{appId} [delete]
+func DeleteApplication(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	vsName, err := middlewares.GetVirtualServerName(r.Context())
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	vars := mux.Vars(r)
+	appIdString := vars["appId"]
+	appId, err := uuid.Parse(appIdString)
+	if err != nil {
+		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+	}
+
+	scope := middlewares.GetScope(ctx)
+	m := ioc.GetDependency[*mediator.Mediator](scope)
+
+	_, err = mediator.Send[*commands.DeleteApplicationResponse](ctx, m, commands.DeleteApplication{
+		VirtualServerName: vsName,
+		ApplicationId:     appId,
+	})
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 type PagedApplicationsResponseDto = PagedResponseDto[ListApplicationsResponseDto]
 
 type ListApplicationsResponseDto struct {
