@@ -15,3 +15,16 @@ Content-Type: application/json
 ### list all applicaitons
 GET http://127.0.0.1:8081/api/virtual-servers/keyline/applications
 Accept: application/json
+
+### get applicaiton by id
+GET http://127.0.0.1:8081/api/virtual-servers/keyline/applications/6c5b8e30-51a5-4554-af3d-1079d16fdf9f
+Accept: application/json
+
+### patch applicaitons
+PATCH http://127.0.0.1:8081/api/virtual-servers/keyline/applications/6c5b8e30-51a5-4554-af3d-1079d16fdf9f
+Accept: application/json
+Content-Type: application/json
+
+{
+  "displayName": "asd"
+}
