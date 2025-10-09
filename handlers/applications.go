@@ -172,6 +172,63 @@ func GetApplication(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+type PatchApplicationRequestDto struct {
+	DisplayName *string `json:"displayName"`
+}
+
+// PatchApplication updates fields of a specific application by ID
+// @Summary Patch application
+// @Description Update an application by ID from a virtual server
+// @Tags applications
+// @Accept json
+// @Produce json
+// @Param vsName path string true "Virtual server name"  default(keyline)
+// @Param appId path string true "Application ID (UUID)"
+// @Param request body PatchApplicationRequestDto true "Application data"
+// @Success 204 {string} string "No Content"
+// @Failure 400
+// @Failure 404 "Application not found"
+// @Failure 500
+// @Router /api/virtual-servers/{vsName}/applications/{appId} [patch]
+func PatchApplication(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	vsName, err := middlewares.GetVirtualServerName(r.Context())
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	vars := mux.Vars(r)
+	appIdString := vars["appId"]
+	appId, err := uuid.Parse(appIdString)
+	if err != nil {
+		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+	}
+
+	var dto PatchApplicationRequestDto
+	err = json.NewDecoder(r.Body).Decode(&dto)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	scope := middlewares.GetScope(ctx)
+	m := ioc.GetDependency[*mediator.Mediator](scope)
+
+	_, err = mediator.Send[*commands.PatchApplicationResponse](ctx, m, commands.PatchApplication{
+		VirtualServerName: vsName,
+		ApplicationId:     appId,
+		DisplayName:       utils.TrimSpace(dto.DisplayName),
+	})
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 type PagedApplicationsResponseDto = PagedResponseDto[ListApplicationsResponseDto]
 
 type ListApplicationsResponseDto struct {
