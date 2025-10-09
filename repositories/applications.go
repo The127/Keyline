@@ -296,7 +296,7 @@ func (r *applicationRepository) Single(ctx context.Context, filter ApplicationFi
 	if err != nil {
 		return nil, err
 	}
-	if application != nil {
+	if application == nil {
 		return nil, utils.ErrApplicationNotFound
 	}
 	return application, nil
