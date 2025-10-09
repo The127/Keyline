@@ -206,6 +206,7 @@ type ApplicationRepository interface {
 	List(ctx context.Context, filter ApplicationFilter) ([]*Application, int, error)
 	Insert(ctx context.Context, application *Application) error
 	Update(ctx context.Context, application *Application) error
+	Delete(ctx context.Context, id uuid.UUID) error
 }
 
 type applicationRepository struct{}
@@ -404,4 +405,27 @@ func (r *applicationRepository) List(ctx context.Context, filter ApplicationFilt
 	}
 
 	return applications, totalCount, nil
+}
+
+func (r *applicationRepository) Delete(ctx context.Context, id uuid.UUID) error {
+	scope := middlewares.GetScope(ctx)
+	dbService := ioc.GetDependency[database.DbService](scope)
+
+	tx, err := dbService.GetTx()
+	if err != nil {
+		return fmt.Errorf("failed to open tx: %w", err)
+	}
+
+	s := sqlbuilder.DeleteFrom("applications")
+
+	s.Where(s.Equal("id", id))
+
+	query, args := s.Build()
+	logging.Logger.Debug("executing sql: ", query)
+	_, err = tx.ExecContext(ctx, query, args...)
+	if err != nil {
+		return fmt.Errorf("executing delete: %w", err)
+	}
+
+	return nil
 }
