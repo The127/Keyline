@@ -3,6 +3,8 @@ package database
 import (
 	"Keyline/ioc"
 	"database/sql"
+	"errors"
+	"fmt"
 )
 
 type DbService interface {
@@ -35,10 +37,17 @@ func (s *dbService) GetTx() (*sql.Tx, error) {
 
 func (s *dbService) Close() error {
 	if s.tx != nil {
-		return s.tx.Commit()
+		err := s.tx.Commit()
+		if err != nil {
+			err = s.tx.Rollback()
+			switch {
+			case errors.Is(err, sql.ErrTxDone):
+				return nil
+			default:
+				return fmt.Errorf("closing db transaction: %w", err)
+			}
+		}
 	}
-
-	// TODO: somehow get all errors/check if we had an error and rollback instead
 
 	return nil
 }
