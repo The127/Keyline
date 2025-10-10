@@ -1,8 +1,9 @@
 package utils
 
 import (
-	"Keyline/config"
+	"Keyline/internal/config"
 	"fmt"
+
 	"github.com/redis/go-redis/v9"
 )
 

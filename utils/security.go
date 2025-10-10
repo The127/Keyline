@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"Keyline/config"
+	"Keyline/internal/config"
 	"crypto/ed25519"
 	"crypto/rand"
 	"crypto/rsa"
