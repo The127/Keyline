@@ -1,6 +1,7 @@
 package server
 
 import (
+	"Keyline/authentication"
 	"Keyline/config"
 	"Keyline/handlers"
 	"Keyline/ioc"
@@ -91,7 +92,7 @@ func Serve(dp *ioc.DependencyProvider) {
 
 	vsApiRouter := apiRouter.PathPrefix("/virtual-servers/{virtualServerName}").Subrouter()
 	vsApiRouter.Use(middlewares.VirtualServerMiddleware())
-	vsApiRouter.Use(middlewares.SessionMiddleware())
+	vsApiRouter.Use(authentication.Middleware())
 
 	vsApiRouter.HandleFunc("", handlers.GetVirtualServer).Methods(http.MethodGet, http.MethodOptions)
 	vsApiRouter.HandleFunc("/public-info", handlers.GetVirtualServerPublicInfo).Methods(http.MethodGet, http.MethodOptions)
