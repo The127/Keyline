@@ -2,6 +2,7 @@ package commands
 
 import (
 	"Keyline/authentication"
+	"Keyline/behaviours"
 	"Keyline/ioc"
 	"Keyline/middlewares"
 	"Keyline/repositories"
@@ -21,13 +22,13 @@ type CreateApplication struct {
 	PostLogoutRedirectUris []string
 }
 
-func (c CreateApplication) IsAllowed(ctx context.Context) (bool, error) {
+func (c CreateApplication) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
 	currentUser := authentication.GetCurrentUser(ctx)
 	if !currentUser.IsAuthenticated() {
-		return false, nil
+		return behaviours.Allowed(currentUser.UserId), nil
 	}
 
-	return true, nil
+	return behaviours.Denied(currentUser.UserId), nil
 }
 
 type CreateApplicationResponse struct {
