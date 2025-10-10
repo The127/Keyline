@@ -3,26 +3,27 @@ package behaviours
 import (
 	"Keyline/logging"
 	"Keyline/mediator"
+	"Keyline/utils"
 	"context"
+	"fmt"
 )
 
 type Policy interface {
 	IsAllowed(ctx context.Context) (bool, error)
 }
 
-func PolicyBehaviour(ctx context.Context, request Policy, next mediator.Next) {
+func PolicyBehaviour(ctx context.Context, request Policy, next mediator.Next) error {
 	logging.Logger.Infof("request: %v", request)
 	allowed, err := request.IsAllowed(ctx)
 	if err != nil {
-		logging.Logger.Fatalf("failed to check if request is allowed: %v", err)
-		return
+		return fmt.Errorf("failed to check if request is allowed: %w", err)
 	}
 
 	if !allowed {
 		logging.Logger.Infof("request not allowed")
-		return
+		return fmt.Errorf("request not allowed: %w", utils.ErrHttpUnauthorized)
 	}
 
 	logging.Logger.Infof("request allowed")
-	next()
+	return next()
 }
