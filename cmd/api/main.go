@@ -10,6 +10,7 @@
 package main
 
 import (
+	"Keyline/behaviours"
 	"Keyline/commands"
 	"Keyline/config"
 	"Keyline/database"
@@ -187,6 +188,8 @@ func setupMediator(dc *ioc.DependencyCollection) {
 	mediator.RegisterHandler(m, commands.HandleAssignRoleToUser)
 
 	mediator.RegisterEventHandler(m, events.QueueEmailVerificationJobOnUserCreatedEvent)
+
+	mediator.RegisterBehaviour(m, behaviours.TestBehaviour)
 
 	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) mediator.Mediator {
 		return m

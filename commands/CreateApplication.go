@@ -2,11 +2,13 @@ package commands
 
 import (
 	"Keyline/ioc"
+	"Keyline/logging"
 	"Keyline/middlewares"
 	"Keyline/repositories"
 	"Keyline/utils"
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
 )
@@ -18,6 +20,16 @@ type CreateApplication struct {
 	Type                   repositories.ApplicationType
 	RedirectUris           []string
 	PostLogoutRedirectUris []string
+}
+
+func (c CreateApplication) IsAllowed(ctx context.Context) (bool, error) {
+	// TODO: actually implement checking logic
+	if strings.Contains(c.Name, "foo") {
+		logging.Logger.Infof("application name contains foo, not allowed in test implementation of policy")
+		return false, nil
+	}
+
+	return true, nil
 }
 
 type CreateApplicationResponse struct {
