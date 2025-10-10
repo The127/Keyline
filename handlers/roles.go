@@ -61,7 +61,7 @@ func GetRoleById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m := ioc.GetDependency[mediator.MediatorInterface](scope)
+	m := ioc.GetDependency[mediator.Mediator](scope)
 	query := queries.GetRoleQuery{
 		VirtualServerName: vsName,
 		RoleId:            roleId,
@@ -127,7 +127,7 @@ func ListRoles(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[mediator.MediatorInterface](scope)
+	m := ioc.GetDependency[mediator.Mediator](scope)
 
 	roles, err := mediator.Send[*queries.ListRolesResponse](ctx, m, queries.ListRoles{
 		VirtualServerName: vsName,
@@ -205,7 +205,7 @@ func CreateRole(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[mediator.MediatorInterface](scope)
+	m := ioc.GetDependency[mediator.Mediator](scope)
 
 	response, err := mediator.Send[*commands.CreateRoleResponse](ctx, m, commands.CreateRole{
 		VirtualServerName: vsName,
@@ -276,7 +276,7 @@ func AssignRole(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[mediator.MediatorInterface](scope)
+	m := ioc.GetDependency[mediator.Mediator](scope)
 
 	_, err = mediator.Send[*commands.AssignRoleToUserResponse](ctx, m, commands.AssignRoleToUser{
 		VirtualServerName: vsName,

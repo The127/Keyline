@@ -188,7 +188,7 @@ func setupMediator(dc *ioc.DependencyCollection) {
 
 	mediator.RegisterEventHandler(m, events.QueueEmailVerificationJobOnUserCreatedEvent)
 
-	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) mediator.MediatorInterface {
+	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) mediator.Mediator {
 		return m
 	})
 }
@@ -200,7 +200,7 @@ func initApplication(dp *ioc.DependencyProvider) {
 	defer utils.PanicOnError(scope.Close, "failed creating scope to init application")
 
 	ctx := middlewares.ContextWithScope(context.Background(), scope)
-	m := ioc.GetDependency[mediator.MediatorInterface](scope)
+	m := ioc.GetDependency[mediator.Mediator](scope)
 
 	// check if there are no virtual servers
 	existsResult, err := mediator.Send[*queries.AnyVirtualServerExistsResult](ctx, m, queries.AnyVirtualServerExists{})

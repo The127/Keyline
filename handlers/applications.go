@@ -64,7 +64,7 @@ func CreateApplication(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[mediator.MediatorInterface](scope)
+	m := ioc.GetDependency[mediator.Mediator](scope)
 
 	response, err := mediator.Send[*commands.CreateApplicationResponse](ctx, m, commands.CreateApplication{
 		VirtualServerName:      vsName,
@@ -137,7 +137,7 @@ func GetApplication(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[mediator.MediatorInterface](scope)
+	m := ioc.GetDependency[mediator.Mediator](scope)
 
 	application, err := mediator.Send[*queries.GetApplicationResult](ctx, m, queries.GetApplication{
 		VirtualServerName: vsName,
@@ -214,7 +214,7 @@ func PatchApplication(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[mediator.MediatorInterface](scope)
+	m := ioc.GetDependency[mediator.Mediator](scope)
 
 	_, err = mediator.Send[*commands.PatchApplicationResponse](ctx, m, commands.PatchApplication{
 		VirtualServerName: vsName,
@@ -257,7 +257,7 @@ func DeleteApplication(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[mediator.MediatorInterface](scope)
+	m := ioc.GetDependency[mediator.Mediator](scope)
 
 	_, err = mediator.Send[*commands.DeleteApplicationResponse](ctx, m, commands.DeleteApplication{
 		VirtualServerName: vsName,
@@ -312,7 +312,7 @@ func ListApplications(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[mediator.MediatorInterface](scope)
+	m := ioc.GetDependency[mediator.Mediator](scope)
 
 	applications, err := mediator.Send[*queries.ListApplicationsResponse](ctx, m, queries.ListApplications{
 		VirtualServerName: vsName,

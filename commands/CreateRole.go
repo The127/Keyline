@@ -49,7 +49,7 @@ func HandleCreateRole(ctx context.Context, command CreateRole) (*CreateRoleRespo
 		return nil, fmt.Errorf("inserting role: %w", err)
 	}
 
-	m := ioc.GetDependency[mediator.MediatorInterface](scope)
+	m := ioc.GetDependency[mediator.Mediator](scope)
 	err = mediator.SendEvent(ctx, m, events.RoleCreatedEvent{
 		RoleId: role.Id(),
 	})

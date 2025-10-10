@@ -46,7 +46,7 @@ func HandleCreateUser(ctx context.Context, command CreateUser) (*CreateUserRespo
 		return nil, fmt.Errorf("inserting user: %w", err)
 	}
 
-	m := ioc.GetDependency[mediator.MediatorInterface](scope)
+	m := ioc.GetDependency[mediator.Mediator](scope)
 	err = mediator.SendEvent(ctx, m, events.UserCreatedEvent{
 		UserId: user.Id(),
 	})
