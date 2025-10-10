@@ -3,13 +3,11 @@ package commands
 import (
 	"Keyline/authentication"
 	"Keyline/ioc"
-	"Keyline/logging"
 	"Keyline/middlewares"
 	"Keyline/repositories"
 	"Keyline/utils"
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/google/uuid"
 )
@@ -25,15 +23,7 @@ type CreateApplication struct {
 
 func (c CreateApplication) IsAllowed(ctx context.Context) (bool, error) {
 	currentUser, ok := authentication.GetCurrentUser(ctx)
-	if !ok {
-		return false, nil
-	}
-
-	logging.Logger.Infof("current user id: %s", currentUser.UserId.String())
-
-	// TODO: actually implement checking logic
-	if strings.Contains(c.Name, "foo") {
-		logging.Logger.Infof("application name contains foo, not allowed in test implementation of policy")
+	if !ok || !currentUser.IsAuthenticated() {
 		return false, nil
 	}
 

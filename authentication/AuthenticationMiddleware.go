@@ -20,6 +20,10 @@ type CurrentUser struct {
 	UserId uuid.UUID
 }
 
+func (c CurrentUser) IsAuthenticated() bool {
+	return c.UserId != uuid.Nil
+}
+
 var CurrentUserContextKey = &CurrentUser{}
 
 func Middleware() mux.MiddlewareFunc {
