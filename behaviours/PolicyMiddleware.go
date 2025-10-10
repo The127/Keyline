@@ -12,17 +12,20 @@ import (
 
 type PolicyResult struct {
 	allowed bool
+	userId  uuid.UUID
 }
 
 func Allowed(userId uuid.UUID) PolicyResult {
 	return PolicyResult{
 		allowed: true,
+		userId:  userId,
 	}
 }
 
 func Denied(userId uuid.UUID) PolicyResult {
 	return PolicyResult{
 		allowed: false,
+		userId:  userId,
 	}
 }
 
