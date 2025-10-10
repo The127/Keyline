@@ -1,6 +1,8 @@
 package behaviours
 
 import (
+	"Keyline/authentication/permissions"
+	"Keyline/authentication/roles"
 	"Keyline/logging"
 	"Keyline/mediator"
 	"Keyline/utils"
@@ -13,12 +15,60 @@ import (
 type PolicyResult struct {
 	allowed bool
 	userId  uuid.UUID
+	reason  AllowReason
 }
 
-func Allowed(userId uuid.UUID) PolicyResult {
+type AllowReason interface {
+	ImplementsAllowReason()
+}
+
+type AllowedByAnyone struct{}
+
+func NewAllowedByAnyone() AllowedByAnyone {
+	return AllowedByAnyone{}
+}
+
+func (a AllowedByAnyone) String() string {
+	return "Anyone"
+}
+
+func (a AllowedByAnyone) ImplementsAllowReason() {}
+
+type AllowedByOwnership struct{}
+
+func NewAllowedByOwnership() AllowedByOwnership {
+	return AllowedByOwnership{}
+}
+
+func (a AllowedByOwnership) String() string {
+	return "Ownership"
+}
+
+func (a AllowedByOwnership) ImplementsAllowReason() {}
+
+type AllowedByPermission struct {
+	Permission  permissions.Permission
+	SourceRoles []roles.Role
+}
+
+func NewAllowedByPermission(permission permissions.Permission, sourceRoles []roles.Role) AllowedByPermission {
+	return AllowedByPermission{
+		Permission:  permission,
+		SourceRoles: sourceRoles,
+	}
+}
+
+func (a AllowedByPermission) String() string {
+	return fmt.Sprintf("Permission: %s, SourceRoles: %v", a.Permission, a.SourceRoles)
+}
+
+func (a AllowedByPermission) ImplementsAllowReason() {}
+
+func Allowed(userId uuid.UUID, reason AllowReason) PolicyResult {
 	return PolicyResult{
 		allowed: true,
 		userId:  userId,
+		reason:  reason,
 	}
 }
 
@@ -31,6 +81,7 @@ func Denied(userId uuid.UUID) PolicyResult {
 
 type Policy interface {
 	IsAllowed(ctx context.Context) (PolicyResult, error)
+	GetRequestName() string
 }
 
 func PolicyBehaviour(ctx context.Context, request Policy, next mediator.Next) error {
@@ -45,6 +96,6 @@ func PolicyBehaviour(ctx context.Context, request Policy, next mediator.Next) er
 		return fmt.Errorf("request not allowed: %w", utils.ErrHttpUnauthorized)
 	}
 
-	logging.Logger.Infof("request allowed")
+	logging.Logger.Infof("request '%s' allowed for '%s' by %s", request.GetRequestName(), policyResult.userId, policyResult.reason)
 	return next()
 }
