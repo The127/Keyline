@@ -193,7 +193,7 @@ func setupMediator(dc *ioc.DependencyCollection) {
 	})
 }
 
-// initApplication sets up the initial application state on first startup.
+// initApplication sets up the initial application state on the first startup.
 // It creates an initial virtual server and other necessary defaults if none exist.
 func initApplication(dp *ioc.DependencyProvider) {
 	scope := dp.NewScope()
