@@ -45,7 +45,7 @@ func TestHandleRegisterUser(t *testing.T) {
 	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.CredentialRepository {
 		return credentialRepository
 	})
-	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) *mediator.Mediator {
+	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) mediator.MediatorInterface {
 		return m
 	})
 	scope := dc.BuildProvider()
