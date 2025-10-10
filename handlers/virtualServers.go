@@ -48,7 +48,7 @@ func CreateVirtualSever(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, err)
 		return
 	}
-	m := ioc.GetDependency[mediator.MediatorInterface](scope)
+	m := ioc.GetDependency[mediator.Mediator](scope)
 
 	signingAlgorithm := config.SigningAlgorithmEdDSA
 	if dto.SigningAlgorithm != nil {
@@ -100,7 +100,7 @@ func GetVirtualServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m := ioc.GetDependency[mediator.MediatorInterface](scope)
+	m := ioc.GetDependency[mediator.Mediator](scope)
 	response, err := mediator.Send[*queries.GetVirtualServerResponse](ctx, m, queries.GetVirtualServerQuery{
 		VirtualServerName: vsName,
 	})
@@ -152,7 +152,7 @@ func GetVirtualServerPublicInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m := ioc.GetDependency[mediator.MediatorInterface](scope)
+	m := ioc.GetDependency[mediator.Mediator](scope)
 
 	response, err := mediator.Send[*queries.GetVirtualServerPublicInfoResponse](ctx, m, queries.GetVirtualServerPublicInfo{
 		VirtualServerName: vsName,
@@ -210,7 +210,7 @@ func PatchVirtualServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m := ioc.GetDependency[mediator.MediatorInterface](scope)
+	m := ioc.GetDependency[mediator.Mediator](scope)
 	command := commands.PatchVirtualServer{
 		VirtualServerName: vsName,
 		DisplayName:       utils.TrimSpace(dto.DisplayName),

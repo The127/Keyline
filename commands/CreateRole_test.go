@@ -42,7 +42,7 @@ func TestHandleCreateRole(t *testing.T) {
 	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.RoleRepository {
 		return roleRepository
 	})
-	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) mediator.MediatorInterface {
+	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) mediator.Mediator {
 		return mediator.NewMediator()
 	})
 	scope := dc.BuildProvider()

@@ -7,7 +7,7 @@ import (
 	"reflect"
 )
 
-type MediatorInterface interface {
+type Mediator interface {
 	Send(ctx context.Context, request any, requestType reflect.Type, responseType reflect.Type) (any, error)
 	SendEvent(ctx context.Context, evt any, eventType reflect.Type) error
 }
@@ -96,7 +96,7 @@ func RegisterHandler[TRequest any, TResponse any](m *mediator, handler HandlerFu
 	}
 }
 
-func SendEvent[TEvent any](ctx context.Context, m MediatorInterface, evt TEvent) error {
+func SendEvent[TEvent any](ctx context.Context, m Mediator, evt TEvent) error {
 	eventType := utils.TypeOf[TEvent]()
 	return m.SendEvent(ctx, evt, eventType)
 }
@@ -117,7 +117,7 @@ func (m *mediator) SendEvent(ctx context.Context, evt any, eventType reflect.Typ
 	return nil
 }
 
-func Send[TResponse any](ctx context.Context, m MediatorInterface, request any) (TResponse, error) {
+func Send[TResponse any](ctx context.Context, m Mediator, request any) (TResponse, error) {
 	requestType := reflect.TypeOf(request)
 	response, err := m.Send(ctx, request, requestType, utils.TypeOf[TResponse]())
 	return response.(TResponse), err
