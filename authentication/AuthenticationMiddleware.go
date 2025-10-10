@@ -98,7 +98,10 @@ func ContextWithCurrentUser(ctx context.Context, user CurrentUser) context.Conte
 	return context.WithValue(ctx, CurrentUserContextKey, user)
 }
 
-func GetCurrentUser(ctx context.Context) (CurrentUser, bool) {
+func GetCurrentUser(ctx context.Context) CurrentUser {
 	value, ok := ctx.Value(CurrentUserContextKey).(CurrentUser)
-	return value, ok
+	if !ok {
+		panic("current user not found")
+	}
+	return value
 }

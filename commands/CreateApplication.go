@@ -22,8 +22,8 @@ type CreateApplication struct {
 }
 
 func (c CreateApplication) IsAllowed(ctx context.Context) (bool, error) {
-	currentUser, ok := authentication.GetCurrentUser(ctx)
-	if !ok || !currentUser.IsAuthenticated() {
+	currentUser := authentication.GetCurrentUser(ctx)
+	if !currentUser.IsAuthenticated() {
 		return false, nil
 	}
 
