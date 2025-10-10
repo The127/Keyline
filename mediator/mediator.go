@@ -7,7 +7,12 @@ import (
 	"reflect"
 )
 
-type Mediator struct {
+type MediatorInterface interface {
+	Send(ctx context.Context, request any, requestType reflect.Type, responseType reflect.Type) (any, error)
+	SendEvent(ctx context.Context, evt any, eventType reflect.Type) error
+}
+
+type mediator struct {
 	handlers      map[reflect.Type]handlerInfo
 	behaviours    map[reflect.Type][]behaviourInfo
 	eventHandlers map[reflect.Type][]eventHandlerInfo
@@ -20,7 +25,7 @@ type eventHandlerInfo struct {
 
 type EventHandlerFunc[TEvent any] func(ctx context.Context, evt TEvent) error
 
-func RegisterEventHandler[TEvent any](m *Mediator, eventHandler EventHandlerFunc[TEvent]) {
+func RegisterEventHandler[TEvent any](m *mediator, eventHandler EventHandlerFunc[TEvent]) {
 	eventType := utils.TypeOf[TEvent]()
 
 	eventHandlers, ok := m.eventHandlers[eventType]
@@ -53,8 +58,8 @@ type handlerInfo struct {
 
 type HandlerFunc[TRequest any, TResponse any] func(ctx context.Context, request TRequest) (TResponse, error)
 
-func NewMediator() *Mediator {
-	return &Mediator{
+func NewMediator() *mediator {
+	return &mediator{
 		handlers:      make(map[reflect.Type]handlerInfo),
 		behaviours:    make(map[reflect.Type][]behaviourInfo),
 		eventHandlers: make(map[reflect.Type][]eventHandlerInfo),
@@ -63,7 +68,7 @@ func NewMediator() *Mediator {
 
 type BehaviourFunc[TRequest any] func(ctx context.Context, request TRequest, next Next)
 
-func RegisterBehaviour[TRequest any](m *Mediator, behaviour BehaviourFunc[TRequest]) {
+func RegisterBehaviour[TRequest any](m *mediator, behaviour BehaviourFunc[TRequest]) {
 	requestType := utils.TypeOf[TRequest]()
 
 	behaviours, ok := m.behaviours[requestType]
@@ -81,7 +86,7 @@ func RegisterBehaviour[TRequest any](m *Mediator, behaviour BehaviourFunc[TReque
 	m.behaviours[requestType] = behaviours
 }
 
-func RegisterHandler[TRequest any, TResponse any](m *Mediator, handler HandlerFunc[TRequest, TResponse]) {
+func RegisterHandler[TRequest any, TResponse any](m *mediator, handler HandlerFunc[TRequest, TResponse]) {
 	m.handlers[utils.TypeOf[TRequest]()] = handlerInfo{
 		requestType:  utils.TypeOf[TRequest](),
 		responseType: utils.TypeOf[TResponse](),
@@ -91,9 +96,12 @@ func RegisterHandler[TRequest any, TResponse any](m *Mediator, handler HandlerFu
 	}
 }
 
-func SendEvent[TEvent any](ctx context.Context, m *Mediator, evt TEvent) error {
+func SendEvent[TEvent any](ctx context.Context, m MediatorInterface, evt TEvent) error {
 	eventType := utils.TypeOf[TEvent]()
+	return m.SendEvent(ctx, evt, eventType)
+}
 
+func (m *mediator) SendEvent(ctx context.Context, evt any, eventType reflect.Type) error {
 	eventHandlers, ok := m.eventHandlers[eventType]
 	if !ok {
 		return nil
@@ -109,15 +117,18 @@ func SendEvent[TEvent any](ctx context.Context, m *Mediator, evt TEvent) error {
 	return nil
 }
 
-func Send[TResponse any](ctx context.Context, m *Mediator, request any) (TResponse, error) {
+func Send[TResponse any](ctx context.Context, m MediatorInterface, request any) (TResponse, error) {
 	requestType := reflect.TypeOf(request)
+	response, err := m.Send(ctx, request, requestType, utils.TypeOf[TResponse]())
+	return response.(TResponse), err
+}
 
+func (m *mediator) Send(ctx context.Context, request any, requestType reflect.Type, responseType reflect.Type) (any, error) {
 	info, ok := m.handlers[requestType]
 	if !ok {
 		logging.Logger.Fatalf("Could not find any registered handler for %s", requestType.Name())
 	}
 
-	responseType := utils.TypeOf[TResponse]()
 	if info.responseType != responseType {
 		logging.Logger.Fatalf("Wrong response type %s was used for request %s, expected response type %s",
 			responseType.Name(),
@@ -148,5 +159,5 @@ func Send[TResponse any](ctx context.Context, m *Mediator, request any) (TRespon
 
 	step()
 
-	return response.(TResponse), err
+	return response, err
 }

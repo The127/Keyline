@@ -51,7 +51,7 @@ func VerifyEmail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(r.Context())
-	m := ioc.GetDependency[*mediator.Mediator](scope)
+	m := ioc.GetDependency[mediator.MediatorInterface](scope)
 
 	_, err = mediator.Send[*commands.VerifyEmailResponse](r.Context(), m, commands.VerifyEmail{
 		VirtualServerName: vsName,
@@ -97,7 +97,7 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[*mediator.Mediator](scope)
+	m := ioc.GetDependency[mediator.MediatorInterface](scope)
 
 	_, err = mediator.Send[*commands.RegisterUserResponse](ctx, m, commands.RegisterUser{
 		VirtualServerName: vsName,
@@ -153,7 +153,7 @@ func ListUsers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[*mediator.Mediator](scope)
+	m := ioc.GetDependency[mediator.MediatorInterface](scope)
 
 	users, err := mediator.Send[*queries.ListUsersResponse](ctx, m, queries.ListUsers{
 		VirtualServerName: vsName,
@@ -226,7 +226,7 @@ func GetUserById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m := ioc.GetDependency[*mediator.Mediator](scope)
+	m := ioc.GetDependency[mediator.MediatorInterface](scope)
 	query := queries.GetUserQuery{
 		UserId:            userId,
 		VirtualServerName: vsName,
@@ -296,7 +296,7 @@ func PatchUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m := ioc.GetDependency[*mediator.Mediator](scope)
+	m := ioc.GetDependency[mediator.MediatorInterface](scope)
 	command := commands.PatchUser{
 		UserId:            userId,
 		VirtualServerName: vsName,

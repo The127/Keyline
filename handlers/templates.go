@@ -54,7 +54,7 @@ func GetTemplate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m := ioc.GetDependency[*mediator.Mediator](scope)
+	m := ioc.GetDependency[mediator.MediatorInterface](scope)
 	query := queries.GetTemplate{
 		VirtualServerName: vsName,
 		Type:              repositories.TemplateType(templateType),
@@ -111,7 +111,7 @@ func ListTemplates(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[*mediator.Mediator](scope)
+	m := ioc.GetDependency[mediator.MediatorInterface](scope)
 
 	templates, err := mediator.Send[*queries.ListTemplatesResponse](ctx, m, queries.ListTemplates{
 		VirtualServerName: vsName,

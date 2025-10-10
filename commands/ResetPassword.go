@@ -48,7 +48,7 @@ func HandleResetPassword(ctx context.Context, command ResetPassword) (*ResetPass
 		return nil, fmt.Errorf("updating credential: %w", err)
 	}
 
-	m := ioc.GetDependency[*mediator.Mediator](scope)
+	m := ioc.GetDependency[mediator.MediatorInterface](scope)
 	err = mediator.SendEvent(ctx, m, events.PasswordChangedEvent{
 		UserId: command.UserId,
 	})

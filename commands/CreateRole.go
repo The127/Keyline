@@ -8,8 +8,9 @@ import (
 	"Keyline/repositories"
 	"context"
 	"fmt"
-	"github.com/google/uuid"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type CreateRole struct {
@@ -48,7 +49,7 @@ func HandleCreateRole(ctx context.Context, command CreateRole) (*CreateRoleRespo
 		return nil, fmt.Errorf("inserting role: %w", err)
 	}
 
-	m := ioc.GetDependency[*mediator.Mediator](scope)
+	m := ioc.GetDependency[mediator.MediatorInterface](scope)
 	err = mediator.SendEvent(ctx, m, events.RoleCreatedEvent{
 		RoleId: role.Id(),
 	})

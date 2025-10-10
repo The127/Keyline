@@ -63,7 +63,7 @@ func HandleRegisterUser(ctx context.Context, command RegisterUser) (*RegisterUse
 		return nil, fmt.Errorf("inserting credential: %w", err)
 	}
 
-	m := ioc.GetDependency[*mediator.Mediator](scope)
+	m := ioc.GetDependency[mediator.MediatorInterface](scope)
 	err = mediator.SendEvent(ctx, m, events.UserCreatedEvent{
 		UserId: user.Id(),
 	})
