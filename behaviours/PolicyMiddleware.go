@@ -6,20 +6,38 @@ import (
 	"Keyline/utils"
 	"context"
 	"fmt"
+
+	"github.com/google/uuid"
 )
 
+type PolicyResult struct {
+	allowed bool
+}
+
+func Allowed(userId uuid.UUID) PolicyResult {
+	return PolicyResult{
+		allowed: true,
+	}
+}
+
+func Denied(userId uuid.UUID) PolicyResult {
+	return PolicyResult{
+		allowed: false,
+	}
+}
+
 type Policy interface {
-	IsAllowed(ctx context.Context) (bool, error)
+	IsAllowed(ctx context.Context) (PolicyResult, error)
 }
 
 func PolicyBehaviour(ctx context.Context, request Policy, next mediator.Next) error {
 	logging.Logger.Infof("request: %v", request)
-	allowed, err := request.IsAllowed(ctx)
+	policyResult, err := request.IsAllowed(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to check if request is allowed: %w", err)
 	}
 
-	if !allowed {
+	if !policyResult.allowed {
 		logging.Logger.Infof("request not allowed")
 		return fmt.Errorf("request not allowed: %w", utils.ErrHttpUnauthorized)
 	}
