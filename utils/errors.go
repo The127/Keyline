@@ -8,6 +8,8 @@ import (
 	"net/http"
 )
 
+var ErrHttpUnauthorized = errors.New("unauthorized")
+
 var ErrHttpNotFound = errors.New("not found")
 var ErrVirtualServerNotFound = fmt.Errorf("virtual server: %w", ErrHttpNotFound)
 var ErrUserNotFound = fmt.Errorf("user: %w", ErrHttpNotFound)
@@ -32,6 +34,10 @@ func HandleHttpError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, ErrHttpBadRequest):
 		status = http.StatusBadRequest
+		msg = err.Error()
+
+	case errors.Is(err, ErrHttpUnauthorized):
+		status = http.StatusUnauthorized
 		msg = err.Error()
 
 	case errors.Is(err, ErrHttpNotFound):
