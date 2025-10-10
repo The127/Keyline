@@ -189,7 +189,7 @@ func setupMediator(dc *ioc.DependencyCollection) {
 
 	mediator.RegisterEventHandler(m, events.QueueEmailVerificationJobOnUserCreatedEvent)
 
-	mediator.RegisterBehaviour(m, behaviours.TestBehaviour)
+	mediator.RegisterBehaviour(m, behaviours.PolicyBehaviour)
 
 	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) mediator.Mediator {
 		return m

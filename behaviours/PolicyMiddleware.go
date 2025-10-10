@@ -10,7 +10,7 @@ type Policy interface {
 	IsAllowed(ctx context.Context) (bool, error)
 }
 
-func TestBehaviour(ctx context.Context, request Policy, next mediator.Next) {
+func PolicyBehaviour(ctx context.Context, request Policy, next mediator.Next) {
 	logging.Logger.Infof("request: %v", request)
 	allowed, err := request.IsAllowed(ctx)
 	if err != nil {
