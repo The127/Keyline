@@ -43,11 +43,11 @@ func RegisterEventHandler[TEvent any](m *mediator, eventHandler EventHandlerFunc
 	m.eventHandlers[eventType] = eventHandlers
 }
 
-type Next func()
+type Next func() error
 
 type behaviourInfo struct {
 	requestType   reflect.Type
-	behaviourFunc func(ctx context.Context, request any, next Next)
+	behaviourFunc func(ctx context.Context, request any, next Next) error
 }
 
 type handlerInfo struct {
@@ -66,15 +66,15 @@ func NewMediator() *mediator {
 	}
 }
 
-type BehaviourFunc[TRequest any] func(ctx context.Context, request TRequest, next Next)
+type BehaviourFunc[TRequest any] func(ctx context.Context, request TRequest, next Next) error
 
 func RegisterBehaviour[TRequest any](m *mediator, behaviour BehaviourFunc[TRequest]) {
 	requestType := utils.TypeOf[TRequest]()
 
 	m.behaviours = append(m.behaviours, behaviourInfo{
 		requestType: requestType,
-		behaviourFunc: func(ctx context.Context, request any, next Next) {
-			behaviour(ctx, request.(TRequest), next)
+		behaviourFunc: func(ctx context.Context, request any, next Next) error {
+			return behaviour(ctx, request.(TRequest), next)
 		},
 	})
 }
@@ -113,6 +113,9 @@ func (m *mediator) SendEvent(ctx context.Context, evt any, eventType reflect.Typ
 func Send[TResponse any](ctx context.Context, m Mediator, request any) (TResponse, error) {
 	requestType := reflect.TypeOf(request)
 	response, err := m.Send(ctx, request, requestType, utils.TypeOf[TResponse]())
+	if response == nil {
+		response = utils.Zero[TResponse]()
+	}
 	return response.(TResponse), err
 }
 
@@ -133,8 +136,9 @@ func (m *mediator) Send(ctx context.Context, request any, requestType reflect.Ty
 	var response any
 	var err error
 
-	step = func() {
+	step = func() error {
 		response, err = info.handlerFunc(ctx, request)
+		return err
 	}
 
 	behaviours := m.getBehaviours(requestType)
@@ -142,12 +146,15 @@ func (m *mediator) Send(ctx context.Context, request any, requestType reflect.Ty
 	for i := len(behaviours) - 1; i >= 0; i-- {
 		behaviour := behaviours[i]
 		prev := step
-		step = func() {
-			behaviour.behaviourFunc(ctx, request, prev)
+		step = func() error {
+			return behaviour.behaviourFunc(ctx, request, prev)
 		}
 	}
 
-	step()
+	err = step()
+	if err != nil {
+		return nil, err
+	}
 
 	return response, err
 }
