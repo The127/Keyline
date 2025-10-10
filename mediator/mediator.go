@@ -14,7 +14,7 @@ type Mediator interface {
 
 type mediator struct {
 	handlers      map[reflect.Type]handlerInfo
-	behaviours    map[reflect.Type][]behaviourInfo
+	behaviours    []behaviourInfo
 	eventHandlers map[reflect.Type][]eventHandlerInfo
 }
 
@@ -61,7 +61,7 @@ type HandlerFunc[TRequest any, TResponse any] func(ctx context.Context, request 
 func NewMediator() *mediator {
 	return &mediator{
 		handlers:      make(map[reflect.Type]handlerInfo),
-		behaviours:    make(map[reflect.Type][]behaviourInfo),
+		behaviours:    make([]behaviourInfo, 0),
 		eventHandlers: make(map[reflect.Type][]eventHandlerInfo),
 	}
 }
@@ -71,19 +71,12 @@ type BehaviourFunc[TRequest any] func(ctx context.Context, request TRequest, nex
 func RegisterBehaviour[TRequest any](m *mediator, behaviour BehaviourFunc[TRequest]) {
 	requestType := utils.TypeOf[TRequest]()
 
-	behaviours, ok := m.behaviours[requestType]
-	if !ok {
-		behaviours = make([]behaviourInfo, 0)
-	}
-
-	behaviours = append(behaviours, behaviourInfo{
+	m.behaviours = append(m.behaviours, behaviourInfo{
 		requestType: requestType,
 		behaviourFunc: func(ctx context.Context, request any, next Next) {
 			behaviour(ctx, request.(TRequest), next)
 		},
 	})
-
-	m.behaviours[requestType] = behaviours
 }
 
 func RegisterHandler[TRequest any, TResponse any](m *mediator, handler HandlerFunc[TRequest, TResponse]) {
@@ -144,10 +137,7 @@ func (m *mediator) Send(ctx context.Context, request any, requestType reflect.Ty
 		response, err = info.handlerFunc(ctx, request)
 	}
 
-	behaviours, ok := m.behaviours[requestType]
-	if !ok {
-		behaviours = make([]behaviourInfo, 0)
-	}
+	behaviours := m.getBehaviours(requestType)
 
 	for i := len(behaviours) - 1; i >= 0; i-- {
 		behaviour := behaviours[i]
@@ -160,4 +150,16 @@ func (m *mediator) Send(ctx context.Context, request any, requestType reflect.Ty
 	step()
 
 	return response, err
+}
+
+func (m *mediator) getBehaviours(requestType reflect.Type) []behaviourInfo {
+	result := make([]behaviourInfo, 0)
+
+	for _, behaviour := range m.behaviours {
+		if requestType.AssignableTo(behaviour.requestType) {
+			result = append(result, behaviour)
+		}
+	}
+
+	return result
 }
