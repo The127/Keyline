@@ -22,10 +22,14 @@ type CreateApplication struct {
 	PostLogoutRedirectUris []string
 }
 
+func (c CreateApplication) GetRequestName() string {
+	return "CreateApplication"
+}
+
 func (c CreateApplication) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
 	currentUser := authentication.GetCurrentUser(ctx)
 	if !currentUser.IsAuthenticated() {
-		return behaviours.Allowed(currentUser.UserId), nil
+		return behaviours.Allowed(currentUser.UserId, behaviours.NewAllowedByAnyone()), nil
 	}
 
 	return behaviours.Denied(currentUser.UserId), nil
