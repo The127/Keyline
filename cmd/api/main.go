@@ -94,6 +94,9 @@ func main() {
 	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) middlewares.SessionService {
 		return services.NewSessionService()
 	})
+	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) behaviours.AuditLogger {
+		return services.NewConsoleAuditLogger()
+	})
 
 	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.UserRepository {
 		return repositories.NewUserRepository()

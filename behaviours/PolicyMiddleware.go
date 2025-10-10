@@ -3,8 +3,10 @@ package behaviours
 import (
 	"Keyline/authentication/permissions"
 	"Keyline/authentication/roles"
+	"Keyline/ioc"
 	"Keyline/logging"
 	"Keyline/mediator"
+	"Keyline/middlewares"
 	"Keyline/utils"
 	"context"
 	"fmt"
@@ -12,10 +14,26 @@ import (
 	"github.com/google/uuid"
 )
 
+type AuditLogger interface {
+	Log(ctx context.Context, policy Policy, result PolicyResult)
+}
+
 type PolicyResult struct {
 	allowed bool
 	userId  uuid.UUID
 	reason  AllowReason
+}
+
+func (p PolicyResult) IsAllowed() bool {
+	return p.allowed
+}
+
+func (p PolicyResult) UserId() uuid.UUID {
+	return p.userId
+}
+
+func (p PolicyResult) Reason() AllowReason {
+	return p.reason
 }
 
 type AllowReason interface {
@@ -91,11 +109,13 @@ func PolicyBehaviour(ctx context.Context, request Policy, next mediator.Next) er
 		return fmt.Errorf("failed to check if request is allowed: %w", err)
 	}
 
+	scope := middlewares.GetScope(ctx)
+	auditLogger := ioc.GetDependency[AuditLogger](scope)
+	auditLogger.Log(ctx, request, policyResult)
+
 	if !policyResult.allowed {
-		logging.Logger.Infof("request not allowed")
 		return fmt.Errorf("request not allowed: %w", utils.ErrHttpUnauthorized)
 	}
 
-	logging.Logger.Infof("request '%s' allowed for '%s' by %s", request.GetRequestName(), policyResult.userId, policyResult.reason)
 	return next()
 }
