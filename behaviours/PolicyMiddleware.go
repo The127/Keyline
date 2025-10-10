@@ -15,7 +15,7 @@ import (
 )
 
 type AuditLogger interface {
-	Log(ctx context.Context, policy Policy, result PolicyResult)
+	Log(ctx context.Context, policy Policy, result PolicyResult) error
 }
 
 type PolicyResult struct {
@@ -111,7 +111,10 @@ func PolicyBehaviour(ctx context.Context, request Policy, next mediator.Next) er
 
 	scope := middlewares.GetScope(ctx)
 	auditLogger := ioc.GetDependency[AuditLogger](scope)
-	auditLogger.Log(ctx, request, policyResult)
+	err = auditLogger.Log(ctx, request, policyResult)
+	if err != nil {
+		return fmt.Errorf("failed to log request: %w", err)
+	}
 
 	if !policyResult.allowed {
 		return fmt.Errorf("request not allowed: %w", utils.ErrHttpUnauthorized)
