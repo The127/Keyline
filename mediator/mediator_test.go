@@ -2,9 +2,10 @@ package mediator
 
 import (
 	"context"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestRequestHandlerGetsCalled(t *testing.T) {
@@ -30,9 +31,9 @@ func TestBehaviourCalled(t *testing.T) {
 	})
 
 	behaviourCalled := false
-	RegisterBehaviour(m, func(ctx context.Context, request string, next Next) {
+	RegisterBehaviour(m, func(ctx context.Context, request string, next Next) error {
 		behaviourCalled = true
-		next()
+		return next()
 	})
 
 	// act

@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"Keyline/config"
+	"Keyline/internal/config"
 	"Keyline/logging"
 	"errors"
 	"fmt"

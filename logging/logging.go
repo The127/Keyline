@@ -1,8 +1,9 @@
 package logging
 
 import (
-	"Keyline/config"
+	"Keyline/internal/config"
 	"fmt"
+
 	"go.uber.org/zap"
 )
 

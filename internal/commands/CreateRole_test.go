@@ -1,0 +1,66 @@
+package commands
+
+import (
+	"Keyline/internal/middlewares"
+	repositories2 "Keyline/internal/repositories"
+	mocks2 "Keyline/internal/repositories/mocks"
+	"Keyline/ioc"
+	"Keyline/mediator"
+	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
+)
+
+func TestHandleCreateRole(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	virtualServer := repositories2.NewVirtualServer("virtualServer", "Virtual Server")
+	virtualServerRepository := mocks2.NewMockVirtualServerRepository(ctrl)
+	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories2.VirtualServerFilter) bool {
+		return *x.GetName() == virtualServer.Name()
+	})).Return(virtualServer, nil)
+
+	roleRepository := mocks2.NewMockRoleRepository(ctrl)
+	roleRepository.EXPECT().Insert(gomock.Any(), gomock.Cond(func(x *repositories2.Role) bool {
+		return x.Name() == "role" &&
+			x.Description() == "description" &&
+			x.VirtualServerId() == virtualServer.Id() &&
+			x.RequireMfa() == true &&
+			*x.MaxTokenAge() == time.Hour
+	}))
+
+	dc := ioc.NewDependencyCollection()
+	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories2.VirtualServerRepository {
+		return virtualServerRepository
+	})
+	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories2.RoleRepository {
+		return roleRepository
+	})
+	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) mediator.Mediator {
+		return mediator.NewMediator()
+	})
+	scope := dc.BuildProvider()
+	ctx := middlewares.ContextWithScope(t.Context(), scope)
+
+	cmd := CreateRole{
+		VirtualServerName: virtualServer.Name(),
+		Name:              "role",
+		Description:       "description",
+		RequireMfa:        true,
+		MaxTokenAge:       time.Hour,
+	}
+
+	// act
+	resp, err := HandleCreateRole(ctx, cmd)
+
+	// assert
+	require.NoError(t, err)
+	assert.NotNil(t, resp)
+}

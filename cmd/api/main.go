@@ -10,21 +10,21 @@
 package main
 
 import (
-	"Keyline/behaviours"
-	"Keyline/commands"
-	"Keyline/config"
-	"Keyline/database"
-	"Keyline/events"
+	"Keyline/internal/behaviours"
+	commands2 "Keyline/internal/commands"
+	"Keyline/internal/config"
+	database2 "Keyline/internal/database"
+	"Keyline/internal/events"
+	"Keyline/internal/jobs"
+	"Keyline/internal/metrics"
+	middlewares2 "Keyline/internal/middlewares"
+	queries2 "Keyline/internal/queries"
+	repositories2 "Keyline/internal/repositories"
+	"Keyline/internal/server"
+	services2 "Keyline/internal/services"
 	"Keyline/ioc"
-	"Keyline/jobs"
 	"Keyline/logging"
 	"Keyline/mediator"
-	"Keyline/metrics"
-	"Keyline/middlewares"
-	"Keyline/queries"
-	"Keyline/repositories"
-	"Keyline/server"
-	"Keyline/services"
 	"Keyline/utils"
 	"context"
 	"database/sql"
@@ -47,27 +47,27 @@ func main() {
 
 	logging.Init()
 	metrics.Init()
-	database.Migrate()
+	database2.Migrate()
 
 	dc := ioc.NewDependencyCollection()
 	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) *sql.DB {
-		return database.ConnectToDatabase()
+		return database2.ConnectToDatabase()
 	})
 
-	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) database.DbService {
-		return database.NewDbService(dp)
+	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) database2.DbService {
+		return database2.NewDbService(dp)
 	})
-	ioc.RegisterCloseHandler(dc, func(dbService database.DbService) error {
+	ioc.RegisterCloseHandler(dc, func(dbService database2.DbService) error {
 		return dbService.Close()
 	})
 
-	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) services.KeyCache {
-		return services.NewMemoryCache[string, services.KeyPair]()
+	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) services2.KeyCache {
+		return services2.NewMemoryCache[string, services2.KeyPair]()
 	})
-	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) services.KeyStore {
+	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) services2.KeyStore {
 		switch config.C.KeyStore.Mode {
 		case config.KeyStoreModeDirectory:
-			return services.NewDirectoryKeyStore()
+			return services2.NewDirectoryKeyStore()
 
 		case config.KeyStoreModeOpenBao:
 			panic("not implemented yet")
@@ -76,63 +76,63 @@ func main() {
 			panic("not implemented")
 		}
 	})
-	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) services.KeyService {
-		return services.NewKeyService(
-			ioc.GetDependency[services.KeyCache](dp),
-			ioc.GetDependency[services.KeyStore](dp),
+	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) services2.KeyService {
+		return services2.NewKeyService(
+			ioc.GetDependency[services2.KeyCache](dp),
+			ioc.GetDependency[services2.KeyStore](dp),
 		)
 	})
-	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) services.MailService {
-		return services.NewMailService()
+	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) services2.MailService {
+		return services2.NewMailService()
 	})
-	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) services.TemplateService {
-		return services.NewTemplateService()
+	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) services2.TemplateService {
+		return services2.NewTemplateService()
 	})
-	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) services.TokenService {
-		return services.NewTokenService()
+	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) services2.TokenService {
+		return services2.NewTokenService()
 	})
-	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) middlewares.SessionService {
-		return services.NewSessionService()
+	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) middlewares2.SessionService {
+		return services2.NewSessionService()
 	})
 	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) behaviours.AuditLogger {
-		return services.NewConsoleAuditLogger()
+		return services2.NewConsoleAuditLogger()
 	})
 
-	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.UserRepository {
-		return repositories.NewUserRepository()
+	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories2.UserRepository {
+		return repositories2.NewUserRepository()
 	})
-	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.VirtualServerRepository {
-		return repositories.NewVirtualServerRepository()
+	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories2.VirtualServerRepository {
+		return repositories2.NewVirtualServerRepository()
 	})
-	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.CredentialRepository {
-		return repositories.NewCredentialRepository()
+	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories2.CredentialRepository {
+		return repositories2.NewCredentialRepository()
 	})
-	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.OutboxMessageRepository {
-		return repositories.NewOutboxMessageRepository()
+	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories2.OutboxMessageRepository {
+		return repositories2.NewOutboxMessageRepository()
 	})
-	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.FileRepository {
-		return repositories.NewFileRepository()
+	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories2.FileRepository {
+		return repositories2.NewFileRepository()
 	})
-	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.TemplateRepository {
-		return repositories.NewTemplateRepository()
+	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories2.TemplateRepository {
+		return repositories2.NewTemplateRepository()
 	})
-	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.RoleRepository {
-		return repositories.NewRoleRepository()
+	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories2.RoleRepository {
+		return repositories2.NewRoleRepository()
 	})
-	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.GroupRepository {
-		return repositories.NewGroupRepository()
+	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories2.GroupRepository {
+		return repositories2.NewGroupRepository()
 	})
-	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.GroupRoleRepository {
-		return repositories.NewGroupRoleRepository()
+	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories2.GroupRoleRepository {
+		return repositories2.NewGroupRoleRepository()
 	})
-	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.UserRoleAssignmentRepository {
-		return repositories.NewUserRoleAssignmentRepository()
+	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories2.UserRoleAssignmentRepository {
+		return repositories2.NewUserRoleAssignmentRepository()
 	})
-	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.ApplicationRepository {
-		return repositories.NewApplicationRepository()
+	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories2.ApplicationRepository {
+		return repositories2.NewApplicationRepository()
 	})
-	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.SessionRepository {
-		return repositories.NewSessionRepository()
+	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories2.SessionRepository {
+		return repositories2.NewSessionRepository()
 	})
 
 	setupMediator(dc)
@@ -163,32 +163,32 @@ func main() {
 func setupMediator(dc *ioc.DependencyCollection) {
 	m := mediator.NewMediator()
 
-	mediator.RegisterHandler(m, queries.HandleAnyVirtualServerExists)
-	mediator.RegisterHandler(m, queries.HandleGetVirtualServerPublicInfo)
-	mediator.RegisterHandler(m, queries.HandleGetVirtualServerQuery)
-	mediator.RegisterHandler(m, commands.HandleCreateVirtualServer)
+	mediator.RegisterHandler(m, queries2.HandleAnyVirtualServerExists)
+	mediator.RegisterHandler(m, queries2.HandleGetVirtualServerPublicInfo)
+	mediator.RegisterHandler(m, queries2.HandleGetVirtualServerQuery)
+	mediator.RegisterHandler(m, commands2.HandleCreateVirtualServer)
 
-	mediator.RegisterHandler(m, queries.HandleListTemplates)
-	mediator.RegisterHandler(m, queries.HandleGetTemplate)
+	mediator.RegisterHandler(m, queries2.HandleListTemplates)
+	mediator.RegisterHandler(m, queries2.HandleGetTemplate)
 
-	mediator.RegisterHandler(m, commands.HandleRegisterUser)
-	mediator.RegisterHandler(m, commands.HandleCreateUser)
-	mediator.RegisterHandler(m, commands.HandleVerifyEmail)
-	mediator.RegisterHandler(m, commands.HandleResetPassword)
-	mediator.RegisterHandler(m, queries.HandleGetUserQuery)
-	mediator.RegisterHandler(m, commands.HandlePatchUser)
-	mediator.RegisterHandler(m, queries.HandleListUsers)
+	mediator.RegisterHandler(m, commands2.HandleRegisterUser)
+	mediator.RegisterHandler(m, commands2.HandleCreateUser)
+	mediator.RegisterHandler(m, commands2.HandleVerifyEmail)
+	mediator.RegisterHandler(m, commands2.HandleResetPassword)
+	mediator.RegisterHandler(m, queries2.HandleGetUserQuery)
+	mediator.RegisterHandler(m, commands2.HandlePatchUser)
+	mediator.RegisterHandler(m, queries2.HandleListUsers)
 
-	mediator.RegisterHandler(m, commands.HandleCreateApplication)
-	mediator.RegisterHandler(m, queries.HandleListApplications)
-	mediator.RegisterHandler(m, queries.HandleGetApplication)
-	mediator.RegisterHandler(m, commands.HandlePatchApplication)
-	mediator.RegisterHandler(m, commands.HandleDeleteApplication)
+	mediator.RegisterHandler(m, commands2.HandleCreateApplication)
+	mediator.RegisterHandler(m, queries2.HandleListApplications)
+	mediator.RegisterHandler(m, queries2.HandleGetApplication)
+	mediator.RegisterHandler(m, commands2.HandlePatchApplication)
+	mediator.RegisterHandler(m, commands2.HandleDeleteApplication)
 
-	mediator.RegisterHandler(m, queries.HandleListRoles)
-	mediator.RegisterHandler(m, queries.HandleGetRole)
-	mediator.RegisterHandler(m, commands.HandleCreateRole)
-	mediator.RegisterHandler(m, commands.HandleAssignRoleToUser)
+	mediator.RegisterHandler(m, queries2.HandleListRoles)
+	mediator.RegisterHandler(m, queries2.HandleGetRole)
+	mediator.RegisterHandler(m, commands2.HandleCreateRole)
+	mediator.RegisterHandler(m, commands2.HandleAssignRoleToUser)
 
 	mediator.RegisterEventHandler(m, events.QueueEmailVerificationJobOnUserCreatedEvent)
 
@@ -205,11 +205,11 @@ func initApplication(dp *ioc.DependencyProvider) {
 	scope := dp.NewScope()
 	defer utils.PanicOnError(scope.Close, "failed creating scope to init application")
 
-	ctx := middlewares.ContextWithScope(context.Background(), scope)
+	ctx := middlewares2.ContextWithScope(context.Background(), scope)
 	m := ioc.GetDependency[mediator.Mediator](scope)
 
 	// check if there are no virtual servers
-	existsResult, err := mediator.Send[*queries.AnyVirtualServerExistsResult](ctx, m, queries.AnyVirtualServerExists{})
+	existsResult, err := mediator.Send[*queries2.AnyVirtualServerExistsResult](ctx, m, queries2.AnyVirtualServerExists{})
 	if err != nil {
 		logging.Logger.Fatalf("failed to query if any virtual servers exist: %v", err)
 	}
@@ -221,7 +221,7 @@ func initApplication(dp *ioc.DependencyProvider) {
 	logging.Logger.Infof("Creating initial virtual server")
 
 	// create initial vs
-	_, err = mediator.Send[*commands.CreateVirtualServerResponse](ctx, m, commands.CreateVirtualServer{
+	_, err = mediator.Send[*commands2.CreateVirtualServerResponse](ctx, m, commands2.CreateVirtualServer{
 		Name:               config.C.InitialVirtualServer.Name,
 		DisplayName:        config.C.InitialVirtualServer.DisplayName,
 		EnableRegistration: config.C.InitialVirtualServer.EnableRegistration,
@@ -234,7 +234,7 @@ func initApplication(dp *ioc.DependencyProvider) {
 	if config.C.InitialVirtualServer.CreateInitialAdmin {
 		logging.Logger.Infof("Creating initial admin user")
 
-		initialAdminUserInfo, err := mediator.Send[*commands.CreateUserResponse](ctx, m, commands.CreateUser{
+		initialAdminUserInfo, err := mediator.Send[*commands2.CreateUserResponse](ctx, m, commands2.CreateUser{
 			VirtualServerName: config.C.InitialVirtualServer.Name,
 			DisplayName:       config.C.InitialVirtualServer.InitialAdmin.DisplayName,
 			Username:          config.C.InitialVirtualServer.InitialAdmin.Username,
@@ -245,8 +245,8 @@ func initApplication(dp *ioc.DependencyProvider) {
 			logging.Logger.Fatalf("failed to create initial admin user: %v", err)
 		}
 
-		credentialRepository := ioc.GetDependency[repositories.CredentialRepository](scope)
-		initialAdminCredential := repositories.NewCredential(initialAdminUserInfo.Id, &repositories.CredentialPasswordDetails{
+		credentialRepository := ioc.GetDependency[repositories2.CredentialRepository](scope)
+		initialAdminCredential := repositories2.NewCredential(initialAdminUserInfo.Id, &repositories2.CredentialPasswordDetails{
 			HashedPassword: config.C.InitialVirtualServer.InitialAdmin.PasswordHash,
 			Temporary:      false,
 		})
