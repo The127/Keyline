@@ -1,6 +1,8 @@
 package authentication
 
 import (
+	"Keyline/authentication/permissions"
+	"Keyline/authentication/roles"
 	"Keyline/config"
 	"Keyline/ioc"
 	"Keyline/middlewares"
@@ -16,8 +18,21 @@ import (
 	"github.com/gorilla/mux"
 )
 
+type PermissionAssignment struct {
+	Permission  permissions.Permission
+	SourceRoles []roles.Role
+}
+
 type CurrentUser struct {
-	UserId uuid.UUID
+	UserId      uuid.UUID
+	Permissions map[permissions.Permission]PermissionAssignment
+}
+
+func NewCurrentUser(userId uuid.UUID) CurrentUser {
+	return CurrentUser{
+		UserId:      userId,
+		Permissions: make(map[permissions.Permission]PermissionAssignment),
+	}
 }
 
 func (c CurrentUser) IsAuthenticated() bool {
@@ -39,7 +54,7 @@ func Middleware() mux.MiddlewareFunc {
 				return
 			}
 
-			currentUser := CurrentUser{}
+			currentUser := NewCurrentUser(uuid.Nil)
 
 			if authorizationHeader != "" {
 				currentUser, err = extractUserFromBearerToken(ctx, authorizationHeader, vsName)
@@ -58,12 +73,12 @@ func extractUserFromBearerToken(ctx context.Context, authorizationHeader string,
 	scope := middlewares.GetScope(ctx)
 
 	if !strings.HasPrefix(authorizationHeader, "Bearer ") {
-		return CurrentUser{}, utils.ErrUserNotFound
+		return CurrentUser{}, utils.ErrHttpUnauthorized
 	}
 
 	tokenString := strings.TrimPrefix(authorizationHeader, "Bearer ")
 	if tokenString == "" {
-		return CurrentUser{}, utils.ErrUserNotFound
+		return CurrentUser{}, utils.ErrHttpUnauthorized
 	}
 
 	keyService := ioc.GetDependency[services.KeyService](scope)
@@ -74,22 +89,27 @@ func extractUserFromBearerToken(ctx context.Context, authorizationHeader string,
 		return keyPair.PrivateKey(), nil
 	})
 	if err != nil {
-		return CurrentUser{}, utils.ErrUserNotFound
+		return CurrentUser{}, utils.ErrHttpUnauthorized
 	}
 
 	if !token.Valid {
-		return CurrentUser{}, utils.ErrUserNotFound
+		return CurrentUser{}, utils.ErrHttpUnauthorized
 	}
 
 	claims := token.Claims.(jwt.MapClaims)
-	userId, ok := claims["sub"].(string)
+	userIdString, ok := claims["sub"].(string)
 	if !ok {
-		return CurrentUser{}, utils.ErrUserNotFound
+		return CurrentUser{}, utils.ErrHttpUnauthorized
 	}
 
-	currentUser := CurrentUser{}
+	userId, err := uuid.Parse(userIdString)
+	if err != nil {
+		return CurrentUser{}, utils.ErrHttpUnauthorized
+	}
 
-	currentUser.UserId = uuid.MustParse(userId)
+	currentUser := NewCurrentUser(userId)
+
+	// TODO: implement role to permission mapping
 
 	return currentUser, nil
 }
