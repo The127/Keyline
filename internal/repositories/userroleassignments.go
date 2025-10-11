@@ -22,10 +22,16 @@ type UserRoleAssignment struct {
 	applicationId *uuid.UUID
 
 	userInfo UserRoleAssignmentUserInfo
+	roleInfo UserRoleAssignmentRoleInfo
 }
 
 type UserRoleAssignmentUserInfo struct {
 	Username    string
+	DisplayName string
+}
+
+type UserRoleAssignmentRoleInfo struct {
+	Name        string
 	DisplayName string
 }
 
@@ -45,6 +51,10 @@ func (u *UserRoleAssignment) UserId() uuid.UUID {
 
 func (u *UserRoleAssignment) UserInfo() UserRoleAssignmentUserInfo {
 	return u.userInfo
+}
+
+func (u *UserRoleAssignment) RoleInfo() UserRoleAssignmentRoleInfo {
+	return u.roleInfo
 }
 
 func (u *UserRoleAssignment) RoleId() uuid.UUID {
@@ -78,6 +88,13 @@ func (u *UserRoleAssignment) getScanPointers(filter UserRoleAssignmentFilter) []
 		)
 	}
 
+	if filter.includeRole {
+		ptrs = append(ptrs,
+			&u.roleInfo.Name,
+			&u.roleInfo.DisplayName,
+		)
+	}
+
 	return ptrs
 }
 
@@ -87,6 +104,7 @@ type UserRoleAssignmentFilter struct {
 	groupId       *uuid.UUID
 	applicationId *uuid.UUID
 	includeUser   bool
+	includeRole   bool
 }
 
 func NewUserRoleAssignmentFilter() UserRoleAssignmentFilter {
@@ -124,6 +142,12 @@ func (f UserRoleAssignmentFilter) ApplicationId(applicationId uuid.UUID) UserRol
 func (f UserRoleAssignmentFilter) IncludeUser() UserRoleAssignmentFilter {
 	filter := f.Clone()
 	filter.includeUser = true
+	return filter
+}
+
+func (f UserRoleAssignmentFilter) IncludeRole() UserRoleAssignmentFilter {
+	filter := f.Clone()
+	filter.includeRole = true
 	return filter
 }
 
@@ -173,6 +197,14 @@ func (r *userRoleAssignmentRepository) selectQuery(filter UserRoleAssignmentFilt
 		s.SelectMore(
 			"u.username",
 			"u.display_name",
+		)
+	}
+
+	if filter.includeRole {
+		s.Join("roles as r", "r.id = ura.role_id")
+		s.SelectMore(
+			"r.name",
+			"r.display_name",
 		)
 	}
 
