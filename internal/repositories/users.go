@@ -25,6 +25,8 @@ type User struct {
 
 	primaryEmail  string
 	emailVerified bool
+
+	serviceUser bool
 }
 
 func NewUser(username string, displayName string, primaryEmail string, virtualServerId uuid.UUID) *User {
@@ -34,6 +36,16 @@ func NewUser(username string, displayName string, primaryEmail string, virtualSe
 		username:        username,
 		displayName:     displayName,
 		primaryEmail:    primaryEmail,
+		serviceUser:     false,
+	}
+}
+
+func NewServiceUser(username string, virtualServerId uuid.UUID) *User {
+	return &User{
+		ModelBase:       NewModelBase(),
+		virtualServerId: virtualServerId,
+		username:        username,
+		serviceUser:     true,
 	}
 }
 
@@ -52,6 +64,10 @@ func (m *User) DisplayName() string {
 func (m *User) SetDisplayName(displayName string) {
 	m.displayName = displayName
 	m.TrackChange("display_name", displayName)
+}
+
+func (m *User) IsServiceUser() bool {
+	return m.serviceUser
 }
 
 func (m *User) PrimaryEmail() string {
@@ -78,6 +94,7 @@ func (m *User) getScanPointers() []any {
 		&m.username,
 		&m.primaryEmail,
 		&m.emailVerified,
+		&m.serviceUser,
 	}
 }
 
@@ -87,6 +104,7 @@ type UserFilter struct {
 	virtualServerId *uuid.UUID
 	id              *uuid.UUID
 	username        *string
+	serviceUser     *bool
 	search          *string
 }
 
@@ -104,18 +122,16 @@ func (f UserFilter) VirtualServerId(virtualServerId uuid.UUID) UserFilter {
 	return filter
 }
 
-func (f UserFilter) GetVirtualServerId() *uuid.UUID {
-	return f.virtualServerId
-}
-
 func (f UserFilter) Id(id uuid.UUID) UserFilter {
 	filter := f.Clone()
 	filter.id = &id
 	return filter
 }
 
-func (f UserFilter) GetId() *uuid.UUID {
-	return f.id
+func (f UserFilter) ServiceUser(serviceUser bool) UserFilter {
+	filter := f.Clone()
+	filter.serviceUser = &serviceUser
+	return filter
 }
 
 func (f UserFilter) Username(username string) UserFilter {
@@ -179,6 +195,7 @@ func (r *userRepository) selectQuery(filter UserFilter) *sqlbuilder.SelectBuilde
 		"username",
 		"primary_email",
 		"email_verified",
+		"service_user",
 	).From("users")
 
 	if filter.username != nil {
@@ -191,6 +208,10 @@ func (r *userRepository) selectQuery(filter UserFilter) *sqlbuilder.SelectBuilde
 
 	if filter.id != nil {
 		s.Where(s.Equal("id", filter.id))
+	}
+
+	if filter.serviceUser != nil {
+		s.Where(s.Equal("service_user", filter.serviceUser))
 	}
 
 	if filter.search != nil {
