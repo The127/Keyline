@@ -170,7 +170,7 @@ func (f RoleFilter) GetVirtualServerId() *uuid.UUID {
 	return f.virtualServerId
 }
 
-//go:generate mockgen -destination=./mocks/role_repository.go -package=mocks Keyline/repositories RoleRepository
+//go:generate mockgen -destination=./mocks/role_repository.go -package=mocks Keyline/internal/repositories RoleRepository
 type RoleRepository interface {
 	List(ctx context.Context, filter RoleFilter) ([]*Role, int, error)
 	Single(ctx context.Context, filter RoleFilter) (*Role, error)

@@ -112,7 +112,7 @@ func (f SessionFilter) Id(id uuid.UUID) SessionFilter {
 	return filter
 }
 
-//go:generate mockgen -destination=./mocks/session_repository.go -package=mocks Keyline/repositories SessionRepository
+//go:generate mockgen -destination=./mocks/session_repository.go -package=mocks Keyline/internal/repositories SessionRepository
 type SessionRepository interface {
 	Single(ctx context.Context, filter SessionFilter) (*Session, error)
 	First(ctx context.Context, filter SessionFilter) (*Session, error)

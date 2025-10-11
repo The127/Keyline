@@ -86,7 +86,7 @@ func (f UserRoleAssignmentFilter) GroupId(groupId uuid.UUID) UserRoleAssignmentF
 	return filter
 }
 
-//go:generate mockgen -destination=./mocks/userroleassignment_repository.go -package=mocks Keyline/repositories UserRoleAssignmentRepository
+//go:generate mockgen -destination=./mocks/userroleassignment_repository.go -package=mocks Keyline/internal/repositories UserRoleAssignmentRepository
 type UserRoleAssignmentRepository interface {
 	Insert(ctx context.Context, userRoleAssignment *UserRoleAssignment) error
 	List(ctx context.Context, filter UserRoleAssignmentFilter) ([]*UserRoleAssignment, int, error)

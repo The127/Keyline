@@ -14,7 +14,7 @@ import (
 
 var ErrKeyPairNotFound = errors.New("KeyPair not found")
 
-//go:generate mockgen -destination=./mocks/key_store.go -package=mocks Keyline/services KeyStore
+//go:generate mockgen -destination=./mocks/key_store.go -package=mocks Keyline/internal/services KeyStore
 type KeyStore interface {
 	Store(virtualServerName string, keyPair KeyPair) error
 	Load(virtualServerName string, algorithm config.SigningAlgorithm) (KeyPair, error)
@@ -120,7 +120,7 @@ func (k *KeyPair) PublicKey() any {
 	return k.publicKey
 }
 
-//go:generate mockgen -destination=./mocks/key_service.go -package=mocks Keyline/services KeyService
+//go:generate mockgen -destination=./mocks/key_service.go -package=mocks Keyline/internal/services KeyService
 type KeyService interface {
 	Generate(virtualServerName string, algorithm config.SigningAlgorithm) (KeyPair, error)
 	GetKey(virtualServerName string, algorithm config.SigningAlgorithm) KeyPair
