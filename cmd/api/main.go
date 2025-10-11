@@ -11,6 +11,7 @@ package main
 
 import (
 	"Keyline/internal/behaviours"
+	"Keyline/internal/clock"
 	"Keyline/internal/commands"
 	"Keyline/internal/config"
 	"Keyline/internal/database"
@@ -22,7 +23,6 @@ import (
 	"Keyline/internal/repositories"
 	"Keyline/internal/server"
 	"Keyline/internal/services"
-	"Keyline/internal/time"
 	"Keyline/ioc"
 	"Keyline/logging"
 	"Keyline/mediator"
@@ -62,8 +62,8 @@ func main() {
 		return dbService.Close()
 	})
 
-	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) time.ClockService {
-		return time.NewClockService()
+	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) clock.ClockService {
+		return clock.NewClockService()
 	})
 
 	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) services.KeyCache {

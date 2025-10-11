@@ -1,6 +1,7 @@
 package services
 
 import (
+	"Keyline/internal/clock"
 	middlewares2 "Keyline/internal/middlewares"
 	repositories2 "Keyline/internal/repositories"
 	"Keyline/ioc"
@@ -38,8 +39,11 @@ func (s *sessionService) NewSession(ctx context.Context, virtualServerName strin
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
+	clockService := ioc.GetDependency[clock.ClockService](scope)
+	now := clockService.Now()
+
 	sessionRepository := ioc.GetDependency[repositories2.SessionRepository](scope)
-	session := repositories2.NewSession(virtualServer.Id(), userId, time.Now().Add(time.Hour*24*30))
+	session := repositories2.NewSession(virtualServer.Id(), userId, now.Add(time.Hour*24*30))
 	token := session.GenerateToken()
 	err = sessionRepository.Insert(ctx, session)
 	if err != nil {

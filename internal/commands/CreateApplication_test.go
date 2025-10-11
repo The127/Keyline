@@ -7,6 +7,7 @@ import (
 	"Keyline/ioc"
 	"Keyline/utils"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -20,8 +21,10 @@ func TestHandleCreateApplication(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
+	now := time.Now()
+
 	virtualServer := repositories2.NewVirtualServer("virtualServer", "Virtual Server")
-	virtualServer.Mock()
+	virtualServer.Mock(now)
 	virtualServerRepository := mocks2.NewMockVirtualServerRepository(ctrl)
 	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories2.VirtualServerFilter) bool {
 		return *x.GetName() == virtualServer.Name()

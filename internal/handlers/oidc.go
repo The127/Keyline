@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"Keyline/internal/clock"
 	"Keyline/internal/config"
 	"Keyline/internal/jsonTypes"
 	"Keyline/internal/middlewares"
@@ -746,7 +747,8 @@ func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 
 	// TODO: get claims from scopes
 
-	now := time.Now() // TODO: add clock service for testing/mocking
+	clockService := ioc.GetDependency[clock.ClockService](scope)
+	now := clockService.Now()
 
 	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(codeInfo.VirtualServerName)
@@ -991,7 +993,8 @@ func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	now := time.Now() // TODO: add clock service for testing/mocking
+	clockService := ioc.GetDependency[clock.ClockService](scope)
+	now := clockService.Now()
 
 	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(refreshTokenInfo.VirtualServerName)
