@@ -31,8 +31,7 @@ type UserRoleAssignmentUserInfo struct {
 }
 
 type UserRoleAssignmentRoleInfo struct {
-	Name        string
-	DisplayName string
+	Name string
 }
 
 func NewUserRoleAssignment(userId uuid.UUID, roleId uuid.UUID, groupId *uuid.UUID, applicationId *uuid.UUID) *UserRoleAssignment {
@@ -91,7 +90,6 @@ func (u *UserRoleAssignment) getScanPointers(filter UserRoleAssignmentFilter) []
 	if filter.includeRole {
 		ptrs = append(ptrs,
 			&u.roleInfo.Name,
-			&u.roleInfo.DisplayName,
 		)
 	}
 
@@ -204,7 +202,6 @@ func (r *userRoleAssignmentRepository) selectQuery(filter UserRoleAssignmentFilt
 		s.Join("roles as r", "r.id = ura.role_id")
 		s.SelectMore(
 			"r.name",
-			"r.display_name",
 		)
 	}
 
