@@ -20,6 +20,13 @@ type UserRoleAssignment struct {
 	roleId        uuid.UUID
 	groupId       *uuid.UUID
 	applicationId *uuid.UUID
+
+	userInfo UserRoleAssignmentUserInfo
+}
+
+type UserRoleAssignmentUserInfo struct {
+	Username    string
+	DisplayName string
 }
 
 func NewUserRoleAssignment(userId uuid.UUID, roleId uuid.UUID, groupId *uuid.UUID, applicationId *uuid.UUID) *UserRoleAssignment {
@@ -36,6 +43,10 @@ func (u *UserRoleAssignment) UserId() uuid.UUID {
 	return u.userId
 }
 
+func (u *UserRoleAssignment) UserInfo() UserRoleAssignmentUserInfo {
+	return u.userInfo
+}
+
 func (u *UserRoleAssignment) RoleId() uuid.UUID {
 	return u.roleId
 }
@@ -48,8 +59,8 @@ func (u *UserRoleAssignment) ApplicationId() *uuid.UUID {
 	return u.applicationId
 }
 
-func (u *UserRoleAssignment) getScanPointers() []any {
-	return []any{
+func (u *UserRoleAssignment) getScanPointers(filter UserRoleAssignmentFilter) []any {
+	ptrs := []any{
 		&u.id,
 		&u.auditCreatedAt,
 		&u.auditUpdatedAt,
@@ -59,12 +70,23 @@ func (u *UserRoleAssignment) getScanPointers() []any {
 		&u.groupId,
 		&u.applicationId,
 	}
+
+	if filter.includeUser {
+		ptrs = append(ptrs,
+			&u.userInfo.Username,
+			&u.userInfo.DisplayName,
+		)
+	}
+
+	return ptrs
 }
 
 type UserRoleAssignmentFilter struct {
-	userId  *uuid.UUID
-	roleId  *uuid.UUID
-	groupId *uuid.UUID
+	userId        *uuid.UUID
+	roleId        *uuid.UUID
+	groupId       *uuid.UUID
+	applicationId *uuid.UUID
+	includeUser   bool
 }
 
 func NewUserRoleAssignmentFilter() UserRoleAssignmentFilter {
@@ -93,6 +115,18 @@ func (f UserRoleAssignmentFilter) GroupId(groupId uuid.UUID) UserRoleAssignmentF
 	return filter
 }
 
+func (f UserRoleAssignmentFilter) ApplicationId(applicationId uuid.UUID) UserRoleAssignmentFilter {
+	filter := f.Clone()
+	filter.applicationId = &applicationId
+	return filter
+}
+
+func (f UserRoleAssignmentFilter) IncludeUser() UserRoleAssignmentFilter {
+	filter := f.Clone()
+	filter.includeUser = true
+	return filter
+}
+
 //go:generate mockgen -destination=./mocks/userroleassignment_repository.go -package=mocks Keyline/internal/repositories UserRoleAssignmentRepository
 type UserRoleAssignmentRepository interface {
 	Insert(ctx context.Context, userRoleAssignment *UserRoleAssignment) error
@@ -108,26 +142,38 @@ func NewUserRoleAssignmentRepository() UserRoleAssignmentRepository {
 
 func (r *userRoleAssignmentRepository) selectQuery(filter UserRoleAssignmentFilter) *sqlbuilder.SelectBuilder {
 	s := sqlbuilder.Select(
-		"id",
-		"audit_created_at",
-		"audit_updated_at",
-		"version",
-		"user_id",
-		"role_id",
-		"group_id",
-		"application_id",
-	).From("user_role_assignments")
+		"ura.id",
+		"ura.audit_created_at",
+		"ura.audit_updated_at",
+		"ura.version",
+		"ura.user_id",
+		"ura.role_id",
+		"ura.group_id",
+		"ura.application_id",
+	).From("user_role_assignments as ura")
 
 	if filter.userId != nil {
-		s.Where(s.Equal("user_id", filter.userId))
+		s.Where(s.Equal("ura.user_id", filter.userId))
 	}
 
 	if filter.roleId != nil {
-		s.Where(s.Equal("role_id", filter.roleId))
+		s.Where(s.Equal("ura.role_id", filter.roleId))
 	}
 
 	if filter.groupId != nil {
-		s.Where(s.Equal("group_id", filter.groupId))
+		s.Where(s.Equal("ura.group_id", filter.groupId))
+	}
+
+	if filter.applicationId != nil {
+		s.Where(s.Equal("ura.application_id", filter.applicationId))
+	}
+
+	if filter.includeUser {
+		s.Join("users as u", "u.id = ura.user_id")
+		s.SelectMore(
+			"u.username",
+			"u.display_name",
+		)
 	}
 
 	return s
@@ -159,7 +205,7 @@ func (r *userRoleAssignmentRepository) List(ctx context.Context, filter UserRole
 		userRoleAssignment := UserRoleAssignment{
 			ModelBase: NewModelBase(),
 		}
-		err = rows.Scan(append(userRoleAssignment.getScanPointers(), &totalCount)...)
+		err = rows.Scan(append(userRoleAssignment.getScanPointers(filter), &totalCount)...)
 		if err != nil {
 			return nil, 0, fmt.Errorf("scanning row: %w", err)
 		}
