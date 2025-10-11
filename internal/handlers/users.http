@@ -10,13 +10,20 @@ Content-Type: application/json
 }
 
 ### create a service user
-POST http://127.0.0.1:8081/api/virtual-servers/keyline/users/create-service-user
+POST http://127.0.0.1:8081/api/virtual-servers/keyline/users/service-users
 Content-Type: application/json
 
 {
-  "username": "service-user-01"
+  "username": "service-user-04"
 }
 
 ### list users
 GET http://127.0.0.1:8081/api/virtual-servers/keyline/users
 
+### associate public key wih service user
+POST http://127.0.0.1:8081/api/virtual-servers/keyline/users/service-users/acb98708-fb0a-481b-aa3f-087aee16b419/keys
+Content-Type: application/json
+
+{
+  "publicKey": "fake public key"
+}
