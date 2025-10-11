@@ -9,6 +9,14 @@ Content-Type: application/json
   "email": "foo@bar.home"
 }
 
+### create a service user
+POST http://127.0.0.1:8081/api/virtual-servers/keyline/users/create-service-user
+Content-Type: application/json
+
+{
+  "username": "service-user-01"
+}
+
 ### list users
 GET http://127.0.0.1:8081/api/virtual-servers/keyline/users
 
