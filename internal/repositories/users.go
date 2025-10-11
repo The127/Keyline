@@ -359,6 +359,7 @@ func (r *userRepository) Insert(ctx context.Context, user *User) error {
 			"display_name",
 			"primary_email",
 			"email_verified",
+			"service_user",
 		).
 		Values(
 			user.virtualServerId,
@@ -366,6 +367,7 @@ func (r *userRepository) Insert(ctx context.Context, user *User) error {
 			user.displayName,
 			user.primaryEmail,
 			user.emailVerified,
+			user.serviceUser,
 		).Returning("id", "audit_created_at", "audit_updated_at", "version")
 
 	query, args := s.Build()
