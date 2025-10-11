@@ -905,20 +905,20 @@ func generateRefreshTokenInfo(params TokenGenerationParams) (string, error) {
 	return string(refreshTokenInfoJson), nil
 }
 
-func generateTokens(ctx context.Context, params TokenGenerationParams, tokenService services2.TokenService) (*GeneratedTokens, error) {
+func generateTokens(ctx context.Context, params TokenGenerationParams, tokenService services2.TokenService) (GeneratedTokens, error) {
 	idTokenString, err := generateIdToken(params)
 	if err != nil {
-		return nil, fmt.Errorf("signing id token: %w", err)
+		return GeneratedTokens{}, fmt.Errorf("signing id token: %w", err)
 	}
 
 	accessTokenString, err := generateAccessToken(params)
 	if err != nil {
-		return nil, fmt.Errorf("signing access token: %w", err)
+		return GeneratedTokens{}, fmt.Errorf("signing access token: %w", err)
 	}
 
 	refreshTokenInfoString, err := generateRefreshTokenInfo(params)
 	if err != nil {
-		return nil, err
+		return GeneratedTokens{}, err
 	}
 
 	refreshTokenString, err := tokenService.GenerateAndStoreToken(
@@ -928,10 +928,10 @@ func generateTokens(ctx context.Context, params TokenGenerationParams, tokenServ
 		params.RefreshTokenExpiry,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("generating refresh token: %w", err)
+		return GeneratedTokens{}, fmt.Errorf("generating refresh token: %w", err)
 	}
 
-	return &GeneratedTokens{
+	return GeneratedTokens{
 		IdToken:      idTokenString,
 		AccessToken:  accessTokenString,
 		RefreshToken: refreshTokenString,
