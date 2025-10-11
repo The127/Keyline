@@ -5,6 +5,7 @@ import (
 	"Keyline/internal/middlewares"
 	"Keyline/ioc"
 	"Keyline/logging"
+	"Keyline/utils"
 	"context"
 	"fmt"
 
@@ -39,6 +40,18 @@ func (u *UserRoleAssignment) RoleId() uuid.UUID {
 
 func (u *UserRoleAssignment) GroupId() *uuid.UUID {
 	return u.groupId
+}
+
+func (u *UserRoleAssignment) getScanPointers() []any {
+	return []any{
+		&u.id,
+		&u.auditCreatedAt,
+		&u.auditUpdatedAt,
+		&u.version,
+		&u.userId,
+		&u.roleId,
+		&u.groupId,
+	}
 }
 
 type UserRoleAssignmentFilter struct {
@@ -76,6 +89,7 @@ func (f UserRoleAssignmentFilter) GroupId(groupId uuid.UUID) UserRoleAssignmentF
 //go:generate mockgen -destination=./mocks/userroleassignment_repository.go -package=mocks Keyline/repositories UserRoleAssignmentRepository
 type UserRoleAssignmentRepository interface {
 	Insert(ctx context.Context, userRoleAssignment *UserRoleAssignment) error
+	List(ctx context.Context, filter UserRoleAssignmentFilter) ([]*UserRoleAssignment, int, error)
 }
 
 type userRoleAssignmentRepository struct {
@@ -83,6 +97,69 @@ type userRoleAssignmentRepository struct {
 
 func NewUserRoleAssignmentRepository() UserRoleAssignmentRepository {
 	return &userRoleAssignmentRepository{}
+}
+
+func (r *userRoleAssignmentRepository) selectQuery(filter UserRoleAssignmentFilter) *sqlbuilder.SelectBuilder {
+	s := sqlbuilder.Select(
+		"id",
+		"audit_created_at",
+		"audit_updated_at",
+		"version",
+		"user_id",
+		"role_id",
+		"group_id",
+	).From("user_role_assignments")
+
+	if filter.userId != nil {
+		s.Where(s.Equal("user_id", filter.userId))
+	}
+
+	if filter.roleId != nil {
+		s.Where(s.Equal("role_id", filter.roleId))
+	}
+
+	if filter.groupId != nil {
+		s.Where(s.Equal("group_id", filter.groupId))
+	}
+
+	return s
+}
+
+func (r *userRoleAssignmentRepository) List(ctx context.Context, filter UserRoleAssignmentFilter) ([]*UserRoleAssignment, int, error) {
+	scope := middlewares.GetScope(ctx)
+	dbService := ioc.GetDependency[database.DbService](scope)
+
+	tx, err := dbService.GetTx()
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to open tx: %w", err)
+	}
+
+	s := r.selectQuery(filter)
+	s.SelectMore("count(*) over()")
+
+	query, args := s.Build()
+	logging.Logger.Debug("executing sql: ", query)
+	rows, err := tx.Query(query, args...)
+	if err != nil {
+		return nil, 0, fmt.Errorf("querying db: %w", err)
+	}
+	defer utils.PanicOnError(rows.Close, "closing rows")
+
+	var userRoleAssignments []*UserRoleAssignment
+	var totalCount int
+	for rows.Next() {
+		userRoleAssignment := UserRoleAssignment{
+			ModelBase: NewModelBase(),
+		}
+		err = rows.Scan(append(userRoleAssignment.getScanPointers(), &totalCount)...)
+		if err != nil {
+			return nil, 0, fmt.Errorf("scanning row: %w", err)
+		}
+
+		userRoleAssignments = append(userRoleAssignments, &userRoleAssignment)
+	}
+
+	return userRoleAssignments, totalCount, nil
 }
 
 func (r *userRoleAssignmentRepository) Insert(ctx context.Context, userRoleAssignment *UserRoleAssignment) error {
