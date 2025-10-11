@@ -747,7 +747,7 @@ func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 
 	// TODO: get claims from scopes
 
-	clockService := ioc.GetDependency[clock.ClockService](scope)
+	clockService := ioc.GetDependency[clock.Service](scope)
 	now := clockService.Now()
 
 	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
@@ -1030,7 +1030,7 @@ func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	clockService := ioc.GetDependency[clock.ClockService](scope)
+	clockService := ioc.GetDependency[clock.Service](scope)
 	now := clockService.Now()
 
 	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)

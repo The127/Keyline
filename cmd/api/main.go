@@ -62,7 +62,7 @@ func main() {
 		return dbService.Close()
 	})
 
-	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) clock.ClockService {
+	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) clock.Service {
 		return clock.NewClockService()
 	})
 

@@ -1,4 +1,3 @@
-// Go
 package helpers
 
 import (

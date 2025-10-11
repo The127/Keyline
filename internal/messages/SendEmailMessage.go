@@ -16,19 +16,19 @@ type SendEmailMessage struct {
 	Body            string    `json:"body"`
 }
 
-func (s SendEmailMessage) OutboxMessageType() repositories.OutboxMessageType {
+func (m *SendEmailMessage) OutboxMessageType() repositories.OutboxMessageType {
 	return repositories.SendMailOutboxMessageType
 }
 
-func (d *SendEmailMessage) Value() (driver.Value, error) {
-	return json.Marshal(d)
+func (m *SendEmailMessage) Value() (driver.Value, error) {
+	return json.Marshal(m)
 }
 
-func (d *SendEmailMessage) Scan(value any) error {
+func (m *SendEmailMessage) Scan(value any) error {
 	bytes, ok := value.([]byte)
 	if !ok {
 		return fmt.Errorf("type assertion for outbox message failed")
 	}
 
-	return json.Unmarshal(bytes, &d)
+	return json.Unmarshal(bytes, &m)
 }
