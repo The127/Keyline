@@ -31,12 +31,12 @@ type ListUsersInRoleResponseItem struct {
 func HandleListUsersInRole(ctx context.Context, query ListUsersInRole) (*ListUsersInRoleResponse, error) {
 	scope := middlewares.GetScope(ctx)
 
-	//virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
-	//virtualServerFilter := repositories.NewVirtualServerFilter().Name(query.VirtualServerName)
-	//virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
-	//if err != nil {
-	//	return nil, fmt.Errorf("getting virtual server: %w", err)
-	//}
+	// virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
+	// virtualServerFilter := repositories.NewVirtualServerFilter().Name(query.VirtualServerName)
+	// virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("getting virtual server: %w", err)
+	// }
 
 	userRoleAssignmentRepository := ioc.GetDependency[repositories.UserRoleAssignmentRepository](scope)
 	userRoleAssignmentFilter := repositories.NewUserRoleAssignmentFilter().
