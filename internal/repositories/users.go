@@ -128,6 +128,10 @@ func (f UserFilter) Id(id uuid.UUID) UserFilter {
 	return filter
 }
 
+func (f UserFilter) GetId() uuid.UUID {
+	return utils.ZeroIfNil(f.id)
+}
+
 func (f UserFilter) ServiceUser(serviceUser bool) UserFilter {
 	filter := f.Clone()
 	filter.serviceUser = &serviceUser
