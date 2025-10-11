@@ -15,6 +15,7 @@ type ListRoles struct {
 	PagedQuery
 	OrderedQuery
 	VirtualServerName string
+	ApplicationId     *uuid.UUID
 	SearchText        string
 }
 
@@ -23,8 +24,9 @@ type ListRolesResponse struct {
 }
 
 type ListRolesResponseItem struct {
-	Id   uuid.UUID
-	Name string
+	Id          uuid.UUID
+	Name        string
+	DisplayName string
 }
 
 func HandleListRoles(ctx context.Context, query ListRoles) (*ListRolesResponse, error) {
@@ -44,6 +46,11 @@ func HandleListRoles(ctx context.Context, query ListRoles) (*ListRolesResponse, 
 		Pagination(query.Page, query.PageSize).
 		Order(query.OrderBy, query.OrderDir).
 		Search(query.SearchText)
+
+	if query.ApplicationId != nil {
+		roleFilter = roleFilter.ApplicationId(*query.ApplicationId)
+	}
+
 	roles, total, err := roleRepository.List(ctx, roleFilter)
 	if err != nil {
 		return nil, fmt.Errorf("searching roles: %w", err)

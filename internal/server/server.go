@@ -119,6 +119,7 @@ func Serve(dp *ioc.DependencyProvider) {
 	vsApiRouter.HandleFunc("/applications/{appId}", handlers.GetApplication).Methods(http.MethodGet, http.MethodOptions)
 	vsApiRouter.HandleFunc("/applications/{appId}", handlers.PatchApplication).Methods(http.MethodPatch, http.MethodOptions)
 	vsApiRouter.HandleFunc("/applications/{appId}", handlers.DeleteApplication).Methods(http.MethodDelete, http.MethodOptions)
+	vsApiRouter.HandleFunc("/applications/{appId}/roles", handlers.ListAppRoles).Methods(http.MethodGet, http.MethodOptions)
 
 	r.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
 

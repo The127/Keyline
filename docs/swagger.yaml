@@ -225,6 +225,13 @@ definitions:
         items: {}
         type: array
     type: object
+  handlers.ListAppRolesResponseDto:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+    type: object
   handlers.ListApplicationsResponseDto:
     properties:
       displayName:
@@ -319,6 +326,15 @@ definitions:
       items:
         items:
           $ref: '#/definitions/handlers.ListApplicationsResponseDto'
+        type: array
+      pagination:
+        $ref: '#/definitions/handlers.Pagination'
+    type: object
+  handlers.PagedListAppRolesResponseDto:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/handlers.ListAppRolesResponseDto'
         type: array
       pagination:
         $ref: '#/definitions/handlers.Pagination'
@@ -453,6 +469,8 @@ definitions:
         - 1000000000
         - 60000000000
         - 3600000000000
+        - -9223372036854775808
+        - 9223372036854775807
         - 1
         - 1000
         - 1000000
@@ -470,6 +488,8 @@ definitions:
         - Second
         - Minute
         - Hour
+        - minDuration
+        - maxDuration
         - Nanosecond
         - Microsecond
         - Millisecond
@@ -1145,6 +1165,57 @@ paths:
         "500":
           description: Internal Server Error
       summary: Patch application
+      tags:
+      - applications
+  /api/virtual-servers/{vsName}/applications/{appId}/roles:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a paginated list of roles in an application
+      parameters:
+      - default: keyline
+        description: Virtual server name
+        in: path
+        name: vsName
+        required: true
+        type: string
+      - description: Application ID (UUID)
+        in: path
+        name: appId
+        required: true
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: pageSize
+        type: integer
+      - description: Order by field
+        in: query
+        name: orderBy
+        type: string
+      - description: Order direction (asc|desc)
+        in: query
+        name: orderDir
+        type: string
+      - description: Search term
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.PagedListAppRolesResponseDto'
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      summary: List roles of application
       tags:
       - applications
   /api/virtual-servers/{vsName}/roles/{roleId}/users:

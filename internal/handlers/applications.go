@@ -346,3 +346,85 @@ func ListApplications(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, err)
 	}
 }
+
+type PagedListAppRolesResponseDto = PagedResponseDto[ListAppRolesResponseDto]
+
+type ListAppRolesResponseDto struct {
+	Id   uuid.UUID `json:"id"`
+	Name string    `json:"name"`
+}
+
+// ListAppRoles lists applications in a virtual server
+// @Summary List roles of application
+// @Description Retrieve a paginated list of roles in an application
+// @Tags applications
+// @Accept json
+// @Produce json
+// @Param vsName path string true "Virtual server name"  default(keyline)
+// @Param appId path string true "Application ID (UUID)"
+// @Param page query int false "Page number"
+// @Param pageSize query int false "Page size"
+// @Param orderBy query string false "Order by field"
+// @Param orderDir query string false "Order direction (asc|desc)"
+// @Param search query string false "Search term"
+// @Success 200 {object} PagedListAppRolesResponseDto
+// @Failure 400
+// @Failure 500
+// @Router /api/virtual-servers/{vsName}/applications/{appId}/roles [get]
+func ListAppRoles(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	queryOps, err := ParseQueryOps(r)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	vsName, err := middlewares.GetVirtualServerName(r.Context())
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	vars := mux.Vars(r)
+	appIdString := vars["appId"]
+	appId, err := uuid.Parse(appIdString)
+	if err != nil {
+		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+	}
+
+	scope := middlewares.GetScope(ctx)
+	m := ioc.GetDependency[mediator.Mediator](scope)
+
+	roles, err := mediator.Send[*queries.ListRolesResponse](ctx, m, queries.ListRoles{
+		PagedQuery:        queryOps.ToPagedQuery(),
+		OrderedQuery:      queryOps.ToOrderedQuery(),
+		VirtualServerName: vsName,
+		SearchText:        queryOps.Search,
+
+		ApplicationId: &appId,
+	})
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	items := utils.MapSlice(roles.Items, func(x queries.ListRolesResponseItem) ListAppRolesResponseDto {
+		return ListAppRolesResponseDto{
+			Id:   x.Id,
+			Name: x.Name,
+		}
+	})
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	err = json.NewEncoder(w).Encode(NewPagedResponseDto(
+		items,
+		queryOps,
+		roles.TotalCount,
+	))
+	if err != nil {
+		utils.HandleHttpError(w, err)
+	}
+}
