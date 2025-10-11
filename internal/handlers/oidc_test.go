@@ -41,11 +41,6 @@ func newTestContext(t *testing.T) context.Context {
 		return userRoleAssignmentRepository
 	})
 
-	roleRepository := mocks.NewMockRoleRepository(ctrl)
-	ioc.RegisterTransient(dependencyCollection, func(dp *ioc.DependencyProvider) repositories.RoleRepository {
-		return roleRepository
-	})
-
 	scope := dependencyCollection.BuildProvider().NewScope()
 	t.Cleanup(func() {
 		ctrl.Finish()

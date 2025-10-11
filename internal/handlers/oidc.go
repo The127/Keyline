@@ -910,26 +910,18 @@ func mapClaims(ctx context.Context, params TokenGenerationParams) (jwt.MapClaims
 	}
 
 	userRoleAssignmentRepository := ioc.GetDependency[repositories.UserRoleAssignmentRepository](scope)
-	userRoleAssignmentFilter := repositories.NewUserRoleAssignmentFilter().UserId(params.UserId)
+	userRoleAssignmentFilter := repositories.NewUserRoleAssignmentFilter().
+		// TODO: add virtual server filter
+		UserId(params.UserId).
+		IncludeRole()
 	userRoleAssignments, _, err := userRoleAssignmentRepository.List(ctx, userRoleAssignmentFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting user role assignments: %w", err)
 	}
 
-	roleRepository := ioc.GetDependency[repositories.RoleRepository](scope)
 	roles := make([]string, 0, len(userRoleAssignments))
-
 	for _, userRoleAssignment := range userRoleAssignments {
-		roleFilter := repositories.NewRoleFilter().Id(userRoleAssignment.RoleId())
-		role, err := roleRepository.Single(ctx, roleFilter)
-		if err != nil {
-			return nil, fmt.Errorf("getting role: %w", err)
-		}
-		if role == nil {
-			return nil, fmt.Errorf("role not found")
-		}
-
-		roles = append(roles, role.Name())
+		roles = append(roles, userRoleAssignment.RoleInfo().Name)
 	}
 
 	claims := jwt.MapClaims{
