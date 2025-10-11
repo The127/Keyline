@@ -22,6 +22,7 @@ type GetUserQueryResult struct {
 	DisplayName   string
 	PrimaryEmail  string
 	EmailVerified bool
+	IsServiceUser bool
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 }
@@ -51,6 +52,7 @@ func HandleGetUserQuery(ctx context.Context, query GetUserQuery) (*GetUserQueryR
 		DisplayName:   user.DisplayName(),
 		PrimaryEmail:  user.PrimaryEmail(),
 		EmailVerified: user.EmailVerified(),
+		IsServiceUser: user.IsServiceUser(),
 		CreatedAt:     user.AuditCreatedAt(),
 		UpdatedAt:     user.AuditUpdatedAt(),
 	}, nil

@@ -23,10 +23,11 @@ type ListUsersResponse struct {
 }
 
 type ListUsersResponseItem struct {
-	Id          uuid.UUID
-	Username    string
-	DisplayName string
-	Email       string
+	Id            uuid.UUID
+	Username      string
+	DisplayName   string
+	Email         string
+	IsServiceUser bool
 }
 
 func HandleListUsers(ctx context.Context, query ListUsers) (*ListUsersResponse, error) {
@@ -53,10 +54,11 @@ func HandleListUsers(ctx context.Context, query ListUsers) (*ListUsersResponse, 
 
 	items := utils.MapSlice(users, func(t *repositories.User) ListUsersResponseItem {
 		return ListUsersResponseItem{
-			Id:          t.Id(),
-			Username:    t.Username(),
-			DisplayName: t.DisplayName(),
-			Email:       t.PrimaryEmail(),
+			Id:            t.Id(),
+			Username:      t.Username(),
+			DisplayName:   t.DisplayName(),
+			Email:         t.PrimaryEmail(),
+			IsServiceUser: t.IsServiceUser(),
 		}
 	})
 

@@ -115,10 +115,11 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 }
 
 type ListUsersResponseDto struct {
-	Id           uuid.UUID `json:"id"`
-	Username     string    `json:"username"`
-	DisplayName  string    `json:"displayName"`
-	PrimaryEmail string    `json:"primaryEmail"`
+	Id            uuid.UUID `json:"id"`
+	Username      string    `json:"username"`
+	DisplayName   string    `json:"displayName"`
+	PrimaryEmail  string    `json:"primaryEmail"`
+	IsServiceUser bool      `json:"isServiceUser"`
 }
 
 type PagedUsersResponseDto struct {
@@ -168,10 +169,11 @@ func ListUsers(w http.ResponseWriter, r *http.Request) {
 
 	items := utils.MapSlice(users.Items, func(x queries.ListUsersResponseItem) ListUsersResponseDto {
 		return ListUsersResponseDto{
-			Id:           x.Id,
-			Username:     x.Username,
-			DisplayName:  x.DisplayName,
-			PrimaryEmail: x.Email,
+			Id:            x.Id,
+			Username:      x.Username,
+			DisplayName:   x.DisplayName,
+			PrimaryEmail:  x.Email,
+			IsServiceUser: x.IsServiceUser,
 		}
 	})
 
@@ -194,6 +196,7 @@ type GetUserByIdResponseDto struct {
 	DisplayName   string    `json:"displayName"`
 	PrimaryEmail  string    `json:"primaryEmail"`
 	EmailVerified bool      `json:"emailVerified"`
+	IsServiceUser bool      `json:"isServiceUser"`
 	CreatedAt     time.Time `json:"createdAt"`
 	UpdatedAt     time.Time `json:"updatedAt"`
 }
@@ -246,6 +249,7 @@ func GetUserById(w http.ResponseWriter, r *http.Request) {
 		DisplayName:   queryResult.DisplayName,
 		PrimaryEmail:  queryResult.PrimaryEmail,
 		EmailVerified: queryResult.EmailVerified,
+		IsServiceUser: queryResult.IsServiceUser,
 		CreatedAt:     queryResult.CreatedAt,
 		UpdatedAt:     queryResult.UpdatedAt,
 	}
