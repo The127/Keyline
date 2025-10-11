@@ -1,10 +1,10 @@
 package jobs
 
 import (
+	"Keyline/internal/logging"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/ioc"
-	"Keyline/logging"
 	"Keyline/utils"
 	"context"
 	"fmt"

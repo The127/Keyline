@@ -1,9 +1,10 @@
 package middlewares
 
 import (
-	"Keyline/logging"
-	"github.com/gorilla/mux"
+	"Keyline/internal/logging"
 	"net/http"
+
+	"github.com/gorilla/mux"
 )
 
 func RecoverMiddleware() mux.MiddlewareFunc {

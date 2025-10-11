@@ -2,7 +2,7 @@ package utils
 
 import (
 	"Keyline/internal/config"
-	"Keyline/logging"
+	"Keyline/internal/logging"
 	"errors"
 	"fmt"
 	"net/http"
