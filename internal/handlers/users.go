@@ -333,7 +333,7 @@ type CreateServiceUserResponseDto struct {
 // @Param        body               body  CreateServiceUserRequestDto   true "User data"
 // @Success      200  {object} CreateServiceUserResponseDto
 // @Failure      400  {string} string
-// @Router       /api/virtual-servers/{virtualServerName}/users/create-service-user [post]
+// @Router       /api/virtual-servers/{virtualServerName}/users/service-users [post]
 func CreateServiceUser(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
