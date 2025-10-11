@@ -642,6 +642,7 @@ func OidcUserinfo(w http.ResponseWriter, r *http.Request) {
 // @Security     BasicAuth
 // @Success      200  {object}  handlers.CodeFlowResponse      "When grant_type=authorization_code"
 // @Success      200  {object}  handlers.RefreshTokenResponse  "When grant_type=refresh_token"
+// @Success      200  {object}  handlers.TokenExchangeResponse "When grant_type=urn:ietf:params:oauth:grant-type:token-exchange"
 // @Failure      400  {string}  string
 // @Router       /oidc/{virtualServerName}/token [post]
 func OidcToken(w http.ResponseWriter, r *http.Request) {
@@ -659,6 +660,9 @@ func OidcToken(w http.ResponseWriter, r *http.Request) {
 
 	case "refresh_token":
 		handleRefreshToken(w, r)
+
+	case "urn:ietf:params:oauth:grant-type:token-exchange":
+		handleTokenExchange(w, r)
 
 	default:
 		utils.HandleHttpError(w, fmt.Errorf("unsupported grant type: %s", grantType))
@@ -1077,6 +1081,244 @@ func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 		AccessToken:  tokens.AccessToken,
 		RefreshToken: tokens.RefreshToken,
 		ExpiresIn:    tokens.ExpiresIn,
+	}
+	err = json.NewEncoder(w).Encode(response)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("encoding response: %w", err))
+		return
+	}
+}
+
+type TokenExchangeResponse struct {
+	AccessToken     string `json:"access_token"`
+	IssuedTokenType string `json:"issued_token_type"`
+	TokenType       string `json:"token_type"`
+}
+
+func handleTokenExchange(w http.ResponseWriter, r *http.Request) {
+	subjectToken := r.Form.Get("subject_token")
+	subjectTokenType := r.Form.Get("subject_token_type")
+
+	if subjectToken == "" {
+		utils.HandleHttpError(w, fmt.Errorf("missing subject token"))
+		return
+	}
+
+	if subjectTokenType == "" {
+		utils.HandleHttpError(w, fmt.Errorf("missing subject token type"))
+		return
+	}
+
+	if subjectTokenType != "urn:ietf:params:oauth:token-type:access_token" {
+		utils.HandleHttpError(w, fmt.Errorf("unsupported subject token type: %s", subjectTokenType))
+	}
+
+	ctx := r.Context()
+
+	virtualServerName, err := middlewares.GetVirtualServerName(ctx)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("getting virtual server name: %w", err))
+		return
+	}
+
+	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](middlewares.GetScope(ctx))
+	virtualServerFilter := repositories.NewVirtualServerFilter().Name(virtualServerName)
+	virtualServer, err := virtualServerRepository.First(ctx, virtualServerFilter)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
+		return
+	}
+	if virtualServer == nil {
+		utils.HandleHttpError(w, fmt.Errorf("virtual server not found"))
+		return
+	}
+
+	scope := middlewares.GetScope(ctx)
+
+	token, err := jwt.Parse(subjectToken, func(token *jwt.Token) (any, error) {
+		claims, ok := token.Claims.(jwt.MapClaims)
+		if !ok {
+			return nil, fmt.Errorf("invalid claims")
+		}
+
+		subject, err := claims.GetSubject()
+		if err != nil {
+			return nil, fmt.Errorf("getting subject: %w", err)
+		}
+
+		issuer, err := claims.GetIssuer()
+		if err != nil {
+			return nil, fmt.Errorf("getting issuer: %w", err)
+		}
+
+		if issuer != subject {
+			return nil, fmt.Errorf("invalid issuer, issuer has to be the same as subject for service account token exchange")
+		}
+
+		keyIdClaim, ok := token.Header["kid"]
+		if !ok {
+			return nil, fmt.Errorf("missing kid header")
+		}
+
+		keyIdString, ok := keyIdClaim.(string)
+		if !ok {
+			return nil, fmt.Errorf("expected kid header to be a string")
+		}
+
+		audienceClaim, err := claims.GetAudience()
+		if err != nil {
+			return nil, fmt.Errorf("getting audience: %w", err)
+		}
+		if len(audienceClaim) != 1 {
+			return nil, fmt.Errorf("expected audience to be a single string")
+		}
+
+		scopesClaim, ok := claims["scopes"]
+		if !ok {
+			return nil, fmt.Errorf("missing scopes claim")
+		}
+
+		scopesString, ok := scopesClaim.(string)
+		if !ok {
+			return nil, fmt.Errorf("expected scopes claim to be a space separated string")
+		}
+
+		scopes := strings.Split(scopesString, " ")
+		if len(scopes) == 0 {
+			return nil, fmt.Errorf("expected scopes claim to be a space separated string")
+		}
+
+		if !slices.Contains(scopes, "openid") {
+			return nil, fmt.Errorf("expected scopes claim to contain openid")
+		}
+
+		// TODO: check if scopes are valid
+
+		userId, err := uuid.Parse(subject)
+		if err != nil {
+			return nil, fmt.Errorf("parsing subject: %w", err)
+		}
+
+		userRepository := ioc.GetDependency[repositories.UserRepository](scope)
+		userFilter := repositories.NewUserFilter().
+			VirtualServerId(virtualServer.Id()).
+			Id(userId)
+		user, err := userRepository.First(ctx, userFilter)
+		if err != nil {
+			return nil, fmt.Errorf("getting user: %w", err)
+		}
+		if user == nil {
+			return nil, fmt.Errorf("user not found")
+		}
+
+		if !user.IsServiceUser() {
+			return nil, fmt.Errorf("user is not a service user")
+		}
+
+		keyId, err := uuid.Parse(keyIdString)
+		if err != nil {
+			return nil, fmt.Errorf("parsing key id: %w", err)
+		}
+
+		credentialRepository := ioc.GetDependency[repositories.CredentialRepository](scope)
+		credentialFilter := repositories.NewCredentialFilter().
+			Type(repositories.CredentialTypeServiceUserKey).
+			UserId(userId).
+			Id(keyId)
+		credential, err := credentialRepository.First(ctx, credentialFilter)
+		if err != nil {
+			return nil, fmt.Errorf("getting credential: %w", err)
+		}
+		if credential == nil {
+			return nil, fmt.Errorf("credential not found")
+		}
+
+		serviceUserKeyDetails, err := credential.ServiceUserKeyDetails()
+		if err != nil {
+			return nil, fmt.Errorf("getting service user key details: %w", err)
+		}
+
+		return serviceUserKeyDetails.PublicKey, nil
+	})
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("parsing subject token: %w", err))
+		return
+	}
+	if !token.Valid {
+		utils.HandleHttpError(w, fmt.Errorf("invalid subject token"))
+		return
+	}
+
+	subject, err := token.Claims.GetSubject()
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("getting subject: %w", err))
+		return
+	}
+
+	userId, err := uuid.Parse(subject)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("parsing subject: %w", err))
+		return
+	}
+
+	audience, err := token.Claims.GetAudience()
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("getting audience: %w", err))
+		return
+	}
+	if len(audience) != 1 {
+		utils.HandleHttpError(w, fmt.Errorf("expected audience to be a single string"))
+	}
+
+	applicationName := audience[0]
+
+	scopesClaim := token.Claims.(jwt.MapClaims)["scopes"].(string)
+	scopes := strings.Split(scopesClaim, " ")
+
+	userRepository := ioc.GetDependency[repositories.UserRepository](scope)
+	userFilter := repositories.NewUserFilter().
+		VirtualServerId(virtualServer.Id()).
+		Id(userId)
+	user, err := userRepository.First(ctx, userFilter)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("getting user: %w", err))
+		return
+	}
+	if user == nil {
+		utils.HandleHttpError(w, fmt.Errorf("user not found"))
+		return
+	}
+
+	keyService := ioc.GetDependency[services.KeyService](scope)
+	keyPair := keyService.GetKey(virtualServerName, virtualServer.SigningAlgorithm())
+
+	clockService := ioc.GetDependency[clock.Service](scope)
+	now := clockService.Now()
+
+	accessToken, err := generateAccessToken(ctx, TokenGenerationParams{
+		UserId:            userId,
+		VirtualServerName: virtualServer.Name(),
+		ClientId:          applicationName,
+		GrantedScopes:     scopes,
+		UserDisplayName:   user.DisplayName(),
+		UserPrimaryEmail:  user.PrimaryEmail(),
+		ExternalUrl:       config.C.Server.ExternalUrl,
+		KeyPair:           keyPair,
+		IssuedAt:          now,
+		AccessTokenExpiry: time.Minute * 5, // TODO: make this configurable per virtual server
+	})
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("generating access token: %w", err))
+		return
+	}
+
+	w.Header().Set("Cache-Control", "no-store")
+	w.Header().Set("Content-Type", "application/json")
+
+	response := TokenExchangeResponse{
+		AccessToken:     accessToken,
+		IssuedTokenType: "urn:ietf:params:oauth:token-type:access_token",
+		TokenType:       "Bearer",
 	}
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {

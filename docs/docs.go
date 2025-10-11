@@ -2039,9 +2039,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "When grant_type=refresh_token",
+                        "description": "When grant_type=urn:ietf:params:oauth:grant-type:token-exchange",
                         "schema": {
-                            "$ref": "#/definitions/handlers.RefreshTokenResponse"
+                            "$ref": "#/definitions/handlers.TokenExchangeResponse"
                         }
                     },
                     "400": {
@@ -2840,6 +2840,20 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.TokenExchangeResponse": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string"
+                },
+                "issued_token_type": {
+                    "type": "string"
+                },
+                "token_type": {
+                    "type": "string"
+                }
+            }
+        },
         "handlers.VerifyPasswordRequestDto": {
             "type": "object",
             "required": [
@@ -2870,14 +2884,10 @@ const docTemplate = `{
                         1000000000,
                         60000000000,
                         3600000000000,
-                        -9223372036854775808,
-                        9223372036854775807,
                         1,
                         1000,
                         1000000,
-                        1000000000,
-                        60000000000,
-                        3600000000000
+                        1000000000
                     ],
                     "x-enum-varnames": [
                         "minDuration",
@@ -2888,14 +2898,10 @@ const docTemplate = `{
                         "Second",
                         "Minute",
                         "Hour",
-                        "minDuration",
-                        "maxDuration",
                         "Nanosecond",
                         "Microsecond",
                         "Millisecond",
-                        "Second",
-                        "Minute",
-                        "Hour"
+                        "Second"
                     ]
                 }
             }

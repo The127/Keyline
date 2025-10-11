@@ -86,6 +86,44 @@ func (c *Credential) PasswordDetails() (*CredentialPasswordDetails, error) {
 	return &passwordDetails, nil
 }
 
+func (c *Credential) TotpDetails() (*CredentialTotpDetails, error) {
+	if c._type != CredentialTypeTotp {
+		return nil, fmt.Errorf("expected totp credential, got %s: %w", c._type, ErrWrongCredentialCast)
+	}
+
+	detailBytes, ok := c.details.([]byte)
+	if !ok {
+		return nil, fmt.Errorf("cannot access detail bytes: %w", ErrWrongCredentialCast)
+	}
+
+	totpDetails := CredentialTotpDetails{}
+	err := json.Unmarshal(detailBytes, &totpDetails)
+	if err != nil {
+		return nil, fmt.Errorf("cannot unmarshal totp details: %w", err)
+	}
+
+	return &totpDetails, nil
+}
+
+func (c *Credential) ServiceUserKeyDetails() (*CredentialServiceUserKey, error) {
+	if c._type != CredentialTypeServiceUserKey {
+		return nil, fmt.Errorf("expected service user key credential, got %s: %w", c._type, ErrWrongCredentialCast)
+	}
+
+	detailBytes, ok := c.details.([]byte)
+	if !ok {
+		return nil, fmt.Errorf("cannot access detail bytes: %w", ErrWrongCredentialCast)
+	}
+
+	serviceUserKeyDetails := CredentialServiceUserKey{}
+	err := json.Unmarshal(detailBytes, &serviceUserKeyDetails)
+	if err != nil {
+		return nil, fmt.Errorf("cannot unmarshal service user key details: %w", err)
+	}
+
+	return &serviceUserKeyDetails, nil
+}
+
 // CredentialType represents a credential type.
 // Use the following constants: CredentialTypePassword
 type CredentialType string
@@ -171,6 +209,7 @@ func (d *CredentialTotpDetails) Scan(value any) error {
 }
 
 type CredentialFilter struct {
+	id     *uuid.UUID
 	userId *uuid.UUID
 	_type  *CredentialType
 }
@@ -181,6 +220,12 @@ func NewCredentialFilter() CredentialFilter {
 
 func (f CredentialFilter) Clone() CredentialFilter {
 	return f
+}
+
+func (f CredentialFilter) Id(id uuid.UUID) CredentialFilter {
+	filter := f.Clone()
+	filter.id = &id
+	return filter
 }
 
 func (f CredentialFilter) UserId(userId uuid.UUID) CredentialFilter {
@@ -221,6 +266,10 @@ func (r *credentialRepository) selectQuery(filter CredentialFilter) *sqlbuilder.
 		"type",
 		"details",
 	).From("credentials")
+
+	if filter.id != nil {
+		s.Where(s.Equal("id", filter.id))
+	}
 
 	if filter.userId != nil {
 		s.Where(s.Equal("user_id", filter.userId))
