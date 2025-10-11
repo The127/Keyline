@@ -870,7 +870,7 @@ func generateIdToken(params TokenGenerationParams) (string, error) {
 	return idToken.SignedString(params.KeyPair.PrivateKey())
 }
 
-func generateAccessToken(params TokenGenerationParams) (string, error) {
+func generateAccessToken(ctx context.Context, params TokenGenerationParams) (string, error) {
 	kid := computeKID(params.KeyPair.PublicKeyBytes())
 
 	jwtSigningMethod, err := getJwtSigningMethod(params.KeyPair.Algorithm())
@@ -878,19 +878,64 @@ func generateAccessToken(params TokenGenerationParams) (string, error) {
 		return "", fmt.Errorf("getting jwt signing method: %w", err)
 	}
 
-	accessTokenClaims := jwt.MapClaims{
-		"sub":    params.UserId,
-		"iss":    fmt.Sprintf("%s/oidc/%s", params.ExternalUrl, params.VirtualServerName),
-		"aud":    []string{params.ClientId},
-		"scopes": params.GrantedScopes,
-		"iat":    params.IssuedAt.Unix(),
-		"exp":    params.IssuedAt.Add(params.AccessTokenExpiry).Unix(),
+	accessTokenClaims, err := mapClaims(ctx, params)
+	if err != nil {
+		return "", fmt.Errorf("mapping claims: %w", err)
 	}
+
+	accessTokenClaims["sub"] = params.UserId
+	accessTokenClaims["iss"] = fmt.Sprintf("%s/oidc/%s", params.ExternalUrl, params.VirtualServerName)
+	accessTokenClaims["aud"] = []string{params.ClientId}
+	accessTokenClaims["scopes"] = params.GrantedScopes
+	accessTokenClaims["iat"] = params.IssuedAt.Unix()
+	accessTokenClaims["exp"] = params.IssuedAt.Add(params.AccessTokenExpiry).Unix()
 
 	accessToken := jwt.NewWithClaims(jwtSigningMethod, accessTokenClaims)
 	accessToken.Header["kid"] = kid
 	accessToken.Header["typ"] = "at+jwt" // RFC 9068
 	return accessToken.SignedString(params.KeyPair.PrivateKey())
+}
+
+func mapClaims(ctx context.Context, params TokenGenerationParams) (jwt.MapClaims, error) {
+	scope := middlewares.GetScope(ctx)
+
+	userRepository := ioc.GetDependency[repositories.UserRepository](scope)
+	userFilter := repositories.NewUserFilter().Id(params.UserId)
+	user, err := userRepository.Single(ctx, userFilter)
+	if err != nil {
+		return nil, fmt.Errorf("getting user: %w", err)
+	}
+	if user == nil {
+		return nil, fmt.Errorf("user not found")
+	}
+
+	userRoleAssignmentRepository := ioc.GetDependency[repositories.UserRoleAssignmentRepository](scope)
+	userRoleAssignmentFilter := repositories.NewUserRoleAssignmentFilter().UserId(params.UserId)
+	userRoleAssignments, _, err := userRoleAssignmentRepository.List(ctx, userRoleAssignmentFilter)
+	if err != nil {
+		return nil, fmt.Errorf("getting user role assignments: %w", err)
+	}
+
+	roleRepository := ioc.GetDependency[repositories.RoleRepository](scope)
+	roles := make([]string, 0, len(userRoleAssignments))
+
+	for _, userRoleAssignment := range userRoleAssignments {
+		roleFilter := repositories.NewRoleFilter().Id(userRoleAssignment.RoleId())
+		role, err := roleRepository.Single(ctx, roleFilter)
+		if err != nil {
+			return nil, fmt.Errorf("getting role: %w", err)
+		}
+		if role == nil {
+			return nil, fmt.Errorf("role not found")
+		}
+
+		roles = append(roles, role.Name())
+	}
+
+	claims := jwt.MapClaims{
+		"roles": roles,
+	}
+	return claims, nil
 }
 
 func generateRefreshTokenInfo(params TokenGenerationParams) (string, error) {
@@ -913,7 +958,7 @@ func generateTokens(ctx context.Context, params TokenGenerationParams, tokenServ
 		return GeneratedTokens{}, fmt.Errorf("signing id token: %w", err)
 	}
 
-	accessTokenString, err := generateAccessToken(params)
+	accessTokenString, err := generateAccessToken(ctx, params)
 	if err != nil {
 		return GeneratedTokens{}, fmt.Errorf("signing access token: %w", err)
 	}

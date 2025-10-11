@@ -127,7 +127,7 @@ func TestGenerateAccessToken_SignsWithPrivateKey(t *testing.T) {
 	params := newDefaultParams(pub, priv, config.SigningAlgorithmEdDSA)
 
 	// Act
-	tokenString, err := generateAccessToken(params)
+	tokenString, err := generateAccessToken(t.Context(), params)
 
 	// Assert
 	require.NoError(t, err)
@@ -148,7 +148,7 @@ func TestGenerateAccessToken_HasExpectedClaims(t *testing.T) {
 	params.GrantedScopes = []string{"openid", "email", "profile"}
 
 	// Act
-	tokenString, _ := generateAccessToken(params)
+	tokenString, _ := generateAccessToken(t.Context(), params)
 	token := parseToken(t, tokenString, pub)
 	claims := token.Claims.(jwt.MapClaims)
 
@@ -174,7 +174,7 @@ func TestGenerateAccessToken_HasExpectedHeaders(t *testing.T) {
 	params := newDefaultParams(pub, priv, config.SigningAlgorithmEdDSA)
 
 	// Act
-	tokenString, _ := generateAccessToken(params)
+	tokenString, _ := generateAccessToken(t.Context(), params)
 	token := parseToken(t, tokenString, pub)
 
 	// Assert
