@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	queries2 "Keyline/internal/queries"
+	"Keyline/internal/queries"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -15,15 +15,15 @@ type QueryOps struct {
 	Search   string
 }
 
-func (q *QueryOps) ToPagedQuery() queries2.PagedQuery {
-	return queries2.PagedQuery{
+func (q *QueryOps) ToPagedQuery() queries.PagedQuery {
+	return queries.PagedQuery{
 		PageSize: q.PageSize,
 		Page:     q.Page,
 	}
 }
 
-func (q *QueryOps) ToOrderedQuery() queries2.OrderedQuery {
-	return queries2.OrderedQuery{
+func (q *QueryOps) ToOrderedQuery() queries.OrderedQuery {
+	return queries.OrderedQuery{
 		OrderBy:  q.OrderBy,
 		OrderDir: q.OrderDir,
 	}
