@@ -3,7 +3,7 @@ package commands
 import (
 	"Keyline/internal/events"
 	"Keyline/internal/middlewares"
-	repositories2 "Keyline/internal/repositories"
+	"Keyline/internal/repositories"
 	"Keyline/ioc"
 	"Keyline/mediator"
 	"context"
@@ -28,15 +28,15 @@ type CreateRoleResponse struct {
 func HandleCreateRole(ctx context.Context, command CreateRole) (*CreateRoleResponse, error) {
 	scope := middlewares.GetScope(ctx)
 
-	virtualServerRepository := ioc.GetDependency[repositories2.VirtualServerRepository](scope)
-	virtualServerFilter := repositories2.NewVirtualServerFilter().Name(command.VirtualServerName)
+	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
+	virtualServerFilter := repositories.NewVirtualServerFilter().Name(command.VirtualServerName)
 	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
-	roleRepository := ioc.GetDependency[repositories2.RoleRepository](scope)
-	role := repositories2.NewRole(
+	roleRepository := ioc.GetDependency[repositories.RoleRepository](scope)
+	role := repositories.NewRole(
 		virtualServer.Id(),
 		nil,
 		command.Name,

@@ -1,7 +1,7 @@
 package jsonTypes
 
 import (
-	repositories2 "Keyline/internal/repositories"
+	"Keyline/internal/repositories"
 
 	"github.com/google/uuid"
 )
@@ -28,7 +28,7 @@ type LoginInfo struct {
 	OriginalUrl              string    `json:"originalUrl"`
 }
 
-func NewLoginInfo(virtualServer *repositories2.VirtualServer, application *repositories2.Application, originalUrl string) LoginInfo {
+func NewLoginInfo(virtualServer *repositories.VirtualServer, application *repositories.Application, originalUrl string) LoginInfo {
 	return LoginInfo{
 		Step:                     LoginStepPasswordVerification,
 		VirtualServerDisplayName: virtualServer.DisplayName(),

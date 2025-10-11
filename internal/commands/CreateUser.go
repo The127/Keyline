@@ -3,7 +3,7 @@ package commands
 import (
 	"Keyline/internal/events"
 	"Keyline/internal/middlewares"
-	repositories2 "Keyline/internal/repositories"
+	"Keyline/internal/repositories"
 	"Keyline/ioc"
 	"Keyline/mediator"
 	"context"
@@ -27,15 +27,15 @@ type CreateUserResponse struct {
 func HandleCreateUser(ctx context.Context, command CreateUser) (*CreateUserResponse, error) {
 	scope := middlewares.GetScope(ctx)
 
-	virtualServerRepository := ioc.GetDependency[repositories2.VirtualServerRepository](scope)
-	virtualServerFilter := repositories2.NewVirtualServerFilter().Name(command.VirtualServerName)
+	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
+	virtualServerFilter := repositories.NewVirtualServerFilter().Name(command.VirtualServerName)
 	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
-	userRepository := ioc.GetDependency[repositories2.UserRepository](scope)
-	user := repositories2.NewUser(
+	userRepository := ioc.GetDependency[repositories.UserRepository](scope)
+	user := repositories.NewUser(
 		command.Username,
 		command.DisplayName,
 		command.Email,

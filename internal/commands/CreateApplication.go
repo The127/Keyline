@@ -4,7 +4,7 @@ import (
 	"Keyline/internal/authentication"
 	"Keyline/internal/behaviours"
 	"Keyline/internal/middlewares"
-	repositories2 "Keyline/internal/repositories"
+	"Keyline/internal/repositories"
 	"Keyline/ioc"
 	"Keyline/utils"
 	"context"
@@ -17,7 +17,7 @@ type CreateApplication struct {
 	VirtualServerName      string
 	Name                   string
 	DisplayName            string
-	Type                   repositories2.ApplicationType
+	Type                   repositories.ApplicationType
 	RedirectUris           []string
 	PostLogoutRedirectUris []string
 }
@@ -43,15 +43,15 @@ type CreateApplicationResponse struct {
 func HandleCreateApplication(ctx context.Context, command CreateApplication) (*CreateApplicationResponse, error) {
 	scope := middlewares.GetScope(ctx)
 
-	virtualServerRepository := ioc.GetDependency[repositories2.VirtualServerRepository](scope)
-	virtualServerFilter := repositories2.NewVirtualServerFilter().Name(command.VirtualServerName)
+	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
+	virtualServerFilter := repositories.NewVirtualServerFilter().Name(command.VirtualServerName)
 	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
-	applicationRepository := ioc.GetDependency[repositories2.ApplicationRepository](scope)
-	application := repositories2.NewApplication(
+	applicationRepository := ioc.GetDependency[repositories.ApplicationRepository](scope)
+	application := repositories.NewApplication(
 		virtualServer.Id(),
 		command.Name,
 		command.DisplayName,
@@ -60,7 +60,7 @@ func HandleCreateApplication(ctx context.Context, command CreateApplication) (*C
 	)
 
 	var secret *string = nil
-	if command.Type == repositories2.ApplicationTypeConfidential {
+	if command.Type == repositories.ApplicationTypeConfidential {
 		secret = utils.Ptr(application.GenerateSecret())
 	}
 

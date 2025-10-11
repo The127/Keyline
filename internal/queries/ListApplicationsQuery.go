@@ -2,7 +2,7 @@ package queries
 
 import (
 	"Keyline/internal/middlewares"
-	repositories2 "Keyline/internal/repositories"
+	"Keyline/internal/repositories"
 	"Keyline/ioc"
 	"Keyline/utils"
 	"context"
@@ -26,22 +26,22 @@ type ListApplicationsResponseItem struct {
 	Id          uuid.UUID
 	Name        string
 	DisplayName string
-	Type        repositories2.ApplicationType
+	Type        repositories.ApplicationType
 }
 
 func HandleListApplications(ctx context.Context, query ListApplications) (*ListApplicationsResponse, error) {
 	scope := middlewares.GetScope(ctx)
 
-	virtualServerRepository := ioc.GetDependency[repositories2.VirtualServerRepository](scope)
-	virtualServerFilter := repositories2.NewVirtualServerFilter().
+	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
+	virtualServerFilter := repositories.NewVirtualServerFilter().
 		Name(query.VirtualServerName)
 	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("searching virtual servers: %w", err)
 	}
 
-	applicationRepository := ioc.GetDependency[repositories2.ApplicationRepository](scope)
-	applicationFilter := repositories2.NewApplicationFilter().
+	applicationRepository := ioc.GetDependency[repositories.ApplicationRepository](scope)
+	applicationFilter := repositories.NewApplicationFilter().
 		VirtualServerId(virtualServer.Id()).
 		Pagination(query.Page, query.PageSize).
 		Order(query.OrderBy, query.OrderDir).
@@ -51,7 +51,7 @@ func HandleListApplications(ctx context.Context, query ListApplications) (*ListA
 		return nil, fmt.Errorf("searching applications: %w", err)
 	}
 
-	items := utils.MapSlice(applications, func(t *repositories2.Application) ListApplicationsResponseItem {
+	items := utils.MapSlice(applications, func(t *repositories.Application) ListApplicationsResponseItem {
 		return ListApplicationsResponseItem{
 			Id:          t.Id(),
 			Name:        t.Name(),

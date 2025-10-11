@@ -3,7 +3,7 @@ package commands
 import (
 	"Keyline/internal/config"
 	"Keyline/internal/middlewares"
-	repositories2 "Keyline/internal/repositories"
+	"Keyline/internal/repositories"
 	"Keyline/internal/services"
 	"Keyline/ioc"
 	"Keyline/templates"
@@ -34,9 +34,9 @@ type CreateVirtualServerResponse struct {
 func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer) (*CreateVirtualServerResponse, error) {
 	scope := middlewares.GetScope(ctx)
 
-	virtualServerRepository := ioc.GetDependency[repositories2.VirtualServerRepository](scope)
+	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
 
-	virtualServer := repositories2.NewVirtualServer(command.Name, command.DisplayName)
+	virtualServer := repositories.NewVirtualServer(command.Name, command.DisplayName)
 	virtualServer.SetEnableRegistration(command.EnableRegistration)
 	virtualServer.SetRequire2fa(command.Require2fa)
 	virtualServer.SetSigningAlgorithm(command.SigningAlgorithm)
@@ -72,16 +72,16 @@ func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer)
 	}, nil
 }
 
-func initializeDefaultApplications(ctx context.Context, virtualServer *repositories2.VirtualServer) error {
+func initializeDefaultApplications(ctx context.Context, virtualServer *repositories.VirtualServer) error {
 	scope := middlewares.GetScope(ctx)
 
-	applicationRepository := ioc.GetDependency[repositories2.ApplicationRepository](scope)
+	applicationRepository := ioc.GetDependency[repositories.ApplicationRepository](scope)
 
-	adminUiApplication := repositories2.NewApplication(
+	adminUiApplication := repositories.NewApplication(
 		virtualServer.Id(),
 		AdminApplicationName,
 		"Admin Application",
-		repositories2.ApplicationTypePublic,
+		repositories.ApplicationTypePublic,
 		[]string{
 			fmt.Sprintf("%s/mgmt/%s/auth", config.C.Frontend.ExternalUrl, virtualServer.Name()),
 		},
@@ -100,12 +100,12 @@ func initializeDefaultApplications(ctx context.Context, virtualServer *repositor
 	return nil
 }
 
-func initializeDefaultRoles(ctx context.Context, virtualServer *repositories2.VirtualServer) error {
+func initializeDefaultRoles(ctx context.Context, virtualServer *repositories.VirtualServer) error {
 	scope := middlewares.GetScope(ctx)
 
-	roleRepository := ioc.GetDependency[repositories2.RoleRepository](scope)
+	roleRepository := ioc.GetDependency[repositories.RoleRepository](scope)
 
-	adminRole := repositories2.NewRole(
+	adminRole := repositories.NewRole(
 		virtualServer.Id(),
 		nil,
 		AdminRoleName,
@@ -122,11 +122,11 @@ func initializeDefaultRoles(ctx context.Context, virtualServer *repositories2.Vi
 	return nil
 }
 
-func initializeDefaultTemplates(ctx context.Context, virtualServer *repositories2.VirtualServer) error {
+func initializeDefaultTemplates(ctx context.Context, virtualServer *repositories.VirtualServer) error {
 	scope := middlewares.GetScope(ctx)
 
-	fileRepository := ioc.GetDependency[repositories2.FileRepository](scope)
-	templateRepository := ioc.GetDependency[repositories2.TemplateRepository](scope)
+	fileRepository := ioc.GetDependency[repositories.FileRepository](scope)
+	templateRepository := ioc.GetDependency[repositories.TemplateRepository](scope)
 
 	err := insertTemplate(
 		ctx,
@@ -144,17 +144,17 @@ func initializeDefaultTemplates(ctx context.Context, virtualServer *repositories
 func insertTemplate(
 	ctx context.Context,
 	templateName string,
-	virtualServer *repositories2.VirtualServer,
-	fileRepository repositories2.FileRepository,
-	templateRepository repositories2.TemplateRepository,
+	virtualServer *repositories.VirtualServer,
+	fileRepository repositories.FileRepository,
+	templateRepository repositories.TemplateRepository,
 ) error {
-	file := repositories2.NewFile(templateName, "text/plain", templates.DefaultEmailVerificationTemplate)
+	file := repositories.NewFile(templateName, "text/plain", templates.DefaultEmailVerificationTemplate)
 	err := fileRepository.Insert(ctx, file)
 	if err != nil {
 		return fmt.Errorf("inserting %s file: %w", templateName, err)
 	}
 
-	t := repositories2.NewTemplate(virtualServer.Id(), file.Id(), repositories2.EmailVerificationMailTemplate)
+	t := repositories.NewTemplate(virtualServer.Id(), file.Id(), repositories.EmailVerificationMailTemplate)
 	err = templateRepository.Insert(ctx, t)
 	if err != nil {
 		return fmt.Errorf("inserting %s template: %w", templateName, err)

@@ -2,7 +2,7 @@ package commands
 
 import (
 	"Keyline/internal/middlewares"
-	repositories2 "Keyline/internal/repositories"
+	"Keyline/internal/repositories"
 	"Keyline/internal/repositories/mocks"
 	"Keyline/internal/services"
 	serviceMocks "Keyline/internal/services/mocks"
@@ -56,22 +56,22 @@ func TestHandleCreateVirtualServer(t *testing.T) {
 		AnyTimes()
 
 	dc := ioc.NewDependencyCollection()
-	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories2.VirtualServerRepository {
+	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.VirtualServerRepository {
 		return virtualServerRepository
 	})
 	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) services.KeyService {
 		return keyService
 	})
-	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories2.TemplateRepository {
+	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.TemplateRepository {
 		return templateRepository
 	})
-	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories2.RoleRepository {
+	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.RoleRepository {
 		return roleRepository
 	})
-	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories2.FileRepository {
+	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.FileRepository {
 		return fileRepository
 	})
-	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories2.ApplicationRepository {
+	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.ApplicationRepository {
 		return applicationRepository
 	})
 	scope := dc.BuildProvider()

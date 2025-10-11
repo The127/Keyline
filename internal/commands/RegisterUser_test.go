@@ -2,8 +2,8 @@ package commands
 
 import (
 	"Keyline/internal/middlewares"
-	repositories2 "Keyline/internal/repositories"
-	mocks2 "Keyline/internal/repositories/mocks"
+	"Keyline/internal/repositories"
+	"Keyline/internal/repositories/mocks"
 	"Keyline/ioc"
 	"Keyline/mediator"
 	"testing"
@@ -23,30 +23,30 @@ func TestHandleRegisterUser(t *testing.T) {
 
 	now := time.Now()
 
-	virtualServer := repositories2.NewVirtualServer("virtualServer", "Virtual Server")
+	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
 	virtualServer.Mock(now)
 	virtualServer.SetEnableRegistration(true)
-	virtualServerRepository := mocks2.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories2.VirtualServerFilter) bool {
+	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
+	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories.VirtualServerFilter) bool {
 		return *x.GetName() == virtualServer.Name()
 	})).Return(virtualServer, nil)
 
-	userRepository := mocks2.NewMockUserRepository(ctrl)
+	userRepository := mocks.NewMockUserRepository(ctrl)
 	userRepository.EXPECT().Insert(gomock.Any(), gomock.Any()).Return(nil)
 
-	credentialRepository := mocks2.NewMockCredentialRepository(ctrl)
+	credentialRepository := mocks.NewMockCredentialRepository(ctrl)
 	credentialRepository.EXPECT().Insert(gomock.Any(), gomock.Any()).Return(nil)
 
 	m := mediator.NewMediator()
 
 	dc := ioc.NewDependencyCollection()
-	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories2.VirtualServerRepository {
+	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.VirtualServerRepository {
 		return virtualServerRepository
 	})
-	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories2.UserRepository {
+	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.UserRepository {
 		return userRepository
 	})
-	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories2.CredentialRepository {
+	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.CredentialRepository {
 		return credentialRepository
 	})
 	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) mediator.Mediator {
@@ -80,16 +80,16 @@ func TestHandleRegisterUser_RegistrationNotEnabled(t *testing.T) {
 
 	now := time.Now()
 
-	virtualServer := repositories2.NewVirtualServer("virtualServer", "Virtual Server")
+	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
 	virtualServer.Mock(now)
 	virtualServer.SetEnableRegistration(false)
-	virtualServerRepository := mocks2.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories2.VirtualServerFilter) bool {
+	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
+	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories.VirtualServerFilter) bool {
 		return *x.GetName() == virtualServer.Name()
 	})).Return(virtualServer, nil)
 
 	dc := ioc.NewDependencyCollection()
-	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories2.VirtualServerRepository {
+	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.VirtualServerRepository {
 		return virtualServerRepository
 	})
 	scope := dc.BuildProvider()

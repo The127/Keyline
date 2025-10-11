@@ -3,7 +3,7 @@ package commands
 import (
 	"Keyline/internal/events"
 	"Keyline/internal/middlewares"
-	repositories2 "Keyline/internal/repositories"
+	"Keyline/internal/repositories"
 	"Keyline/ioc"
 	"Keyline/mediator"
 	"Keyline/utils"
@@ -28,8 +28,8 @@ type RegisterUserResponse struct {
 func HandleRegisterUser(ctx context.Context, command RegisterUser) (*RegisterUserResponse, error) {
 	scope := middlewares.GetScope(ctx)
 
-	virtualServerRepository := ioc.GetDependency[repositories2.VirtualServerRepository](scope)
-	virtualServerFilter := repositories2.NewVirtualServerFilter().Name(command.VirtualServerName)
+	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
+	virtualServerFilter := repositories.NewVirtualServerFilter().Name(command.VirtualServerName)
 	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
@@ -39,8 +39,8 @@ func HandleRegisterUser(ctx context.Context, command RegisterUser) (*RegisterUse
 		return nil, utils.ErrRegistrationNotEnabled
 	}
 
-	userRepository := ioc.GetDependency[repositories2.UserRepository](scope)
-	user := repositories2.NewUser(
+	userRepository := ioc.GetDependency[repositories.UserRepository](scope)
+	user := repositories.NewUser(
 		command.Username,
 		command.DisplayName,
 		command.Email,
@@ -53,8 +53,8 @@ func HandleRegisterUser(ctx context.Context, command RegisterUser) (*RegisterUse
 
 	hashedPassword := utils.HashPassword(command.Password)
 
-	credentialRepository := ioc.GetDependency[repositories2.CredentialRepository](scope)
-	credential := repositories2.NewCredential(user.Id(), &repositories2.CredentialPasswordDetails{
+	credentialRepository := ioc.GetDependency[repositories.CredentialRepository](scope)
+	credential := repositories.NewCredential(user.Id(), &repositories.CredentialPasswordDetails{
 		HashedPassword: hashedPassword,
 		Temporary:      false,
 	})

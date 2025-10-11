@@ -2,7 +2,7 @@ package services
 
 import (
 	"Keyline/internal/middlewares"
-	repositories2 "Keyline/internal/repositories"
+	"Keyline/internal/repositories"
 	"Keyline/ioc"
 	"bytes"
 	"context"
@@ -13,7 +13,7 @@ import (
 )
 
 type TemplateService interface {
-	Template(ctx context.Context, virtualServerId uuid.UUID, templateType repositories2.TemplateType, data any) (string, error)
+	Template(ctx context.Context, virtualServerId uuid.UUID, templateType repositories.TemplateType, data any) (string, error)
 }
 
 type templateService struct {
@@ -23,12 +23,12 @@ func NewTemplateService() TemplateService {
 	return &templateService{}
 }
 
-func (s templateService) Template(ctx context.Context, virtualServerId uuid.UUID, templateType repositories2.TemplateType, data any) (string, error) {
+func (s templateService) Template(ctx context.Context, virtualServerId uuid.UUID, templateType repositories.TemplateType, data any) (string, error) {
 	scope := middlewares.GetScope(ctx)
-	templateRepository := ioc.GetDependency[repositories2.TemplateRepository](scope)
-	fileRepository := ioc.GetDependency[repositories2.FileRepository](scope)
+	templateRepository := ioc.GetDependency[repositories.TemplateRepository](scope)
+	fileRepository := ioc.GetDependency[repositories.FileRepository](scope)
 
-	dbTemplate, err := templateRepository.First(ctx, repositories2.NewTemplateFilter().
+	dbTemplate, err := templateRepository.First(ctx, repositories.NewTemplateFilter().
 		VirtualServerId(virtualServerId).
 		TemplateType(templateType))
 	if err != nil {
@@ -39,7 +39,7 @@ func (s templateService) Template(ctx context.Context, virtualServerId uuid.UUID
 		return "", fmt.Errorf("template not found")
 	}
 
-	dbFile, err := fileRepository.First(ctx, repositories2.NewFileFilter().
+	dbFile, err := fileRepository.First(ctx, repositories.NewFileFilter().
 		Id(dbTemplate.FileId()))
 	if err != nil {
 		return "", fmt.Errorf("querying file: %w", err)
