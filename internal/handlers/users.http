@@ -14,16 +14,22 @@ POST http://127.0.0.1:8081/api/virtual-servers/keyline/users/service-users
 Content-Type: application/json
 
 {
-  "username": "service-user-04"
+  "username": "service-user-05"
 }
 
 ### list users
 GET http://127.0.0.1:8081/api/virtual-servers/keyline/users
 
 ### associate public key wih service user
-POST http://127.0.0.1:8081/api/virtual-servers/keyline/users/servicerefactor-users/acb98708-fb0a-481b-aa3f-087aee16b419/keys
+POST http://127.0.0.1:8081/api/virtual-servers/keyline/users/service-users/ae3c23d4-9b94-44f1-bd2d-43a14a6d9b08/keys
 Content-Type: application/json
 
+// demo private key
+//-----BEGIN PRIVATE KEY-----
+//MIGEAgEAMBAGByqGSM49AgEGBSuBBAAKBG0wawIBAQQg+13edOCwzpLdI/jLl2Y4
+//BVF7247SXRCYoSnyziSyPR6hRANCAAQvE3AXvPI3ZKwG2viPqJW0HgGpNhwvqsnl
+//5soqQHn4c31h5ZrAQuy4Jl17CFQtwNCXJ4C+AubmpUr3EjmKOKn6
+//-----END PRIVATE KEY-----
 {
-  "publicKey": "fake public key"
+  "publicKey": "-----BEGIN PUBLIC KEY-----\nMFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAELxNwF7zyN2SsBtr4j6iVtB4BqTYcL6rJ\n5ebKKkB5+HN9YeWawELsuCZdewhULcDQlyeAvgLm5qVK9xI5ijip+g==\n-----END PUBLIC KEY-----"
 }
