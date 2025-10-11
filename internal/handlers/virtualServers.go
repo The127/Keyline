@@ -1,10 +1,10 @@
 package handlers
 
 import (
-	commands2 "Keyline/internal/commands"
+	"Keyline/internal/commands"
 	"Keyline/internal/config"
-	middlewares2 "Keyline/internal/middlewares"
-	queries2 "Keyline/internal/queries"
+	"Keyline/internal/middlewares"
+	"Keyline/internal/queries"
 	"Keyline/ioc"
 	"Keyline/mediator"
 	"Keyline/utils"
@@ -34,7 +34,7 @@ type CreateVirtualSeverRequestDto struct {
 // @Router       /api/virtual-servers [post]
 func CreateVirtualSever(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	scope := middlewares2.GetScope(ctx)
+	scope := middlewares.GetScope(ctx)
 
 	var dto CreateVirtualSeverRequestDto
 	err := json.NewDecoder(r.Body).Decode(&dto)
@@ -55,7 +55,7 @@ func CreateVirtualSever(w http.ResponseWriter, r *http.Request) {
 		signingAlgorithm = config.SigningAlgorithm(*dto.SigningAlgorithm)
 	}
 
-	_, err = mediator.Send[*commands2.CreateVirtualServerResponse](ctx, m, commands2.CreateVirtualServer{
+	_, err = mediator.Send[*commands.CreateVirtualServerResponse](ctx, m, commands.CreateVirtualServer{
 		Name:               dto.Name,
 		DisplayName:        dto.DisplayName,
 		EnableRegistration: dto.EnableRegistration,
@@ -92,16 +92,16 @@ type GetVirtualServerResponseDto struct {
 // @Router       /api/virtual-servers/{virtualServerName} [get]
 func GetVirtualServer(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	scope := middlewares2.GetScope(ctx)
+	scope := middlewares.GetScope(ctx)
 
-	vsName, err := middlewares2.GetVirtualServerName(r.Context())
+	vsName, err := middlewares.GetVirtualServerName(r.Context())
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
 	}
 
 	m := ioc.GetDependency[mediator.Mediator](scope)
-	response, err := mediator.Send[*queries2.GetVirtualServerResponse](ctx, m, queries2.GetVirtualServerQuery{
+	response, err := mediator.Send[*queries.GetVirtualServerResponse](ctx, m, queries.GetVirtualServerQuery{
 		VirtualServerName: vsName,
 	})
 	if err != nil {
@@ -144,9 +144,9 @@ type GetVirtualServerListResponseDto struct {
 // @Router       /api/virtual-servers/{virtualServerName}/public-info [get]
 func GetVirtualServerPublicInfo(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	scope := middlewares2.GetScope(ctx)
+	scope := middlewares.GetScope(ctx)
 
-	vsName, err := middlewares2.GetVirtualServerName(r.Context())
+	vsName, err := middlewares.GetVirtualServerName(r.Context())
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
@@ -154,7 +154,7 @@ func GetVirtualServerPublicInfo(w http.ResponseWriter, r *http.Request) {
 
 	m := ioc.GetDependency[mediator.Mediator](scope)
 
-	response, err := mediator.Send[*queries2.GetVirtualServerPublicInfoResponse](ctx, m, queries2.GetVirtualServerPublicInfo{
+	response, err := mediator.Send[*queries.GetVirtualServerPublicInfoResponse](ctx, m, queries.GetVirtualServerPublicInfo{
 		VirtualServerName: vsName,
 	})
 	if err != nil {
@@ -195,9 +195,9 @@ type PatchVirtualServerRequestDto struct {
 // @Router       /api/virtual-servers/{virtualServerName} [patch]
 func PatchVirtualServer(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	scope := middlewares2.GetScope(ctx)
+	scope := middlewares.GetScope(ctx)
 
-	vsName, err := middlewares2.GetVirtualServerName(ctx)
+	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
@@ -211,11 +211,11 @@ func PatchVirtualServer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	m := ioc.GetDependency[mediator.Mediator](scope)
-	command := commands2.PatchVirtualServer{
+	command := commands.PatchVirtualServer{
 		VirtualServerName: vsName,
 		DisplayName:       utils.TrimSpace(dto.DisplayName),
 	}
-	_, err = mediator.Send[*commands2.PatchVirtualServerResponse](ctx, m, command)
+	_, err = mediator.Send[*commands.PatchVirtualServerResponse](ctx, m, command)
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return

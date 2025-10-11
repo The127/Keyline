@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	commands2 "Keyline/internal/commands"
-	middlewares2 "Keyline/internal/middlewares"
-	queries2 "Keyline/internal/queries"
+	"Keyline/internal/commands"
+	"Keyline/internal/middlewares"
+	"Keyline/internal/queries"
 	"Keyline/internal/repositories"
 	"Keyline/ioc"
 	"Keyline/mediator"
@@ -44,7 +44,7 @@ type CreateApplicationResponseDto struct {
 func CreateApplication(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	vsName, err := middlewares2.GetVirtualServerName(r.Context())
+	vsName, err := middlewares.GetVirtualServerName(r.Context())
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
@@ -63,10 +63,10 @@ func CreateApplication(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	scope := middlewares2.GetScope(ctx)
+	scope := middlewares.GetScope(ctx)
 	m := ioc.GetDependency[mediator.Mediator](scope)
 
-	response, err := mediator.Send[*commands2.CreateApplicationResponse](ctx, m, commands2.CreateApplication{
+	response, err := mediator.Send[*commands.CreateApplicationResponse](ctx, m, commands.CreateApplication{
 		VirtualServerName:      vsName,
 		Name:                   dto.Name,
 		DisplayName:            dto.DisplayName,
@@ -122,7 +122,7 @@ type GetApplicationResponseDto struct {
 func GetApplication(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	vsName, err := middlewares2.GetVirtualServerName(r.Context())
+	vsName, err := middlewares.GetVirtualServerName(r.Context())
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
@@ -136,10 +136,10 @@ func GetApplication(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	scope := middlewares2.GetScope(ctx)
+	scope := middlewares.GetScope(ctx)
 	m := ioc.GetDependency[mediator.Mediator](scope)
 
-	application, err := mediator.Send[*queries2.GetApplicationResult](ctx, m, queries2.GetApplication{
+	application, err := mediator.Send[*queries.GetApplicationResult](ctx, m, queries.GetApplication{
 		VirtualServerName: vsName,
 		ApplicationId:     appId,
 	})
@@ -193,7 +193,7 @@ type PatchApplicationRequestDto struct {
 func PatchApplication(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	vsName, err := middlewares2.GetVirtualServerName(r.Context())
+	vsName, err := middlewares.GetVirtualServerName(r.Context())
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
@@ -213,10 +213,10 @@ func PatchApplication(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	scope := middlewares2.GetScope(ctx)
+	scope := middlewares.GetScope(ctx)
 	m := ioc.GetDependency[mediator.Mediator](scope)
 
-	_, err = mediator.Send[*commands2.PatchApplicationResponse](ctx, m, commands2.PatchApplication{
+	_, err = mediator.Send[*commands.PatchApplicationResponse](ctx, m, commands.PatchApplication{
 		VirtualServerName: vsName,
 		ApplicationId:     appId,
 		DisplayName:       utils.TrimSpace(dto.DisplayName),
@@ -243,7 +243,7 @@ func PatchApplication(w http.ResponseWriter, r *http.Request) {
 func DeleteApplication(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	vsName, err := middlewares2.GetVirtualServerName(r.Context())
+	vsName, err := middlewares.GetVirtualServerName(r.Context())
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
@@ -256,10 +256,10 @@ func DeleteApplication(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, utils.ErrInvalidUuid)
 	}
 
-	scope := middlewares2.GetScope(ctx)
+	scope := middlewares.GetScope(ctx)
 	m := ioc.GetDependency[mediator.Mediator](scope)
 
-	_, err = mediator.Send[*commands2.DeleteApplicationResponse](ctx, m, commands2.DeleteApplication{
+	_, err = mediator.Send[*commands.DeleteApplicationResponse](ctx, m, commands.DeleteApplication{
 		VirtualServerName: vsName,
 		ApplicationId:     appId,
 	})
@@ -305,16 +305,16 @@ func ListApplications(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vsName, err := middlewares2.GetVirtualServerName(r.Context())
+	vsName, err := middlewares.GetVirtualServerName(r.Context())
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
 	}
 
-	scope := middlewares2.GetScope(ctx)
+	scope := middlewares.GetScope(ctx)
 	m := ioc.GetDependency[mediator.Mediator](scope)
 
-	applications, err := mediator.Send[*queries2.ListApplicationsResponse](ctx, m, queries2.ListApplications{
+	applications, err := mediator.Send[*queries.ListApplicationsResponse](ctx, m, queries.ListApplications{
 		VirtualServerName: vsName,
 		PagedQuery:        queryOps.ToPagedQuery(),
 		OrderedQuery:      queryOps.ToOrderedQuery(),
@@ -325,7 +325,7 @@ func ListApplications(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	items := utils.MapSlice(applications.Items, func(x queries2.ListApplicationsResponseItem) ListApplicationsResponseDto {
+	items := utils.MapSlice(applications.Items, func(x queries.ListApplicationsResponseItem) ListApplicationsResponseDto {
 		return ListApplicationsResponseDto{
 			Id:          x.Id,
 			Name:        x.Name,

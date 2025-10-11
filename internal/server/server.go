@@ -4,7 +4,7 @@ import (
 	"Keyline/internal/authentication"
 	"Keyline/internal/config"
 	"Keyline/internal/handlers"
-	middlewares2 "Keyline/internal/middlewares"
+	"Keyline/internal/middlewares"
 	"Keyline/ioc"
 	"Keyline/logging"
 	"fmt"
@@ -21,9 +21,9 @@ import (
 func Serve(dp *ioc.DependencyProvider) {
 	r := mux.NewRouter()
 
-	r.Use(middlewares2.RecoverMiddleware())
-	r.Use(middlewares2.LoggingMiddleware())
-	r.Use(middlewares2.ScopeMiddleware(dp))
+	r.Use(middlewares.RecoverMiddleware())
+	r.Use(middlewares.LoggingMiddleware())
+	r.Use(middlewares.ScopeMiddleware(dp))
 
 	r.HandleFunc("/health", handlers.ApplicationHealth).Methods(http.MethodGet, http.MethodOptions)
 	r.HandleFunc("/debug", handlers.Debug).Methods(http.MethodGet, http.MethodOptions)
@@ -52,8 +52,8 @@ func Serve(dp *ioc.DependencyProvider) {
 		})
 	})
 
-	oidcRouter.Use(middlewares2.VirtualServerMiddleware())
-	oidcRouter.Use(middlewares2.SessionMiddleware())
+	oidcRouter.Use(middlewares.VirtualServerMiddleware())
+	oidcRouter.Use(middlewares.SessionMiddleware())
 	oidcRouter.HandleFunc("/.well-known/openid-configuration", handlers.WellKnownOpenIdConfiguration).Methods(http.MethodGet, http.MethodOptions)
 	oidcRouter.HandleFunc("/.well-known/jwks.json", handlers.WellKnownJwks).Methods(http.MethodGet, http.MethodOptions)
 	oidcRouter.HandleFunc("/authorize", handlers.BeginAuthorizationFlow).Methods(http.MethodGet, http.MethodPost, http.MethodOptions)
@@ -91,7 +91,7 @@ func Serve(dp *ioc.DependencyProvider) {
 	apiRouter.HandleFunc("/virtual-servers", handlers.CreateVirtualSever).Methods(http.MethodPost, http.MethodOptions)
 
 	vsApiRouter := apiRouter.PathPrefix("/virtual-servers/{virtualServerName}").Subrouter()
-	vsApiRouter.Use(middlewares2.VirtualServerMiddleware())
+	vsApiRouter.Use(middlewares.VirtualServerMiddleware())
 	vsApiRouter.Use(authentication.Middleware())
 
 	vsApiRouter.HandleFunc("", handlers.GetVirtualServer).Methods(http.MethodGet, http.MethodOptions)
