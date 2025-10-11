@@ -261,22 +261,22 @@ func initApplication(dp *ioc.DependencyProvider) {
 		}
 	}
 }
+
 func configureSwaggerFromConfig() {
 	if config.C.Server.ExternalUrl != "" {
 		if u, err := url.Parse(config.C.Server.ExternalUrl); err == nil {
 			if u.Host != "" {
 				docs.SwaggerInfo.Host = u.Host
 			}
+
 			if u.Scheme != "" {
 				docs.SwaggerInfo.Schemes = []string{u.Scheme}
 			}
 		}
-	}
-
-	// Fallback to internal host:port
-	if docs.SwaggerInfo.Host == "" {
+	} else {
 		docs.SwaggerInfo.Host = fmt.Sprintf("%s:%d", config.C.Server.Host, config.C.Server.Port)
 	}
+
 	if len(docs.SwaggerInfo.Schemes) == 0 {
 		docs.SwaggerInfo.Schemes = []string{"http"}
 	}
