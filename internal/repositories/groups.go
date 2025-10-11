@@ -68,9 +68,12 @@ func (g *Group) VirtualServerId() uuid.UUID {
 }
 
 type GroupFilter struct {
-	name             *string
-	virtuallServerId *uuid.UUID
-	id               *uuid.UUID
+	pagingInfo
+	orderInfo
+	name            *string
+	virtualServerId *uuid.UUID
+	id              *uuid.UUID
+	search          *string
 }
 
 func NewGroupFilter() GroupFilter {
@@ -81,6 +84,30 @@ func (f GroupFilter) Clone() GroupFilter {
 	return f
 }
 
+func (f GroupFilter) Pagination(page int, size int) GroupFilter {
+	filter := f.Clone()
+	filter.pagingInfo = pagingInfo{
+		page: page,
+		size: size,
+	}
+	return filter
+}
+
+func (f GroupFilter) Order(by string, direction string) GroupFilter {
+	filter := f.Clone()
+	filter.orderInfo = orderInfo{
+		orderBy:  by,
+		orderDir: direction,
+	}
+	return filter
+}
+
+func (f GroupFilter) Search(search string) GroupFilter {
+	filter := f.Clone()
+	filter.search = utils.NilIfZero(search)
+	return filter
+}
+
 func (f GroupFilter) Name(name string) GroupFilter {
 	filter := f.Clone()
 	filter.name = &name
@@ -89,7 +116,7 @@ func (f GroupFilter) Name(name string) GroupFilter {
 
 func (f GroupFilter) VirtualServerId(virtualServerId uuid.UUID) GroupFilter {
 	filter := f.Clone()
-	filter.virtuallServerId = &virtualServerId
+	filter.virtualServerId = &virtualServerId
 	return filter
 }
 
@@ -135,9 +162,19 @@ func (r *groupRepository) selectQuery(filter GroupFilter) *sqlbuilder.SelectBuil
 		s.Where(s.Equal("name", filter.name))
 	}
 
-	if filter.virtuallServerId != nil {
-		s.Where(s.Equal("virtual_server_id", filter.virtuallServerId))
+	if filter.virtualServerId != nil {
+		s.Where(s.Equal("virtual_server_id", filter.virtualServerId))
 	}
+
+	if filter.search != nil {
+		term := "%" + *filter.search + "%"
+		s.Where(s.Or(
+			s.ILike("name", term),
+		))
+	}
+
+	filter.orderInfo.apply(s)
+	filter.pagingInfo.apply(s)
 
 	return s
 }
