@@ -152,7 +152,7 @@ func (f UserFilter) GetUsername() *string {
 	return f.username
 }
 
-//go:generate mockgen -destination=./mocks/user_repository.go -package=mocks Keyline/repositories UserRepository
+//go:generate mockgen -destination=./mocks/user_repository.go -package=mocks Keyline/internal/repositories UserRepository
 type UserRepository interface {
 	List(ctx context.Context, filter UserFilter) ([]*User, int, error)
 	Single(ctx context.Context, filter UserFilter) (*User, error)

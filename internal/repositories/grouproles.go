@@ -50,7 +50,7 @@ func (f GroupRoleFilter) RoleId(roleId uuid.UUID) GroupRoleFilter {
 	return filter
 }
 
-//go:generate mockgen -destination=./mocks/grouprole_repository.go -package=mocks Keyline/repositories GroupRoleRepository
+//go:generate mockgen -destination=./mocks/grouprole_repository.go -package=mocks Keyline/internal/repositories GroupRoleRepository
 type GroupRoleRepository interface {
 }
 

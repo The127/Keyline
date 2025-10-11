@@ -135,7 +135,7 @@ func (f VirtualServerFilter) GetId() *uuid.UUID {
 	return f.id
 }
 
-//go:generate mockgen -destination=./mocks/virtualserver_repository.go -package=mocks Keyline/repositories VirtualServerRepository
+//go:generate mockgen -destination=./mocks/virtualserver_repository.go -package=mocks Keyline/internal/repositories VirtualServerRepository
 type VirtualServerRepository interface {
 	Single(ctx context.Context, filter VirtualServerFilter) (*VirtualServer, error)
 	First(ctx context.Context, filter VirtualServerFilter) (*VirtualServer, error)
