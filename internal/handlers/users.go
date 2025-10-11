@@ -17,13 +17,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-type RegisterUserRequestDto struct {
-	Username    string `json:"username" validate:"required,min=1,max=255"`
-	DisplayName string `json:"displayName" validate:"required,min=1,max=255"`
-	Password    string `json:"password" validate:"required"`
-	Email       string `json:"email" validate:"required"`
-}
-
 var (
 	ErrMissingEmailVerificationToken = fmt.Errorf("missing email verification token: %w", utils.ErrHttpBadRequest)
 )
@@ -63,6 +56,13 @@ func VerifyEmail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Redirect(w, r, fmt.Sprintf("%s/%s/email-verified", config.C.Frontend.ExternalUrl, vsName), http.StatusFound)
+}
+
+type RegisterUserRequestDto struct {
+	Username    string `json:"username" validate:"required,min=1,max=255"`
+	DisplayName string `json:"displayName" validate:"required,min=1,max=255"`
+	Password    string `json:"password" validate:"required"`
+	Email       string `json:"email" validate:"required"`
 }
 
 // RegisterUser registers a new user.
