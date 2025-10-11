@@ -762,6 +762,20 @@ func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	applicationRepository := ioc.GetDependency[repositories.ApplicationRepository](scope)
+	applicationFilter := repositories.NewApplicationFilter().
+		VirtualServerId(virtualServer.Id()).
+		Name(clientId)
+	application, err := applicationRepository.First(ctx, applicationFilter)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("getting application: %w", err))
+		return
+	}
+	if application == nil {
+		utils.HandleHttpError(w, fmt.Errorf("application not found"))
+		return
+	}
+
 	keyService := ioc.GetDependency[services.KeyService](scope)
 	keyPair := keyService.GetKey(codeInfo.VirtualServerName, virtualServer.SigningAlgorithm())
 
@@ -771,6 +785,7 @@ func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 		UserId:             codeInfo.UserId,
 		VirtualServerName:  codeInfo.VirtualServerName,
 		ClientId:           clientId,
+		ApplicationId:      application.Id(),
 		GrantedScopes:      codeInfo.GrantedScopes,
 		UserDisplayName:    user.DisplayName(),
 		UserPrimaryEmail:   user.PrimaryEmail(),
@@ -833,6 +848,7 @@ type TokenGenerationParams struct {
 	UserId             uuid.UUID
 	VirtualServerName  string
 	ClientId           string
+	ApplicationId      uuid.UUID
 	GrantedScopes      []string
 	UserDisplayName    string
 	UserPrimaryEmail   string
@@ -914,22 +930,38 @@ func mapClaims(ctx context.Context, params TokenGenerationParams) (jwt.MapClaims
 	}
 
 	userRoleAssignmentRepository := ioc.GetDependency[repositories.UserRoleAssignmentRepository](scope)
-	userRoleAssignmentFilter := repositories.NewUserRoleAssignmentFilter().
+	globalUserRoleAssignmentFilter := repositories.NewUserRoleAssignmentFilter().
 		// TODO: add virtual server filter
 		UserId(params.UserId).
+		ApplicationId(nil).
 		IncludeRole()
-	userRoleAssignments, _, err := userRoleAssignmentRepository.List(ctx, userRoleAssignmentFilter)
+	globalUserRoleAssignments, _, err := userRoleAssignmentRepository.List(ctx, globalUserRoleAssignmentFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting user role assignments: %w", err)
 	}
 
-	roles := make([]string, 0, len(userRoleAssignments))
-	for _, userRoleAssignment := range userRoleAssignments {
-		roles = append(roles, userRoleAssignment.RoleInfo().Name)
+	globalRoles := make([]string, 0, len(globalUserRoleAssignments))
+	for _, userRoleAssignment := range globalUserRoleAssignments {
+		globalRoles = append(globalRoles, userRoleAssignment.RoleInfo().Name)
+	}
+
+	applicationUserRoleAssignmentFilter := repositories.NewUserRoleAssignmentFilter().
+		// TODO: add virtual server filter
+		UserId(params.UserId).
+		ApplicationId(&params.ApplicationId).
+		IncludeRole()
+	applicationUserRoleAssignments, _, err := userRoleAssignmentRepository.List(ctx, applicationUserRoleAssignmentFilter)
+	applicationRoles := make([]string, 0, len(applicationUserRoleAssignments))
+	if err != nil {
+		return nil, fmt.Errorf("getting user role assignments: %w", err)
+	}
+	for _, userRoleAssignment := range applicationUserRoleAssignments {
+		applicationRoles = append(applicationRoles, userRoleAssignment.RoleInfo().Name)
 	}
 
 	claims := jwt.MapClaims{
-		"roles": roles,
+		"roles":             globalRoles,
+		"application_roles": applicationRoles,
 	}
 	return claims, nil
 }
@@ -1045,6 +1077,20 @@ func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	applicationRepository := ioc.GetDependency[repositories.ApplicationRepository](scope)
+	applicationFilter := repositories.NewApplicationFilter().
+		VirtualServerId(virtualServer.Id()).
+		Name(clientId)
+	application, err := applicationRepository.First(ctx, applicationFilter)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("getting application: %w", err))
+		return
+	}
+	if application == nil {
+		utils.HandleHttpError(w, fmt.Errorf("application not found"))
+		return
+	}
+
 	keyService := ioc.GetDependency[services.KeyService](scope)
 	keyPair := keyService.GetKey(refreshTokenInfo.VirtualServerName, virtualServer.SigningAlgorithm())
 
@@ -1054,6 +1100,7 @@ func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 		UserId:             refreshTokenInfo.UserId,
 		VirtualServerName:  refreshTokenInfo.VirtualServerName,
 		ClientId:           clientId,
+		ApplicationId:      application.Id(),
 		GrantedScopes:      refreshTokenInfo.GrantedScopes,
 		UserDisplayName:    user.DisplayName(),
 		UserPrimaryEmail:   user.PrimaryEmail(),
@@ -1289,6 +1336,20 @@ func handleTokenExchange(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	applicationRepository := ioc.GetDependency[repositories.ApplicationRepository](scope)
+	applicationFilter := repositories.NewApplicationFilter().
+		VirtualServerId(virtualServer.Id()).
+		Name(applicationName)
+	application, err := applicationRepository.First(ctx, applicationFilter)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("getting application: %w", err))
+		return
+	}
+	if application == nil {
+		utils.HandleHttpError(w, fmt.Errorf("application not found"))
+		return
+	}
+
 	keyService := ioc.GetDependency[services.KeyService](scope)
 	keyPair := keyService.GetKey(virtualServerName, virtualServer.SigningAlgorithm())
 
@@ -1299,6 +1360,7 @@ func handleTokenExchange(w http.ResponseWriter, r *http.Request) {
 		UserId:            userId,
 		VirtualServerName: virtualServer.Name(),
 		ClientId:          applicationName,
+		ApplicationId:     application.Id(),
 		GrantedScopes:     scopes,
 		UserDisplayName:   user.DisplayName(),
 		UserPrimaryEmail:  user.PrimaryEmail(),

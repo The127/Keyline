@@ -96,11 +96,15 @@ func (u *UserRoleAssignment) getScanPointers(filter UserRoleAssignmentFilter) []
 	return ptrs
 }
 
+type applicationIdFilter struct {
+	value *uuid.UUID
+}
+
 type UserRoleAssignmentFilter struct {
 	userId        *uuid.UUID
 	roleId        *uuid.UUID
 	groupId       *uuid.UUID
-	applicationId *uuid.UUID
+	applicationId *applicationIdFilter
 	includeUser   bool
 	includeRole   bool
 }
@@ -131,9 +135,11 @@ func (f UserRoleAssignmentFilter) GroupId(groupId uuid.UUID) UserRoleAssignmentF
 	return filter
 }
 
-func (f UserRoleAssignmentFilter) ApplicationId(applicationId uuid.UUID) UserRoleAssignmentFilter {
+func (f UserRoleAssignmentFilter) ApplicationId(applicationId *uuid.UUID) UserRoleAssignmentFilter {
 	filter := f.Clone()
-	filter.applicationId = &applicationId
+	filter.applicationId = &applicationIdFilter{
+		value: applicationId,
+	}
 	return filter
 }
 
@@ -187,7 +193,7 @@ func (r *userRoleAssignmentRepository) selectQuery(filter UserRoleAssignmentFilt
 	}
 
 	if filter.applicationId != nil {
-		s.Where(s.Equal("ura.application_id", filter.applicationId))
+		s.Where(s.Equal("ura.application_id", filter.applicationId.value))
 	}
 
 	if filter.includeUser {
