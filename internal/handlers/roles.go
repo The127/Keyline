@@ -249,6 +249,7 @@ type AssignRoleRequestDto struct {
 // @router      /api/virtual-servers/{virtualServerName}/roles/{roleId}/assign [post]
 func AssignRole(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -289,4 +290,85 @@ func AssignRole(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+type PagedUsersInRoleResponseDto = PagedResponseDto[ListUsersInRoleResponseDto]
+
+type ListUsersInRoleResponseDto struct {
+	Id          uuid.UUID `json:"id"`
+	Username    string    `json:"username"`
+	DisplayName string    `json:"displayName"`
+}
+
+// ListUsersInRole lists users in a role
+// @Summary List users in role
+// @Description Retrieve a paginated list of users
+// @Tags Roles
+// @Accept json
+// @Produce json
+// @Param vsName path string true "Virtual server name"  default(keyline)
+// @Param roleId path string true "Role ID (UUID)"
+// @Param page query int false "Page number"
+// @Param pageSize query int false "Page size"
+// @Param orderBy query string false "Order by field"
+// @Param orderDir query string false "Order direction (asc|desc)"
+// @Param search query string false "Search term"
+// @Success 200 {object} PagedUsersInRoleResponseDto
+// @Failure 400
+// @Failure 500
+// @Router /api/virtual-servers/{vsName}/roles/{roleId}/users [get]
+func ListUsersInRole(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	queryOps, err := ParseQueryOps(r)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	vsName, err := middlewares.GetVirtualServerName(ctx)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	vars := mux.Vars(r)
+	roleId, err := uuid.Parse(vars["roleId"])
+	if err != nil {
+		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+	}
+
+	scope := middlewares.GetScope(ctx)
+	m := ioc.GetDependency[mediator.Mediator](scope)
+
+	users, err := mediator.Send[*queries.ListUsersInRoleResponse](ctx, m, queries.ListUsersInRole{
+		VirtualServerName: vsName,
+		RoleId:            roleId,
+		PagedQuery:        queryOps.ToPagedQuery(),
+		OrderedQuery:      queryOps.ToOrderedQuery(),
+	})
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	items := utils.MapSlice(users.Items, func(x queries.ListUsersInRoleResponseItem) ListUsersInRoleResponseDto {
+		return ListUsersInRoleResponseDto{
+			Id:          x.Id,
+			Username:    x.Username,
+			DisplayName: x.DisplayName,
+		}
+	})
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	err = json.NewEncoder(w).Encode(NewPagedResponseDto(
+		items,
+		queryOps,
+		users.TotalCount,
+	))
+	if err != nil {
+		utils.HandleHttpError(w, err)
+	}
 }

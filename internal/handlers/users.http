@@ -1,4 +1,4 @@
-### call health endpoint
+### register a user
 POST http://127.0.0.1:8081/api/virtual-servers/keyline/users/register
 Content-Type: application/json
 
@@ -8,3 +8,7 @@ Content-Type: application/json
   "password": "foo",
   "email": "foo@bar.home"
 }
+
+### list users
+GET http://127.0.0.1:8081/api/virtual-servers/keyline/users
+

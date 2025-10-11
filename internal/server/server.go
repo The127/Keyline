@@ -112,6 +112,7 @@ func Serve(dp *ioc.DependencyProvider) {
 	vsApiRouter.HandleFunc("/roles", handlers.ListRoles).Methods(http.MethodGet, http.MethodOptions)
 	vsApiRouter.HandleFunc("/roles/{roleId}", handlers.GetRoleById).Methods(http.MethodGet, http.MethodOptions)
 	vsApiRouter.HandleFunc("/roles/{roleId}/assign", handlers.AssignRole).Methods(http.MethodPost, http.MethodOptions)
+	vsApiRouter.HandleFunc("/roles/{roleId}/users", handlers.ListUsersInRole).Methods(http.MethodGet, http.MethodOptions)
 
 	vsApiRouter.HandleFunc("/applications", handlers.CreateApplication).Methods(http.MethodPost, http.MethodOptions)
 	vsApiRouter.HandleFunc("/applications", handlers.ListApplications).Methods(http.MethodGet, http.MethodOptions)
