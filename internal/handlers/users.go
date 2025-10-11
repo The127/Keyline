@@ -17,13 +17,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-type RegisterUserRequestDto struct {
-	Username    string `json:"username" validate:"required,min=1,max=255"`
-	DisplayName string `json:"displayName" validate:"required,min=1,max=255"`
-	Password    string `json:"password" validate:"required"`
-	Email       string `json:"email" validate:"required"`
-}
-
 var (
 	ErrMissingEmailVerificationToken = fmt.Errorf("missing email verification token: %w", utils.ErrHttpBadRequest)
 )
@@ -65,6 +58,13 @@ func VerifyEmail(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, fmt.Sprintf("%s/%s/email-verified", config.C.Frontend.ExternalUrl, vsName), http.StatusFound)
 }
 
+type RegisterUserRequestDto struct {
+	Username    string `json:"username" validate:"required,min=1,max=255"`
+	DisplayName string `json:"displayName" validate:"required,min=1,max=255"`
+	Password    string `json:"password" validate:"required"`
+	Email       string `json:"email" validate:"required"`
+}
+
 // RegisterUser registers a new user.
 // @Summary      Register user
 // @Tags         Users
@@ -77,6 +77,7 @@ func VerifyEmail(w http.ResponseWriter, r *http.Request) {
 // @Router       /api/virtual-servers/{virtualServerName}/users/register [post]
 func RegisterUser(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -115,10 +116,11 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 }
 
 type ListUsersResponseDto struct {
-	Id           uuid.UUID `json:"id"`
-	Username     string    `json:"username"`
-	DisplayName  string    `json:"displayName"`
-	PrimaryEmail string    `json:"primaryEmail"`
+	Id            uuid.UUID `json:"id"`
+	Username      string    `json:"username"`
+	DisplayName   string    `json:"displayName"`
+	PrimaryEmail  string    `json:"primaryEmail"`
+	IsServiceUser bool      `json:"isServiceUser"`
 }
 
 type PagedUsersResponseDto struct {
@@ -168,10 +170,11 @@ func ListUsers(w http.ResponseWriter, r *http.Request) {
 
 	items := utils.MapSlice(users.Items, func(x queries.ListUsersResponseItem) ListUsersResponseDto {
 		return ListUsersResponseDto{
-			Id:           x.Id,
-			Username:     x.Username,
-			DisplayName:  x.DisplayName,
-			PrimaryEmail: x.Email,
+			Id:            x.Id,
+			Username:      x.Username,
+			DisplayName:   x.DisplayName,
+			PrimaryEmail:  x.Email,
+			IsServiceUser: x.IsServiceUser,
 		}
 	})
 
@@ -194,6 +197,7 @@ type GetUserByIdResponseDto struct {
 	DisplayName   string    `json:"displayName"`
 	PrimaryEmail  string    `json:"primaryEmail"`
 	EmailVerified bool      `json:"emailVerified"`
+	IsServiceUser bool      `json:"isServiceUser"`
 	CreatedAt     time.Time `json:"createdAt"`
 	UpdatedAt     time.Time `json:"updatedAt"`
 }
@@ -246,6 +250,7 @@ func GetUserById(w http.ResponseWriter, r *http.Request) {
 		DisplayName:   queryResult.DisplayName,
 		PrimaryEmail:  queryResult.PrimaryEmail,
 		EmailVerified: queryResult.EmailVerified,
+		IsServiceUser: queryResult.IsServiceUser,
 		CreatedAt:     queryResult.CreatedAt,
 		UpdatedAt:     queryResult.UpdatedAt,
 	}
@@ -309,4 +314,133 @@ func PatchUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+type CreateServiceUserRequestDto struct {
+	Username string `json:"username" validate:"required,min=1,max=255"`
+}
+
+type CreateServiceUserResponseDto struct {
+	Id uuid.UUID `json:"id"`
+}
+
+// CreateServiceUser create a service user.
+// @Summary      Create service user
+// @Tags         Users
+// @Accept       json
+// @Produce      json
+// @Param        virtualServerName  path  string                true "Virtual server name"  default(keyline)
+// @Param        body               body  CreateServiceUserRequestDto   true "User data"
+// @Success      200  {object} CreateServiceUserResponseDto
+// @Failure      400  {string} string
+// @Router       /api/virtual-servers/{virtualServerName}/users/service-users [post]
+func CreateServiceUser(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	vsName, err := middlewares.GetVirtualServerName(ctx)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	var dto CreateServiceUserRequestDto
+	err = json.NewDecoder(r.Body).Decode(&dto)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+	}
+
+	err = utils.ValidateDto(dto)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	scope := middlewares.GetScope(ctx)
+	m := ioc.GetDependency[mediator.Mediator](scope)
+
+	response, err := mediator.Send[*commands.CreateServiceUserResponse](ctx, m, commands.CreateServiceUser{
+		VirtualServerName: vsName,
+		Username:          dto.Username,
+	})
+	if err != nil {
+		utils.HandleHttpError(w, err)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	err = json.NewEncoder(w).Encode(CreateServiceUserResponseDto{
+		Id: response.Id,
+	})
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+}
+
+type AssociateServiceUserPublicKeyRequestDto struct {
+	PublicKey string `json:"publicKey" validate:"required"`
+}
+
+type AssociateServiceUserPublicKeyResponseDto struct {
+	Id uuid.UUID `json:"id"`
+}
+
+// AssociateServiceUserPublicKey associates a public key with a service user.
+// @Summary      Associate a public key with a service user
+// @Tags         Users
+// @Accept       json
+// @Produce      json
+// @Param        virtualServerName  path  string                true "Virtual server name"  default(keyline)
+// @Param        body               body  AssociateServiceUserPublicKeyRequestDto   true "Public key data"
+// @Success      200  {object} AssociateServiceUserPublicKeyResponseDto
+// @Failure      400  {string} string
+// @Router       /api/virtual-servers/{virtualServerName}/users/service-users/{serviceUserId}/keys [post]
+func AssociateServiceUserPublicKey(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	vsName, err := middlewares.GetVirtualServerName(ctx)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	vars := mux.Vars(r)
+	serviceUserId, err := uuid.Parse(vars["serviceUserId"])
+	if err != nil {
+		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+	}
+
+	var dto AssociateServiceUserPublicKeyRequestDto
+	err = json.NewDecoder(r.Body).Decode(&dto)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+	}
+
+	err = utils.ValidateDto(dto)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	scope := middlewares.GetScope(ctx)
+	m := ioc.GetDependency[mediator.Mediator](scope)
+
+	response, err := mediator.Send[*commands.AssociateServiceUserPublicKeyResponse](ctx, m, commands.AssociateServiceUserPublicKey{
+		VirtualServerName: vsName,
+		ServiceUserId:     serviceUserId,
+		PublicKey:         dto.PublicKey,
+	})
+	if err != nil {
+		utils.HandleHttpError(w, err)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	err = json.NewEncoder(w).Encode(AssociateServiceUserPublicKeyResponseDto{
+		Id: response.Id,
+	})
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
 }

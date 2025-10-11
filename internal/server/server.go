@@ -107,6 +107,8 @@ func Serve(dp *ioc.DependencyProvider) {
 	vsApiRouter.HandleFunc("/users", handlers.ListUsers).Methods(http.MethodGet, http.MethodOptions)
 	vsApiRouter.HandleFunc("/users/{userId}", handlers.GetUserById).Methods(http.MethodGet, http.MethodOptions)
 	vsApiRouter.HandleFunc("/users/{userId}", handlers.PatchUser).Methods(http.MethodPatch, http.MethodOptions)
+	vsApiRouter.HandleFunc("/users/service-users", handlers.CreateServiceUser).Methods(http.MethodPost, http.MethodOptions)
+	vsApiRouter.HandleFunc("/users/service-users/{serviceUserId}/keys", handlers.AssociateServiceUserPublicKey).Methods(http.MethodPost, http.MethodOptions)
 
 	vsApiRouter.HandleFunc("/groups", handlers.ListGroups).Methods(http.MethodGet, http.MethodOptions)
 

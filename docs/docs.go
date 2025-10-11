@@ -614,6 +614,100 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/virtual-servers/{virtualServerName}/users/service-users": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Create service user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "keyline",
+                        "description": "Virtual server name",
+                        "name": "virtualServerName",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "User data",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.CreateServiceUserRequestDto"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.CreateServiceUserResponseDto"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/virtual-servers/{virtualServerName}/users/service-users/{serviceUserId}/keys": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Associate a public key with a service user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "keyline",
+                        "description": "Virtual server name",
+                        "name": "virtualServerName",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Public key data",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.AssociateServiceUserPublicKeyRequestDto"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.AssociateServiceUserPublicKeyResponseDto"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/virtual-servers/{virtualServerName}/users/verify-email": {
             "get": {
                 "produces": [
@@ -1076,6 +1170,75 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/handlers.PagedListAppRolesResponseDto"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/virtual-servers/{vsName}/groups": {
+            "get": {
+                "description": "Retrieve a paginated list of groups",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Groups"
+                ],
+                "summary": "List groups",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "keyline",
+                        "description": "Virtual server name",
+                        "name": "vsName",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size",
+                        "name": "pageSize",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order by field",
+                        "name": "orderBy",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order direction (asc|desc)",
+                        "name": "orderDir",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search term",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.PagedGroupsResponseDto"
                         }
                     },
                     "400": {
@@ -1943,6 +2106,25 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.AssociateServiceUserPublicKeyRequestDto": {
+            "type": "object",
+            "required": [
+                "publicKey"
+            ],
+            "properties": {
+                "publicKey": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.AssociateServiceUserPublicKeyResponseDto": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                }
+            }
+        },
         "handlers.CodeFlowResponse": {
             "type": "object",
             "properties": {
@@ -2041,6 +2223,27 @@ const docTemplate = `{
             }
         },
         "handlers.CreateRoleResponseDto": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.CreateServiceUserRequestDto": {
+            "type": "object",
+            "required": [
+                "username"
+            ],
+            "properties": {
+                "username": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                }
+            }
+        },
+        "handlers.CreateServiceUserResponseDto": {
             "type": "object",
             "properties": {
                 "id": {
@@ -2200,6 +2403,9 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
+                "isServiceUser": {
+                    "type": "boolean"
+                },
                 "primaryEmail": {
                     "type": "string"
                 },
@@ -2294,6 +2500,17 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.ListGroupsResponseDto": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
         "handlers.ListRolesResponseDto": {
             "type": "object",
             "properties": {
@@ -2338,6 +2555,9 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "string"
+                },
+                "isServiceUser": {
+                    "type": "boolean"
                 },
                 "primaryEmail": {
                     "type": "string"
@@ -2421,6 +2641,20 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/handlers.ListApplicationsResponseDto"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/handlers.Pagination"
+                }
+            }
+        },
+        "handlers.PagedGroupsResponseDto": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.ListGroupsResponseDto"
                     }
                 },
                 "pagination": {
