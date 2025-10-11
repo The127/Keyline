@@ -1,10 +1,10 @@
 package handlers
 
 import (
-	commands2 "Keyline/internal/commands"
+	"Keyline/internal/commands"
 	"Keyline/internal/config"
-	middlewares2 "Keyline/internal/middlewares"
-	queries2 "Keyline/internal/queries"
+	"Keyline/internal/middlewares"
+	"Keyline/internal/queries"
 	"Keyline/ioc"
 	"Keyline/mediator"
 	"Keyline/utils"
@@ -38,7 +38,7 @@ var (
 // @Failure      400  {string} string
 // @Router       /api/virtual-servers/{virtualServerName}/users/verify-email [get]
 func VerifyEmail(w http.ResponseWriter, r *http.Request) {
-	vsName, err := middlewares2.GetVirtualServerName(r.Context())
+	vsName, err := middlewares.GetVirtualServerName(r.Context())
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
@@ -50,10 +50,10 @@ func VerifyEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	scope := middlewares2.GetScope(r.Context())
+	scope := middlewares.GetScope(r.Context())
 	m := ioc.GetDependency[mediator.Mediator](scope)
 
-	_, err = mediator.Send[*commands2.VerifyEmailResponse](r.Context(), m, commands2.VerifyEmail{
+	_, err = mediator.Send[*commands.VerifyEmailResponse](r.Context(), m, commands.VerifyEmail{
 		VirtualServerName: vsName,
 		Token:             token,
 	})
@@ -77,7 +77,7 @@ func VerifyEmail(w http.ResponseWriter, r *http.Request) {
 // @Router       /api/virtual-servers/{virtualServerName}/users/register [post]
 func RegisterUser(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	vsName, err := middlewares2.GetVirtualServerName(ctx)
+	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
@@ -96,10 +96,10 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	scope := middlewares2.GetScope(ctx)
+	scope := middlewares.GetScope(ctx)
 	m := ioc.GetDependency[mediator.Mediator](scope)
 
-	_, err = mediator.Send[*commands2.RegisterUserResponse](ctx, m, commands2.RegisterUser{
+	_, err = mediator.Send[*commands.RegisterUserResponse](ctx, m, commands.RegisterUser{
 		VirtualServerName: vsName,
 		Username:          dto.Username,
 		DisplayName:       dto.DisplayName,
@@ -146,16 +146,16 @@ func ListUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vsName, err := middlewares2.GetVirtualServerName(ctx)
+	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
 	}
 
-	scope := middlewares2.GetScope(ctx)
+	scope := middlewares.GetScope(ctx)
 	m := ioc.GetDependency[mediator.Mediator](scope)
 
-	users, err := mediator.Send[*queries2.ListUsersResponse](ctx, m, queries2.ListUsers{
+	users, err := mediator.Send[*queries.ListUsersResponse](ctx, m, queries.ListUsers{
 		VirtualServerName: vsName,
 		PagedQuery:        queryOps.ToPagedQuery(),
 		OrderedQuery:      queryOps.ToOrderedQuery(),
@@ -166,7 +166,7 @@ func ListUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	items := utils.MapSlice(users.Items, func(x queries2.ListUsersResponseItem) ListUsersResponseDto {
+	items := utils.MapSlice(users.Items, func(x queries.ListUsersResponseItem) ListUsersResponseDto {
 		return ListUsersResponseDto{
 			Id:           x.Id,
 			Username:     x.Username,
@@ -209,9 +209,9 @@ type GetUserByIdResponseDto struct {
 // @Router       /api/virtual-servers/{virtualServerName}/users/{userId} [get]
 func GetUserById(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	scope := middlewares2.GetScope(ctx)
+	scope := middlewares.GetScope(ctx)
 
-	vsName, err := middlewares2.GetVirtualServerName(ctx)
+	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
@@ -227,11 +227,11 @@ func GetUserById(w http.ResponseWriter, r *http.Request) {
 	}
 
 	m := ioc.GetDependency[mediator.Mediator](scope)
-	query := queries2.GetUserQuery{
+	query := queries.GetUserQuery{
 		UserId:            userId,
 		VirtualServerName: vsName,
 	}
-	queryResult, err := mediator.Send[*queries2.GetUserQueryResult](ctx, m, query)
+	queryResult, err := mediator.Send[*queries.GetUserQueryResult](ctx, m, query)
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
@@ -273,9 +273,9 @@ type PatchUserRequestDto struct {
 // @Router       /api/virtual-servers/{virtualServerName}/users/{userId} [patch]
 func PatchUser(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	scope := middlewares2.GetScope(ctx)
+	scope := middlewares.GetScope(ctx)
 
-	vsName, err := middlewares2.GetVirtualServerName(ctx)
+	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
@@ -297,12 +297,12 @@ func PatchUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	m := ioc.GetDependency[mediator.Mediator](scope)
-	command := commands2.PatchUser{
+	command := commands.PatchUser{
 		UserId:            userId,
 		VirtualServerName: vsName,
 		DisplayName:       utils.TrimSpace(dto.DisplayName),
 	}
-	_, err = mediator.Send[*commands2.PatchUserResponse](ctx, m, command)
+	_, err = mediator.Send[*commands.PatchUserResponse](ctx, m, command)
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return

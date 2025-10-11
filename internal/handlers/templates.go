@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	middlewares2 "Keyline/internal/middlewares"
-	queries2 "Keyline/internal/queries"
+	"Keyline/internal/middlewares"
+	"Keyline/internal/queries"
 	"Keyline/internal/repositories"
 	"Keyline/ioc"
 	"Keyline/mediator"
@@ -39,9 +39,9 @@ type GetTemplateResponseDto struct {
 // @Router       /api/virtual-servers/{virtualServerName}/templates/{templateType} [get]
 func GetTemplate(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	scope := middlewares2.GetScope(ctx)
+	scope := middlewares.GetScope(ctx)
 
-	vsName, err := middlewares2.GetVirtualServerName(ctx)
+	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
@@ -55,11 +55,11 @@ func GetTemplate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	m := ioc.GetDependency[mediator.Mediator](scope)
-	query := queries2.GetTemplate{
+	query := queries.GetTemplate{
 		VirtualServerName: vsName,
 		Type:              repositories.TemplateType(templateType),
 	}
-	queryResult, err := mediator.Send[*queries2.GetTemplateResult](ctx, m, query)
+	queryResult, err := mediator.Send[*queries.GetTemplateResult](ctx, m, query)
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
@@ -104,16 +104,16 @@ func ListTemplates(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vsName, err := middlewares2.GetVirtualServerName(ctx)
+	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
 	}
 
-	scope := middlewares2.GetScope(ctx)
+	scope := middlewares.GetScope(ctx)
 	m := ioc.GetDependency[mediator.Mediator](scope)
 
-	templates, err := mediator.Send[*queries2.ListTemplatesResponse](ctx, m, queries2.ListTemplates{
+	templates, err := mediator.Send[*queries.ListTemplatesResponse](ctx, m, queries.ListTemplates{
 		VirtualServerName: vsName,
 		PagedQuery:        queryOps.ToPagedQuery(),
 		OrderedQuery:      queryOps.ToOrderedQuery(),
@@ -124,7 +124,7 @@ func ListTemplates(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	items := utils.MapSlice(templates.Items, func(x queries2.ListTemplatesResponseItem) ListTemplatesResponseDto {
+	items := utils.MapSlice(templates.Items, func(x queries.ListTemplatesResponseItem) ListTemplatesResponseDto {
 		return ListTemplatesResponseDto{
 			Id:   x.Id,
 			Type: x.Type,

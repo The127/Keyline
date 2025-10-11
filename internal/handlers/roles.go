@@ -1,10 +1,10 @@
 package handlers
 
 import (
-	commands2 "Keyline/internal/commands"
+	"Keyline/internal/commands"
 	"Keyline/internal/jsonTypes"
-	middlewares2 "Keyline/internal/middlewares"
-	queries2 "Keyline/internal/queries"
+	"Keyline/internal/middlewares"
+	"Keyline/internal/queries"
 	"Keyline/ioc"
 	"Keyline/mediator"
 	"Keyline/utils"
@@ -44,9 +44,9 @@ type GetRoleByIdResponseDto struct {
 // @router      /api/virtual-servers/{virtualServerName}/roles/{roleId} [get]
 func GetRoleById(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	scope := middlewares2.GetScope(ctx)
+	scope := middlewares.GetScope(ctx)
 
-	vsName, err := middlewares2.GetVirtualServerName(ctx)
+	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
@@ -62,11 +62,11 @@ func GetRoleById(w http.ResponseWriter, r *http.Request) {
 	}
 
 	m := ioc.GetDependency[mediator.Mediator](scope)
-	query := queries2.GetRoleQuery{
+	query := queries.GetRoleQuery{
 		VirtualServerName: vsName,
 		RoleId:            roleId,
 	}
-	queryResult, err := mediator.Send[*queries2.GetRoleQueryResult](ctx, m, query)
+	queryResult, err := mediator.Send[*queries.GetRoleQueryResult](ctx, m, query)
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
@@ -120,16 +120,16 @@ func ListRoles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vsName, err := middlewares2.GetVirtualServerName(ctx)
+	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
 	}
 
-	scope := middlewares2.GetScope(ctx)
+	scope := middlewares.GetScope(ctx)
 	m := ioc.GetDependency[mediator.Mediator](scope)
 
-	roles, err := mediator.Send[*queries2.ListRolesResponse](ctx, m, queries2.ListRoles{
+	roles, err := mediator.Send[*queries.ListRolesResponse](ctx, m, queries.ListRoles{
 		VirtualServerName: vsName,
 		PagedQuery:        queryOps.ToPagedQuery(),
 		OrderedQuery:      queryOps.ToOrderedQuery(),
@@ -140,7 +140,7 @@ func ListRoles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	items := utils.MapSlice(roles.Items, func(x queries2.ListRolesResponseItem) ListRolesResponseDto {
+	items := utils.MapSlice(roles.Items, func(x queries.ListRolesResponseItem) ListRolesResponseDto {
 		return ListRolesResponseDto{
 			Id:   x.Id,
 			Name: x.Name,
@@ -185,7 +185,7 @@ type CreateRoleResponseDto struct {
 // @router      /api/virtual-servers/{virtualServerName}/roles [post]
 func CreateRole(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	vsName, err := middlewares2.GetVirtualServerName(ctx)
+	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
@@ -204,10 +204,10 @@ func CreateRole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	scope := middlewares2.GetScope(ctx)
+	scope := middlewares.GetScope(ctx)
 	m := ioc.GetDependency[mediator.Mediator](scope)
 
-	response, err := mediator.Send[*commands2.CreateRoleResponse](ctx, m, commands2.CreateRole{
+	response, err := mediator.Send[*commands.CreateRoleResponse](ctx, m, commands.CreateRole{
 		VirtualServerName: vsName,
 		Name:              dto.Name,
 		Description:       dto.Description,
@@ -249,7 +249,7 @@ type AssignRoleRequestDto struct {
 // @router      /api/virtual-servers/{virtualServerName}/roles/{roleId}/assign [post]
 func AssignRole(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	vsName, err := middlewares2.GetVirtualServerName(ctx)
+	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
@@ -275,10 +275,10 @@ func AssignRole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	scope := middlewares2.GetScope(ctx)
+	scope := middlewares.GetScope(ctx)
 	m := ioc.GetDependency[mediator.Mediator](scope)
 
-	_, err = mediator.Send[*commands2.AssignRoleToUserResponse](ctx, m, commands2.AssignRoleToUser{
+	_, err = mediator.Send[*commands.AssignRoleToUserResponse](ctx, m, commands.AssignRoleToUser{
 		VirtualServerName: vsName,
 		RoleId:            roleId,
 		UserId:            dto.UserId,

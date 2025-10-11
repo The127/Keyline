@@ -4,7 +4,7 @@ import (
 	"Keyline/internal/authentication/permissions"
 	"Keyline/internal/authentication/roles"
 	"Keyline/internal/config"
-	middlewares2 "Keyline/internal/middlewares"
+	"Keyline/internal/middlewares"
 	"Keyline/internal/services"
 	"Keyline/ioc"
 	"Keyline/utils"
@@ -48,7 +48,7 @@ func Middleware() mux.MiddlewareFunc {
 
 			authorizationHeader := r.Header.Get("Authorization")
 
-			vsName, err := middlewares2.GetVirtualServerName(ctx)
+			vsName, err := middlewares.GetVirtualServerName(ctx)
 			if err != nil {
 				utils.HandleHttpError(w, err)
 				return
@@ -70,7 +70,7 @@ func Middleware() mux.MiddlewareFunc {
 }
 
 func extractUserFromBearerToken(ctx context.Context, authorizationHeader string, vsName string) (CurrentUser, error) {
-	scope := middlewares2.GetScope(ctx)
+	scope := middlewares.GetScope(ctx)
 
 	if !strings.HasPrefix(authorizationHeader, "Bearer ") {
 		return CurrentUser{}, utils.ErrHttpUnauthorized
