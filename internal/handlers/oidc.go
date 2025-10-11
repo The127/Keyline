@@ -860,6 +860,74 @@ type TokenGenerationParams struct {
 	RefreshTokenExpiry time.Duration
 }
 
+func (t *TokenGenerationParams) ToAccessTokenGenerationParams() AccessTokenGenerationParams {
+	return AccessTokenGenerationParams{
+		ExternalUrl:       t.ExternalUrl,
+		VirtualServerName: t.VirtualServerName,
+		ClientId:          t.ClientId,
+		ApplicationId:     t.ApplicationId,
+		GrantedScopes:     t.GrantedScopes,
+		IssuedAt:          t.IssuedAt,
+		Expiry:            t.AccessTokenExpiry,
+		UserId:            t.UserId,
+		KeyPair:           t.KeyPair,
+	}
+}
+
+func (t *TokenGenerationParams) ToIdTokenGenerationParams() IdTokenGenerationParams {
+	return IdTokenGenerationParams{
+		ClientId:          t.ClientId,
+		ExternalUrl:       t.ExternalUrl,
+		UserDisplayName:   t.UserDisplayName,
+		UserPrimaryEmail:  t.UserPrimaryEmail,
+		VirtualServerName: t.VirtualServerName,
+		IssuedAt:          t.IssuedAt,
+		Expiry:            t.IdTokenExpiry,
+		UserId:            t.UserId,
+		KeyPair:           t.KeyPair,
+	}
+}
+
+func (t *TokenGenerationParams) ToRefreshTokenGenerationParams() RefreshTokenGenerationParams {
+	return RefreshTokenGenerationParams{
+		VirtualServerName: t.VirtualServerName,
+		GrantedScopes:     t.GrantedScopes,
+		ClientId:          t.ClientId,
+		UserId:            t.UserId,
+	}
+}
+
+type RefreshTokenGenerationParams struct {
+	VirtualServerName string
+	GrantedScopes     []string
+	ClientId          string
+	UserId            uuid.UUID
+}
+
+type AccessTokenGenerationParams struct {
+	ExternalUrl       string
+	VirtualServerName string
+	ClientId          string
+	ApplicationId     uuid.UUID
+	GrantedScopes     []string
+	IssuedAt          time.Time
+	Expiry            time.Duration
+	UserId            uuid.UUID
+	KeyPair           services.KeyPair
+}
+
+type IdTokenGenerationParams struct {
+	ClientId          string
+	ExternalUrl       string
+	UserDisplayName   string
+	UserPrimaryEmail  string
+	VirtualServerName string
+	IssuedAt          time.Time
+	Expiry            time.Duration
+	UserId            uuid.UUID
+	KeyPair           services.KeyPair
+}
+
 type GeneratedTokens struct {
 	IdToken      string
 	AccessToken  string
@@ -867,7 +935,7 @@ type GeneratedTokens struct {
 	ExpiresIn    int
 }
 
-func generateIdToken(params TokenGenerationParams) (string, error) {
+func generateIdToken(params IdTokenGenerationParams) (string, error) {
 	kid := computeKID(params.KeyPair.PublicKeyBytes())
 
 	jwtSigningMethod, err := getJwtSigningMethod(params.KeyPair.Algorithm())
@@ -880,7 +948,7 @@ func generateIdToken(params TokenGenerationParams) (string, error) {
 		"iss":   fmt.Sprintf("%s/oidc/%s", params.ExternalUrl, params.VirtualServerName),
 		"aud":   []string{params.ClientId},
 		"iat":   params.IssuedAt.Unix(),
-		"exp":   params.IssuedAt.Add(params.IdTokenExpiry).Unix(),
+		"exp":   params.IssuedAt.Add(params.Expiry).Unix(),
 		"name":  params.UserDisplayName,
 		"email": params.UserPrimaryEmail,
 	}
@@ -890,7 +958,7 @@ func generateIdToken(params TokenGenerationParams) (string, error) {
 	return idToken.SignedString(params.KeyPair.PrivateKey())
 }
 
-func generateAccessToken(ctx context.Context, params TokenGenerationParams) (string, error) {
+func generateAccessToken(ctx context.Context, params AccessTokenGenerationParams) (string, error) {
 	kid := computeKID(params.KeyPair.PublicKeyBytes())
 
 	jwtSigningMethod, err := getJwtSigningMethod(params.KeyPair.Algorithm())
@@ -908,7 +976,7 @@ func generateAccessToken(ctx context.Context, params TokenGenerationParams) (str
 	accessTokenClaims["aud"] = []string{params.ClientId}
 	accessTokenClaims["scopes"] = params.GrantedScopes
 	accessTokenClaims["iat"] = params.IssuedAt.Unix()
-	accessTokenClaims["exp"] = params.IssuedAt.Add(params.AccessTokenExpiry).Unix()
+	accessTokenClaims["exp"] = params.IssuedAt.Add(params.Expiry).Unix()
 
 	accessToken := jwt.NewWithClaims(jwtSigningMethod, accessTokenClaims)
 	accessToken.Header["kid"] = kid
@@ -916,7 +984,7 @@ func generateAccessToken(ctx context.Context, params TokenGenerationParams) (str
 	return accessToken.SignedString(params.KeyPair.PrivateKey())
 }
 
-func mapClaims(ctx context.Context, params TokenGenerationParams) (jwt.MapClaims, error) {
+func mapClaims(ctx context.Context, params AccessTokenGenerationParams) (jwt.MapClaims, error) {
 	scope := middlewares.GetScope(ctx)
 
 	userRepository := ioc.GetDependency[repositories.UserRepository](scope)
@@ -966,7 +1034,7 @@ func mapClaims(ctx context.Context, params TokenGenerationParams) (jwt.MapClaims
 	return claims, nil
 }
 
-func generateRefreshTokenInfo(params TokenGenerationParams) (string, error) {
+func generateRefreshTokenInfo(params RefreshTokenGenerationParams) (string, error) {
 	refreshTokenInfo := jsonTypes.NewRefreshTokenInfo(
 		params.VirtualServerName,
 		params.ClientId,
@@ -981,17 +1049,17 @@ func generateRefreshTokenInfo(params TokenGenerationParams) (string, error) {
 }
 
 func generateTokens(ctx context.Context, params TokenGenerationParams, tokenService services.TokenService) (GeneratedTokens, error) {
-	idTokenString, err := generateIdToken(params)
+	idTokenString, err := generateIdToken(params.ToIdTokenGenerationParams())
 	if err != nil {
 		return GeneratedTokens{}, fmt.Errorf("signing id token: %w", err)
 	}
 
-	accessTokenString, err := generateAccessToken(ctx, params)
+	accessTokenString, err := generateAccessToken(ctx, params.ToAccessTokenGenerationParams())
 	if err != nil {
 		return GeneratedTokens{}, fmt.Errorf("signing access token: %w", err)
 	}
 
-	refreshTokenInfoString, err := generateRefreshTokenInfo(params)
+	refreshTokenInfoString, err := generateRefreshTokenInfo(params.ToRefreshTokenGenerationParams())
 	if err != nil {
 		return GeneratedTokens{}, err
 	}
@@ -1322,20 +1390,6 @@ func handleTokenExchange(w http.ResponseWriter, r *http.Request) {
 	scopesClaim := token.Claims.(jwt.MapClaims)["scopes"].(string)
 	scopes := strings.Split(scopesClaim, " ")
 
-	userRepository := ioc.GetDependency[repositories.UserRepository](scope)
-	userFilter := repositories.NewUserFilter().
-		VirtualServerId(virtualServer.Id()).
-		Id(userId)
-	user, err := userRepository.First(ctx, userFilter)
-	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting user: %w", err))
-		return
-	}
-	if user == nil {
-		utils.HandleHttpError(w, fmt.Errorf("user not found"))
-		return
-	}
-
 	applicationRepository := ioc.GetDependency[repositories.ApplicationRepository](scope)
 	applicationFilter := repositories.NewApplicationFilter().
 		VirtualServerId(virtualServer.Id()).
@@ -1356,18 +1410,16 @@ func handleTokenExchange(w http.ResponseWriter, r *http.Request) {
 	clockService := ioc.GetDependency[clock.Service](scope)
 	now := clockService.Now()
 
-	accessToken, err := generateAccessToken(ctx, TokenGenerationParams{
+	accessToken, err := generateAccessToken(ctx, AccessTokenGenerationParams{
 		UserId:            userId,
 		VirtualServerName: virtualServer.Name(),
 		ClientId:          applicationName,
 		ApplicationId:     application.Id(),
 		GrantedScopes:     scopes,
-		UserDisplayName:   user.DisplayName(),
-		UserPrimaryEmail:  user.PrimaryEmail(),
 		ExternalUrl:       config.C.Server.ExternalUrl,
 		KeyPair:           keyPair,
 		IssuedAt:          now,
-		AccessTokenExpiry: time.Minute * 5, // TODO: make this configurable per virtual server
+		Expiry:            time.Minute * 5, // TODO: make this configurable per virtual server
 	})
 	if err != nil {
 		utils.HandleHttpError(w, fmt.Errorf("generating access token: %w", err))
