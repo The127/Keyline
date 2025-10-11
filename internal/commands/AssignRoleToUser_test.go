@@ -7,6 +7,7 @@ import (
 	"Keyline/ioc"
 	"Keyline/utils"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -21,22 +22,24 @@ func TestHandleAssignRoleToUser(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
+	now := time.Now()
+
 	virtualServer := repositories2.NewVirtualServer("virtualServer", "Virtual Server")
-	virtualServer.Mock()
+	virtualServer.Mock(now)
 	virtualServerRepository := mocks2.NewMockVirtualServerRepository(ctrl)
 	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories2.VirtualServerFilter) bool {
 		return *x.GetName() == virtualServer.Name()
 	})).Return(virtualServer, nil)
 
 	user := repositories2.NewUser("user", "User", "user@mail", virtualServer.Id())
-	user.Mock()
+	user.Mock(now)
 	userRepository := mocks2.NewMockUserRepository(ctrl)
 	userRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories2.UserFilter) bool {
 		return *x.GetId() == user.Id()
 	})).Return(user, nil)
 
 	role := repositories2.NewRole(virtualServer.Id(), nil, "role", "Role")
-	role.Mock()
+	role.Mock(now)
 	roleRepository := mocks2.NewMockRoleRepository(ctrl)
 	roleRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories2.RoleFilter) bool {
 		return *x.GetId() == role.Id()

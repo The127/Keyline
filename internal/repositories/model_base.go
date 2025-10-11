@@ -51,9 +51,9 @@ func (m *ModelBase) Version() int64 {
 	return m.version
 }
 
-func (m *ModelBase) Mock() {
+func (m *ModelBase) Mock(now time.Time) {
 	m.id = uuid.New()
-	m.auditCreatedAt = time.Now()
-	m.auditUpdatedAt = time.Now()
+	m.auditCreatedAt = now
+	m.auditUpdatedAt = now
 	m.version = 0
 }
