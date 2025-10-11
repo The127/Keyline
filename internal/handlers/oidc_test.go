@@ -2,7 +2,13 @@ package handlers
 
 import (
 	"Keyline/internal/config"
+	"Keyline/internal/middlewares"
+	"Keyline/internal/repositories"
+	"Keyline/internal/repositories/mocks"
 	"Keyline/internal/services"
+	"Keyline/ioc"
+	"Keyline/utils"
+	"context"
 	"crypto/ed25519"
 	"crypto/rand"
 	"crypto/rsa"
@@ -13,7 +19,41 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
+
+func newTestContext(t *testing.T) context.Context {
+	dependencyCollection := ioc.NewDependencyCollection()
+
+	ctrl := gomock.NewController(t)
+
+	userRepository := mocks.NewMockUserRepository(ctrl)
+	user := repositories.NewUser("user", "User", "user@mail", uuid.New())
+	user.Mock(time.Now())
+	userRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(user, nil)
+	ioc.RegisterTransient(dependencyCollection, func(dp *ioc.DependencyProvider) repositories.UserRepository {
+		return userRepository
+	})
+
+	userRoleAssignmentRepository := mocks.NewMockUserRoleAssignmentRepository(ctrl)
+	userRoleAssignmentRepository.EXPECT().List(gomock.Any(), gomock.Any()).Return(nil, 0, nil)
+	ioc.RegisterTransient(dependencyCollection, func(dp *ioc.DependencyProvider) repositories.UserRoleAssignmentRepository {
+		return userRoleAssignmentRepository
+	})
+
+	roleRepository := mocks.NewMockRoleRepository(ctrl)
+	ioc.RegisterTransient(dependencyCollection, func(dp *ioc.DependencyProvider) repositories.RoleRepository {
+		return roleRepository
+	})
+
+	scope := dependencyCollection.BuildProvider().NewScope()
+	t.Cleanup(func() {
+		ctrl.Finish()
+		utils.PanicOnError(scope.Close, "closing scope")
+	})
+
+	return middlewares.ContextWithScope(t.Context(), scope)
+}
 
 func newDefaultParams(pub any, priv any, algorithm config.SigningAlgorithm) TokenGenerationParams {
 	return TokenGenerationParams{
@@ -123,11 +163,13 @@ func TestGenerateAccessToken_SignsWithPrivateKey(t *testing.T) {
 	t.Parallel()
 
 	// Arrange
+	ctx := newTestContext(t)
+
 	pub, priv, _ := ed25519.GenerateKey(rand.Reader)
 	params := newDefaultParams(pub, priv, config.SigningAlgorithmEdDSA)
 
 	// Act
-	tokenString, err := generateAccessToken(t.Context(), params)
+	tokenString, err := generateAccessToken(ctx, params)
 
 	// Assert
 	require.NoError(t, err)
@@ -141,6 +183,8 @@ func TestGenerateAccessToken_HasExpectedClaims(t *testing.T) {
 	t.Parallel()
 
 	// Arrange
+	ctx := newTestContext(t)
+
 	pub, priv, _ := ed25519.GenerateKey(rand.Reader)
 	now := time.Now()
 	params := newDefaultParams(pub, priv, config.SigningAlgorithmEdDSA)
@@ -148,7 +192,7 @@ func TestGenerateAccessToken_HasExpectedClaims(t *testing.T) {
 	params.GrantedScopes = []string{"openid", "email", "profile"}
 
 	// Act
-	tokenString, _ := generateAccessToken(t.Context(), params)
+	tokenString, _ := generateAccessToken(ctx, params)
 	token := parseToken(t, tokenString, pub)
 	claims := token.Claims.(jwt.MapClaims)
 
@@ -170,11 +214,13 @@ func TestGenerateAccessToken_HasExpectedHeaders(t *testing.T) {
 	t.Parallel()
 
 	// Arrange
+	ctx := newTestContext(t)
+
 	pub, priv, _ := ed25519.GenerateKey(rand.Reader)
 	params := newDefaultParams(pub, priv, config.SigningAlgorithmEdDSA)
 
 	// Act
-	tokenString, _ := generateAccessToken(t.Context(), params)
+	tokenString, _ := generateAccessToken(ctx, params)
 	token := parseToken(t, tokenString, pub)
 
 	// Assert
