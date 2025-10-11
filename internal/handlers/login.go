@@ -5,9 +5,9 @@ import (
 	"Keyline/internal/config"
 	"Keyline/internal/jsonTypes"
 	"Keyline/internal/messages"
-	middlewares2 "Keyline/internal/middlewares"
-	repositories2 "Keyline/internal/repositories"
-	services2 "Keyline/internal/services"
+	"Keyline/internal/middlewares"
+	"Keyline/internal/repositories"
+	"Keyline/internal/services"
 	"Keyline/ioc"
 	"Keyline/mediator"
 	"Keyline/templates"
@@ -41,15 +41,15 @@ type GetLoginStateResponseDto struct {
 // @Router       /logins/{loginToken} [get]
 func GetLoginState(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	scope := middlewares2.GetScope(ctx)
+	scope := middlewares.GetScope(ctx)
 
 	vars := mux.Vars(r)
 	loginToken := vars["loginToken"]
 
-	tokenService := ioc.GetDependency[services2.TokenService](scope)
-	redisValueString, err := tokenService.GetToken(ctx, services2.LoginSessionTokenType, loginToken)
+	tokenService := ioc.GetDependency[services.TokenService](scope)
+	redisValueString, err := tokenService.GetToken(ctx, services.LoginSessionTokenType, loginToken)
 	switch {
-	case errors.Is(err, services2.ErrTokenNotFound):
+	case errors.Is(err, services.ErrTokenNotFound):
 		http.Error(w, "unknown token", http.StatusUnauthorized)
 		return
 
@@ -101,13 +101,13 @@ type VerifyPasswordRequestDto struct {
 // @Router       /logins/{loginToken}/verify-password [post]
 func VerifyPassword(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	scope := middlewares2.GetScope(ctx)
+	scope := middlewares.GetScope(ctx)
 
 	vars := mux.Vars(r)
 	loginToken := vars["loginToken"]
 
-	tokenService := ioc.GetDependency[services2.TokenService](scope)
-	redisValueString, err := tokenService.GetToken(ctx, services2.LoginSessionTokenType, loginToken)
+	tokenService := ioc.GetDependency[services.TokenService](scope)
+	redisValueString, err := tokenService.GetToken(ctx, services.LoginSessionTokenType, loginToken)
 	if err != nil {
 		http.Error(w, "invalid login token", http.StatusBadRequest)
 		return
@@ -138,8 +138,8 @@ func VerifyPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userRepository := ioc.GetDependency[repositories2.UserRepository](scope)
-	userFilter := repositories2.NewUserFilter().Username(dto.Username)
+	userRepository := ioc.GetDependency[repositories.UserRepository](scope)
+	userFilter := repositories.NewUserFilter().Username(dto.Username)
 	user, err := userRepository.First(ctx, userFilter)
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -150,10 +150,10 @@ func VerifyPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	credentialRepository := ioc.GetDependency[repositories2.CredentialRepository](scope)
-	credentialFilter := repositories2.NewCredentialFilter().
+	credentialRepository := ioc.GetDependency[repositories.CredentialRepository](scope)
+	credentialFilter := repositories.NewCredentialFilter().
 		UserId(user.Id()).
-		Type(repositories2.CredentialTypePassword)
+		Type(repositories.CredentialTypePassword)
 	credential, err := credentialRepository.Single(ctx, credentialFilter)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
@@ -173,8 +173,8 @@ func VerifyPassword(w http.ResponseWriter, r *http.Request) {
 
 	loginInfo.UserId = user.Id()
 
-	virtualServerRepository := ioc.GetDependency[repositories2.VirtualServerRepository](scope)
-	virtualServerFilter := repositories2.NewVirtualServerFilter().Id(user.VirtualServerId())
+	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
+	virtualServerFilter := repositories.NewVirtualServerFilter().Id(user.VirtualServerId())
 	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -201,7 +201,7 @@ func VerifyPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = tokenService.UpdateToken(ctx, services2.LoginSessionTokenType, loginToken, string(loginInfoString), time.Minute*15)
+	err = tokenService.UpdateToken(ctx, services.LoginSessionTokenType, loginToken, string(loginInfoString), time.Minute*15)
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
@@ -221,13 +221,13 @@ func VerifyPassword(w http.ResponseWriter, r *http.Request) {
 // @Router       /logins/{loginToken}/verify-email [post]
 func VerifyEmailToken(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	scope := middlewares2.GetScope(ctx)
+	scope := middlewares.GetScope(ctx)
 
 	vars := mux.Vars(r)
 	loginToken := vars["loginToken"]
 
-	tokenService := ioc.GetDependency[services2.TokenService](scope)
-	redisValueString, err := tokenService.GetToken(ctx, services2.LoginSessionTokenType, loginToken)
+	tokenService := ioc.GetDependency[services.TokenService](scope)
+	redisValueString, err := tokenService.GetToken(ctx, services.LoginSessionTokenType, loginToken)
 	if err != nil {
 		http.Error(w, "invalid login token", http.StatusBadRequest)
 		return
@@ -245,8 +245,8 @@ func VerifyEmailToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userRepository := ioc.GetDependency[repositories2.UserRepository](scope)
-	userFilter := repositories2.NewUserFilter().Id(loginInfo.UserId)
+	userRepository := ioc.GetDependency[repositories.UserRepository](scope)
+	userFilter := repositories.NewUserFilter().Id(loginInfo.UserId)
 	user, err := userRepository.Single(ctx, userFilter)
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -265,7 +265,7 @@ func VerifyEmailToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = tokenService.UpdateToken(ctx, services2.LoginSessionTokenType, loginToken, string(loginInfoString), time.Minute*15)
+	err = tokenService.UpdateToken(ctx, services.LoginSessionTokenType, loginToken, string(loginInfoString), time.Minute*15)
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
@@ -285,13 +285,13 @@ func VerifyEmailToken(w http.ResponseWriter, r *http.Request) {
 // @Router       /logins/{loginToken}/finish-login [post]
 func FinishLogin(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	scope := middlewares2.GetScope(ctx)
+	scope := middlewares.GetScope(ctx)
 
 	vars := mux.Vars(r)
 	loginToken := vars["loginToken"]
 
-	tokenService := ioc.GetDependency[services2.TokenService](scope)
-	redisValueString, err := tokenService.GetToken(ctx, services2.LoginSessionTokenType, loginToken)
+	tokenService := ioc.GetDependency[services.TokenService](scope)
+	redisValueString, err := tokenService.GetToken(ctx, services.LoginSessionTokenType, loginToken)
 	if err != nil {
 		http.Error(w, "invalid login token", http.StatusBadRequest)
 		return
@@ -309,7 +309,7 @@ func FinishLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = middlewares2.CreateSession(w, r, loginInfo.VirtualServerName, loginInfo.UserId)
+	err = middlewares.CreateSession(w, r, loginInfo.VirtualServerName, loginInfo.UserId)
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
@@ -337,13 +337,13 @@ type ResetTemporaryPasswordRequestDto struct {
 // @Router       /logins/{loginToken}/reset-temporary-password [post]
 func ResetTemporaryPassword(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	scope := middlewares2.GetScope(ctx)
+	scope := middlewares.GetScope(ctx)
 
 	vars := mux.Vars(r)
 	loginToken := vars["loginToken"]
 
-	tokenService := ioc.GetDependency[services2.TokenService](scope)
-	redisValueString, err := tokenService.GetToken(ctx, services2.LoginSessionTokenType, loginToken)
+	tokenService := ioc.GetDependency[services.TokenService](scope)
+	redisValueString, err := tokenService.GetToken(ctx, services.LoginSessionTokenType, loginToken)
 	if err != nil {
 		http.Error(w, "invalid login token", http.StatusBadRequest)
 		return
@@ -395,7 +395,7 @@ func ResetTemporaryPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = tokenService.UpdateToken(ctx, services2.LoginSessionTokenType, loginToken, string(loginInfoString), time.Minute*15)
+	err = tokenService.UpdateToken(ctx, services.LoginSessionTokenType, loginToken, string(loginInfoString), time.Minute*15)
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
@@ -417,13 +417,13 @@ func ResendEmailVerification(w http.ResponseWriter, r *http.Request) {
 	// TODO: add "cooldown" for sending emails
 
 	ctx := r.Context()
-	scope := middlewares2.GetScope(ctx)
+	scope := middlewares.GetScope(ctx)
 
 	vars := mux.Vars(r)
 	loginToken := vars["loginToken"]
 
-	tokenService := ioc.GetDependency[services2.TokenService](scope)
-	redisValueString, err := tokenService.GetToken(ctx, services2.LoginSessionTokenType, loginToken)
+	tokenService := ioc.GetDependency[services.TokenService](scope)
+	redisValueString, err := tokenService.GetToken(ctx, services.LoginSessionTokenType, loginToken)
 	if err != nil {
 		http.Error(w, "invalid login token", http.StatusBadRequest)
 		return
@@ -442,17 +442,17 @@ func ResendEmailVerification(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// retrigger email verification sending
-	token, err := tokenService.GenerateAndStoreToken(ctx, services2.EmailVerificationTokenType, loginInfo.UserId.String(), time.Minute*15)
+	token, err := tokenService.GenerateAndStoreToken(ctx, services.EmailVerificationTokenType, loginInfo.UserId.String(), time.Minute*15)
 	if err != nil {
 		utils.HandleHttpError(w, fmt.Errorf("storing email verification token: %w", err))
 		return
 	}
 
-	templateService := ioc.GetDependency[services2.TemplateService](scope)
+	templateService := ioc.GetDependency[services.TemplateService](scope)
 	mailBody, err := templateService.Template(
 		ctx,
 		loginInfo.VirtualServerId,
-		repositories2.EmailVerificationMailTemplate,
+		repositories.EmailVerificationMailTemplate,
 		templates.EmailVerificationTemplateData{
 			VerificationLink: fmt.Sprintf(
 				"%s/api/virtual-servers/%s/users/verify-email?token=%s",
@@ -467,8 +467,8 @@ func ResendEmailVerification(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userRepository := ioc.GetDependency[repositories2.UserRepository](scope)
-	userFilter := repositories2.NewUserFilter().Id(loginInfo.UserId)
+	userRepository := ioc.GetDependency[repositories.UserRepository](scope)
+	userFilter := repositories.NewUserFilter().Id(loginInfo.UserId)
 	user, err := userRepository.Single(ctx, userFilter)
 	if err != nil {
 		utils.HandleHttpError(w, fmt.Errorf("getting user: %w", err))
@@ -482,8 +482,8 @@ func ResendEmailVerification(w http.ResponseWriter, r *http.Request) {
 		Body:            mailBody,
 	}
 
-	outboxMessageRepository := ioc.GetDependency[repositories2.OutboxMessageRepository](scope)
-	err = outboxMessageRepository.Insert(ctx, repositories2.NewOutboxMessage(message))
+	outboxMessageRepository := ioc.GetDependency[repositories.OutboxMessageRepository](scope)
+	err = outboxMessageRepository.Insert(ctx, repositories.NewOutboxMessage(message))
 	if err != nil {
 		utils.HandleHttpError(w, fmt.Errorf("creating email outbox message: %w", err))
 		return

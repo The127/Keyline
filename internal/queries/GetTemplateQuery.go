@@ -2,7 +2,7 @@ package queries
 
 import (
 	"Keyline/internal/middlewares"
-	repositories2 "Keyline/internal/repositories"
+	"Keyline/internal/repositories"
 	"Keyline/ioc"
 	"context"
 	"fmt"
@@ -13,7 +13,7 @@ import (
 
 type GetTemplate struct {
 	VirtualServerName string
-	Type              repositories2.TemplateType
+	Type              repositories.TemplateType
 }
 
 type GetTemplateResult struct {
@@ -26,15 +26,15 @@ type GetTemplateResult struct {
 func HandleGetTemplate(ctx context.Context, query GetTemplate) (*GetTemplateResult, error) {
 	scope := middlewares.GetScope(ctx)
 
-	virtualServerRepository := ioc.GetDependency[repositories2.VirtualServerRepository](scope)
-	virtualServerFilter := repositories2.NewVirtualServerFilter().Name(query.VirtualServerName)
+	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
+	virtualServerFilter := repositories.NewVirtualServerFilter().Name(query.VirtualServerName)
 	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
-	templateRepository := ioc.GetDependency[repositories2.TemplateRepository](scope)
-	templateFilter := repositories2.NewTemplateFilter().
+	templateRepository := ioc.GetDependency[repositories.TemplateRepository](scope)
+	templateFilter := repositories.NewTemplateFilter().
 		VirtualServerId(virtualServer.Id()).
 		TemplateType(query.Type)
 	template, err := templateRepository.Single(ctx, templateFilter)
@@ -42,8 +42,8 @@ func HandleGetTemplate(ctx context.Context, query GetTemplate) (*GetTemplateResu
 		return nil, fmt.Errorf("getting template: %w", err)
 	}
 
-	fileRepository := ioc.GetDependency[repositories2.FileRepository](scope)
-	fileFilter := repositories2.NewFileFilter().
+	fileRepository := ioc.GetDependency[repositories.FileRepository](scope)
+	fileFilter := repositories.NewFileFilter().
 		Id(template.FileId())
 	file, err := fileRepository.Single(ctx, fileFilter)
 	if err != nil {

@@ -2,8 +2,8 @@ package commands
 
 import (
 	"Keyline/internal/middlewares"
-	repositories2 "Keyline/internal/repositories"
-	mocks2 "Keyline/internal/repositories/mocks"
+	"Keyline/internal/repositories"
+	"Keyline/internal/repositories/mocks"
 	"Keyline/ioc"
 	"Keyline/utils"
 	"testing"
@@ -23,15 +23,15 @@ func TestHandleCreateApplication(t *testing.T) {
 
 	now := time.Now()
 
-	virtualServer := repositories2.NewVirtualServer("virtualServer", "Virtual Server")
+	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
 	virtualServer.Mock(now)
-	virtualServerRepository := mocks2.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories2.VirtualServerFilter) bool {
+	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
+	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories.VirtualServerFilter) bool {
 		return *x.GetName() == virtualServer.Name()
 	})).Return(virtualServer, nil)
 
-	applicationRepository := mocks2.NewMockApplicationRepository(ctrl)
-	applicationRepository.EXPECT().Insert(gomock.Any(), gomock.Cond(func(x *repositories2.Application) bool {
+	applicationRepository := mocks.NewMockApplicationRepository(ctrl)
+	applicationRepository.EXPECT().Insert(gomock.Any(), gomock.Cond(func(x *repositories.Application) bool {
 		return x.Name() == "applicationName" &&
 			x.DisplayName() == "Display Name" &&
 			x.RedirectUris()[0] == "redirectUri1" &&
@@ -39,10 +39,10 @@ func TestHandleCreateApplication(t *testing.T) {
 	}))
 
 	dc := ioc.NewDependencyCollection()
-	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories2.VirtualServerRepository {
+	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.VirtualServerRepository {
 		return virtualServerRepository
 	})
-	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories2.ApplicationRepository {
+	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.ApplicationRepository {
 		return applicationRepository
 	})
 	scope := dc.BuildProvider()
@@ -53,7 +53,7 @@ func TestHandleCreateApplication(t *testing.T) {
 		VirtualServerName: virtualServer.Name(),
 		Name:              "applicationName",
 		DisplayName:       "Display Name",
-		Type:              repositories2.ApplicationTypePublic,
+		Type:              repositories.ApplicationTypePublic,
 		RedirectUris: []string{
 			"redirectUri1",
 			"redirectUri2",

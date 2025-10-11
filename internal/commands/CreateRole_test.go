@@ -2,8 +2,8 @@ package commands
 
 import (
 	"Keyline/internal/middlewares"
-	repositories2 "Keyline/internal/repositories"
-	mocks2 "Keyline/internal/repositories/mocks"
+	"Keyline/internal/repositories"
+	"Keyline/internal/repositories/mocks"
 	"Keyline/ioc"
 	"Keyline/mediator"
 	"testing"
@@ -21,14 +21,14 @@ func TestHandleCreateRole(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	virtualServer := repositories2.NewVirtualServer("virtualServer", "Virtual Server")
-	virtualServerRepository := mocks2.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories2.VirtualServerFilter) bool {
+	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
+	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
+	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories.VirtualServerFilter) bool {
 		return *x.GetName() == virtualServer.Name()
 	})).Return(virtualServer, nil)
 
-	roleRepository := mocks2.NewMockRoleRepository(ctrl)
-	roleRepository.EXPECT().Insert(gomock.Any(), gomock.Cond(func(x *repositories2.Role) bool {
+	roleRepository := mocks.NewMockRoleRepository(ctrl)
+	roleRepository.EXPECT().Insert(gomock.Any(), gomock.Cond(func(x *repositories.Role) bool {
 		return x.Name() == "role" &&
 			x.Description() == "description" &&
 			x.VirtualServerId() == virtualServer.Id() &&
@@ -37,10 +37,10 @@ func TestHandleCreateRole(t *testing.T) {
 	}))
 
 	dc := ioc.NewDependencyCollection()
-	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories2.VirtualServerRepository {
+	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.VirtualServerRepository {
 		return virtualServerRepository
 	})
-	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories2.RoleRepository {
+	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.RoleRepository {
 		return roleRepository
 	})
 	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) mediator.Mediator {

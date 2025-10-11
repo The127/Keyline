@@ -2,7 +2,7 @@ package commands
 
 import (
 	"Keyline/internal/middlewares"
-	repositories2 "Keyline/internal/repositories"
+	"Keyline/internal/repositories"
 	"Keyline/ioc"
 	"context"
 	"fmt"
@@ -21,27 +21,27 @@ type AssignRoleToUserResponse struct{}
 func HandleAssignRoleToUser(ctx context.Context, command AssignRoleToUser) (*AssignRoleToUserResponse, error) {
 	scope := middlewares.GetScope(ctx)
 
-	virtualServerRepository := ioc.GetDependency[repositories2.VirtualServerRepository](scope)
-	virtualServerFilter := repositories2.NewVirtualServerFilter().Name(command.VirtualServerName)
+	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
+	virtualServerFilter := repositories.NewVirtualServerFilter().Name(command.VirtualServerName)
 	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
-	roleRepository := ioc.GetDependency[repositories2.RoleRepository](scope)
-	_, err = roleRepository.Single(ctx, repositories2.NewRoleFilter().Id(command.RoleId).VirtualServerId(virtualServer.Id()))
+	roleRepository := ioc.GetDependency[repositories.RoleRepository](scope)
+	_, err = roleRepository.Single(ctx, repositories.NewRoleFilter().Id(command.RoleId).VirtualServerId(virtualServer.Id()))
 	if err != nil {
 		return nil, fmt.Errorf("getting role: %w", err)
 	}
 
-	userRepository := ioc.GetDependency[repositories2.UserRepository](scope)
-	_, err = userRepository.Single(ctx, repositories2.NewUserFilter().Id(command.UserId).VirtualServerId(virtualServer.Id()))
+	userRepository := ioc.GetDependency[repositories.UserRepository](scope)
+	_, err = userRepository.Single(ctx, repositories.NewUserFilter().Id(command.UserId).VirtualServerId(virtualServer.Id()))
 	if err != nil {
 		return nil, fmt.Errorf("getting user: %w", err)
 	}
 
-	userRoleAssignmentRepository := ioc.GetDependency[repositories2.UserRoleAssignmentRepository](scope)
-	userRoleAssignment := repositories2.NewUserRoleAssignment(
+	userRoleAssignmentRepository := ioc.GetDependency[repositories.UserRoleAssignmentRepository](scope)
+	userRoleAssignment := repositories.NewUserRoleAssignment(
 		command.UserId,
 		command.RoleId,
 		nil, // TODO: add group id to command once we need it

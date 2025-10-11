@@ -2,7 +2,7 @@ package queries
 
 import (
 	"Keyline/internal/middlewares"
-	repositories2 "Keyline/internal/repositories"
+	"Keyline/internal/repositories"
 	"Keyline/ioc"
 	"Keyline/utils"
 	"context"
@@ -32,16 +32,16 @@ type ListUsersResponseItem struct {
 func HandleListUsers(ctx context.Context, query ListUsers) (*ListUsersResponse, error) {
 	scope := middlewares.GetScope(ctx)
 
-	virtualServerRepository := ioc.GetDependency[repositories2.VirtualServerRepository](scope)
-	virtualServerFilter := repositories2.NewVirtualServerFilter().
+	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
+	virtualServerFilter := repositories.NewVirtualServerFilter().
 		Name(query.VirtualServerName)
 	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("searching virtual servers: %w", err)
 	}
 
-	userRepository := ioc.GetDependency[repositories2.UserRepository](scope)
-	userFilter := repositories2.NewUserFilter().
+	userRepository := ioc.GetDependency[repositories.UserRepository](scope)
+	userFilter := repositories.NewUserFilter().
 		VirtualServerId(virtualServer.Id()).
 		Pagination(query.Page, query.PageSize).
 		Order(query.OrderBy, query.OrderDir).
@@ -51,7 +51,7 @@ func HandleListUsers(ctx context.Context, query ListUsers) (*ListUsersResponse, 
 		return nil, fmt.Errorf("searching users: %w", err)
 	}
 
-	items := utils.MapSlice(users, func(t *repositories2.User) ListUsersResponseItem {
+	items := utils.MapSlice(users, func(t *repositories.User) ListUsersResponseItem {
 		return ListUsersResponseItem{
 			Id:          t.Id(),
 			Username:    t.Username(),

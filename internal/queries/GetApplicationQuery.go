@@ -2,7 +2,7 @@ package queries
 
 import (
 	"Keyline/internal/middlewares"
-	repositories2 "Keyline/internal/repositories"
+	"Keyline/internal/repositories"
 	"Keyline/ioc"
 	"context"
 	"fmt"
@@ -20,7 +20,7 @@ type GetApplicationResult struct {
 	Id                uuid.UUID
 	Name              string
 	DisplayName       string
-	Type              repositories2.ApplicationType
+	Type              repositories.ApplicationType
 	RedirectUris      []string
 	PostLogoutUris    []string
 	SystemApplication bool
@@ -31,16 +31,16 @@ type GetApplicationResult struct {
 func HandleGetApplication(ctx context.Context, query GetApplication) (*GetApplicationResult, error) {
 	scope := middlewares.GetScope(ctx)
 
-	virtualServerRepository := ioc.GetDependency[repositories2.VirtualServerRepository](scope)
-	virtualServerFilter := repositories2.NewVirtualServerFilter().
+	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
+	virtualServerFilter := repositories.NewVirtualServerFilter().
 		Name(query.VirtualServerName)
 	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("searching virtual servers: %w", err)
 	}
 
-	applicationRepository := ioc.GetDependency[repositories2.ApplicationRepository](scope)
-	applicationFilter := repositories2.NewApplicationFilter().
+	applicationRepository := ioc.GetDependency[repositories.ApplicationRepository](scope)
+	applicationFilter := repositories.NewApplicationFilter().
 		VirtualServerId(virtualServer.Id()).
 		Id(query.ApplicationId)
 	application, err := applicationRepository.First(ctx, applicationFilter)

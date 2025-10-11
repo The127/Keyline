@@ -2,7 +2,7 @@ package queries
 
 import (
 	"Keyline/internal/middlewares"
-	repositories2 "Keyline/internal/repositories"
+	"Keyline/internal/repositories"
 	"Keyline/ioc"
 	"context"
 	"fmt"
@@ -29,15 +29,15 @@ type GetRoleQueryResult struct {
 func HandleGetRole(ctx context.Context, query GetRoleQuery) (*GetRoleQueryResult, error) {
 	scope := middlewares.GetScope(ctx)
 
-	virtualServerRepository := ioc.GetDependency[repositories2.VirtualServerRepository](scope)
-	virtualServerFilter := repositories2.NewVirtualServerFilter().Name(query.VirtualServerName)
+	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
+	virtualServerFilter := repositories.NewVirtualServerFilter().Name(query.VirtualServerName)
 	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
-	roleRepository := ioc.GetDependency[repositories2.RoleRepository](scope)
-	roleFilter := repositories2.NewRoleFilter().
+	roleRepository := ioc.GetDependency[repositories.RoleRepository](scope)
+	roleFilter := repositories.NewRoleFilter().
 		VirtualServerId(virtualServer.Id()).
 		Id(query.RoleId)
 	role, err := roleRepository.Single(ctx, roleFilter)

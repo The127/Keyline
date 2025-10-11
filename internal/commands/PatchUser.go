@@ -2,7 +2,7 @@ package commands
 
 import (
 	"Keyline/internal/middlewares"
-	repositories2 "Keyline/internal/repositories"
+	"Keyline/internal/repositories"
 	"Keyline/ioc"
 	"context"
 	"fmt"
@@ -21,15 +21,15 @@ type PatchUserResponse struct{}
 func HandlePatchUser(ctx context.Context, command PatchUser) (*PatchUserResponse, error) {
 	scope := middlewares.GetScope(ctx)
 
-	virtualServerRepository := ioc.GetDependency[repositories2.VirtualServerRepository](scope)
-	virtualServerFilter := repositories2.NewVirtualServerFilter().Name(command.VirtualServerName)
+	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
+	virtualServerFilter := repositories.NewVirtualServerFilter().Name(command.VirtualServerName)
 	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
-	userRepository := ioc.GetDependency[repositories2.UserRepository](scope)
-	userFilter := repositories2.NewUserFilter().Id(command.UserId).VirtualServerId(virtualServer.Id())
+	userRepository := ioc.GetDependency[repositories.UserRepository](scope)
+	userFilter := repositories.NewUserFilter().Id(command.UserId).VirtualServerId(virtualServer.Id())
 	user, err := userRepository.Single(ctx, userFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting user: %w", err)

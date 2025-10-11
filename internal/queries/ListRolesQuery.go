@@ -2,7 +2,7 @@ package queries
 
 import (
 	"Keyline/internal/middlewares"
-	repositories2 "Keyline/internal/repositories"
+	"Keyline/internal/repositories"
 	"Keyline/ioc"
 	"Keyline/utils"
 	"context"
@@ -30,16 +30,16 @@ type ListRolesResponseItem struct {
 func HandleListRoles(ctx context.Context, query ListRoles) (*ListRolesResponse, error) {
 	scope := middlewares.GetScope(ctx)
 
-	virtualServerRepository := ioc.GetDependency[repositories2.VirtualServerRepository](scope)
-	virtualServerFilter := repositories2.NewVirtualServerFilter().
+	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
+	virtualServerFilter := repositories.NewVirtualServerFilter().
 		Name(query.VirtualServerName)
 	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("searching virtual servers: %w", err)
 	}
 
-	roleRepository := ioc.GetDependency[repositories2.RoleRepository](scope)
-	roleFilter := repositories2.NewRoleFilter().
+	roleRepository := ioc.GetDependency[repositories.RoleRepository](scope)
+	roleFilter := repositories.NewRoleFilter().
 		VirtualServerId(virtualServer.Id()).
 		Pagination(query.Page, query.PageSize).
 		Order(query.OrderBy, query.OrderDir).
@@ -49,7 +49,7 @@ func HandleListRoles(ctx context.Context, query ListRoles) (*ListRolesResponse, 
 		return nil, fmt.Errorf("searching roles: %w", err)
 	}
 
-	items := utils.MapSlice(roles, func(t *repositories2.Role) ListRolesResponseItem {
+	items := utils.MapSlice(roles, func(t *repositories.Role) ListRolesResponseItem {
 		return ListRolesResponseItem{
 			Id:   t.Id(),
 			Name: t.Name(),
