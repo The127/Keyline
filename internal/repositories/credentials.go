@@ -209,6 +209,7 @@ func (d *CredentialTotpDetails) Scan(value any) error {
 }
 
 type CredentialFilter struct {
+	id     *uuid.UUID
 	userId *uuid.UUID
 	_type  *CredentialType
 }
@@ -219,6 +220,12 @@ func NewCredentialFilter() CredentialFilter {
 
 func (f CredentialFilter) Clone() CredentialFilter {
 	return f
+}
+
+func (f CredentialFilter) Id(id uuid.UUID) CredentialFilter {
+	filter := f.Clone()
+	filter.id = &id
+	return filter
 }
 
 func (f CredentialFilter) UserId(userId uuid.UUID) CredentialFilter {
@@ -259,6 +266,10 @@ func (r *credentialRepository) selectQuery(filter CredentialFilter) *sqlbuilder.
 		"type",
 		"details",
 	).From("credentials")
+
+	if filter.id != nil {
+		s.Where(s.Equal("id", filter.id))
+	}
 
 	if filter.userId != nil {
 		s.Where(s.Equal("user_id", filter.userId))
