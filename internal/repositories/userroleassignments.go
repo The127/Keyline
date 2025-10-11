@@ -16,17 +16,19 @@ import (
 type UserRoleAssignment struct {
 	ModelBase
 
-	userId  uuid.UUID
-	roleId  uuid.UUID
-	groupId *uuid.UUID
+	userId        uuid.UUID
+	roleId        uuid.UUID
+	groupId       *uuid.UUID
+	applicationId *uuid.UUID
 }
 
-func NewUserRoleAssignment(userId uuid.UUID, roleId uuid.UUID, groupId *uuid.UUID) *UserRoleAssignment {
+func NewUserRoleAssignment(userId uuid.UUID, roleId uuid.UUID, groupId *uuid.UUID, applicationId *uuid.UUID) *UserRoleAssignment {
 	return &UserRoleAssignment{
-		ModelBase: NewModelBase(),
-		userId:    userId,
-		roleId:    roleId,
-		groupId:   groupId,
+		ModelBase:     NewModelBase(),
+		userId:        userId,
+		roleId:        roleId,
+		groupId:       groupId,
+		applicationId: applicationId,
 	}
 }
 
@@ -42,6 +44,10 @@ func (u *UserRoleAssignment) GroupId() *uuid.UUID {
 	return u.groupId
 }
 
+func (u *UserRoleAssignment) ApplicationId() *uuid.UUID {
+	return u.applicationId
+}
+
 func (u *UserRoleAssignment) getScanPointers() []any {
 	return []any{
 		&u.id,
@@ -51,6 +57,7 @@ func (u *UserRoleAssignment) getScanPointers() []any {
 		&u.userId,
 		&u.roleId,
 		&u.groupId,
+		&u.applicationId,
 	}
 }
 
@@ -108,6 +115,7 @@ func (r *userRoleAssignmentRepository) selectQuery(filter UserRoleAssignmentFilt
 		"user_id",
 		"role_id",
 		"group_id",
+		"application_id",
 	).From("user_role_assignments")
 
 	if filter.userId != nil {
@@ -176,11 +184,13 @@ func (r *userRoleAssignmentRepository) Insert(ctx context.Context, userRoleAssig
 			"user_id",
 			"role_id",
 			"group_id",
+			"application_id",
 		).
 		Values(
 			userRoleAssignment.userId,
 			userRoleAssignment.roleId,
 			userRoleAssignment.groupId,
+			userRoleAssignment.applicationId,
 		).Returning("id", "audit_created_at", "audit_updated_at", "version")
 
 	query, args := s.Build()
