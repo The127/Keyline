@@ -376,3 +376,71 @@ func CreateServiceUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
+type AssociateServiceUserPublicKeyRequestDto struct {
+	PublicKey string `json:"publicKey" validate:"required"`
+}
+
+type AssociateServiceUserPublicKeyResponseDto struct {
+	Id uuid.UUID `json:"id"`
+}
+
+// AssociateServiceUserPublicKey associates a public key with a service user.
+// @Summary      Associate a public key with a service user
+// @Tags         Users
+// @Accept       json
+// @Produce      json
+// @Param        virtualServerName  path  string                true "Virtual server name"  default(keyline)
+// @Param        body               body  AssociateServiceUserPublicKeyRequestDto   true "Public key data"
+// @Success      200  {object} AssociateServiceUserPublicKeyResponseDto
+// @Failure      400  {string} string
+// @Router       /api/virtual-servers/{virtualServerName}/users/service-users/{serviceUserId}/keys [post]
+func AssociateServiceUserPublicKey(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	vsName, err := middlewares.GetVirtualServerName(ctx)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	vars := mux.Vars(r)
+	serviceUserId, err := uuid.Parse(vars["serviceUserId"])
+	if err != nil {
+		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+	}
+
+	var dto AssociateServiceUserPublicKeyRequestDto
+	err = json.NewDecoder(r.Body).Decode(&dto)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+	}
+
+	err = utils.ValidateDto(dto)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	scope := middlewares.GetScope(ctx)
+	m := ioc.GetDependency[mediator.Mediator](scope)
+
+	response, err := mediator.Send[*commands.AssociateServiceUserPublicKeyResponse](ctx, m, commands.AssociateServiceUserPublicKey{
+		VirtualServerName: vsName,
+		ServiceUserId:     serviceUserId,
+		PublicKey:         dto.PublicKey,
+	})
+	if err != nil {
+		utils.HandleHttpError(w, err)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	err = json.NewEncoder(w).Encode(AssociateServiceUserPublicKeyResponseDto{
+		Id: response.Id,
+	})
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+}

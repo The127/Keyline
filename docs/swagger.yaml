@@ -7,6 +7,18 @@ definitions:
     required:
     - userId
     type: object
+  handlers.AssociateServiceUserPublicKeyRequestDto:
+    properties:
+      publicKey:
+        type: string
+    required:
+    - publicKey
+    type: object
+  handlers.AssociateServiceUserPublicKeyResponseDto:
+    properties:
+      id:
+        type: string
+    type: object
   handlers.CodeFlowResponse:
     properties:
       access_token:
@@ -503,10 +515,14 @@ definitions:
         - 1000000000
         - 60000000000
         - 3600000000000
+        - -9223372036854775808
+        - 9223372036854775807
         - 1
         - 1000
         - 1000000
         - 1000000000
+        - 60000000000
+        - 3600000000000
         format: int64
         type: integer
         x-enum-varnames:
@@ -518,10 +534,14 @@ definitions:
         - Second
         - Minute
         - Hour
+        - minDuration
+        - maxDuration
         - Nanosecond
         - Microsecond
         - Millisecond
         - Second
+        - Minute
+        - Hour
     type: object
   repositories.TemplateType:
     enum:
@@ -1018,6 +1038,37 @@ paths:
           schema:
             type: string
       summary: Create service user
+      tags:
+      - Users
+  /api/virtual-servers/{virtualServerName}/users/service-users/{serviceUserId}/keys:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - default: keyline
+        description: Virtual server name
+        in: path
+        name: virtualServerName
+        required: true
+        type: string
+      - description: Public key data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.AssociateServiceUserPublicKeyRequestDto'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.AssociateServiceUserPublicKeyResponseDto'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+      summary: Associate a public key with a service user
       tags:
       - Users
   /api/virtual-servers/{virtualServerName}/users/verify-email:
