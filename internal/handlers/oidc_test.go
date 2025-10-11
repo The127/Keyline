@@ -36,7 +36,7 @@ func newTestContext(t *testing.T) context.Context {
 	})
 
 	userRoleAssignmentRepository := mocks.NewMockUserRoleAssignmentRepository(ctrl)
-	userRoleAssignmentRepository.EXPECT().List(gomock.Any(), gomock.Any()).Return(nil, 0, nil)
+	userRoleAssignmentRepository.EXPECT().List(gomock.Any(), gomock.Any()).Return(nil, 0, nil).Times(2)
 	ioc.RegisterTransient(dependencyCollection, func(dp *ioc.DependencyProvider) repositories.UserRoleAssignmentRepository {
 		return userRoleAssignmentRepository
 	})
@@ -55,6 +55,7 @@ func newDefaultParams(pub any, priv any, algorithm config.SigningAlgorithm) Toke
 		UserId:            uuid.New(),
 		VirtualServerName: "test-server",
 		ClientId:          "test-client",
+		ApplicationId:     uuid.New(),
 		GrantedScopes:     []string{"openid", "email"},
 		UserDisplayName:   "Test User",
 		UserPrimaryEmail:  "test@example.com",
