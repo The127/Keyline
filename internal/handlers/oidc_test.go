@@ -85,7 +85,7 @@ func TestGenerateIdToken_SignsWithPrivateKey(t *testing.T) {
 	params := newDefaultParams(pub, priv, config.SigningAlgorithmEdDSA)
 
 	// Act
-	tokenString, err := generateIdToken(params)
+	tokenString, err := generateIdToken(params.ToIdTokenGenerationParams())
 
 	// Assert
 	require.NoError(t, err)
@@ -103,7 +103,7 @@ func TestGenerateIdToken_SignsWithRSAKey(t *testing.T) {
 	params := newDefaultParams(&priv.PublicKey, priv, config.SigningAlgorithmRS256)
 
 	// Act
-	tokenString, err := generateIdToken(params)
+	tokenString, err := generateIdToken(params.ToIdTokenGenerationParams())
 
 	// Assert
 	require.NoError(t, err)
@@ -124,7 +124,7 @@ func TestGenerateIdToken_HasExpectedClaims(t *testing.T) {
 	params.IdTokenExpiry = time.Hour
 
 	// Act
-	tokenString, _ := generateIdToken(params)
+	tokenString, _ := generateIdToken(params.ToIdTokenGenerationParams())
 	token := parseToken(t, tokenString, pub)
 	claims := token.Claims.(jwt.MapClaims)
 
@@ -146,7 +146,7 @@ func TestGenerateIdToken_HasExpectedHeaders(t *testing.T) {
 	params := newDefaultParams(pub, priv, config.SigningAlgorithmEdDSA)
 
 	// Act
-	tokenString, _ := generateIdToken(params)
+	tokenString, _ := generateIdToken(params.ToIdTokenGenerationParams())
 	token := parseToken(t, tokenString, pub)
 
 	// Assert
@@ -165,7 +165,7 @@ func TestGenerateAccessToken_SignsWithPrivateKey(t *testing.T) {
 	params := newDefaultParams(pub, priv, config.SigningAlgorithmEdDSA)
 
 	// Act
-	tokenString, err := generateAccessToken(ctx, params)
+	tokenString, err := generateAccessToken(ctx, params.ToAccessTokenGenerationParams())
 
 	// Assert
 	require.NoError(t, err)
@@ -188,7 +188,7 @@ func TestGenerateAccessToken_HasExpectedClaims(t *testing.T) {
 	params.GrantedScopes = []string{"openid", "email", "profile"}
 
 	// Act
-	tokenString, _ := generateAccessToken(ctx, params)
+	tokenString, _ := generateAccessToken(ctx, params.ToAccessTokenGenerationParams())
 	token := parseToken(t, tokenString, pub)
 	claims := token.Claims.(jwt.MapClaims)
 
@@ -216,7 +216,7 @@ func TestGenerateAccessToken_HasExpectedHeaders(t *testing.T) {
 	params := newDefaultParams(pub, priv, config.SigningAlgorithmEdDSA)
 
 	// Act
-	tokenString, _ := generateAccessToken(ctx, params)
+	tokenString, _ := generateAccessToken(ctx, params.ToAccessTokenGenerationParams())
 	token := parseToken(t, tokenString, pub)
 
 	// Assert
@@ -238,7 +238,7 @@ func TestGenerateRefreshTokenInfo_ReturnsExpectedJSON(t *testing.T) {
 	}
 
 	// Act
-	info, err := generateRefreshTokenInfo(params)
+	info, err := generateRefreshTokenInfo(params.ToRefreshTokenGenerationParams())
 
 	// Assert
 	require.NoError(t, err)
