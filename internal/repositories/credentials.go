@@ -91,12 +91,34 @@ func (c *Credential) PasswordDetails() (*CredentialPasswordDetails, error) {
 type CredentialType string
 
 const (
-	CredentialTypePassword CredentialType = "password"
-	CredentialTypeTotp     CredentialType = "totp"
+	CredentialTypePassword       CredentialType = "password"
+	CredentialTypeTotp           CredentialType = "totp"
+	CredentialTypeServiceUserKey CredentialType = "service_user_key"
 )
 
 type CredentialDetails interface {
 	CredentialDetailType() CredentialType
+}
+
+type CredentialServiceUserKey struct {
+	PublicKey string `json:"publicKey"`
+}
+
+func (d *CredentialServiceUserKey) CredentialDetailType() CredentialType {
+	return CredentialTypeServiceUserKey
+}
+
+func (d *CredentialServiceUserKey) Value() (driver.Value, error) {
+	return json.Marshal(d)
+}
+
+func (d *CredentialServiceUserKey) Scan(value any) error {
+	bytes, ok := value.([]byte)
+	if !ok {
+		return fmt.Errorf("type assertion for credential failed")
+	}
+
+	return json.Unmarshal(bytes, &d)
 }
 
 type CredentialPasswordDetails struct {
