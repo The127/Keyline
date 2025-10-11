@@ -2,13 +2,13 @@ package clock
 
 import "time"
 
-type ClockService interface {
+type Service interface {
 	Now() time.Time
 }
 
 type clockService struct{}
 
-func NewClockService() ClockService {
+func NewClockService() Service {
 	return &clockService{}
 }
 

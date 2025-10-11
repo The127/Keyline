@@ -4,10 +4,11 @@ import (
 	"crypto/sha256"
 	"crypto/subtle"
 	"fmt"
+	"strings"
+
 	"github.com/go-crypt/crypt"
 	"github.com/go-crypt/crypt/algorithm"
 	"github.com/go-crypt/crypt/algorithm/argon2"
-	"strings"
 )
 
 func CompareHash(password string, hashedPassword string) bool {

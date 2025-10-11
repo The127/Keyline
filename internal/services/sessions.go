@@ -39,7 +39,7 @@ func (s *sessionService) NewSession(ctx context.Context, virtualServerName strin
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
-	clockService := ioc.GetDependency[clock.ClockService](scope)
+	clockService := ioc.GetDependency[clock.Service](scope)
 	now := clockService.Now()
 
 	sessionRepository := ioc.GetDependency[repositories.SessionRepository](scope)
