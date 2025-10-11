@@ -2,8 +2,8 @@ package commands
 
 import (
 	"Keyline/internal/middlewares"
-	repositories2 "Keyline/internal/repositories"
-	mocks2 "Keyline/internal/repositories/mocks"
+	"Keyline/internal/repositories"
+	repoMocks "Keyline/internal/repositories/mocks"
 	"Keyline/ioc"
 	"Keyline/utils"
 	"testing"
@@ -24,43 +24,43 @@ func TestHandleAssignRoleToUser(t *testing.T) {
 
 	now := time.Now()
 
-	virtualServer := repositories2.NewVirtualServer("virtualServer", "Virtual Server")
+	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
 	virtualServer.Mock(now)
-	virtualServerRepository := mocks2.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories2.VirtualServerFilter) bool {
+	virtualServerRepository := repoMocks.NewMockVirtualServerRepository(ctrl)
+	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories.VirtualServerFilter) bool {
 		return *x.GetName() == virtualServer.Name()
 	})).Return(virtualServer, nil)
 
-	user := repositories2.NewUser("user", "User", "user@mail", virtualServer.Id())
+	user := repositories.NewUser("user", "User", "user@mail", virtualServer.Id())
 	user.Mock(now)
-	userRepository := mocks2.NewMockUserRepository(ctrl)
-	userRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories2.UserFilter) bool {
+	userRepository := repoMocks.NewMockUserRepository(ctrl)
+	userRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories.UserFilter) bool {
 		return *x.GetId() == user.Id()
 	})).Return(user, nil)
 
-	role := repositories2.NewRole(virtualServer.Id(), nil, "role", "Role")
+	role := repositories.NewRole(virtualServer.Id(), nil, "role", "Role")
 	role.Mock(now)
-	roleRepository := mocks2.NewMockRoleRepository(ctrl)
-	roleRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories2.RoleFilter) bool {
+	roleRepository := repoMocks.NewMockRoleRepository(ctrl)
+	roleRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories.RoleFilter) bool {
 		return *x.GetId() == role.Id()
 	})).Return(role, nil)
 
-	userRoleAssignmentRepository := mocks2.NewMockUserRoleAssignmentRepository(ctrl)
-	userRoleAssignmentRepository.EXPECT().Insert(gomock.Any(), gomock.Cond(func(x *repositories2.UserRoleAssignment) bool {
+	userRoleAssignmentRepository := repoMocks.NewMockUserRoleAssignmentRepository(ctrl)
+	userRoleAssignmentRepository.EXPECT().Insert(gomock.Any(), gomock.Cond(func(x *repositories.UserRoleAssignment) bool {
 		return x.RoleId() == role.Id() && x.UserId() == user.Id()
 	})).Return(nil)
 
 	dc := ioc.NewDependencyCollection()
-	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories2.VirtualServerRepository {
+	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.VirtualServerRepository {
 		return virtualServerRepository
 	})
-	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories2.UserRepository {
+	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.UserRepository {
 		return userRepository
 	})
-	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories2.RoleRepository {
+	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.RoleRepository {
 		return roleRepository
 	})
-	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories2.UserRoleAssignmentRepository {
+	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.UserRoleAssignmentRepository {
 		return userRoleAssignmentRepository
 	})
 	scope := dc.BuildProvider()
