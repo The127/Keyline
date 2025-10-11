@@ -3,9 +3,9 @@ package behaviours
 import (
 	"Keyline/internal/authentication/permissions"
 	"Keyline/internal/authentication/roles"
+	"Keyline/internal/logging"
 	"Keyline/internal/middlewares"
 	"Keyline/ioc"
-	"Keyline/logging"
 	"Keyline/mediator"
 	"Keyline/utils"
 	"context"

@@ -2,7 +2,7 @@ package services
 
 import (
 	"Keyline/internal/behaviours"
-	"Keyline/logging"
+	"Keyline/internal/logging"
 	"context"
 )
 

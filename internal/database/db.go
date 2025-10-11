@@ -2,7 +2,7 @@ package database
 
 import (
 	"Keyline/internal/config"
-	"Keyline/logging"
+	"Keyline/internal/logging"
 	"Keyline/utils"
 	"database/sql"
 	"embed"

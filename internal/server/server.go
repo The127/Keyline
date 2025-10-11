@@ -4,9 +4,9 @@ import (
 	"Keyline/internal/authentication"
 	"Keyline/internal/config"
 	"Keyline/internal/handlers"
+	"Keyline/internal/logging"
 	"Keyline/internal/middlewares"
 	"Keyline/ioc"
-	"Keyline/logging"
 	"fmt"
 	"net/http"
 

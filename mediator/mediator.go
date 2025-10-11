@@ -1,7 +1,7 @@
 package mediator
 
 import (
-	"Keyline/logging"
+	"Keyline/internal/logging"
 	"Keyline/utils"
 	"context"
 	"reflect"
