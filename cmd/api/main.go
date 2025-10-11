@@ -196,6 +196,8 @@ func setupMediator(dc *ioc.DependencyCollection) {
 	mediator.RegisterHandler(m, commands.HandleAssignRoleToUser)
 	mediator.RegisterHandler(m, queries.HandleListUsersInRole)
 
+	mediator.RegisterHandler(m, queries.HandleListGroups)
+
 	mediator.RegisterEventHandler(m, events.QueueEmailVerificationJobOnUserCreatedEvent)
 
 	mediator.RegisterBehaviour(m, behaviours.PolicyBehaviour)
