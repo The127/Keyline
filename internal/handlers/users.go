@@ -77,6 +77,7 @@ type RegisterUserRequestDto struct {
 // @Router       /api/virtual-servers/{virtualServerName}/users/register [post]
 func RegisterUser(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -313,4 +314,65 @@ func PatchUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+type CreateServiceUserRequestDto struct {
+	Username string `json:"username" validate:"required,min=1,max=255"`
+}
+
+type CreateServiceUserResponseDto struct {
+	Id uuid.UUID `json:"id"`
+}
+
+// CreateServiceUser create a service user.
+// @Summary      Create service user
+// @Tags         Users
+// @Accept       json
+// @Produce      json
+// @Param        virtualServerName  path  string                true "Virtual server name"  default(keyline)
+// @Param        body               body  CreateServiceUserRequestDto   true "User data"
+// @Success      200  {object} CreateServiceUserResponseDto
+// @Failure      400  {string} string
+// @Router       /api/virtual-servers/{virtualServerName}/users/create-service-user [post]
+func CreateServiceUser(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	vsName, err := middlewares.GetVirtualServerName(ctx)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	var dto CreateServiceUserRequestDto
+	err = json.NewDecoder(r.Body).Decode(&dto)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+	}
+
+	err = utils.ValidateDto(dto)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	scope := middlewares.GetScope(ctx)
+	m := ioc.GetDependency[mediator.Mediator](scope)
+
+	response, err := mediator.Send[*commands.CreateServiceUserResponse](ctx, m, commands.CreateServiceUser{
+		VirtualServerName: vsName,
+		Username:          dto.Username,
+	})
+	if err != nil {
+		utils.HandleHttpError(w, err)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	err = json.NewEncoder(w).Encode(CreateServiceUserResponseDto{
+		Id: response.Id,
+	})
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
 }
