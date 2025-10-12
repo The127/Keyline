@@ -156,9 +156,6 @@ func (r *outboxMessageRepository) Insert(ctx context.Context, outboxMessage *Out
 	if err != nil {
 		return fmt.Errorf("scanning row: %w", err)
 	}
-	if err != nil {
-		return fmt.Errorf("scanning row: %w", err)
-	}
 
 	outboxMessage.clearChanges()
 	return nil
