@@ -206,7 +206,7 @@ func (r *applicationUserMetadataRepository) First(ctx context.Context, filter Ap
 		ModelBase: NewModelBase(),
 	}
 
-	err = row.Scan(append(metadata.getScanPointers())...)
+	err = row.Scan(metadata.getScanPointers()...)
 	if err != nil {
 		return nil, fmt.Errorf("scanning row: %w", err)
 	}
