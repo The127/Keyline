@@ -17,7 +17,7 @@ func (c *consoleAuditLogger) Log(ctx context.Context, policy behaviours.Policy, 
 	if result.IsAllowed() {
 		logging.Logger.Infof("request '%s' allowed for '%s' by %s", policy.GetRequestName(), result.UserId(), result.Reason())
 	} else {
-		logging.Logger.Infof("request '%s' denied for '%s' by %s", policy.GetRequestName(), result.UserId())
+		logging.Logger.Infof("request '%s' denied for '%s'", policy.GetRequestName(), result.UserId())
 	}
 
 	return nil
