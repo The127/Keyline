@@ -6,6 +6,7 @@ const (
 	SystemUser Permission = "system_user"
 
 	ApplicationCreate Permission = "application:create"
+	ApplicationDelete Permission = "application:delete"
 
 	RoleCreate Permission = "role:create"
 	RoleAssign Permission = "role:assign"

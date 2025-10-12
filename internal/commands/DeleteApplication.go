@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"Keyline/internal/authentication/permissions"
+	"Keyline/internal/behaviours"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/ioc"
@@ -14,6 +16,14 @@ import (
 type DeleteApplication struct {
 	VirtualServerName string
 	ApplicationId     uuid.UUID
+}
+
+func (a DeleteApplication) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
+	return behaviours.PermissionBasedPolicy(ctx, permissions.ApplicationDelete)
+}
+
+func (a DeleteApplication) GetRequestName() string {
+	return "DeleteApplication"
 }
 
 type DeleteApplicationResponse struct{}
