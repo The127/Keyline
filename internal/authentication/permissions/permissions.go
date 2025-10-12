@@ -8,6 +8,7 @@ const (
 	ApplicationCreate Permission = "application:create"
 	ApplicationDelete Permission = "application:delete"
 	ApplicationUpdate Permission = "application:update"
+	ApplicationView   Permission = "application:view"
 
 	RoleCreate Permission = "role:create"
 	RoleAssign Permission = "role:assign"
