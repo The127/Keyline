@@ -264,7 +264,7 @@ func GetUserById(w http.ResponseWriter, r *http.Request) {
 
 type GetUserApplicationMetadataResponseDto map[string]any
 
-// GetUserMetadata returns a users application metadata.
+// GetUserApplicationMetadata returns a users application metadata.
 // @Summary      Get users application metadata
 // @Tags         Users
 // @Produce      json
@@ -329,7 +329,7 @@ func GetUserApplicationMetadata(w http.ResponseWriter, r *http.Request) {
 
 type GetUserGlobalMetadataResponseDto map[string]any
 
-// GetUserMetadata returns a users metadata (only the global metadata).
+// GetUserGlobalMetadata returns a users metadata (only the global metadata).
 // @Summary      Get user metadata (only global)
 // @Tags         Users
 // @Tags         Users
@@ -623,7 +623,7 @@ func UpdateUserApplicationMetadata(w http.ResponseWriter, r *http.Request) {
 
 type PatchUserApplicationMetadataRequestDto map[string]any
 
-// PatchUserGlobalMetadata patch a users application metadata.
+// PatchUserApplicationMetadata patch a users application metadata.
 // @Summary      Patch a users application metadata using JSON Merge Patch (RFC 7396)
 // @Tags         Users
 // @Produce      json
