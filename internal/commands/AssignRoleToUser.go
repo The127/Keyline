@@ -14,6 +14,7 @@ type AssignRoleToUser struct {
 	VirtualServerName string
 	UserId            uuid.UUID
 	RoleId            uuid.UUID
+	ApplicationId     *uuid.UUID
 }
 
 type AssignRoleToUserResponse struct{}
@@ -29,7 +30,16 @@ func HandleAssignRoleToUser(ctx context.Context, command AssignRoleToUser) (*Ass
 	}
 
 	roleRepository := ioc.GetDependency[repositories.RoleRepository](scope)
-	_, err = roleRepository.Single(ctx, repositories.NewRoleFilter().Id(command.RoleId).VirtualServerId(virtualServer.Id()))
+
+	roleFilter := repositories.NewRoleFilter().
+		Id(command.RoleId).
+		VirtualServerId(virtualServer.Id())
+
+	if command.ApplicationId != nil {
+		roleFilter = roleFilter.ApplicationId(*command.ApplicationId)
+	}
+
+	_, err = roleRepository.Single(ctx, roleFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting role: %w", err)
 	}
