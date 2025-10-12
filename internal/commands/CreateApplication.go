@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"Keyline/internal/authentication"
 	"Keyline/internal/authentication/permissions"
 	"Keyline/internal/behaviours"
 	"Keyline/internal/middlewares"
@@ -30,23 +29,7 @@ func (c CreateApplication) GetRequestName() string {
 }
 
 func (c CreateApplication) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
-	currentUser := authentication.GetCurrentUser(ctx)
-	if !currentUser.IsAuthenticated() {
-		return behaviours.Denied(currentUser.UserId), nil
-	}
-
-	hasPermission := currentUser.HasPermission(permissions.ApplicationCreate)
-	if !hasPermission.IsSuccess() {
-		return behaviours.Denied(currentUser.UserId), nil
-	}
-
-	return behaviours.Allowed(
-		currentUser.UserId,
-		behaviours.NewAllowedByPermission(
-			permissions.ApplicationCreate,
-			hasPermission.SourceRoles,
-		),
-	), nil
+	return behaviours.PermissionBasedPolicy(ctx, permissions.ApplicationCreate)
 }
 
 type CreateApplicationResponse struct {

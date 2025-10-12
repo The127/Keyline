@@ -134,3 +134,23 @@ func evaluatePolicy(ctx context.Context, request Policy) (PolicyResult, error) {
 
 	return request.IsAllowed(ctx)
 }
+
+func PermissionBasedPolicy(ctx context.Context, permission permissions.Permission) (PolicyResult, error) {
+	currentUser := authentication.GetCurrentUser(ctx)
+	if !currentUser.IsAuthenticated() {
+		return Denied(currentUser.UserId), nil
+	}
+
+	hasPermission := currentUser.HasPermission(permission)
+	if !hasPermission.IsSuccess() {
+		return Denied(currentUser.UserId), nil
+	}
+
+	return Allowed(
+		currentUser.UserId,
+		NewAllowedByPermission(
+			permission,
+			hasPermission.SourceRoles,
+		),
+	), nil
+}
