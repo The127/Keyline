@@ -20,5 +20,6 @@ var AdminPermissions = []permissions.Permission{
 }
 
 var AllRoles = map[Role][]permissions.Permission{
-	Admin: AdminPermissions,
+	SystemUser: SystemUserPermissions,
+	Admin:      AdminPermissions,
 }
