@@ -16,6 +16,12 @@ type VerifyEmail struct {
 	Token             string
 }
 
+// Verify email does not implement policy as anyone can verify their email
+
+func (a VerifyEmail) GetRequestName() string {
+	return "VerifyEmail"
+}
+
 type VerifyEmailResponse struct {
 }
 
