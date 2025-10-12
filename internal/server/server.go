@@ -109,6 +109,7 @@ func Serve(dp *ioc.DependencyProvider) {
 	vsApiRouter.HandleFunc("/users/{userId}/metadata", handlers.GetUserMetadata).Methods(http.MethodGet, http.MethodOptions)
 	vsApiRouter.HandleFunc("/users/{userId}/metadata/user", handlers.GetUserGlobalMetadata).Methods(http.MethodGet, http.MethodOptions)
 	vsApiRouter.HandleFunc("/users/{userId}/metadata/user", handlers.UpdateUserGlobalMetadata).Methods(http.MethodPut, http.MethodOptions)
+	vsApiRouter.HandleFunc("/users/{userId}/metadata/user", handlers.PatchUserGlobalMetadata).Methods(http.MethodPatch, http.MethodOptions)
 	vsApiRouter.HandleFunc("/users/{userId}/metadata/application/{appId}", handlers.GetUserApplicationMetadata).Methods(http.MethodGet, http.MethodOptions)
 	vsApiRouter.HandleFunc("/users/{userId}/metadata/application/{appId}", handlers.UpdateUserApplicationMetadata).Methods(http.MethodPut, http.MethodOptions)
 	vsApiRouter.HandleFunc("/users/{userId}", handlers.PatchUser).Methods(http.MethodPatch, http.MethodOptions)

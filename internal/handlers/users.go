@@ -188,6 +188,7 @@ func ListUsers(w http.ResponseWriter, r *http.Request) {
 	))
 	if err != nil {
 		utils.HandleHttpError(w, err)
+		return
 	}
 }
 
@@ -510,6 +511,58 @@ func UpdateUserGlobalMetadata(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+type PatchUserGlobalMetadataRequestDto map[string]any
+
+// PatchUserGlobalMetadata patch a users metadata.
+// @Summary      Patch a user metadata using JSON Merge Patch (RFC 7396)
+// @Tags         Users
+// @Produce      json
+// @Param        virtualServerName  path  string true  "Virtual server name"  default(keyline)
+// @Param        userId             path  string true  "User ID (UUID)"
+// @Param        body               body  PatchUserGlobalMetadataRequestDto   true "Metadata"
+// @Accept       json
+// @Accept       application/merge-patch+json
+// @Success      204  {string}  string  "No Content"
+// @Failure      404  {string}  string
+// @Router       /api/virtual-servers/{virtualServerName}/users/{userId}/metadata/user [patch]
+func PatchUserGlobalMetadata(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	scope := middlewares.GetScope(ctx)
+
+	vsName, err := middlewares.GetVirtualServerName(ctx)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	vars := mux.Vars(r)
+	userId, err := uuid.Parse(vars["userId"])
+	if err != nil {
+		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+		return
+	}
+
+	var dto PatchUserGlobalMetadataRequestDto
+	err = json.NewDecoder(r.Body).Decode(&dto)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	m := ioc.GetDependency[mediator.Mediator](scope)
+	_, err = mediator.Send[*commands.PatchUserMetadataResponse](ctx, m, commands.PatchUserMetadata{
+		VirtualServerName: vsName,
+		UserId:            userId,
+		Metadata:          dto,
+	})
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+}
+
 type UpdateUserApplicationMetadataRequestDto map[string]any
 
 // UpdateUserApplicationMetadata updates a users application metadata.
@@ -537,11 +590,13 @@ func UpdateUserApplicationMetadata(w http.ResponseWriter, r *http.Request) {
 	userId, err := uuid.Parse(vars["userId"])
 	if err != nil {
 		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+		return
 	}
 
 	appId, err := uuid.Parse(vars["appId"])
 	if err != nil {
 		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+		return
 	}
 
 	var dto UpdateUserApplicationMetadataRequestDto
