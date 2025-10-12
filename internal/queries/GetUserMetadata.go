@@ -11,10 +11,11 @@ import (
 )
 
 type GetUserMetadata struct {
-	VirtualServerName     string
-	UserId                uuid.UUID
-	ApplicationMatcher    string
-	IncludeGlobalMetadata bool
+	VirtualServerName             string
+	UserId                        uuid.UUID
+	IncludeGlobalMetadata         bool
+	IncludeAllApplicationMetadata bool
+	ApplicationIds                *[]uuid.UUID
 }
 
 type GetUserMetadataResult struct {
@@ -42,28 +43,6 @@ func HandleGetUserMetadata(ctx context.Context, query GetUserMetadata) (*GetUser
 		return nil, fmt.Errorf("getting user: %w", err)
 	}
 
-	applicationRepository := ioc.GetDependency[repositories.ApplicationRepository](scope)
-	applicationFilter := repositories.NewApplicationFilter().
-		Search(repositories.NewExactSearchFilter(query.ApplicationMatcher))
-	applications, _, err := applicationRepository.List(ctx, applicationFilter)
-	if err != nil {
-		return nil, fmt.Errorf("searching applications: %w", err)
-	}
-
-	appIds := make([]uuid.UUID, len(applications))
-	for i, application := range applications {
-		appIds[i] = application.Id()
-	}
-
-	applicationUserMetadataRepository := ioc.GetDependency[repositories.ApplicationUserMetadataRepository](scope)
-	applicationUserMetadataFilter := repositories.NewApplicationUserMetadataFilter().
-		ApplicationIds(appIds).
-		UserId(query.UserId)
-	applicationMetadata, _, err := applicationUserMetadataRepository.List(ctx, applicationUserMetadataFilter)
-	if err != nil {
-		return nil, fmt.Errorf("searching application user metadata: %w", err)
-	}
-
 	result := GetUserMetadataResult{
 		Metadata:            "",
 		ApplicationMetadata: make(map[string]string),
@@ -73,19 +52,47 @@ func HandleGetUserMetadata(ctx context.Context, query GetUserMetadata) (*GetUser
 		result.Metadata = user.Metadata()
 	}
 
-	for _, metadata := range applicationMetadata {
-		var application *repositories.Application
-		for _, application = range applications {
-			if application.Id() == metadata.ApplicationId() {
-				application = application
-				break
-			}
-		}
-		if application == nil {
-			panic(fmt.Sprintf("application not found: %s", metadata.ApplicationId().String()))
+	if query.ApplicationIds != nil || query.IncludeAllApplicationMetadata {
+		applicationRepository := ioc.GetDependency[repositories.ApplicationRepository](scope)
+		applicationFilter := repositories.NewApplicationFilter()
+
+		if query.ApplicationIds != nil {
+			applicationFilter = applicationFilter.Ids(*query.ApplicationIds)
 		}
 
-		result.ApplicationMetadata[application.Name()] = metadata.Metadata()
+		applications, _, err := applicationRepository.List(ctx, applicationFilter)
+		if err != nil {
+			return nil, fmt.Errorf("searching applications: %w", err)
+		}
+
+		appIds := make([]uuid.UUID, len(applications))
+		for i, application := range applications {
+			appIds[i] = application.Id()
+		}
+
+		applicationUserMetadataRepository := ioc.GetDependency[repositories.ApplicationUserMetadataRepository](scope)
+		applicationUserMetadataFilter := repositories.NewApplicationUserMetadataFilter().
+			ApplicationIds(appIds).
+			UserId(query.UserId)
+		applicationMetadata, _, err := applicationUserMetadataRepository.List(ctx, applicationUserMetadataFilter)
+		if err != nil {
+			return nil, fmt.Errorf("searching application user metadata: %w", err)
+		}
+
+		for _, metadata := range applicationMetadata {
+			var application *repositories.Application
+			for _, a := range applications {
+				if a.Id() == metadata.ApplicationId() {
+					application = a
+					break
+				}
+			}
+			if application == nil {
+				panic(fmt.Sprintf("application not found: %s", metadata.ApplicationId().String()))
+			}
+
+			result.ApplicationMetadata[application.Name()] = metadata.Metadata()
+		}
 	}
 
 	return &result, nil

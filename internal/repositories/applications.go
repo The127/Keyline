@@ -145,6 +145,7 @@ type ApplicationFilter struct {
 	orderInfo
 	name            *string
 	id              *uuid.UUID
+	ids             *[]uuid.UUID
 	virtualServerId *uuid.UUID
 	searchFilter    *SearchFilter
 }
@@ -199,6 +200,12 @@ func (f ApplicationFilter) VirtualServerId(virtualServerId uuid.UUID) Applicatio
 	return filter
 }
 
+func (f ApplicationFilter) Ids(ids []uuid.UUID) ApplicationFilter {
+	fiter := f.Clone()
+	fiter.ids = &ids
+	return fiter
+}
+
 //go:generate mockgen -destination=./mocks/application_repository.go -package=mocks Keyline/internal/repositories ApplicationRepository
 type ApplicationRepository interface {
 	Single(ctx context.Context, filter ApplicationFilter) (*Application, error)
@@ -232,11 +239,15 @@ func (r *applicationRepository) selectQuery(filter ApplicationFilter) *sqlbuilde
 	).From("applications")
 
 	if filter.name != nil {
-		s.Where(s.Equal("name", filter.name))
+		s.Where(s.Equal("name", *filter.name))
 	}
 
 	if filter.id != nil {
-		s.Where(s.Equal("id", filter.id))
+		s.Where(s.Equal("id", *filter.id))
+	}
+
+	if filter.ids != nil {
+		s.Where(s.Any("id", "=", pq.Array(*filter.ids)))
 	}
 
 	if filter.virtualServerId != nil {
