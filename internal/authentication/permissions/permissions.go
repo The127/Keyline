@@ -15,6 +15,8 @@ const (
 	UserCreate Permission = "user:create"
 	UserUpdate Permission = "user:update"
 
+	UserMetadataUpdate Permission = "user_metadata:update"
+
 	AppMetadataUpdateAny Permission = "app_metadata:update:any"
 
 	ServiceUserCreate       Permission = "service_user:create"
