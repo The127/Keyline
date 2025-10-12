@@ -85,7 +85,7 @@ func (d *directoryKeyStore) GetAllForAlgorithm(virtualServerName string, algorit
 		return nil, err
 	}
 
-	var keyPairs []KeyPair
+	var keyPairs []KeyPair //nolint:prealloc
 	for _, file := range files {
 		if file.IsDir() {
 			continue
