@@ -28,7 +28,8 @@ type CreateVirtualServer struct {
 }
 
 type CreateVirtualServerResponse struct {
-	Id uuid.UUID
+	Id                   uuid.UUID
+	AdminUiApplicationId uuid.UUID
 }
 
 func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer) (*CreateVirtualServerResponse, error) {
@@ -56,17 +57,18 @@ func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer)
 		return nil, fmt.Errorf("initializing default templates: %w", err)
 	}
 
-	err = initializeDefaultApplications(ctx, virtualServer)
+	adminUiAppId, err := initializeDefaultApplications(ctx, virtualServer)
 	if err != nil {
 		return nil, fmt.Errorf("initializing default applications: %w", err)
 	}
 
 	return &CreateVirtualServerResponse{
-		Id: virtualServer.Id(),
+		Id:                   virtualServer.Id(),
+		AdminUiApplicationId: adminUiAppId,
 	}, nil
 }
 
-func initializeDefaultApplications(ctx context.Context, virtualServer *repositories.VirtualServer) error {
+func initializeDefaultApplications(ctx context.Context, virtualServer *repositories.VirtualServer) (uuid.UUID, error) {
 	scope := middlewares.GetScope(ctx)
 
 	applicationRepository := ioc.GetDependency[repositories.ApplicationRepository](scope)
@@ -88,15 +90,15 @@ func initializeDefaultApplications(ctx context.Context, virtualServer *repositor
 
 	err := applicationRepository.Insert(ctx, adminUiApplication)
 	if err != nil {
-		return fmt.Errorf("inserting application: %w", err)
+		return uuid.Nil, fmt.Errorf("inserting application: %w", err)
 	}
 
 	err = initializeDefaultAdminUiRoles(ctx, virtualServer, adminUiApplication)
 	if err != nil {
-		return fmt.Errorf("initializing default roles: %w", err)
+		return uuid.Nil, fmt.Errorf("initializing default roles: %w", err)
 	}
 
-	return nil
+	return adminUiApplication.Id(), nil
 }
 
 func initializeDefaultAdminUiRoles(ctx context.Context, virtualServer *repositories.VirtualServer, application *repositories.Application) error {
