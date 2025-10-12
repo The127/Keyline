@@ -1,9 +1,9 @@
 package behaviours
 
 import (
+	"Keyline/internal/authentication"
 	"Keyline/internal/authentication/permissions"
 	"Keyline/internal/authentication/roles"
-	"Keyline/internal/logging"
 	"Keyline/internal/middlewares"
 	"Keyline/ioc"
 	"Keyline/mediator"
@@ -103,8 +103,7 @@ type Policy interface {
 }
 
 func PolicyBehaviour(ctx context.Context, request Policy, next mediator.Next) error {
-	logging.Logger.Infof("request: %v", request)
-	policyResult, err := request.IsAllowed(ctx)
+	policyResult, err := evaluatePolicy(ctx, request)
 	if err != nil {
 		return fmt.Errorf("failed to check if request is allowed: %w", err)
 	}
@@ -121,4 +120,17 @@ func PolicyBehaviour(ctx context.Context, request Policy, next mediator.Next) er
 	}
 
 	return next()
+}
+
+func evaluatePolicy(ctx context.Context, request Policy) (PolicyResult, error) {
+	currentUser := authentication.GetCurrentUser(ctx)
+	isSystemUser := currentUser.HasPermission(permissions.SystemUser)
+	if isSystemUser.IsSuccess() {
+		return Allowed(
+			currentUser.UserId,
+			NewAllowedByPermission(permissions.SystemUser, isSystemUser.SourceRoles),
+		), nil
+	}
+
+	return request.IsAllowed(ctx)
 }
