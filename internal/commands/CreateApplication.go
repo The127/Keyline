@@ -24,12 +24,12 @@ type CreateApplication struct {
 	HashedSecret *string
 }
 
-func (c CreateApplication) GetRequestName() string {
-	return "CreateApplication"
-}
-
 func (c CreateApplication) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
 	return behaviours.PermissionBasedPolicy(ctx, permissions.ApplicationCreate)
+}
+
+func (c CreateApplication) GetRequestName() string {
+	return "CreateApplication"
 }
 
 type CreateApplicationResponse struct {

@@ -28,7 +28,7 @@ func (a CreateRole) IsAllowed(ctx context.Context) (behaviours.PolicyResult, err
 }
 
 func (a CreateRole) GetRequestName() string {
-	return "AssignRoleToUser"
+	return "CreateRole"
 }
 
 type CreateRoleResponse struct {
