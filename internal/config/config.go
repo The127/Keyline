@@ -57,6 +57,14 @@ type Config struct {
 			PrimaryEmail string
 			PasswordHash string
 		}
+		InitialApplications []struct {
+			Name                   string
+			DisplayName            string
+			Type                   string
+			HashedSecret           *string
+			RedirectUris           []string
+			PostLogoutRedirectUris []string
+		}
 		Mail struct {
 			Host     string
 			Port     int
@@ -189,6 +197,39 @@ func setInitialVirtualServerDefaultsOrPanic() {
 	}
 
 	setInitialAdminDefaultsOrPanic()
+	setInitialApplicationsDefaultsOrPanic()
+}
+
+func setInitialApplicationsDefaultsOrPanic() {
+	for i := range C.InitialVirtualServer.InitialApplications {
+		application := &C.InitialVirtualServer.InitialApplications[i]
+
+		if application.Name == "" {
+			panic("missing application name")
+		}
+
+		if application.DisplayName == "" {
+			application.DisplayName = application.Name
+		}
+
+		if application.Type == "" {
+			panic("missing application type (confidential or public)")
+		}
+
+		if application.Type != "confidential" && application.Type != "public" {
+			panic("application type not supported")
+		}
+
+		if application.Type == "confidential" && application.HashedSecret == nil {
+			panic("missing application secret")
+		}
+
+		if application.Type == "confidential" && application.HashedSecret != nil {
+			if len(*application.HashedSecret) == 0 {
+				panic("application secret is empty")
+			}
+		}
+	}
 }
 
 func setInitialAdminDefaultsOrPanic() {
