@@ -24,7 +24,9 @@ func HandleGetVirtualServerPublicInfo(ctx context.Context, query GetVirtualServe
 	scope := middlewares.GetScope(ctx)
 
 	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
-	virtualServer, err := virtualServerRepository.Single(ctx, repositories.NewVirtualServerFilter())
+	virtualServerFilter := repositories.NewVirtualServerFilter().
+		Name(query.VirtualServerName)
+	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("searching virtual servers: %w", err)
 	}
