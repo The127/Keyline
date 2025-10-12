@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"Keyline/internal/authentication/permissions"
+	"Keyline/internal/behaviours"
 	"Keyline/internal/config"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
@@ -25,6 +27,14 @@ type CreateVirtualServer struct {
 	EnableRegistration bool
 	Require2fa         bool
 	SigningAlgorithm   config.SigningAlgorithm
+}
+
+func (a CreateVirtualServer) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
+	return behaviours.PermissionBasedPolicy(ctx, permissions.VirtualServerCreate)
+}
+
+func (a CreateVirtualServer) GetRequestName() string {
+	return "CreateVirtualServer"
 }
 
 type CreateVirtualServerResponse struct {
