@@ -10,6 +10,8 @@ const (
 	ApplicationUpdate Permission = "application:update"
 	ApplicationView   Permission = "application:view"
 
+	GroupView Permission = "group:view"
+
 	RoleCreate Permission = "role:create"
 	RoleAssign Permission = "role:assign"
 	RoleView   Permission = "role:view"
