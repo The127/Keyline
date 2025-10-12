@@ -138,24 +138,28 @@ func extractUserFromBearerToken(ctx context.Context, authorizationHeader string,
 		if ok {
 			for _, roleClaim := range roleClaimsArray {
 				role := roles.Role(roleClaim)
-				rolePermissions, ok := roles.AllRoles[role]
-				if ok {
-					for _, permission := range rolePermissions {
-						permissionAssignment, ok := currentUser.Permissions[permission]
-						if !ok {
-							permissionAssignment = PermissionAssignment{
-								Permission:  permission,
-								SourceRoles: make([]roles.Role, 0),
-							}
-						}
-						permissionAssignment.SourceRoles = append(permissionAssignment.SourceRoles, role)
-					}
-				}
+				assignPermissionsToUser(&currentUser, role)
 			}
 		}
 	}
 
 	return currentUser, nil
+}
+
+func assignPermissionsToUser(currentUser *CurrentUser, role roles.Role) {
+	rolePermissions, ok := roles.AllRoles[role]
+	if ok {
+		for _, permission := range rolePermissions {
+			permissionAssignment, ok := currentUser.Permissions[permission]
+			if !ok {
+				permissionAssignment = PermissionAssignment{
+					Permission:  permission,
+					SourceRoles: make([]roles.Role, 0),
+				}
+			}
+			permissionAssignment.SourceRoles = append(permissionAssignment.SourceRoles, role)
+		}
+	}
 }
 
 func ContextWithCurrentUser(ctx context.Context, user CurrentUser) context.Context {
@@ -168,4 +172,10 @@ func GetCurrentUser(ctx context.Context) CurrentUser {
 		panic("current user not found")
 	}
 	return value
+}
+
+func SystemUser() CurrentUser {
+	user := NewCurrentUser(uuid.Nil)
+	assignPermissionsToUser(&user, roles.SystemUser)
+	return user
 }

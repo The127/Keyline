@@ -38,7 +38,6 @@ import (
 
 	"Keyline/docs"
 
-	"github.com/google/uuid"
 	"github.com/huandu/go-sqlbuilder"
 )
 
@@ -225,7 +224,7 @@ func initApplication(dp *ioc.DependencyProvider) {
 	scope := dp.NewScope()
 
 	ctx := middlewares.ContextWithScope(context.Background(), scope)
-	ctx = authentication.ContextWithCurrentUser(ctx, authentication.NewCurrentUser(uuid.Nil))
+	ctx = authentication.ContextWithCurrentUser(ctx, authentication.SystemUser())
 	m := ioc.GetDependency[mediator.Mediator](scope)
 
 	// check if there are no virtual servers
@@ -236,6 +235,14 @@ func initApplication(dp *ioc.DependencyProvider) {
 
 	if existsResult.Found {
 		return
+	}
+
+	logging.Logger.Info("Creating system user")
+	userRepository := ioc.GetDependency[repositories.UserRepository](scope)
+	systemUser := repositories.NewSystemUser("system-user")
+	err = userRepository.Insert(ctx, systemUser)
+	if err != nil {
+		logging.Logger.Fatalf("failed to create system user: %v", err)
 	}
 
 	logging.Logger.Infof("Creating initial virtual server")
