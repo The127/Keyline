@@ -16,10 +16,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-type PagedRolesResponseDto struct {
-	Items      []ListRolesResponseDto `json:"items"`
-	Pagination Pagination             `json:"pagination"`
-}
 type GetRoleByIdResponseDto struct {
 	Id          uuid.UUID           `json:"id"`
 	Name        string              `json:"name"`
@@ -89,6 +85,11 @@ func GetRoleById(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		utils.HandleHttpError(w, err)
 	}
+}
+
+type PagedRolesResponseDto struct {
+	Items      []ListRolesResponseDto `json:"items"`
+	Pagination Pagination             `json:"pagination"`
 }
 
 type ListRolesResponseDto struct {
