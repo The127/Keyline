@@ -1,6 +1,8 @@
 package queries
 
 import (
+	"Keyline/internal/authentication/permissions"
+	"Keyline/internal/behaviours"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/ioc"
@@ -16,6 +18,14 @@ type ListGroups struct {
 	OrderedQuery
 	VirtualServerName string
 	SearchText        string
+}
+
+func (a ListGroups) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
+	return behaviours.PermissionBasedPolicy(ctx, permissions.GroupView)
+}
+
+func (a ListGroups) GetRequestName() string {
+	return "ListGroups"
 }
 
 type ListGroupsResponse struct {
