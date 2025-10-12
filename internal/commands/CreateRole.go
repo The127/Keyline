@@ -36,9 +36,8 @@ func HandleCreateRole(ctx context.Context, command CreateRole) (*CreateRoleRespo
 	}
 
 	roleRepository := ioc.GetDependency[repositories.RoleRepository](scope)
-	role := repositories.NewRole(
+	role := repositories.NewVirtualServerRole(
 		virtualServer.Id(),
-		nil,
 		command.Name,
 		command.Description,
 	)
