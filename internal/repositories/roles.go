@@ -30,11 +30,20 @@ type Role struct {
 	maxTokenAge *time.Duration
 }
 
-func NewRole(virtualServerId uuid.UUID, applicationId *uuid.UUID, name string, description string) *Role {
+func NewVirtualServerRole(virtualServerId uuid.UUID, name string, description string) *Role {
 	return &Role{
 		ModelBase:       NewModelBase(),
 		virtualServerId: virtualServerId,
-		applicationId:   applicationId,
+		name:            name,
+		description:     description,
+	}
+}
+
+func NewApplicationRole(virtualServerId uuid.UUID, applicationId uuid.UUID, name string, description string) *Role {
+	return &Role{
+		ModelBase:       NewModelBase(),
+		virtualServerId: virtualServerId,
+		applicationId:   &applicationId,
 		name:            name,
 		description:     description,
 	}
