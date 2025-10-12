@@ -10,6 +10,7 @@
 package main
 
 import (
+	"Keyline/internal/authentication"
 	"Keyline/internal/behaviours"
 	"Keyline/internal/clock"
 	"Keyline/internal/commands"
@@ -37,6 +38,7 @@ import (
 
 	"Keyline/docs"
 
+	"github.com/google/uuid"
 	"github.com/huandu/go-sqlbuilder"
 )
 
@@ -221,9 +223,9 @@ func setupMediator(dc *ioc.DependencyCollection) {
 // It creates an initial virtual server and other necessary defaults if none exist.
 func initApplication(dp *ioc.DependencyProvider) {
 	scope := dp.NewScope()
-	defer utils.PanicOnError(scope.Close, "failed creating scope to init application")
 
 	ctx := middlewares.ContextWithScope(context.Background(), scope)
+	ctx = authentication.ContextWithCurrentUser(ctx, authentication.NewCurrentUser(uuid.Nil))
 	m := ioc.GetDependency[mediator.Mediator](scope)
 
 	// check if there are no virtual servers
@@ -273,6 +275,22 @@ func initApplication(dp *ioc.DependencyProvider) {
 			logging.Logger.Fatalf("failed to create initial admin credential: %v", err)
 		}
 	}
+
+	for _, applicationConfig := range config.C.InitialVirtualServer.InitialApplications {
+		_, err := mediator.Send[*commands.CreateApplicationResponse](ctx, m, commands.CreateApplication{
+			VirtualServerName:      config.C.InitialVirtualServer.Name,
+			Name:                   applicationConfig.Name,
+			DisplayName:            applicationConfig.DisplayName,
+			Type:                   repositories.ApplicationType(applicationConfig.Type),
+			RedirectUris:           applicationConfig.RedirectUris,
+			PostLogoutRedirectUris: applicationConfig.PostLogoutRedirectUris,
+		})
+		if err != nil {
+			logging.Logger.Fatalf("failed to create initial application: %v", err)
+		}
+	}
+
+	utils.PanicOnError(scope.Close, "failed creating scope to init application")
 }
 
 func configureSwaggerFromConfig() {

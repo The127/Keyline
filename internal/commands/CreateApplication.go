@@ -20,6 +20,8 @@ type CreateApplication struct {
 	Type                   repositories.ApplicationType
 	RedirectUris           []string
 	PostLogoutRedirectUris []string
+
+	HashedSecret *string
 }
 
 func (c CreateApplication) GetRequestName() string {
@@ -61,7 +63,12 @@ func HandleCreateApplication(ctx context.Context, command CreateApplication) (*C
 
 	var secret *string = nil
 	if command.Type == repositories.ApplicationTypeConfidential {
-		secret = utils.Ptr(application.GenerateSecret())
+		if command.HashedSecret != nil {
+			application.SetHashedSecret(*command.HashedSecret)
+			secret = utils.Ptr("pre hashed secret was used")
+		} else {
+			secret = utils.Ptr(application.GenerateSecret())
+		}
 	}
 
 	application.SetPostLogoutRedirectUris(command.PostLogoutRedirectUris)
