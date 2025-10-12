@@ -11,7 +11,6 @@ import (
 	"Keyline/utils"
 	"context"
 	"crypto/rsa"
-	"crypto/sha256"
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
@@ -87,7 +86,7 @@ func WellKnownJwks(w http.ResponseWriter, r *http.Request) {
 
 	keyPair := keyService.GetKey(vsName, virtualServer.SigningAlgorithm())
 
-	kid := computeKID(keyPair.PublicKeyBytes())
+	kid := keyPair.ComputeKid()
 
 	keys := make([]any, 0)
 
@@ -135,11 +134,6 @@ func WellKnownJwks(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, err)
 		return
 	}
-}
-
-func computeKID(pub []byte) string {
-	hash := sha256.Sum256(pub)
-	return base64.RawURLEncoding.EncodeToString(hash[:])
 }
 
 type OpenIdConfigurationResponseDto struct {
@@ -936,7 +930,7 @@ type GeneratedTokens struct {
 }
 
 func generateIdToken(params IdTokenGenerationParams) (string, error) {
-	kid := computeKID(params.KeyPair.PublicKeyBytes())
+	kid := params.KeyPair.ComputeKid()
 
 	jwtSigningMethod, err := getJwtSigningMethod(params.KeyPair.Algorithm())
 	if err != nil {
@@ -959,7 +953,7 @@ func generateIdToken(params IdTokenGenerationParams) (string, error) {
 }
 
 func generateAccessToken(ctx context.Context, params AccessTokenGenerationParams) (string, error) {
-	kid := computeKID(params.KeyPair.PublicKeyBytes())
+	kid := params.KeyPair.ComputeKid()
 
 	jwtSigningMethod, err := getJwtSigningMethod(params.KeyPair.Algorithm())
 	if err != nil {

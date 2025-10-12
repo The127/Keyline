@@ -41,31 +41,75 @@ func (m *MockKeyStore) EXPECT() *MockKeyStoreMockRecorder {
 	return m.recorder
 }
 
-// Load mocks base method.
-func (m *MockKeyStore) Load(virtualServerName string, algorithm config.SigningAlgorithm) (services.KeyPair, error) {
+// Add mocks base method.
+func (m *MockKeyStore) Add(virtualServerName string, keyPair services.KeyPair) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Load", virtualServerName, algorithm)
-	ret0, _ := ret[0].(services.KeyPair)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Load indicates an expected call of Load.
-func (mr *MockKeyStoreMockRecorder) Load(virtualServerName, algorithm any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Load", reflect.TypeOf((*MockKeyStore)(nil).Load), virtualServerName, algorithm)
-}
-
-// Store mocks base method.
-func (m *MockKeyStore) Store(virtualServerName string, keyPair services.KeyPair) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Store", virtualServerName, keyPair)
+	ret := m.ctrl.Call(m, "Add", virtualServerName, keyPair)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// Store indicates an expected call of Store.
-func (mr *MockKeyStoreMockRecorder) Store(virtualServerName, keyPair any) *gomock.Call {
+// Add indicates an expected call of Add.
+func (mr *MockKeyStoreMockRecorder) Add(virtualServerName, keyPair any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Store", reflect.TypeOf((*MockKeyStore)(nil).Store), virtualServerName, keyPair)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockKeyStore)(nil).Add), virtualServerName, keyPair)
+}
+
+// Get mocks base method.
+func (m *MockKeyStore) Get(virtualServerName string, algorithm config.SigningAlgorithm, kid string) (*services.KeyPair, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Get", virtualServerName, algorithm, kid)
+	ret0, _ := ret[0].(*services.KeyPair)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Get indicates an expected call of Get.
+func (mr *MockKeyStoreMockRecorder) Get(virtualServerName, algorithm, kid any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockKeyStore)(nil).Get), virtualServerName, algorithm, kid)
+}
+
+// GetAll mocks base method.
+func (m *MockKeyStore) GetAll(virtualServerName string) ([]services.KeyPair, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAll", virtualServerName)
+	ret0, _ := ret[0].([]services.KeyPair)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAll indicates an expected call of GetAll.
+func (mr *MockKeyStoreMockRecorder) GetAll(virtualServerName any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockKeyStore)(nil).GetAll), virtualServerName)
+}
+
+// GetAllForAlgorithm mocks base method.
+func (m *MockKeyStore) GetAllForAlgorithm(virtualServerName string, algorithm config.SigningAlgorithm) ([]services.KeyPair, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllForAlgorithm", virtualServerName, algorithm)
+	ret0, _ := ret[0].([]services.KeyPair)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAllForAlgorithm indicates an expected call of GetAllForAlgorithm.
+func (mr *MockKeyStoreMockRecorder) GetAllForAlgorithm(virtualServerName, algorithm any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllForAlgorithm", reflect.TypeOf((*MockKeyStore)(nil).GetAllForAlgorithm), virtualServerName, algorithm)
+}
+
+// Remove mocks base method.
+func (m *MockKeyStore) Remove(virtualServerName string, algorithm config.SigningAlgorithm, kid string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Remove", virtualServerName, algorithm, kid)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Remove indicates an expected call of Remove.
+func (mr *MockKeyStoreMockRecorder) Remove(virtualServerName, algorithm, kid any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Remove", reflect.TypeOf((*MockKeyStore)(nil).Remove), virtualServerName, algorithm, kid)
 }

@@ -22,6 +22,11 @@ const (
 	SigningAlgorithmEdDSA SigningAlgorithm = "EdDSA"
 )
 
+var SupportedSigningAlgorithms = []SigningAlgorithm{
+	SigningAlgorithmEdDSA,
+	SigningAlgorithmRS256,
+}
+
 type Config struct {
 	Server struct {
 		ExternalUrl    string
