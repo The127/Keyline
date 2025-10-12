@@ -7,6 +7,8 @@ import (
 	"Keyline/ioc"
 	"Keyline/utils"
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -96,6 +98,8 @@ type ApplicationUserMetadataRepository interface {
 	Single(ctx context.Context, filter ApplicationUserMetadataFilter) (*ApplicationUserMetadata, error)
 	First(ctx context.Context, filter ApplicationUserMetadataFilter) (*ApplicationUserMetadata, error)
 	List(ctx context.Context, filter ApplicationUserMetadataFilter) ([]*ApplicationUserMetadata, int, error)
+	Insert(ctx context.Context, applicationUserMetadata *ApplicationUserMetadata) error
+	Update(ctx context.Context, applicationUserMetadata *ApplicationUserMetadata) error
 }
 
 type applicationUserMetadataRepository struct{}
@@ -208,4 +212,72 @@ func (r *applicationUserMetadataRepository) First(ctx context.Context, filter Ap
 	}
 
 	return &metadata, nil
+}
+
+func (r *applicationUserMetadataRepository) Insert(ctx context.Context, applicationUserMetadata *ApplicationUserMetadata) error {
+	scope := middlewares.GetScope(ctx)
+	dbService := ioc.GetDependency[database.DbService](scope)
+
+	tx, err := dbService.GetTx()
+	if err != nil {
+		return fmt.Errorf("failed to open tx: %w", err)
+	}
+
+	s := sqlbuilder.InsertInto("application_user_metadata").
+		Cols(
+			"application_id",
+			"user_id",
+			"metadata",
+		).
+		Values(
+			applicationUserMetadata.applicationId,
+			applicationUserMetadata.userId,
+			applicationUserMetadata.metadata,
+		).Returning("id", "audit_created_at", "audit_updated_at", "version")
+
+	query, args := s.Build()
+	logging.Logger.Debug("executing sql: ", query)
+	row := tx.QueryRowContext(ctx, query, args...)
+
+	err = row.Scan(&applicationUserMetadata.id, &applicationUserMetadata.auditCreatedAt, &applicationUserMetadata.auditUpdatedAt, &applicationUserMetadata.version)
+	if err != nil {
+		return fmt.Errorf("scanning row: %w", err)
+	}
+
+	return nil
+}
+
+func (r *applicationUserMetadataRepository) Update(ctx context.Context, applicationUserMetadata *ApplicationUserMetadata) error {
+	scope := middlewares.GetScope(ctx)
+	dbService := ioc.GetDependency[database.DbService](scope)
+
+	tx, err := dbService.GetTx()
+	if err != nil {
+		return fmt.Errorf("failed to open tx: %w", err)
+	}
+
+	s := sqlbuilder.Update("application_user_metadata")
+	for fieldName, value := range applicationUserMetadata.changes {
+		s.SetMore(s.Assign(fieldName, value))
+	}
+	s.SetMore(s.Assign("version", applicationUserMetadata.version+1))
+
+	s.Where(s.Equal("id", applicationUserMetadata.id))
+	s.Where(s.Equal("version", applicationUserMetadata.version))
+	s.Returning("audit_updated_at", "version")
+
+	query, args := s.Build()
+	logging.Logger.Debug("executing sql: ", query)
+	row := tx.QueryRowContext(ctx, query, args...)
+
+	err = row.Scan(&applicationUserMetadata.auditUpdatedAt, &applicationUserMetadata.version)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return fmt.Errorf("updating application user metadata: %w", ErrVersionMismatch)
+	case err != nil:
+		return fmt.Errorf("scanning row: %w", err)
+	}
+
+	applicationUserMetadata.clearChanges()
+	return nil
 }
