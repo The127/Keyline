@@ -555,8 +555,6 @@ definitions:
         - 1000
         - 1000000
         - 1000000000
-        - 60000000000
-        - 3600000000000
         format: int64
         type: integer
         x-enum-varnames:
@@ -572,8 +570,6 @@ definitions:
         - Microsecond
         - Millisecond
         - Second
-        - Minute
-        - Hour
     type: object
   repositories.TemplateType:
     enum:

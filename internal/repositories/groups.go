@@ -73,7 +73,7 @@ type GroupFilter struct {
 	name            *string
 	virtualServerId *uuid.UUID
 	id              *uuid.UUID
-	search          *string
+	searchFilter    *SearchFilter
 }
 
 func NewGroupFilter() GroupFilter {
@@ -102,9 +102,9 @@ func (f GroupFilter) Order(by string, direction string) GroupFilter {
 	return filter
 }
 
-func (f GroupFilter) Search(search string) GroupFilter {
+func (f GroupFilter) Search(searchFilter SearchFilter) GroupFilter {
 	filter := f.Clone()
-	filter.search = utils.NilIfZero(search)
+	filter.searchFilter = &searchFilter
 	return filter
 }
 
@@ -166,8 +166,8 @@ func (r *groupRepository) selectQuery(filter GroupFilter) *sqlbuilder.SelectBuil
 		s.Where(s.Equal("virtual_server_id", filter.virtualServerId))
 	}
 
-	if filter.search != nil {
-		term := "%" + *filter.search + "%"
+	if filter.searchFilter != nil {
+		term := filter.searchFilter.Term()
 		s.Where(s.Or(
 			s.ILike("name", term),
 		))

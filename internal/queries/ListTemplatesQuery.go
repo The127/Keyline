@@ -43,7 +43,7 @@ func HandleListTemplates(ctx context.Context, query ListTemplates) (*ListTemplat
 		VirtualServerId(virtualServer.Id()).
 		Pagination(query.Page, query.PageSize).
 		Order(query.OrderBy, query.OrderDir).
-		Search(query.SearchText)
+		Search(repositories.NewContainsSearchFilter(query.SearchText))
 	templates, total, err := templateRepository.List(ctx, templateFilter)
 	if err != nil {
 		return nil, fmt.Errorf("searching templates: %w", err)
