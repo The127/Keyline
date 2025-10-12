@@ -21,6 +21,9 @@ type RegisterUser struct {
 	Email             string
 }
 
+// Any user (especially someone who is not logged in) must be able to register.
+// Because of that we don't need to check permissions here.
+
 type RegisterUserResponse struct {
 	Id uuid.UUID
 }
