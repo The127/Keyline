@@ -5,7 +5,9 @@ import (
 	"Keyline/utils"
 	"crypto/ed25519"
 	"crypto/rsa"
+	"crypto/sha256"
 	"crypto/x509"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"os"
@@ -77,6 +79,11 @@ func NewKeyPair(algorithm config.SigningAlgorithm, publicKey any, privateKey any
 		publicKey:  publicKey,
 		privateKey: privateKey,
 	}
+}
+
+func (k *KeyPair) ComputeKid() string {
+	hash := sha256.Sum256(k.PublicKeyBytes())
+	return base64.RawURLEncoding.EncodeToString(hash[:])
 }
 
 func (k *KeyPair) PublicKeyBytes() []byte {
