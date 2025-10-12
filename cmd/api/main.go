@@ -25,6 +25,7 @@ import (
 	"Keyline/internal/repositories"
 	"Keyline/internal/server"
 	"Keyline/internal/services"
+	"Keyline/internal/services/audit"
 	"Keyline/ioc"
 	"Keyline/mediator"
 	"Keyline/utils"
@@ -101,7 +102,7 @@ func main() {
 		return services.NewSessionService()
 	})
 	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) behaviours.AuditLogger {
-		return services.NewConsoleAuditLogger()
+		return audit.NewConsoleAuditLogger()
 	})
 
 	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.UserRepository {
