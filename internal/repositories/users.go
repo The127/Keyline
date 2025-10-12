@@ -27,6 +27,8 @@ type User struct {
 	emailVerified bool
 
 	serviceUser bool
+
+	metadata string
 }
 
 func NewUser(username string, displayName string, primaryEmail string, virtualServerId uuid.UUID) *User {
@@ -84,8 +86,17 @@ func (m *User) SetEmailVerified(emailVerified bool) {
 	m.TrackChange("email_verified", emailVerified)
 }
 
-func (m *User) getScanPointers() []any {
-	return []any{
+func (m *User) Metadata() string {
+	return m.metadata
+}
+
+func (m *User) SetMetadata(metadata string) {
+	m.metadata = metadata
+	m.TrackChange("metadata", metadata)
+}
+
+func (m *User) getScanPointers(filter UserFilter) []any {
+	pointers := []any{
 		&m.id,
 		&m.auditCreatedAt,
 		&m.auditUpdatedAt,
@@ -97,6 +108,12 @@ func (m *User) getScanPointers() []any {
 		&m.emailVerified,
 		&m.serviceUser,
 	}
+
+	if filter.includeMetadata {
+		pointers = append(pointers, &m.metadata)
+	}
+
+	return pointers
 }
 
 type UserFilter struct {
@@ -107,6 +124,7 @@ type UserFilter struct {
 	username        *string
 	serviceUser     *bool
 	search          *string
+	includeMetadata bool
 }
 
 func NewUserFilter() UserFilter {
@@ -142,6 +160,12 @@ func (f UserFilter) ServiceUser(serviceUser bool) UserFilter {
 func (f UserFilter) Username(username string) UserFilter {
 	filter := f.Clone()
 	filter.username = &username
+	return filter
+}
+
+func (f UserFilter) IncludeMetadata() UserFilter {
+	filter := f.Clone()
+	filter.includeMetadata = true
 	return filter
 }
 
@@ -203,6 +227,10 @@ func (r *userRepository) selectQuery(filter UserFilter) *sqlbuilder.SelectBuilde
 		"service_user",
 	).From("users")
 
+	if filter.includeMetadata {
+		s.SelectMore("metadata")
+	}
+
 	if filter.username != nil {
 		s.Where(s.Equal("username", filter.username))
 	}
@@ -260,7 +288,7 @@ func (r *userRepository) List(ctx context.Context, filter UserFilter) ([]*User, 
 			ModelBase: NewModelBase(),
 		}
 
-		err = rows.Scan(append(user.getScanPointers(), &totalCount)...)
+		err = rows.Scan(append(user.getScanPointers(filter), &totalCount)...)
 		if err != nil {
 			return nil, 0, fmt.Errorf("scanning row: %w", err)
 		}
@@ -301,7 +329,7 @@ func (r *userRepository) First(ctx context.Context, filter UserFilter) (*User, e
 	user := User{
 		ModelBase: NewModelBase(),
 	}
-	err = row.Scan(user.getScanPointers()...)
+	err = row.Scan(user.getScanPointers(filter)...)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, nil
