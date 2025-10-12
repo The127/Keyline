@@ -248,8 +248,7 @@ func initApplication(dp *ioc.DependencyProvider) {
 
 	logging.Logger.Infof("Creating initial virtual server")
 
-	// create initial vs
-	_, err = mediator.Send[*commands.CreateVirtualServerResponse](ctx, m, commands.CreateVirtualServer{
+	createVirtualServerResponse, err := mediator.Send[*commands.CreateVirtualServerResponse](ctx, m, commands.CreateVirtualServer{
 		Name:               config.C.InitialVirtualServer.Name,
 		DisplayName:        config.C.InitialVirtualServer.DisplayName,
 		EnableRegistration: config.C.InitialVirtualServer.EnableRegistration,
@@ -281,6 +280,16 @@ func initApplication(dp *ioc.DependencyProvider) {
 		err = credentialRepository.Insert(ctx, initialAdminCredential)
 		if err != nil {
 			logging.Logger.Fatalf("failed to create initial admin credential: %v", err)
+		}
+
+		_, err = mediator.Send[*commands.AssignRoleToUserResponse](ctx, m, commands.AssignRoleToUser{
+			VirtualServerName: config.C.InitialVirtualServer.Name,
+			UserId:            initialAdminUserInfo.Id,
+			RoleId:            createVirtualServerResponse.AdminRoleId,
+			ApplicationId:     &createVirtualServerResponse.AdminUiApplicationId,
+		})
+		if err != nil {
+			logging.Logger.Fatalf("failed to assign admin role to initial admin user: %v", err)
 		}
 	}
 
