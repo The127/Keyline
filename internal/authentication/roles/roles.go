@@ -28,6 +28,8 @@ var AdminPermissions = []permissions.Permission{
 	permissions.UserCreate,
 	permissions.UserUpdate,
 
+	permissions.AppMetadataUpdateAny,
+
 	permissions.ServiceUserCreate,
 	permissions.ServiceUserAssociateKey,
 }
