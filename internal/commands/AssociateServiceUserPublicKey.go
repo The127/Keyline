@@ -23,7 +23,7 @@ func (a AssociateServiceUserPublicKey) IsAllowed(ctx context.Context) (behaviour
 }
 
 func (a AssociateServiceUserPublicKey) GetRequestName() string {
-	return "AssignRoleToUser"
+	return "AssociateServiceUserPublicKey"
 }
 
 type AssociateServiceUserPublicKeyResponse struct {

@@ -22,7 +22,7 @@ func (a CreateServiceUser) IsAllowed(ctx context.Context) (behaviours.PolicyResu
 }
 
 func (a CreateServiceUser) GetRequestName() string {
-	return "AssignRoleToUser"
+	return "CreateServiceUser"
 }
 
 type CreateServiceUserResponse struct {
