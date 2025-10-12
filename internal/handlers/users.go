@@ -261,6 +261,65 @@ func GetUserById(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+type GetUserGlobalMetadataResponseDto map[string]any
+
+// GetUserMetadata returns a users metadata (only the global metadata).
+// @Summary      Get user metadata (only global)
+// @Tags         Users
+// @Tags         Users
+// @Produce      json
+// @Param        virtualServerName  path  string true  "Virtual server name"  default(keyline)
+// @Param        userId             path  string true  "User ID (UUID)"
+// @Success      200  {object}  GetUserGlobalMetadataResponseDto
+// @Failure      404  {string}  string
+// @Router       /api/virtual-servers/{virtualServerName}/users/{userId}/metadata/user [get]
+func GetUserGlobalMetadata(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	scope := middlewares.GetScope(ctx)
+
+	vsName, err := middlewares.GetVirtualServerName(ctx)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	vars := mux.Vars(r)
+	userId, err := uuid.Parse(vars["userId"])
+	if err != nil {
+		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+		return
+	}
+
+	m := ioc.GetDependency[mediator.Mediator](scope)
+	query := queries.GetUserMetadata{
+		VirtualServerName:     vsName,
+		UserId:                userId,
+		IncludeGlobalMetadata: true,
+	}
+	response, err := mediator.Send[*queries.GetUserMetadataResult](ctx, m, query)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	var responseDto GetUserGlobalMetadataResponseDto = make(map[string]any)
+
+	if response.Metadata != "" {
+		err := json.Unmarshal([]byte(response.Metadata), &responseDto)
+		if err != nil {
+			utils.HandleHttpError(w, err)
+			return
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	err = json.NewEncoder(w).Encode(responseDto)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+	}
+}
+
 type GetUserMetadataResponseDto struct {
 	Metadata            map[string]any `json:"metadata,omitempty"`
 	ApplicationMetadata map[string]any `json:"applicationMetadata,omitempty"`
