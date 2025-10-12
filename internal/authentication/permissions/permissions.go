@@ -10,5 +10,6 @@ const (
 	RoleCreate Permission = "role:create"
 	RoleAssign Permission = "role:assign"
 
+	ServiceUserCreate       Permission = "service_user:create"
 	ServiceUserAssociateKey Permission = "service_user:associate_key"
 )
