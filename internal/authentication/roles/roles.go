@@ -17,6 +17,8 @@ var SystemUserPermissions = []permissions.Permission{
 
 var AdminPermissions = []permissions.Permission{
 	permissions.ApplicationCreate,
+
+	permissions.RoleAssign,
 }
 
 var AllRoles = map[Role][]permissions.Permission{
