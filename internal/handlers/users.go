@@ -510,6 +510,62 @@ func UpdateUserGlobalMetadata(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+type UpdateUserApplicationMetadataRequestDto map[string]any
+
+// UpdateUserApplicationMetadata updates a users application metadata.
+// @Summary      Update a users application metadata
+// @Tags         Users
+// @Produce      json
+// @Param        virtualServerName  path  string true  "Virtual server name"  default(keyline)
+// @Param        userId             path  string true  "User ID (UUID)"
+// @Param        appId              path  string true  "Application ID (UUID)"
+// @Param        body               body  UpdateUserApplicationMetadataRequestDto   true "Metadata"
+// @Success      204  {string}  string  "No Content"
+// @Failure      404  {string}  string
+// @Router       /api/virtual-servers/{virtualServerName}/users/{userId}/metadata/application/{appId} [put]
+func UpdateUserApplicationMetadata(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	scope := middlewares.GetScope(ctx)
+
+	vsName, err := middlewares.GetVirtualServerName(ctx)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	vars := mux.Vars(r)
+	userId, err := uuid.Parse(vars["userId"])
+	if err != nil {
+		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+	}
+
+	appId, err := uuid.Parse(vars["appId"])
+	if err != nil {
+		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+	}
+
+	var dto UpdateUserApplicationMetadataRequestDto
+	err = json.NewDecoder(r.Body).Decode(&dto)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	m := ioc.GetDependency[mediator.Mediator](scope)
+	_, err = mediator.Send[*commands.UpdateUserAppMetadataResponse](ctx, m, commands.UpdateUserAppMetadata{
+		VirtualServerName: vsName,
+		UserId:            userId,
+		ApplicationId:     appId,
+		Metadata:          dto,
+	})
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 type PatchUserRequestDto struct {
 	DisplayName *string `json:"displayName"`
 }
