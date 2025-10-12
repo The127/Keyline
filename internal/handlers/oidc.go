@@ -466,7 +466,12 @@ func OidcEndSession(w http.ResponseWriter, r *http.Request) {
 	}
 
 	idTokenClaims := idToken.Claims.(jwt.MapClaims)
-	clientId := idTokenClaims["aud"].(string)
+	clientId, err := extractClientIdFromJwt(idTokenClaims)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("extracting client id from id token: %w", err))
+		return
+	}
+
 	if clientId == "" {
 		utils.HandleHttpError(w, fmt.Errorf("client id not found"))
 		return
@@ -515,6 +520,32 @@ func OidcEndSession(w http.ResponseWriter, r *http.Request) {
 	redirectUri.RawQuery = query.Encode()
 
 	http.Redirect(w, r, redirectUriString, http.StatusFound)
+}
+
+func extractClientIdFromJwt(idTokenClaims jwt.MapClaims) (string, error) {
+	clientIdString, ok := idTokenClaims["aud"]
+	if !ok {
+		return "", fmt.Errorf("client id not found")
+	}
+
+	clientId, ok := clientIdString.(string)
+	if !ok {
+		clientIds, ok := clientIdString.([]interface{})
+		if !ok {
+			return "", fmt.Errorf("expected string or array of strings for client id")
+		}
+
+		if len(clientIds) != 1 {
+			return "", fmt.Errorf("expected array of length 1 for client id")
+		}
+
+		clientId, ok = clientIds[0].(string)
+		if !ok {
+			return "", fmt.Errorf("expected string for client id")
+		}
+	}
+
+	return clientId, nil
 }
 
 type OidcUserInfoResponseDto struct {
