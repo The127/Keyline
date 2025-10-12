@@ -67,7 +67,7 @@ type TemplateFilter struct {
 	orderInfo
 	virtualServerId *uuid.UUID
 	templateType    *TemplateType
-	search          *string
+	searchFilter    *SearchFilter
 }
 
 func NewTemplateFilter() TemplateFilter {
@@ -90,9 +90,9 @@ func (f TemplateFilter) TemplateType(templateType TemplateType) TemplateFilter {
 	return filter
 }
 
-func (f TemplateFilter) Search(search string) TemplateFilter {
+func (f TemplateFilter) Search(searchFilter SearchFilter) TemplateFilter {
 	filter := f.Clone()
-	filter.search = utils.NilIfZero(search)
+	filter.searchFilter = &searchFilter
 	return filter
 }
 
@@ -148,8 +148,8 @@ func (r *templateRepository) selectQuery(filter TemplateFilter) *sqlbuilder.Sele
 		s.Where(s.Equal("type", filter.templateType))
 	}
 
-	if filter.search != nil {
-		term := "%" + *filter.search + "%"
+	if filter.searchFilter != nil {
+		term := filter.searchFilter.Term()
 		s.Where(s.Or(
 			s.ILike("type", term),
 		))

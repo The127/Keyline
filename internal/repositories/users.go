@@ -123,7 +123,7 @@ type UserFilter struct {
 	id              *uuid.UUID
 	username        *string
 	serviceUser     *bool
-	search          *string
+	searchFilter    *SearchFilter
 	includeMetadata bool
 }
 
@@ -187,9 +187,9 @@ func (f UserFilter) Order(by string, direction string) UserFilter {
 	return filter
 }
 
-func (f UserFilter) Search(search string) UserFilter {
+func (f UserFilter) Search(searchFilter SearchFilter) UserFilter {
 	filter := f.Clone()
-	filter.search = utils.NilIfZero(search)
+	filter.searchFilter = &searchFilter
 	return filter
 }
 
@@ -247,8 +247,8 @@ func (r *userRepository) selectQuery(filter UserFilter) *sqlbuilder.SelectBuilde
 		s.Where(s.Equal("service_user", filter.serviceUser))
 	}
 
-	if filter.search != nil {
-		term := "%" + *filter.search + "%"
+	if filter.searchFilter != nil {
+		term := filter.searchFilter.Term()
 		s.Where(s.Or(
 			s.ILike("username", term),
 			s.ILike("display_name", term),

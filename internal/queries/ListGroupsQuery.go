@@ -43,7 +43,7 @@ func HandleListGroups(ctx context.Context, query ListGroups) (*ListGroupsRespons
 		VirtualServerId(virtualServer.Id()).
 		Pagination(query.Page, query.PageSize).
 		Order(query.OrderBy, query.OrderDir).
-		Search(query.SearchText)
+		Search(repositories.NewContainsSearchFilter(query.SearchText))
 	groups, total, err := groupRepository.List(ctx, groupFilter)
 	if err != nil {
 		return nil, fmt.Errorf("searching groups: %w", err)
