@@ -8,4 +8,6 @@ const (
 	ApplicationCreate Permission = "application:create"
 
 	RoleAssign Permission = "role:assign"
+
+	ServiceUserAssociateKey Permission = "service_user:associate_key"
 )

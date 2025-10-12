@@ -19,6 +19,8 @@ var AdminPermissions = []permissions.Permission{
 	permissions.ApplicationCreate,
 
 	permissions.RoleAssign,
+
+	permissions.ServiceUserAssociateKey,
 }
 
 var AllRoles = map[Role][]permissions.Permission{
