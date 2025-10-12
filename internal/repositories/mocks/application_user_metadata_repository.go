@@ -41,6 +41,35 @@ func (m *MockApplicationUserMetadataRepository) EXPECT() *MockApplicationUserMet
 	return m.recorder
 }
 
+// First mocks base method.
+func (m *MockApplicationUserMetadataRepository) First(ctx context.Context, filter repositories.ApplicationUserMetadataFilter) (*repositories.ApplicationUserMetadata, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "First", ctx, filter)
+	ret0, _ := ret[0].(*repositories.ApplicationUserMetadata)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// First indicates an expected call of First.
+func (mr *MockApplicationUserMetadataRepositoryMockRecorder) First(ctx, filter any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "First", reflect.TypeOf((*MockApplicationUserMetadataRepository)(nil).First), ctx, filter)
+}
+
+// Insert mocks base method.
+func (m *MockApplicationUserMetadataRepository) Insert(ctx context.Context, applicationUserMetadata *repositories.ApplicationUserMetadata) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Insert", ctx, applicationUserMetadata)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Insert indicates an expected call of Insert.
+func (mr *MockApplicationUserMetadataRepositoryMockRecorder) Insert(ctx, applicationUserMetadata any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockApplicationUserMetadataRepository)(nil).Insert), ctx, applicationUserMetadata)
+}
+
 // List mocks base method.
 func (m *MockApplicationUserMetadataRepository) List(ctx context.Context, filter repositories.ApplicationUserMetadataFilter) ([]*repositories.ApplicationUserMetadata, int, error) {
 	m.ctrl.T.Helper()
@@ -55,4 +84,33 @@ func (m *MockApplicationUserMetadataRepository) List(ctx context.Context, filter
 func (mr *MockApplicationUserMetadataRepositoryMockRecorder) List(ctx, filter any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockApplicationUserMetadataRepository)(nil).List), ctx, filter)
+}
+
+// Single mocks base method.
+func (m *MockApplicationUserMetadataRepository) Single(ctx context.Context, filter repositories.ApplicationUserMetadataFilter) (*repositories.ApplicationUserMetadata, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Single", ctx, filter)
+	ret0, _ := ret[0].(*repositories.ApplicationUserMetadata)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Single indicates an expected call of Single.
+func (mr *MockApplicationUserMetadataRepositoryMockRecorder) Single(ctx, filter any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Single", reflect.TypeOf((*MockApplicationUserMetadataRepository)(nil).Single), ctx, filter)
+}
+
+// Update mocks base method.
+func (m *MockApplicationUserMetadataRepository) Update(ctx context.Context, applicationUserMetadata *repositories.ApplicationUserMetadata) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Update", ctx, applicationUserMetadata)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Update indicates an expected call of Update.
+func (mr *MockApplicationUserMetadataRepositoryMockRecorder) Update(ctx, applicationUserMetadata any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockApplicationUserMetadataRepository)(nil).Update), ctx, applicationUserMetadata)
 }

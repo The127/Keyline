@@ -29,8 +29,24 @@ GET http://127.0.0.1:8081/api/virtual-servers/keyline/users/ddf24610-1d41-47d3-b
 ### get user global metadata
 GET http://127.0.0.1:8081/api/virtual-servers/keyline/users/ddf24610-1d41-47d3-b89d-4ba98267725f/metadata/user
 
+### update user global metadata
+PUT http://127.0.0.1:8081/api/virtual-servers/keyline/users/ddf24610-1d41-47d3-b89d-4ba98267725f/metadata/user
+Content-Type: application/json
+
+{
+  "some": "data"
+}
+
 ### get user app metadata
 GET http://127.0.0.1:8081/api/virtual-servers/keyline/users/ddf24610-1d41-47d3-b89d-4ba98267725f/metadata/application/0f8e81bd-3237-4698-aa20-7d0ef8af79ba
+
+### update user app metadata
+PUT http://127.0.0.1:8081/api/virtual-servers/keyline/users/ddf24610-1d41-47d3-b89d-4ba98267725f/metadata/application/0f8e81bd-3237-4698-aa20-7d0ef8af79ba
+Content-Type: application/json
+
+{
+    "some": "app-data"
+}
 
 ### associate public key wih service user
 POST http://127.0.0.1:8081/api/virtual-servers/keyline/users/service-users/ae3c23d4-9b94-44f1-bd2d-43a14a6d9b08/keys
