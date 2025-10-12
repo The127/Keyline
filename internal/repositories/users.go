@@ -42,6 +42,15 @@ func NewUser(username string, displayName string, primaryEmail string, virtualSe
 	}
 }
 
+func NewSystemUser(username string) *User {
+	return &User{
+		ModelBase:   NewModelBase(),
+		username:    username,
+		displayName: username,
+		serviceUser: true,
+	}
+}
+
 func NewServiceUser(username string, virtualServerId uuid.UUID) *User {
 	return &User{
 		ModelBase:       NewModelBase(),
@@ -385,23 +394,38 @@ func (r *userRepository) Insert(ctx context.Context, user *User) error {
 		return fmt.Errorf("failed to open tx: %w", err)
 	}
 
+	cols := []string{
+		"username",
+		"display_name",
+		"primary_email",
+		"email_verified",
+		"service_user",
+	}
+	if user.virtualServerId != uuid.Nil {
+		cols = append(cols, "virtual_server_id")
+	} else {
+		cols = append(cols, "id")
+	}
+
 	s := sqlbuilder.InsertInto("users").
-		Cols(
-			"virtual_server_id",
-			"username",
-			"display_name",
-			"primary_email",
-			"email_verified",
-			"service_user",
-		).
-		Values(
-			user.virtualServerId,
-			user.username,
-			user.displayName,
-			user.primaryEmail,
-			user.emailVerified,
-			user.serviceUser,
-		).Returning("id", "audit_created_at", "audit_updated_at", "version")
+		Cols(cols...)
+
+	values := []any{
+		user.username,
+		user.displayName,
+		user.primaryEmail,
+		user.emailVerified,
+		user.serviceUser,
+	}
+	if user.virtualServerId != uuid.Nil {
+		values = append(values, user.virtualServerId)
+	} else {
+		values = append(values, user.id)
+	}
+
+	s.Values(values...)
+
+	s.Returning("id", "audit_created_at", "audit_updated_at", "version")
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
