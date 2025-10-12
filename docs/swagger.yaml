@@ -217,6 +217,9 @@ definitions:
       username:
         type: string
     type: object
+  handlers.GetUserGlobalMetadataResponseDto:
+    additionalProperties: {}
+    type: object
   handlers.GetUserMetadataResponseDto:
     properties:
       applicationMetadata:
@@ -533,11 +536,23 @@ definitions:
         - 1000000000
         - 60000000000
         - 3600000000000
+        - 1
+        - 1000
+        - 1000000
+        - 1000000000
+        - 60000000000
+        - 3600000000000
         format: int64
         type: integer
         x-enum-varnames:
         - minDuration
         - maxDuration
+        - Nanosecond
+        - Microsecond
+        - Millisecond
+        - Second
+        - Minute
+        - Hour
         - Nanosecond
         - Microsecond
         - Millisecond
@@ -1007,6 +1022,35 @@ paths:
             type: string
       summary: Get user metadata
       tags:
+      - Users
+  /api/virtual-servers/{virtualServerName}/users/{userId}/metadata/user:
+    get:
+      parameters:
+      - default: keyline
+        description: Virtual server name
+        in: path
+        name: virtualServerName
+        required: true
+        type: string
+      - description: User ID (UUID)
+        in: path
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.GetUserGlobalMetadataResponseDto'
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      summary: Get user metadata (only global)
+      tags:
+      - Users
       - Users
   /api/virtual-servers/{virtualServerName}/users/register:
     post:
