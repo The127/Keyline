@@ -20,6 +20,12 @@ Content-Type: application/json
 ### list users
 GET http://127.0.0.1:8081/api/virtual-servers/keyline/users
 
+### get user
+GET http://127.0.0.1:8081/api/virtual-servers/keyline/users/ddf24610-1d41-47d3-b89d-4ba98267725f
+
+### get user metadata
+GET http://127.0.0.1:8081/api/virtual-servers/keyline/users/ddf24610-1d41-47d3-b89d-4ba98267725f/metadata?application=%25&includeGlobal=true
+
 ### associate public key wih service user
 POST http://127.0.0.1:8081/api/virtual-servers/keyline/users/service-users/ae3c23d4-9b94-44f1-bd2d-43a14a6d9b08/keys
 Content-Type: application/json
