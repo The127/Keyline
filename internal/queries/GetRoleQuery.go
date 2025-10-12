@@ -1,6 +1,8 @@
 package queries
 
 import (
+	"Keyline/internal/authentication/permissions"
+	"Keyline/internal/behaviours"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/ioc"
@@ -14,6 +16,14 @@ import (
 type GetRoleQuery struct {
 	VirtualServerName string
 	RoleId            uuid.UUID
+}
+
+func (a GetRoleQuery) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
+	return behaviours.PermissionBasedPolicy(ctx, permissions.RoleView)
+}
+
+func (a GetRoleQuery) GetRequestName() string {
+	return "GetRoleQuery"
 }
 
 type GetRoleQueryResult struct {
