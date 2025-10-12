@@ -1081,6 +1081,66 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "patch": {
+                "consumes": [
+                    "application/json",
+                    "application/merge-patch+json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Patch a users application metadata using JSON Merge Patch (RFC 7396)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "keyline",
+                        "description": "Virtual server name",
+                        "name": "virtualServerName",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "User ID (UUID)",
+                        "name": "userId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Application ID (UUID)",
+                        "name": "appId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Patch document",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.PatchUserApplicationMetadataRequestDto"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
             }
         },
         "/api/virtual-servers/{vsName}/applications": {
@@ -3017,6 +3077,14 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.PatchUserApplicationMetadataRequestDto": {
+            "type": "object",
+            "additionalProperties": {}
+        },
+        "handlers.PatchUserGlobalMetadataRequestDto": {
+            "type": "object",
+            "additionalProperties": {}
+        },
         "handlers.PatchUserRequestDto": {
             "type": "object",
             "properties": {
@@ -3152,8 +3220,6 @@ const docTemplate = `{
                         1000000000,
                         60000000000,
                         3600000000000,
-                        -9223372036854775808,
-                        9223372036854775807,
                         1,
                         1000,
                         1000000,
@@ -3170,8 +3236,6 @@ const docTemplate = `{
                         "Second",
                         "Minute",
                         "Hour",
-                        "minDuration",
-                        "maxDuration",
                         "Nanosecond",
                         "Microsecond",
                         "Millisecond",
