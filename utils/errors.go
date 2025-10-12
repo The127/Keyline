@@ -20,6 +20,7 @@ var ErrSessionNotFound = fmt.Errorf("session: %w", ErrHttpNotFound)
 var ErrFileNotFoud = fmt.Errorf("file: %w", ErrHttpNotFound)
 var ErrTemplateNotFound = fmt.Errorf("template: %w", ErrHttpNotFound)
 var ErrCredentialNotFound = fmt.Errorf("credential: %w", ErrHttpNotFound)
+var ErrUserApplicationMetadataNotFound = fmt.Errorf("user application metadata: %w", ErrHttpNotFound)
 
 var ErrHttpBadRequest = errors.New("bad request")
 var ErrRegistrationNotEnabled = fmt.Errorf("registration is not enabled: %w", ErrHttpBadRequest)

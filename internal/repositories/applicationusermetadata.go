@@ -93,6 +93,8 @@ func (f ApplicationUserMetadataFilter) UserId(userId uuid.UUID) ApplicationUserM
 
 //go:generate mockgen -destination=./mocks/application_user_metadata_repository.go -package=mocks Keyline/internal/repositories ApplicationUserMetadataRepository
 type ApplicationUserMetadataRepository interface {
+	Single(ctx context.Context, filter ApplicationUserMetadataFilter) (*ApplicationUserMetadata, error)
+	First(ctx context.Context, filter ApplicationUserMetadataFilter) (*ApplicationUserMetadata, error)
 	List(ctx context.Context, filter ApplicationUserMetadataFilter) ([]*ApplicationUserMetadata, int, error)
 }
 
@@ -167,4 +169,43 @@ func (r *applicationUserMetadataRepository) List(ctx context.Context, filter App
 	}
 
 	return metadata, totalCount, nil
+}
+
+func (r *applicationUserMetadataRepository) Single(ctx context.Context, filter ApplicationUserMetadataFilter) (*ApplicationUserMetadata, error) {
+	result, err := r.First(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	if result == nil {
+		return nil, utils.ErrUserApplicationMetadataNotFound
+	}
+	return result, nil
+}
+
+func (r *applicationUserMetadataRepository) First(ctx context.Context, filter ApplicationUserMetadataFilter) (*ApplicationUserMetadata, error) {
+	scope := middlewares.GetScope(ctx)
+	dbService := ioc.GetDependency[database.DbService](scope)
+
+	tx, err := dbService.GetTx()
+	if err != nil {
+		return nil, fmt.Errorf("failed to open tx: %w", err)
+	}
+
+	s := r.selectQuery(filter)
+	s.Limit(1)
+
+	query, args := s.Build()
+	logging.Logger.Debug("executing sql: ", query)
+	row := tx.QueryRowContext(ctx, query, args...)
+
+	metadata := ApplicationUserMetadata{
+		ModelBase: NewModelBase(),
+	}
+
+	err = row.Scan(append(metadata.getScanPointers())...)
+	if err != nil {
+		return nil, fmt.Errorf("scanning row: %w", err)
+	}
+
+	return &metadata, nil
 }
