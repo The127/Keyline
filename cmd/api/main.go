@@ -139,6 +139,9 @@ func main() {
 	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.SessionRepository {
 		return repositories.NewSessionRepository()
 	})
+	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.ApplicationUserMetadataRepository {
+		return repositories.NewApplicationUserMetadataRepository()
+	})
 
 	setupMediator(dc)
 	dp := dc.BuildProvider()
@@ -185,6 +188,7 @@ func setupMediator(dc *ioc.DependencyCollection) {
 	mediator.RegisterHandler(m, queries.HandleListUsers)
 	mediator.RegisterHandler(m, commands.HandleCreateServiceUser)
 	mediator.RegisterHandler(m, commands.HandleAssociateServiceUserPublicKey)
+	mediator.RegisterHandler(m, queries.HandleGetUserMetadata)
 
 	mediator.RegisterHandler(m, commands.HandleCreateApplication)
 	mediator.RegisterHandler(m, queries.HandleListApplications)

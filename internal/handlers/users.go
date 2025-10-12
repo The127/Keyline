@@ -261,6 +261,91 @@ func GetUserById(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+type GetUserMetadataResponseDto struct {
+	Metadata            map[string]any `json:"metadata,omitempty"`
+	ApplicationMetadata map[string]any `json:"applicationMetadata,omitempty"`
+}
+
+// GetUserMetadata returns a users metadata.
+// @Summary      Get user metadata
+// @Tags         Users
+// @Produce      json
+// @Param        virtualServerName  path  string true  "Virtual server name"  default(keyline)
+// @Param        userId             path  string true  "User ID (UUID)"
+// @Param        application        query  string false "A matcher for what application metadata should be returned for. (% can be used as wildcard)"
+// @Param        includeGlobal      query  bool   false "Whether to include global metadata."
+// @Success      200  {object}  GetUserMetadataResponseDto
+// @Failure      404  {string}  string
+// @Router       /api/virtual-servers/{virtualServerName}/users/{userId}/metadata [get]
+func GetUserMetadata(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	scope := middlewares.GetScope(ctx)
+
+	vsName, err := middlewares.GetVirtualServerName(ctx)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	vars := mux.Vars(r)
+	userId, err := uuid.Parse(vars["userId"])
+	if err != nil {
+		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+		return
+	}
+
+	applicationMatcher := r.URL.Query().Get("application")
+
+	includeGlobalMetadata := false
+	if r.URL.Query().Get("includeGlobal") == "true" {
+		includeGlobalMetadata = true
+	}
+
+	m := ioc.GetDependency[mediator.Mediator](scope)
+	query := queries.GetUserMetadata{
+		VirtualServerName:     vsName,
+		UserId:                userId,
+		ApplicationMatcher:    applicationMatcher,
+		IncludeGlobalMetadata: includeGlobalMetadata,
+	}
+	response, err := mediator.Send[*queries.GetUserMetadataResult](ctx, m, query)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	responseDto := GetUserMetadataResponseDto{}
+
+	if response.Metadata != "" {
+		err := json.Unmarshal([]byte(response.Metadata), &responseDto.Metadata)
+		if err != nil {
+			utils.HandleHttpError(w, err)
+			return
+		}
+	}
+
+	if len(response.ApplicationMetadata) > 0 {
+		responseDto.ApplicationMetadata = make(map[string]any)
+	}
+
+	for appName, metadata := range response.ApplicationMetadata {
+		var appMetadata map[string]any
+		err := json.Unmarshal([]byte(metadata), &appMetadata)
+		if err != nil {
+			utils.HandleHttpError(w, err)
+			return
+		}
+		responseDto.ApplicationMetadata[appName] = appMetadata
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	err = json.NewEncoder(w).Encode(responseDto)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+	}
+}
+
 type PatchUserRequestDto struct {
 	DisplayName *string `json:"displayName"`
 }
