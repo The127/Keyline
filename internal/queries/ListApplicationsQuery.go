@@ -45,7 +45,7 @@ func HandleListApplications(ctx context.Context, query ListApplications) (*ListA
 		VirtualServerId(virtualServer.Id()).
 		Pagination(query.Page, query.PageSize).
 		Order(query.OrderBy, query.OrderDir).
-		Search(query.SearchText)
+		Search(repositories.NewContainsSearchFilter(query.SearchText))
 	applications, total, err := applicationRepository.List(ctx, applicationFilter)
 	if err != nil {
 		return nil, fmt.Errorf("searching applications: %w", err)
