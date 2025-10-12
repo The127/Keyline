@@ -45,6 +45,7 @@ func NewServiceUser(username string, virtualServerId uuid.UUID) *User {
 		ModelBase:       NewModelBase(),
 		virtualServerId: virtualServerId,
 		username:        username,
+		displayName:     username,
 		serviceUser:     true,
 	}
 }
