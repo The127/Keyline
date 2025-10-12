@@ -132,7 +132,28 @@ func extractUserFromBearerToken(ctx context.Context, authorizationHeader string,
 
 	currentUser := NewCurrentUser(userId)
 
-	// TODO: implement role to permission mapping
+	roleClaims, ok := claims["application_roles"]
+	if ok {
+		roleClaimsArray, ok := roleClaims.([]string)
+		if ok {
+			for _, roleClaim := range roleClaimsArray {
+				role := roles.Role(roleClaim)
+				rolePermissions, ok := roles.AllRoles[role]
+				if ok {
+					for _, permission := range rolePermissions {
+						permissionAssignment, ok := currentUser.Permissions[permission]
+						if !ok {
+							permissionAssignment = PermissionAssignment{
+								Permission:  permission,
+								SourceRoles: make([]roles.Role, 0),
+							}
+						}
+						permissionAssignment.SourceRoles = append(permissionAssignment.SourceRoles, role)
+					}
+				}
+			}
+		}
+	}
 
 	return currentUser, nil
 }
