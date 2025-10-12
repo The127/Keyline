@@ -8,18 +8,18 @@ import (
 	"crypto/sha256"
 	"crypto/x509"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 )
 
-var ErrKeyPairNotFound = errors.New("KeyPair not found")
-
 //go:generate mockgen -destination=./mocks/key_store.go -package=mocks Keyline/internal/services KeyStore
 type KeyStore interface {
-	Store(virtualServerName string, keyPair KeyPair) error
-	Load(virtualServerName string, algorithm config.SigningAlgorithm) (KeyPair, error)
+	Get(virtualServerName string, algorithm config.SigningAlgorithm, kid string) (*KeyPair, error)
+	GetAll(virtualServerName string) ([]KeyPair, error)
+	GetAllForAlgorithm(virtualServerName string, algorithm config.SigningAlgorithm) ([]KeyPair, error)
+	Add(virtualServerName string, keyPair KeyPair) error
+	Remove(virtualServerName string, algorithm config.SigningAlgorithm, kid string) error
 }
 
 type directoryKeyStore struct {
@@ -29,40 +29,121 @@ func NewDirectoryKeyStore() KeyStore {
 	return &directoryKeyStore{}
 }
 
-func (d *directoryKeyStore) getPath(virtualServerName string) string {
-	return filepath.Join(config.C.KeyStore.Directory.Path, virtualServerName)
-}
-
-func (d *directoryKeyStore) Store(virtualServerName string, keyPair KeyPair) error {
-	path := d.getPath(virtualServerName)
-	privateKeyBytes := keyPair.PrivateKeyBytes()
-
-	dir := filepath.Dir(path)
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		return errors.New("keystore directory does not exist: " + dir)
+func (d *directoryKeyStore) Add(virtualServerName string, keyPair KeyPair) error {
+	algPath := d.getPath(virtualServerName, keyPair.algorithm)
+	info, err := os.Stat(algPath)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			return err
+		}
+		err = os.MkdirAll(algPath, 0700)
+		if err != nil {
+			return err
+		}
+	} else if !info.IsDir() {
+		return fmt.Errorf("path %s is not a directory", algPath)
 	}
 
-	return os.WriteFile(path, privateKeyBytes, 0600)
+	keyPath := filepath.Join(algPath, keyPair.ComputeKid())
+	err = os.WriteFile(keyPath, keyPair.PrivateKeyBytes(), 0600)
+	if err != nil {
+		return fmt.Errorf("writing key: %w", err)
+	}
+
+	return nil
 }
 
-func (d *directoryKeyStore) Load(virtualServerName string, algorithm config.SigningAlgorithm) (KeyPair, error) {
-	path := d.getPath(virtualServerName)
+func (d *directoryKeyStore) Remove(virtualServerName string, algorithm config.SigningAlgorithm, kid string) error {
+	algPath := d.getPath(virtualServerName, algorithm)
+	keyPath := filepath.Join(algPath, kid)
 
-	privateKeyBytes, err := os.ReadFile(path)
+	info, err := os.Stat(keyPath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return KeyPair{}, ErrKeyPairNotFound
+			return nil
 		}
-		return KeyPair{}, err
+		return err
+	}
+
+	if info.IsDir() {
+		return fmt.Errorf("path %s is a directory", keyPath)
+	}
+
+	err = os.Remove(keyPath)
+	if err != nil {
+		return fmt.Errorf("removing key: %w", err)
+	}
+
+	return nil
+}
+
+func (d *directoryKeyStore) GetAllForAlgorithm(virtualServerName string, algorithm config.SigningAlgorithm) ([]KeyPair, error) {
+	algPath := d.getPath(virtualServerName, algorithm)
+
+	files, err := os.ReadDir(algPath)
+	if err != nil {
+		return nil, err
+	}
+
+	var keyPairs []KeyPair
+	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
+
+		privateKeyBytes, err := os.ReadFile(filepath.Join(algPath, file.Name()))
+		if err != nil {
+			return nil, fmt.Errorf("reading key: %w", err)
+		}
+
+		privateKey, publicKey := utils.ImportPrivateKey(privateKeyBytes, algorithm)
+		keyPairs = append(keyPairs, KeyPair{
+			algorithm:  algorithm,
+			publicKey:  publicKey,
+			privateKey: privateKey,
+		})
+	}
+
+	return keyPairs, nil
+}
+
+func (d *directoryKeyStore) GetAll(virtualServerName string) ([]KeyPair, error) {
+	var keyPairs []KeyPair
+
+	for _, alg := range config.SupportedSigningAlgorithms {
+		algKeyPairs, err := d.GetAllForAlgorithm(virtualServerName, alg)
+		if err != nil {
+			return nil, err
+		}
+
+		keyPairs = append(keyPairs, algKeyPairs...)
+	}
+
+	return keyPairs, nil
+}
+
+func (d *directoryKeyStore) Get(virtualServerName string, algorithm config.SigningAlgorithm, kid string) (*KeyPair, error) {
+	algPath := d.getPath(virtualServerName, algorithm)
+	keyPath := filepath.Join(algPath, kid)
+
+	privateKeyBytes, err := os.ReadFile(keyPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("reading key: %w", err)
 	}
 
 	privateKey, publicKey := utils.ImportPrivateKey(privateKeyBytes, algorithm)
-
-	return KeyPair{
+	return &KeyPair{
 		algorithm:  algorithm,
-		privateKey: privateKey,
 		publicKey:  publicKey,
+		privateKey: privateKey,
 	}, nil
+}
+
+func (d *directoryKeyStore) getPath(virtualServerName string, algorithm config.SigningAlgorithm) string {
+	return filepath.Join(config.C.KeyStore.Directory.Path, virtualServerName, string(algorithm))
 }
 
 type KeyCache Cache[string, KeyPair]
@@ -154,7 +235,7 @@ func (s *keyServiceImpl) Generate(virtualServerName string, algorithm config.Sig
 		privateKey: privateKey,
 	}
 
-	err := s.store.Store(virtualServerName, keyPair)
+	err := s.store.Add(virtualServerName, keyPair)
 	if err != nil {
 		return KeyPair{}, fmt.Errorf("storing key pair: %w", err)
 	}
@@ -165,17 +246,16 @@ func (s *keyServiceImpl) Generate(virtualServerName string, algorithm config.Sig
 func (s *keyServiceImpl) GetKey(virtualServerName string, algorithm config.SigningAlgorithm) KeyPair {
 	keyPair, ok := s.cache.TryGet(virtualServerName)
 	if !ok {
-		var err error
-		keyPair, err = s.store.Load(virtualServerName, algorithm)
-		switch {
-		case errors.Is(err, ErrKeyPairNotFound):
-			// TODO: regenerate
-			panic(fmt.Errorf("loading keypair for %s: %w", virtualServerName, err))
-
-		case err != nil:
-			panic(fmt.Errorf("loading keypair for %s: %w", virtualServerName, err))
+		keyPairs, err := s.store.GetAllForAlgorithm(virtualServerName, algorithm)
+		if err != nil {
+			panic(fmt.Errorf("getting key pairs: %w", err))
 		}
 
+		if len(keyPairs) == 0 {
+			panic(fmt.Errorf("no key pairs found for virtual server %s", virtualServerName))
+		}
+
+		keyPair = keyPairs[0]
 		s.cache.Put(virtualServerName, keyPair)
 	}
 
