@@ -146,7 +146,7 @@ type ApplicationFilter struct {
 	name            *string
 	id              *uuid.UUID
 	virtualServerId *uuid.UUID
-	search          *string
+	searchFilter    *SearchFilter
 }
 
 func NewApplicationFilter() ApplicationFilter {
@@ -175,9 +175,9 @@ func (f ApplicationFilter) Order(by string, direction string) ApplicationFilter 
 	return filter
 }
 
-func (f ApplicationFilter) Search(search string) ApplicationFilter {
+func (f ApplicationFilter) Search(searchFilter SearchFilter) ApplicationFilter {
 	filter := f.Clone()
-	filter.search = utils.NilIfZero(search)
+	filter.searchFilter = &searchFilter
 	return filter
 }
 
@@ -243,8 +243,8 @@ func (r *applicationRepository) selectQuery(filter ApplicationFilter) *sqlbuilde
 		s.Where(s.Equal("virtual_server_id", filter.virtualServerId))
 	}
 
-	if filter.search != nil {
-		term := "%" + *filter.search + "%"
+	if filter.searchFilter != nil {
+		term := filter.searchFilter.Term()
 		s.Where(s.Or(
 			s.ILike("name", term),
 			s.ILike("display_name", term),
