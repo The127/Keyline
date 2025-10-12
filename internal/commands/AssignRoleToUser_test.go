@@ -38,7 +38,7 @@ func TestHandleAssignRoleToUser(t *testing.T) {
 		return x.GetId() == user.Id()
 	})).Return(user, nil)
 
-	role := repositories.NewRole(virtualServer.Id(), nil, "role", "Role")
+	role := repositories.NewVirtualServerRole(virtualServer.Id(), "role", "Role")
 	role.Mock(now)
 	roleRepository := repoMocks.NewMockRoleRepository(ctrl)
 	roleRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories.RoleFilter) bool {

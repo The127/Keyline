@@ -39,6 +39,29 @@ func (c CurrentUser) IsAuthenticated() bool {
 	return c.UserId != uuid.Nil
 }
 
+type HasPermissionResult struct {
+	HasPermission bool
+	SourceRoles   []roles.Role
+}
+
+func (r HasPermissionResult) IsSuccess() bool {
+	return r.HasPermission
+}
+
+func (c CurrentUser) HasPermission(permission permissions.Permission) HasPermissionResult {
+	assignment, ok := c.Permissions[permission]
+	if !ok {
+		return HasPermissionResult{
+			HasPermission: false,
+		}
+	}
+
+	return HasPermissionResult{
+		HasPermission: true,
+		SourceRoles:   assignment.SourceRoles,
+	}
+}
+
 var CurrentUserContextKey = &CurrentUser{}
 
 func Middleware() mux.MiddlewareFunc {
@@ -109,9 +132,35 @@ func extractUserFromBearerToken(ctx context.Context, authorizationHeader string,
 
 	currentUser := NewCurrentUser(userId)
 
-	// TODO: implement role to permission mapping
+	roleClaims, ok := claims["application_roles"]
+	if ok {
+		roleClaimsArray, ok := roleClaims.([]string)
+		if ok {
+			for _, roleClaim := range roleClaimsArray {
+				role := roles.Role(roleClaim)
+				assignPermissionsToUser(&currentUser, role)
+			}
+		}
+	}
 
 	return currentUser, nil
+}
+
+func assignPermissionsToUser(currentUser *CurrentUser, role roles.Role) {
+	rolePermissions, ok := roles.AllRoles[role]
+	if ok {
+		for _, permission := range rolePermissions {
+			permissionAssignment, ok := currentUser.Permissions[permission]
+			if !ok {
+				permissionAssignment = PermissionAssignment{
+					Permission:  permission,
+					SourceRoles: make([]roles.Role, 0),
+				}
+				currentUser.Permissions[permission] = permissionAssignment
+			}
+			permissionAssignment.SourceRoles = append(permissionAssignment.SourceRoles, role)
+		}
+	}
 }
 
 func ContextWithCurrentUser(ctx context.Context, user CurrentUser) context.Context {
@@ -124,4 +173,10 @@ func GetCurrentUser(ctx context.Context) CurrentUser {
 		panic("current user not found")
 	}
 	return value
+}
+
+func SystemUser() CurrentUser {
+	user := NewCurrentUser(uuid.Nil)
+	assignPermissionsToUser(&user, roles.SystemUser)
+	return user
 }

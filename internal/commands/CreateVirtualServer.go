@@ -51,12 +51,6 @@ func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer)
 	if err != nil {
 		return nil, fmt.Errorf("generating keypair: %w", err)
 	}
-
-	err = initializeDefaultRoles(ctx, virtualServer)
-	if err != nil {
-		return nil, fmt.Errorf("initializing default roles: %w", err)
-	}
-
 	err = initializeDefaultTemplates(ctx, virtualServer)
 	if err != nil {
 		return nil, fmt.Errorf("initializing default templates: %w", err)
@@ -97,17 +91,22 @@ func initializeDefaultApplications(ctx context.Context, virtualServer *repositor
 		return fmt.Errorf("inserting application: %w", err)
 	}
 
+	err = initializeDefaultAdminUiRoles(ctx, virtualServer, adminUiApplication)
+	if err != nil {
+		return fmt.Errorf("initializing default roles: %w", err)
+	}
+
 	return nil
 }
 
-func initializeDefaultRoles(ctx context.Context, virtualServer *repositories.VirtualServer) error {
+func initializeDefaultAdminUiRoles(ctx context.Context, virtualServer *repositories.VirtualServer, application *repositories.Application) error {
 	scope := middlewares.GetScope(ctx)
 
 	roleRepository := ioc.GetDependency[repositories.RoleRepository](scope)
 
-	adminRole := repositories.NewRole(
+	adminRole := repositories.NewApplicationRole(
 		virtualServer.Id(),
-		nil,
+		application.Id(),
 		AdminRoleName,
 		"Administrator role",
 	)

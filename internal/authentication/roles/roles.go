@@ -7,9 +7,19 @@ import (
 type Role string
 
 const (
-	Admin Role = "admin"
+	SystemUser Role = "system_user"
+	Admin      Role = "admin"
 )
+
+var SystemUserPermissions = []permissions.Permission{
+	permissions.SystemUser,
+}
 
 var AdminPermissions = []permissions.Permission{
 	permissions.ApplicationCreate,
+}
+
+var AllRoles = map[Role][]permissions.Permission{
+	SystemUser: SystemUserPermissions,
+	Admin:      AdminPermissions,
 }
