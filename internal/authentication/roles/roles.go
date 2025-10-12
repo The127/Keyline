@@ -13,3 +13,7 @@ const (
 var AdminPermissions = []permissions.Permission{
 	permissions.ApplicationCreate,
 }
+
+var AllRoles = map[Role][]permissions.Permission{
+	Admin: AdminPermissions,
+}
