@@ -844,6 +844,48 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/virtual-servers/{virtualServerName}/users/{userId}/metadata": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Get user metadata",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "keyline",
+                        "description": "Virtual server name",
+                        "name": "virtualServerName",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "User ID (UUID)",
+                        "name": "userId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.GetUserMetadataResponseDto"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/virtual-servers/{vsName}/applications": {
             "get": {
                 "description": "Retrieve a paginated list of applications (OIDC clients)",
@@ -2417,6 +2459,19 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.GetUserMetadataResponseDto": {
+            "type": "object",
+            "properties": {
+                "applicationMetadata": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": {}
+                }
+            }
+        },
         "handlers.GetVirtualServerListResponseDto": {
             "type": "object",
             "properties": {
@@ -2883,23 +2938,11 @@ const docTemplate = `{
                         1000000,
                         1000000000,
                         60000000000,
-                        3600000000000,
-                        1,
-                        1000,
-                        1000000,
-                        1000000000,
-                        60000000000,
                         3600000000000
                     ],
                     "x-enum-varnames": [
                         "minDuration",
                         "maxDuration",
-                        "Nanosecond",
-                        "Microsecond",
-                        "Millisecond",
-                        "Second",
-                        "Minute",
-                        "Hour",
                         "Nanosecond",
                         "Microsecond",
                         "Millisecond",
