@@ -65,7 +65,7 @@ func HandleAssignRoleToUser(ctx context.Context, command AssignRoleToUser) (*Ass
 		command.UserId,
 		command.RoleId,
 		nil, // TODO: add group id to command once we need it
-		nil, // TODO: add applicatino to command once we need it
+		command.ApplicationId,
 	)
 	err = userRoleAssignmentRepository.Insert(ctx, userRoleAssignment)
 	if err != nil {
