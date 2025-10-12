@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"Keyline/internal/authentication/permissions"
+	"Keyline/internal/behaviours"
 	"Keyline/internal/events"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
@@ -17,6 +19,15 @@ type ResetPassword struct {
 	UserId      uuid.UUID
 	NewPassword string
 	Temporary   bool
+}
+
+func (a ResetPassword) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
+	// TODO: users should be able to reset their own password
+	return behaviours.PermissionBasedPolicy(ctx, permissions.UserResetPassword)
+}
+
+func (a ResetPassword) GetRequestName() string {
+	return "ResetPassword"
 }
 
 type ResetPasswordResponse struct{}

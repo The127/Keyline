@@ -12,8 +12,9 @@ const (
 	RoleCreate Permission = "role:create"
 	RoleAssign Permission = "role:assign"
 
-	UserCreate Permission = "user:create"
-	UserUpdate Permission = "user:update"
+	UserCreate        Permission = "user:create"
+	UserUpdate        Permission = "user:update"
+	UserResetPassword Permission = "user:reset_password"
 
 	UserMetadataUpdate Permission = "user_metadata:update"
 
