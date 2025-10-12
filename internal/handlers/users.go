@@ -461,6 +461,55 @@ func GetUserMetadata(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+type UpdateUserGlobalMetadataRequestDto map[string]any
+
+// UpdateUserGlobalMetadata updates a users metadata.
+// @Summary      Update a user metadata
+// @Tags         Users
+// @Produce      json
+// @Param        virtualServerName  path  string true  "Virtual server name"  default(keyline)
+// @Param        userId             path  string true  "User ID (UUID)"
+// @Param        body               body  UpdateUserGlobalMetadataRequestDto   true "Metadata"
+// @Success      204  {string}  string  "No Content"
+// @Failure      404  {string}  string
+// @Router       /api/virtual-servers/{virtualServerName}/users/{userId}/metadata/user [put]
+func UpdateUserGlobalMetadata(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	scope := middlewares.GetScope(ctx)
+
+	vsName, err := middlewares.GetVirtualServerName(ctx)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	vars := mux.Vars(r)
+	userId, err := uuid.Parse(vars["userId"])
+	if err != nil {
+		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+	}
+
+	var dto UpdateUserGlobalMetadataRequestDto
+	err = json.NewDecoder(r.Body).Decode(&dto)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	m := ioc.GetDependency[mediator.Mediator](scope)
+	_, err = mediator.Send[*commands.UpdateUserMetadataResponse](ctx, m, commands.UpdateUserMetadata{
+		VirtualServerName: vsName,
+		UserId:            userId,
+		Metadata:          dto,
+	})
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 type PatchUserRequestDto struct {
 	DisplayName *string `json:"displayName"`
 }
