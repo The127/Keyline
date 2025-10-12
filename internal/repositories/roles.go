@@ -106,7 +106,7 @@ type RoleFilter struct {
 	id              *uuid.UUID
 	virtualServerId *uuid.UUID
 	applicationId   *uuid.UUID
-	search          *string
+	searchFilter    *SearchFilter
 }
 
 func NewRoleFilter() RoleFilter {
@@ -139,9 +139,9 @@ func (f RoleFilter) ApplicationId(applicationId uuid.UUID) RoleFilter {
 	return filter
 }
 
-func (f RoleFilter) Search(search string) RoleFilter {
+func (f RoleFilter) Search(searchFilter SearchFilter) RoleFilter {
 	filter := f.Clone()
-	filter.search = utils.NilIfZero(search)
+	filter.searchFilter = &searchFilter
 	return filter
 }
 
@@ -222,8 +222,8 @@ func (r *roleRepository) selectQuery(filter RoleFilter) *sqlbuilder.SelectBuilde
 		s.Where(s.Equal("application_id", filter.applicationId))
 	}
 
-	if filter.search != nil {
-		term := "%" + *filter.search + "%"
+	if filter.searchFilter != nil {
+		term := filter.searchFilter.Term()
 		s.Where(s.Or(
 			s.ILike("name", term),
 		))

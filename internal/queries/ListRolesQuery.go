@@ -45,7 +45,7 @@ func HandleListRoles(ctx context.Context, query ListRoles) (*ListRolesResponse, 
 		VirtualServerId(virtualServer.Id()).
 		Pagination(query.Page, query.PageSize).
 		Order(query.OrderBy, query.OrderDir).
-		Search(query.SearchText)
+		Search(repositories.NewContainsSearchFilter(query.SearchText))
 
 	if query.ApplicationId != nil {
 		roleFilter = roleFilter.ApplicationId(*query.ApplicationId)

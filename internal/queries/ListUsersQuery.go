@@ -46,7 +46,7 @@ func HandleListUsers(ctx context.Context, query ListUsers) (*ListUsersResponse, 
 		VirtualServerId(virtualServer.Id()).
 		Pagination(query.Page, query.PageSize).
 		Order(query.OrderBy, query.OrderDir).
-		Search(query.SearchText)
+		Search(repositories.NewContainsSearchFilter(query.SearchText))
 	users, total, err := userRepository.List(ctx, userFilter)
 	if err != nil {
 		return nil, fmt.Errorf("searching users: %w", err)
