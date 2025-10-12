@@ -156,6 +156,7 @@ func assignPermissionsToUser(currentUser *CurrentUser, role roles.Role) {
 					Permission:  permission,
 					SourceRoles: make([]roles.Role, 0),
 				}
+				currentUser.Permissions[permission] = permissionAssignment
 			}
 			permissionAssignment.SourceRoles = append(permissionAssignment.SourceRoles, role)
 		}
