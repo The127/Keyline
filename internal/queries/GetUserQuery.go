@@ -1,6 +1,8 @@
 package queries
 
 import (
+	"Keyline/internal/authentication/permissions"
+	"Keyline/internal/behaviours"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/ioc"
@@ -14,6 +16,14 @@ import (
 type GetUserQuery struct {
 	UserId            uuid.UUID
 	VirtualServerName string
+}
+
+func (a GetUserQuery) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
+	return behaviours.PermissionBasedPolicy(ctx, permissions.UserView)
+}
+
+func (a GetUserQuery) GetRequestName() string {
+	return "GetUserQuery"
 }
 
 type GetUserQueryResult struct {
