@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"Keyline/internal/authentication/permissions"
+	"Keyline/internal/behaviours"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/ioc"
@@ -17,6 +19,14 @@ type PatchUserAppMetadata struct {
 	UserId            uuid.UUID
 	ApplicationId     uuid.UUID
 	Metadata          map[string]any
+}
+
+func (a PatchUserAppMetadata) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
+	return behaviours.PermissionBasedPolicy(ctx, permissions.AppMetadataUpdateAny)
+}
+
+func (a PatchUserAppMetadata) GetRequestName() string {
+	return "PatchUserAppMetadata"
 }
 
 type PatchUserAppMetadataResponse struct{}
