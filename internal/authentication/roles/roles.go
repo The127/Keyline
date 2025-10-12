@@ -33,6 +33,7 @@ var AdminPermissions = []permissions.Permission{
 	permissions.UserResetPassword,
 
 	permissions.UserMetadataUpdate,
+	permissions.UserMetadataView,
 
 	permissions.AppMetadataUpdateAny,
 
