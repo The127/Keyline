@@ -1,6 +1,8 @@
 package queries
 
 import (
+	"Keyline/internal/authentication/permissions"
+	"Keyline/internal/behaviours"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/ioc"
@@ -16,6 +18,14 @@ type ListUsersInRole struct {
 	OrderedQuery
 	VirtualServerName string
 	RoleId            uuid.UUID
+}
+
+func (a ListUsersInRole) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
+	return behaviours.PermissionBasedPolicy(ctx, permissions.UserView)
+}
+
+func (a ListUsersInRole) GetRequestName() string {
+	return "ListUsersInRole"
 }
 
 type ListUsersInRoleResponse struct {
