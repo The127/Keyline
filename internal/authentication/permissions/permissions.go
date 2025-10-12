@@ -17,6 +17,7 @@ const (
 	UserCreate        Permission = "user:create"
 	UserUpdate        Permission = "user:update"
 	UserResetPassword Permission = "user:reset_password"
+	UserView          Permission = "user:view"
 
 	UserMetadataUpdate Permission = "user_metadata:update"
 	UserMetadataView   Permission = "user_metadata:view"
