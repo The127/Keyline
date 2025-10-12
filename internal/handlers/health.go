@@ -8,7 +8,7 @@ import "net/http"
 // @Produce     plain
 // @Success     200 {string} string "OK"
 // @Router      /health [get]
-func ApplicationHealth(w http.ResponseWriter, r *http.Request) {
+func ApplicationHealth(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -19,6 +19,6 @@ func ApplicationHealth(w http.ResponseWriter, r *http.Request) {
 // @Param       virtualServerName path string true "Virtual server name"  default(keyline)
 // @Success     200 {string} string "OK"
 // @Router      /api/virtual-servers/{virtualServerName}/health [get]
-func VirtualServerHealth(w http.ResponseWriter, r *http.Request) {
+func VirtualServerHealth(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
