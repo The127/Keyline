@@ -1,6 +1,8 @@
 package queries
 
 import (
+	"Keyline/internal/authentication/permissions"
+	"Keyline/internal/behaviours"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/ioc"
@@ -14,6 +16,14 @@ import (
 type GetTemplate struct {
 	VirtualServerName string
 	Type              repositories.TemplateType
+}
+
+func (a GetTemplate) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
+	return behaviours.PermissionBasedPolicy(ctx, permissions.TemplateView)
+}
+
+func (a GetTemplate) GetRequestName() string {
+	return "GetTemplate"
 }
 
 type GetTemplateResult struct {

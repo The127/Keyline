@@ -38,6 +38,8 @@ var AdminPermissions = []permissions.Permission{
 
 	permissions.ServiceUserCreate,
 	permissions.ServiceUserAssociateKey,
+
+	permissions.TemplateView,
 }
 
 var AllRoles = map[Role][]permissions.Permission{
