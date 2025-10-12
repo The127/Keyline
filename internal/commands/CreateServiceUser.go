@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"Keyline/internal/authentication/permissions"
+	"Keyline/internal/behaviours"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/ioc"
@@ -13,6 +15,14 @@ import (
 type CreateServiceUser struct {
 	VirtualServerName string
 	Username          string
+}
+
+func (a CreateServiceUser) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
+	return behaviours.PermissionBasedPolicy(ctx, permissions.ServiceUserCreate)
+}
+
+func (a CreateServiceUser) GetRequestName() string {
+	return "CreateServiceUser"
 }
 
 type CreateServiceUserResponse struct {

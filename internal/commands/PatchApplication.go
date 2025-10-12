@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"Keyline/internal/authentication/permissions"
+	"Keyline/internal/behaviours"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/ioc"
@@ -14,6 +16,14 @@ type PatchApplication struct {
 	VirtualServerName string
 	ApplicationId     uuid.UUID
 	DisplayName       *string
+}
+
+func (a PatchApplication) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
+	return behaviours.PermissionBasedPolicy(ctx, permissions.ApplicationUpdate)
+}
+
+func (a PatchApplication) GetRequestName() string {
+	return "PatchApplication"
 }
 
 type PatchApplicationResponse struct{}

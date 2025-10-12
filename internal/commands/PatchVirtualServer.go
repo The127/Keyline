@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"Keyline/internal/authentication/permissions"
+	"Keyline/internal/behaviours"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/ioc"
@@ -15,6 +17,14 @@ type PatchVirtualServer struct {
 	EnableRegistration       *bool
 	Require2fa               *bool
 	RequireEmailVerification *bool
+}
+
+func (a PatchVirtualServer) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
+	return behaviours.PermissionBasedPolicy(ctx, permissions.VirtualServerUpdate)
+}
+
+func (a PatchVirtualServer) GetRequestName() string {
+	return "PatchVirtualServer"
 }
 
 type PatchVirtualServerResponse struct{}

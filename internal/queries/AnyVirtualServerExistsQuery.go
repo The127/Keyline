@@ -9,6 +9,9 @@ import (
 )
 
 type AnyVirtualServerExists struct{}
+
+// This is only used for initial setup, so we don't care about a policy.
+
 type AnyVirtualServerExistsResult struct {
 	Found bool
 }

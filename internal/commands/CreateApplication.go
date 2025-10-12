@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"Keyline/internal/authentication"
 	"Keyline/internal/authentication/permissions"
 	"Keyline/internal/behaviours"
 	"Keyline/internal/middlewares"
@@ -25,28 +24,12 @@ type CreateApplication struct {
 	HashedSecret *string
 }
 
-func (c CreateApplication) GetRequestName() string {
-	return "CreateApplication"
+func (c CreateApplication) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
+	return behaviours.PermissionBasedPolicy(ctx, permissions.ApplicationCreate)
 }
 
-func (c CreateApplication) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
-	currentUser := authentication.GetCurrentUser(ctx)
-	if !currentUser.IsAuthenticated() {
-		return behaviours.Denied(currentUser.UserId), nil
-	}
-
-	hasPermission := currentUser.HasPermission(permissions.ApplicationCreate)
-	if !hasPermission.IsSuccess() {
-		return behaviours.Denied(currentUser.UserId), nil
-	}
-
-	return behaviours.Allowed(
-		currentUser.UserId,
-		behaviours.NewAllowedByPermission(
-			permissions.ApplicationCreate,
-			hasPermission.SourceRoles,
-		),
-	), nil
+func (c CreateApplication) GetRequestName() string {
+	return "CreateApplication"
 }
 
 type CreateApplicationResponse struct {

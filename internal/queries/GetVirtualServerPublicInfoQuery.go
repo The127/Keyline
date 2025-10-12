@@ -12,6 +12,8 @@ type GetVirtualServerPublicInfo struct {
 	VirtualServerName string
 }
 
+// This query is public, so there is no policy.
+
 type GetVirtualServerPublicInfoResponse struct {
 	Name                string
 	DisplayName         string

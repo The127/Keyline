@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"Keyline/internal/authentication/permissions"
+	"Keyline/internal/behaviours"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/ioc"
@@ -15,6 +17,14 @@ type AssignRoleToUser struct {
 	UserId            uuid.UUID
 	RoleId            uuid.UUID
 	ApplicationId     *uuid.UUID
+}
+
+func (a AssignRoleToUser) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
+	return behaviours.PermissionBasedPolicy(ctx, permissions.RoleAssign)
+}
+
+func (a AssignRoleToUser) GetRequestName() string {
+	return "AssignRoleToUser"
 }
 
 type AssignRoleToUserResponse struct{}
@@ -55,7 +65,7 @@ func HandleAssignRoleToUser(ctx context.Context, command AssignRoleToUser) (*Ass
 		command.UserId,
 		command.RoleId,
 		nil, // TODO: add group id to command once we need it
-		nil, // TODO: add applicatino to command once we need it
+		command.ApplicationId,
 	)
 	err = userRoleAssignmentRepository.Insert(ctx, userRoleAssignment)
 	if err != nil {

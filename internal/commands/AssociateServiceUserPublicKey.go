@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"Keyline/internal/authentication/permissions"
+	"Keyline/internal/behaviours"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/ioc"
@@ -14,6 +16,14 @@ type AssociateServiceUserPublicKey struct {
 	VirtualServerName string
 	ServiceUserId     uuid.UUID
 	PublicKey         string
+}
+
+func (a AssociateServiceUserPublicKey) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
+	return behaviours.PermissionBasedPolicy(ctx, permissions.ServiceUserAssociateKey)
+}
+
+func (a AssociateServiceUserPublicKey) GetRequestName() string {
+	return "AssociateServiceUserPublicKey"
 }
 
 type AssociateServiceUserPublicKeyResponse struct {

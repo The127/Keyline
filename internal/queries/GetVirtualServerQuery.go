@@ -1,6 +1,8 @@
 package queries
 
 import (
+	"Keyline/internal/authentication/permissions"
+	"Keyline/internal/behaviours"
 	"Keyline/internal/config"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
@@ -13,6 +15,14 @@ import (
 
 type GetVirtualServerQuery struct {
 	VirtualServerName string
+}
+
+func (a GetVirtualServerQuery) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
+	return behaviours.PermissionBasedPolicy(ctx, permissions.VirtualServerView)
+}
+
+func (a GetVirtualServerQuery) GetRequestName() string {
+	return "GetVirtualServerQuery"
 }
 
 type GetVirtualServerResponse struct {

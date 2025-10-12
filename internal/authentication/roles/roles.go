@@ -16,7 +16,34 @@ var SystemUserPermissions = []permissions.Permission{
 }
 
 var AdminPermissions = []permissions.Permission{
+	permissions.VirtualServerUpdate,
+	permissions.VirtualServerView,
+
 	permissions.ApplicationCreate,
+	permissions.ApplicationDelete,
+	permissions.ApplicationUpdate,
+	permissions.ApplicationView,
+
+	permissions.GroupView,
+
+	permissions.RoleCreate,
+	permissions.RoleAssign,
+	permissions.RoleView,
+
+	permissions.UserCreate,
+	permissions.UserUpdate,
+	permissions.UserResetPassword,
+	permissions.UserView,
+
+	permissions.UserMetadataUpdate,
+	permissions.UserMetadataView,
+
+	permissions.AppMetadataUpdateAny,
+
+	permissions.ServiceUserCreate,
+	permissions.ServiceUserAssociateKey,
+
+	permissions.TemplateView,
 }
 
 var AllRoles = map[Role][]permissions.Permission{
