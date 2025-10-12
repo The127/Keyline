@@ -229,6 +229,8 @@ func (r *roleRepository) selectQuery(filter RoleFilter) *sqlbuilder.SelectBuilde
 
 	if filter.applicationId != nil {
 		s.Where(s.Equal("application_id", filter.applicationId))
+	} else {
+		s.Where(s.IsNull("application_id"))
 	}
 
 	if filter.searchFilter != nil {
