@@ -163,7 +163,9 @@ func assignPermissionsToUser(currentUser *CurrentUser, role roles.Role) {
 				}
 				currentUser.Permissions[permission] = permissionAssignment
 			}
+
 			permissionAssignment.SourceRoles = append(permissionAssignment.SourceRoles, role)
+			currentUser.Permissions[permission] = permissionAssignment
 		}
 	}
 }
