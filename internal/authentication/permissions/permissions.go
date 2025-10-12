@@ -14,4 +14,6 @@ const (
 
 	ServiceUserCreate       Permission = "service_user:create"
 	ServiceUserAssociateKey Permission = "service_user:associate_key"
+
+	VirtualServerCreate Permission = "virtual_server:create"
 )
