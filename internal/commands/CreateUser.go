@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"Keyline/internal/authentication/permissions"
+	"Keyline/internal/behaviours"
 	"Keyline/internal/events"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
@@ -18,6 +20,14 @@ type CreateUser struct {
 	DisplayName       string
 	Email             string
 	EmailVerified     bool
+}
+
+func (a CreateUser) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
+	return behaviours.PermissionBasedPolicy(ctx, permissions.UserCreate)
+}
+
+func (a CreateUser) GetRequestName() string {
+	return "CreateUser"
 }
 
 type CreateUserResponse struct {
