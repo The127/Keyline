@@ -81,9 +81,9 @@ func HandleGetUserMetadata(ctx context.Context, query GetUserMetadata) (*GetUser
 
 		for _, metadata := range applicationMetadata {
 			var application *repositories.Application
-			for _, application = range applications {
-				if application.Id() == metadata.ApplicationId() {
-					application = application
+			for _, a := range applications {
+				if a.Id() == metadata.ApplicationId() {
+					application = a
 					break
 				}
 			}
