@@ -18,6 +18,7 @@ var SystemUserPermissions = []permissions.Permission{
 var AdminPermissions = []permissions.Permission{
 	permissions.ApplicationCreate,
 
+	permissions.RoleCreate,
 	permissions.RoleAssign,
 
 	permissions.ServiceUserAssociateKey,

@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"Keyline/internal/authentication/permissions"
+	"Keyline/internal/behaviours"
 	"Keyline/internal/events"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
@@ -19,6 +21,14 @@ type CreateRole struct {
 	Description       string
 	RequireMfa        bool
 	MaxTokenAge       time.Duration
+}
+
+func (a CreateRole) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
+	return behaviours.PermissionBasedPolicy(ctx, permissions.RoleCreate)
+}
+
+func (a CreateRole) GetRequestName() string {
+	return "AssignRoleToUser"
 }
 
 type CreateRoleResponse struct {
