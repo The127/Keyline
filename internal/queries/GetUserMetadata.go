@@ -1,6 +1,8 @@
 package queries
 
 import (
+	"Keyline/internal/authentication/permissions"
+	"Keyline/internal/behaviours"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/ioc"
@@ -16,6 +18,14 @@ type GetUserMetadata struct {
 	IncludeGlobalMetadata         bool
 	IncludeAllApplicationMetadata bool
 	ApplicationIds                *[]uuid.UUID
+}
+
+func (a GetUserMetadata) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
+	return behaviours.PermissionBasedPolicy(ctx, permissions.UserMetadataView)
+}
+
+func (a GetUserMetadata) GetRequestName() string {
+	return "GetUserMetadata"
 }
 
 type GetUserMetadataResult struct {

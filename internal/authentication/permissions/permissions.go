@@ -19,6 +19,7 @@ const (
 	UserResetPassword Permission = "user:reset_password"
 
 	UserMetadataUpdate Permission = "user_metadata:update"
+	UserMetadataView   Permission = "user_metadata:view"
 
 	AppMetadataUpdateAny Permission = "app_metadata:update:any"
 
