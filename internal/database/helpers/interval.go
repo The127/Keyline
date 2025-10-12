@@ -38,7 +38,7 @@ type NullDuration struct {
 }
 
 // Value converts the duration into a Postgres-compatible textual interval or NULL.
-func (nd NullDuration) Value() (driver.Value, error) {
+func (nd *NullDuration) Value() (driver.Value, error) {
 	if !nd.Valid {
 		return nil, nil
 	}
