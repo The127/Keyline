@@ -247,7 +247,7 @@ func (r *applicationRepository) selectQuery(filter ApplicationFilter) *sqlbuilde
 	}
 
 	if filter.ids != nil {
-		s.Where(s.In("id", *filter.ids))
+		s.Where(s.Any("id", "=", pq.Array(*filter.ids)))
 	}
 
 	if filter.virtualServerId != nil {
