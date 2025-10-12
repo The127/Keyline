@@ -13,7 +13,7 @@ func NewConsoleAuditLogger() behaviours.AuditLogger {
 type consoleAuditLogger struct {
 }
 
-func (c *consoleAuditLogger) Log(ctx context.Context, policy behaviours.Policy, result behaviours.PolicyResult) error {
+func (c *consoleAuditLogger) Log(_ context.Context, policy behaviours.Policy, result behaviours.PolicyResult) error {
 	if result.IsAllowed() {
 		logging.Logger.Infof("request '%s' allowed for '%s' by %s", policy.GetRequestName(), result.UserId(), result.Reason())
 	} else {
