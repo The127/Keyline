@@ -29,6 +29,7 @@ const (
 
 	VirtualServerCreate Permission = "virtual_server:create"
 	VirtualServerUpdate Permission = "virtual_server:update"
+	VirtualServerView   Permission = "virtual_server:view"
 
 	TemplateView Permission = "template:view"
 )
