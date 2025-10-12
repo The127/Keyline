@@ -26,6 +26,7 @@ var AdminPermissions = []permissions.Permission{
 	permissions.RoleAssign,
 
 	permissions.UserCreate,
+	permissions.UserUpdate,
 
 	permissions.ServiceUserCreate,
 	permissions.ServiceUserAssociateKey,
