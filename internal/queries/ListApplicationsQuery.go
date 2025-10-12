@@ -23,10 +23,11 @@ type ListApplicationsResponse struct {
 }
 
 type ListApplicationsResponseItem struct {
-	Id          uuid.UUID
-	Name        string
-	DisplayName string
-	Type        repositories.ApplicationType
+	Id                uuid.UUID
+	Name              string
+	DisplayName       string
+	Type              repositories.ApplicationType
+	SystemApplication bool
 }
 
 func HandleListApplications(ctx context.Context, query ListApplications) (*ListApplicationsResponse, error) {
@@ -53,10 +54,11 @@ func HandleListApplications(ctx context.Context, query ListApplications) (*ListA
 
 	items := utils.MapSlice(applications, func(t *repositories.Application) ListApplicationsResponseItem {
 		return ListApplicationsResponseItem{
-			Id:          t.Id(),
-			Name:        t.Name(),
-			DisplayName: t.DisplayName(),
-			Type:        t.Type(),
+			Id:                t.Id(),
+			Name:              t.Name(),
+			DisplayName:       t.DisplayName(),
+			Type:              t.Type(),
+			SystemApplication: t.SystemApplication(),
 		}
 	})
 

@@ -274,10 +274,11 @@ func DeleteApplication(w http.ResponseWriter, r *http.Request) {
 type PagedApplicationsResponseDto = PagedResponseDto[ListApplicationsResponseDto]
 
 type ListApplicationsResponseDto struct {
-	Id          uuid.UUID `json:"id"`
-	Name        string    `json:"name"`
-	DisplayName string    `json:"displayName"`
-	Type        string    `json:"type"`
+	Id                uuid.UUID `json:"id"`
+	Name              string    `json:"name"`
+	DisplayName       string    `json:"displayName"`
+	Type              string    `json:"type"`
+	SystemApplication bool      `json:"systemApplication"`
 }
 
 // ListApplications lists applications in a virtual server
@@ -327,10 +328,11 @@ func ListApplications(w http.ResponseWriter, r *http.Request) {
 
 	items := utils.MapSlice(applications.Items, func(x queries.ListApplicationsResponseItem) ListApplicationsResponseDto {
 		return ListApplicationsResponseDto{
-			Id:          x.Id,
-			Name:        x.Name,
-			DisplayName: x.DisplayName,
-			Type:        string(x.Type),
+			Id:                x.Id,
+			Name:              x.Name,
+			DisplayName:       x.DisplayName,
+			Type:              string(x.Type),
+			SystemApplication: x.SystemApplication,
 		}
 	})
 
