@@ -39,6 +39,29 @@ func (c CurrentUser) IsAuthenticated() bool {
 	return c.UserId != uuid.Nil
 }
 
+type HasPermissionResult struct {
+	HasPermission bool
+	SourceRoles   []roles.Role
+}
+
+func (r HasPermissionResult) IsSuccess() bool {
+	return r.HasPermission
+}
+
+func (c CurrentUser) HasPermission(permission permissions.Permission) HasPermissionResult {
+	assignment, ok := c.Permissions[permission]
+	if !ok {
+		return HasPermissionResult{
+			HasPermission: false,
+		}
+	}
+
+	return HasPermissionResult{
+		HasPermission: true,
+		SourceRoles:   assignment.SourceRoles,
+	}
+}
+
 var CurrentUserContextKey = &CurrentUser{}
 
 func Middleware() mux.MiddlewareFunc {
