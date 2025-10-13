@@ -21,12 +21,12 @@ type AuditLog struct {
 	userId          *uuid.UUID
 
 	requestType string
-	request     map[string]any
-	response    *map[string]any
+	request     string
+	response    *string
 
 	allowed         bool
 	allowReasonType *string
-	allowReason     *map[string]any
+	allowReason     *string
 }
 
 type Request interface {
@@ -38,36 +38,38 @@ type AllowReason interface {
 }
 
 func NewAllowedAuditLog(virtualServerId uuid.UUID, userId uuid.UUID, request Request, response any, allowReason AllowReason) (*AuditLog, error) {
-	requestJsonMap, err := toJsonMap(request)
+	requestJsonBytes, err := json.Marshal(request)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	responseJsonMap, err := toJsonMap(response)
+	responseJsonBytes, err := json.Marshal(response)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal response: %w", err)
 	}
+	responseJsonString := string(responseJsonBytes)
 
-	allowReasonJsonMap, err := toJsonMap(allowReason)
+	allowReasonJsonBytes, err := json.Marshal(allowReason)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal allow reason: %w", err)
 	}
+	allowReasonJsonString := string(allowReasonJsonBytes)
 
 	return &AuditLog{
 		ModelBase:       NewModelBase(),
 		virtualServerId: virtualServerId,
 		userId:          &userId,
 		requestType:     request.GetRequestName(),
-		request:         requestJsonMap,
-		response:        &responseJsonMap,
+		request:         string(requestJsonBytes),
+		response:        &responseJsonString,
 		allowed:         true,
 		allowReasonType: utils.Ptr(allowReason.GetReasonType()),
-		allowReason:     &allowReasonJsonMap,
+		allowReason:     &allowReasonJsonString,
 	}, nil
 }
 
 func NewDeniedAuditLog(virtualServerId uuid.UUID, userId uuid.UUID, request Request) (*AuditLog, error) {
-	requestJsonMap, err := toJsonMap(request)
+	requestJsonMap, err := json.Marshal(request)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
@@ -77,24 +79,9 @@ func NewDeniedAuditLog(virtualServerId uuid.UUID, userId uuid.UUID, request Requ
 		virtualServerId: virtualServerId,
 		userId:          &userId,
 		requestType:     request.GetRequestName(),
-		request:         requestJsonMap,
+		request:         string(requestJsonMap),
 		allowed:         false,
 	}, nil
-}
-
-func toJsonMap(request any) (map[string]any, error) {
-	jsonBytes, err := json.Marshal(request)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal: %w", err)
-	}
-
-	requestJsonMap := map[string]any{}
-	err = json.Unmarshal(jsonBytes, &requestJsonMap)
-	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal: %w", err)
-	}
-
-	return requestJsonMap, nil
 }
 
 func (a *AuditLog) VirtualServerId() uuid.UUID {
@@ -109,11 +96,11 @@ func (a *AuditLog) RequestType() string {
 	return a.requestType
 }
 
-func (a *AuditLog) Request() map[string]any {
+func (a *AuditLog) Request() string {
 	return a.request
 }
 
-func (a *AuditLog) Response() *map[string]any {
+func (a *AuditLog) Response() *string {
 	return a.response
 }
 
@@ -125,7 +112,7 @@ func (a *AuditLog) AllowReasonType() *string {
 	return a.allowReasonType
 }
 
-func (a *AuditLog) AllowReason() *map[string]any {
+func (a *AuditLog) AllowReason() *string {
 	return a.allowReason
 }
 
