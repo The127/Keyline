@@ -271,9 +271,10 @@ func (r *virtualServerRepository) First(ctx context.Context, filter VirtualServe
 		return nil, fmt.Errorf("scanning row: %w", err)
 	}
 
-	r.cache.Put(cacheKey, &virtualServer)
+	result := &virtualServer
+	r.cache.Put(cacheKey, result)
 
-	return &virtualServer, nil
+	return result, nil
 }
 
 func (r *virtualServerRepository) Insert(ctx context.Context, virtualServer *VirtualServer) error {
