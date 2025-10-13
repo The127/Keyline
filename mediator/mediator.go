@@ -43,11 +43,11 @@ func RegisterEventHandler[TEvent any](m *mediator, eventHandler EventHandlerFunc
 	m.eventHandlers[eventType] = eventHandlers
 }
 
-type Next func() error
+type Next func() (any, error)
 
 type behaviourInfo struct {
 	requestType   reflect.Type
-	behaviourFunc func(ctx context.Context, request any, next Next) error
+	behaviourFunc func(ctx context.Context, request any, next Next) (any, error)
 }
 
 type handlerInfo struct {
@@ -66,14 +66,14 @@ func NewMediator() *mediator {
 	}
 }
 
-type BehaviourFunc[TRequest any] func(ctx context.Context, request TRequest, next Next) error
+type BehaviourFunc[TRequest any] func(ctx context.Context, request TRequest, next Next) (any, error)
 
 func RegisterBehaviour[TRequest any](m *mediator, behaviour BehaviourFunc[TRequest]) {
 	requestType := utils.TypeOf[TRequest]()
 
 	m.behaviours = append(m.behaviours, behaviourInfo{
 		requestType: requestType,
-		behaviourFunc: func(ctx context.Context, request any, next Next) error {
+		behaviourFunc: func(ctx context.Context, request any, next Next) (any, error) {
 			return behaviour(ctx, request.(TRequest), next)
 		},
 	})
@@ -136,9 +136,8 @@ func (m *mediator) Send(ctx context.Context, request any, requestType reflect.Ty
 	var response any
 	var err error
 
-	step = func() error {
-		response, err = info.handlerFunc(ctx, request)
-		return err
+	step = func() (any, error) {
+		return info.handlerFunc(ctx, request)
 	}
 
 	behaviours := m.getBehaviours(requestType)
@@ -146,12 +145,12 @@ func (m *mediator) Send(ctx context.Context, request any, requestType reflect.Ty
 	for i := len(behaviours) - 1; i >= 0; i-- {
 		behaviour := behaviours[i]
 		prev := step
-		step = func() error {
+		step = func() (any, error) {
 			return behaviour.behaviourFunc(ctx, request, prev)
 		}
 	}
 
-	err = step()
+	response, err = step()
 	if err != nil {
 		return nil, err
 	}

@@ -136,10 +136,10 @@ type Policy interface {
 	GetRequestName() string
 }
 
-func PolicyBehaviour(ctx context.Context, request Policy, next mediator.Next) error {
+func PolicyBehaviour(ctx context.Context, request Policy, next mediator.Next) (any, error) {
 	policyResult, err := evaluatePolicy(ctx, request)
 	if err != nil {
-		return fmt.Errorf("failed to check if request is allowed: %w", err)
+		return nil, fmt.Errorf("failed to check if request is allowed: %w", err)
 	}
 
 	scope := middlewares.GetScope(ctx)
@@ -150,10 +150,13 @@ func PolicyBehaviour(ctx context.Context, request Policy, next mediator.Next) er
 	}
 
 	if !policyResult.allowed {
-		return fmt.Errorf("request not allowed: %w", utils.ErrHttpUnauthorized)
+		return nil, fmt.Errorf("request not allowed: %w", utils.ErrHttpUnauthorized)
 	}
 
 	return next()
+	response, err := next()
+
+	return response, err
 }
 
 func evaluatePolicy(ctx context.Context, request Policy) (PolicyResult, error) {
