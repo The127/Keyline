@@ -3,7 +3,9 @@
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![Go Version](https://img.shields.io/badge/Go-1.24-00ADD8?logo=go)](https://go.dev/)
 
-**Keyline** is an open-source OpenID Connect (OIDC) / Identity Provider (IDP) server built with Go. It provides a robust, scalable authentication and authorization solution for modern applications.
+**Keyline** is an open-source OpenID Connect (OIDC) / Identity Provider (IDP) server built with Go. It providesa robust, scalable authentication and authorization solution for modern applications.
+
+The goal is to create a open-source, self-hostable, lightweight, fast, secure, feature rich (but in a good opinionated way), easily configurable and developer friendly OIDC server.
 
 Keyline is still under active development and not ready for production use. Consider it a very feature-rich late alpha release.
 
