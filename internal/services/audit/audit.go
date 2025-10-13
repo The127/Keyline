@@ -19,11 +19,11 @@ func NewConsoleAuditLogger() behaviours.AuditLogger {
 type consoleAuditLogger struct {
 }
 
-func (c *consoleAuditLogger) Log(_ context.Context, policy behaviours.Policy, result behaviours.PolicyResult) error {
-	if result.IsAllowed() {
-		logging.Logger.Infof("request '%s' allowed for '%s' by %s", policy.GetRequestName(), result.UserId(), result.Reason())
+func (c *consoleAuditLogger) Log(_ context.Context, policy behaviours.Policy, policyResult behaviours.PolicyResult, _ any) error {
+	if policyResult.IsAllowed() {
+		logging.Logger.Infof("request '%s' allowed for '%s' by %s", policy.GetRequestName(), policyResult.UserId(), policyResult.Reason())
 	} else {
-		logging.Logger.Infof("request '%s' denied for '%s'", policy.GetRequestName(), result.UserId())
+		logging.Logger.Infof("request '%s' denied for '%s'", policy.GetRequestName(), policyResult.UserId())
 	}
 
 	return nil
@@ -35,7 +35,7 @@ func NewDbAuditLogger() behaviours.AuditLogger {
 
 type dbAuditLogger struct{}
 
-func (d *dbAuditLogger) Log(ctx context.Context, policy behaviours.Policy, policyResult behaviours.PolicyResult) error {
+func (d *dbAuditLogger) Log(ctx context.Context, policy behaviours.Policy, policyResult behaviours.PolicyResult, response any) error {
 	scope := middlewares.GetScope(ctx)
 
 	// we cannot log to the db during the bootstrap process
@@ -51,7 +51,7 @@ func (d *dbAuditLogger) Log(ctx context.Context, policy behaviours.Policy, polic
 			policyResult.VirtualServerId(),
 			policyResult.UserId(),
 			policy,
-			nil, // TODO pass the result into the logger
+			response,
 			policyResult.Reason(),
 		)
 		if err != nil {
