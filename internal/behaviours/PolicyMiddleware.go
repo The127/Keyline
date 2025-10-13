@@ -179,7 +179,7 @@ func evaluatePolicy(ctx context.Context, request Policy) (PolicyResult, error) {
 	virtualServerId := uuid.Nil
 
 	// if virtual server name is not set, we don't need to check for virtual server
-	// this should only happen for internal bootrstrap requests where there is no virtual server yet
+	// this should only happen for internal bootstrap requests where there is no virtual server yet
 	// and we don't want to fail on that
 	// this can only be the case for the system user
 	// cron jobs and other internal requests should ensure that the virtual server is set in the context
