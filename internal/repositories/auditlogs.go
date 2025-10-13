@@ -1,11 +1,17 @@
 package repositories
 
 import (
+	"Keyline/internal/database"
+	"Keyline/internal/logging"
+	"Keyline/internal/middlewares"
+	"Keyline/ioc"
 	"Keyline/utils"
+	"context"
 	"encoding/json"
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/huandu/go-sqlbuilder"
 )
 
 type AuditLog struct {
@@ -151,10 +157,46 @@ func (f AuditLogFilter) UserId(userId uuid.UUID) AuditLogFilter {
 }
 
 type AuditLogRepository interface {
+	Insert(ctx context.Context, auditLog *AuditLog) error
 }
 
 type auditLogRepository struct{}
 
 func NewAuditLogRepository() AuditLogRepository {
 	return &auditLogRepository{}
+}
+
+func (r *auditLogRepository) Insert(ctx context.Context, auditLog *AuditLog) error {
+	scope := middlewares.GetScope(ctx)
+	dbService := ioc.GetDependency[database.DbService](scope)
+
+	tx, err := dbService.GetTx()
+	if err != nil {
+		return fmt.Errorf("failed to open tx: %w", err)
+	}
+
+	s := sqlbuilder.InsertInto("audit_logs").
+		Cols("virtual_server_id", "user_id", "request_type", "request", "response", "allowed", "allow_reason_type", "allow_reason").
+		Values(
+			auditLog.virtualServerId,
+			auditLog.userId,
+			auditLog.requestType,
+			auditLog.request,
+			auditLog.response,
+			auditLog.allowed,
+			auditLog.allowReasonType,
+			auditLog.allowReason,
+		).Returning("id", "audit_created_at", "audit_updated_at", "version")
+
+	query, args := s.Build()
+	logging.Logger.Debug("executing sql: ", query)
+	row := tx.QueryRowContext(ctx, query, args...)
+
+	err = row.Scan(&auditLog.id, &auditLog.auditCreatedAt, &auditLog.auditUpdatedAt, &auditLog.version)
+	if err != nil {
+		return fmt.Errorf("scanning row: %w", err)
+	}
+
+	auditLog.clearChanges()
+	return nil
 }
