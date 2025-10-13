@@ -31,7 +31,7 @@ func TestBehaviourCalled(t *testing.T) {
 	})
 
 	behaviourCalled := false
-	RegisterBehaviour(m, func(ctx context.Context, request string, next Next) error {
+	RegisterBehaviour(m, func(ctx context.Context, request string, next Next) (any, error) {
 		behaviourCalled = true
 		return next()
 	})
