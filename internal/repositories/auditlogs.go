@@ -117,8 +117,6 @@ func (a *AuditLog) AllowReason() *string {
 }
 
 type AuditLogFilter struct {
-	pagingInfo
-	orderInfo
 	virtualServerId *uuid.UUID
 	userId          *uuid.UUID
 }
