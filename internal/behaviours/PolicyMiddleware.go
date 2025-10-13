@@ -38,12 +38,17 @@ func (p PolicyResult) Reason() AllowReason {
 
 type AllowReason interface {
 	ImplementsAllowReason()
+	GetReasonType() string
 }
 
 type AllowedByAnyone struct{}
 
 func NewAllowedByAnyone() AllowedByAnyone {
 	return AllowedByAnyone{}
+}
+
+func (a AllowedByAnyone) GetReasonType() string {
+	return "anyone"
 }
 
 func (a AllowedByAnyone) String() string {
@@ -56,6 +61,10 @@ type AllowedByOwnership struct{}
 
 func NewAllowedByOwnership() AllowedByOwnership {
 	return AllowedByOwnership{}
+}
+
+func (a AllowedByOwnership) GetReasonType() string {
+	return "ownership"
 }
 
 func (a AllowedByOwnership) String() string {
@@ -74,6 +83,10 @@ func NewAllowedByPermission(permission permissions.Permission, sourceRoles []rol
 		Permission:  permission,
 		SourceRoles: sourceRoles,
 	}
+}
+
+func (a AllowedByPermission) GetReasonType() string {
+	return "permission"
 }
 
 func (a AllowedByPermission) String() string {
