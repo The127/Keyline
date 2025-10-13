@@ -102,7 +102,7 @@ func main() {
 		return services.NewSessionService()
 	})
 	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) behaviours.AuditLogger {
-		return audit.NewConsoleAuditLogger()
+		return audit.NewDbAuditLogger()
 	})
 
 	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.UserRepository {
