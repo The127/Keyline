@@ -18,6 +18,10 @@ type DeleteApplication struct {
 	ApplicationId     uuid.UUID
 }
 
+func (a DeleteApplication) LogResponse() bool {
+	return true
+}
+
 func (a DeleteApplication) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
 	return behaviours.PermissionBasedPolicy(ctx, permissions.ApplicationDelete)
 }

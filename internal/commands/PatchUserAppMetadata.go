@@ -21,6 +21,10 @@ type PatchUserAppMetadata struct {
 	Metadata          map[string]any
 }
 
+func (a PatchUserAppMetadata) LogResponse() bool {
+	return true
+}
+
 func (a PatchUserAppMetadata) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
 	return behaviours.PermissionBasedPolicy(ctx, permissions.AppMetadataUpdateAny)
 }

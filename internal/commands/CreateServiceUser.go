@@ -17,6 +17,10 @@ type CreateServiceUser struct {
 	Username          string
 }
 
+func (a CreateServiceUser) LogResponse() bool {
+	return true
+}
+
 func (a CreateServiceUser) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
 	return behaviours.PermissionBasedPolicy(ctx, permissions.ServiceUserCreate)
 }

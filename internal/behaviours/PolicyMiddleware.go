@@ -134,6 +134,7 @@ func Denied(userId uuid.UUID, virtualServerId uuid.UUID) PolicyResult {
 type Policy interface {
 	IsAllowed(ctx context.Context) (PolicyResult, error)
 	GetRequestName() string
+	LogResponse() bool
 }
 
 func PolicyBehaviour(ctx context.Context, request Policy, next mediator.Next) (any, error) {
@@ -152,8 +153,13 @@ func PolicyBehaviour(ctx context.Context, request Policy, next mediator.Next) (a
 	if err == nil {
 		scope := middlewares.GetScope(ctx)
 		auditLogger := ioc.GetDependency[AuditLogger](scope)
-		// only log the response if the request says so (TODO: add function to interface)
-		err = auditLogger.Log(ctx, request, policyResult, response)
+
+		var logResponse any = nil
+		if request.LogResponse() {
+			logResponse = response
+		}
+
+		err = auditLogger.Log(ctx, request, policyResult, logResponse)
 		if err != nil {
 			return nil, fmt.Errorf("failed to log request: %w", err)
 		}

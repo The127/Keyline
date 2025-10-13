@@ -18,6 +18,10 @@ type GetRoleQuery struct {
 	RoleId            uuid.UUID
 }
 
+func (a GetRoleQuery) LogResponse() bool {
+	return false
+}
+
 func (a GetRoleQuery) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
 	return behaviours.PermissionBasedPolicy(ctx, permissions.RoleView)
 }

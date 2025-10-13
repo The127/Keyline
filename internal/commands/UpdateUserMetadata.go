@@ -19,6 +19,10 @@ type UpdateUserMetadata struct {
 	Metadata          map[string]any
 }
 
+func (a UpdateUserMetadata) LogResponse() bool {
+	return true
+}
+
 func (a UpdateUserMetadata) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
 	return behaviours.PermissionBasedPolicy(ctx, permissions.UserMetadataUpdate)
 }

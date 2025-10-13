@@ -20,6 +20,10 @@ type GetUserMetadata struct {
 	ApplicationIds                *[]uuid.UUID
 }
 
+func (a GetUserMetadata) LogResponse() bool {
+	return false
+}
+
 func (a GetUserMetadata) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
 	return behaviours.PermissionBasedPolicy(ctx, permissions.UserMetadataView)
 }

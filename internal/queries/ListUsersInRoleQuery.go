@@ -20,6 +20,10 @@ type ListUsersInRole struct {
 	RoleId            uuid.UUID
 }
 
+func (a ListUsersInRole) LogResponse() bool {
+	return false
+}
+
 func (a ListUsersInRole) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
 	return behaviours.PermissionBasedPolicy(ctx, permissions.UserView)
 }

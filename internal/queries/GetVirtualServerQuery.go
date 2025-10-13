@@ -17,6 +17,10 @@ type GetVirtualServerQuery struct {
 	VirtualServerName string
 }
 
+func (a GetVirtualServerQuery) LogResponse() bool {
+	return false
+}
+
 func (a GetVirtualServerQuery) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
 	return behaviours.PermissionBasedPolicy(ctx, permissions.VirtualServerView)
 }

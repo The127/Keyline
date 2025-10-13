@@ -20,6 +20,10 @@ type ListTemplates struct {
 	SearchText        string
 }
 
+func (a ListTemplates) LogResponse() bool {
+	return false
+}
+
 func (a ListTemplates) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
 	return behaviours.PermissionBasedPolicy(ctx, permissions.TemplateView)
 }

@@ -18,6 +18,10 @@ type PatchUser struct {
 	DisplayName       *string
 }
 
+func (a PatchUser) LogResponse() bool {
+	return true
+}
+
 func (a PatchUser) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
 	return behaviours.PermissionBasedPolicy(ctx, permissions.UserUpdate)
 }

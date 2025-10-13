@@ -22,6 +22,10 @@ type CreateUser struct {
 	EmailVerified     bool
 }
 
+func (a CreateUser) LogResponse() bool {
+	return true
+}
+
 func (a CreateUser) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
 	return behaviours.PermissionBasedPolicy(ctx, permissions.UserCreate)
 }

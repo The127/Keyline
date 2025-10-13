@@ -20,6 +20,10 @@ type ListGroups struct {
 	SearchText        string
 }
 
+func (a ListGroups) LogResponse() bool {
+	return false
+}
+
 func (a ListGroups) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
 	return behaviours.PermissionBasedPolicy(ctx, permissions.GroupView)
 }
