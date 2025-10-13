@@ -12,6 +12,7 @@ package main
 import (
 	"Keyline/internal/authentication"
 	"Keyline/internal/behaviours"
+	"Keyline/internal/caching"
 	"Keyline/internal/clock"
 	"Keyline/internal/commands"
 	"Keyline/internal/config"
@@ -69,7 +70,7 @@ func main() {
 	})
 
 	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) services.KeyCache {
-		return services.NewMemoryCache[string, services.KeyPair]()
+		return caching.NewMemoryCache[string, services.KeyPair]()
 	})
 	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) services.KeyStore {
 		switch config.C.KeyStore.Mode {
