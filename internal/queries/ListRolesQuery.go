@@ -21,6 +21,10 @@ type ListRoles struct {
 	SearchText        string
 }
 
+func (a ListRoles) LogResponse() bool {
+	return false
+}
+
 func (a ListRoles) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
 	return behaviours.PermissionBasedPolicy(ctx, permissions.RoleView)
 }

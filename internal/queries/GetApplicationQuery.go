@@ -18,6 +18,10 @@ type GetApplication struct {
 	ApplicationId     uuid.UUID
 }
 
+func (a GetApplication) LogResponse() bool {
+	return false
+}
+
 func (a GetApplication) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
 	return behaviours.PermissionBasedPolicy(ctx, permissions.ApplicationView)
 }

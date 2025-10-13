@@ -18,6 +18,10 @@ type AssociateServiceUserPublicKey struct {
 	PublicKey         string
 }
 
+func (a AssociateServiceUserPublicKey) LogResponse() bool {
+	return true
+}
+
 func (a AssociateServiceUserPublicKey) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
 	return behaviours.PermissionBasedPolicy(ctx, permissions.ServiceUserAssociateKey)
 }

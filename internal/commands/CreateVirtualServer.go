@@ -29,6 +29,10 @@ type CreateVirtualServer struct {
 	SigningAlgorithm   config.SigningAlgorithm
 }
 
+func (a CreateVirtualServer) LogResponse() bool {
+	return true
+}
+
 func (a CreateVirtualServer) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
 	return behaviours.PermissionBasedPolicy(ctx, permissions.VirtualServerCreate)
 }

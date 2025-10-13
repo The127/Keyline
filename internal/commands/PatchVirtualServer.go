@@ -19,6 +19,10 @@ type PatchVirtualServer struct {
 	RequireEmailVerification *bool
 }
 
+func (a PatchVirtualServer) LogResponse() bool {
+	return true
+}
+
 func (a PatchVirtualServer) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
 	return behaviours.PermissionBasedPolicy(ctx, permissions.VirtualServerUpdate)
 }

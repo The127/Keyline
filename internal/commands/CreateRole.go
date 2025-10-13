@@ -23,6 +23,10 @@ type CreateRole struct {
 	MaxTokenAge       time.Duration
 }
 
+func (a CreateRole) LogResponse() bool {
+	return true
+}
+
 func (a CreateRole) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
 	return behaviours.PermissionBasedPolicy(ctx, permissions.RoleCreate)
 }

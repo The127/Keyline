@@ -20,6 +20,10 @@ type ListApplications struct {
 	SearchText        string
 }
 
+func (a ListApplications) LogResponse() bool {
+	return false
+}
+
 func (a ListApplications) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
 	return behaviours.PermissionBasedPolicy(ctx, permissions.ApplicationView)
 }

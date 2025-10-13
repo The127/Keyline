@@ -21,6 +21,10 @@ type ResetPassword struct {
 	Temporary   bool
 }
 
+func (a ResetPassword) LogResponse() bool {
+	return true
+}
+
 func (a ResetPassword) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
 	// TODO: users should be able to reset their own password
 	return behaviours.PermissionBasedPolicy(ctx, permissions.UserResetPassword)

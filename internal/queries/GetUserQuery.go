@@ -18,6 +18,10 @@ type GetUserQuery struct {
 	VirtualServerName string
 }
 
+func (a GetUserQuery) LogResponse() bool {
+	return false
+}
+
 func (a GetUserQuery) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
 	return behaviours.PermissionBasedPolicy(ctx, permissions.UserView)
 }

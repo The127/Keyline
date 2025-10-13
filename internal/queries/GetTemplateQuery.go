@@ -18,6 +18,10 @@ type GetTemplate struct {
 	Type              repositories.TemplateType
 }
 
+func (a GetTemplate) LogResponse() bool {
+	return false
+}
+
 func (a GetTemplate) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
 	return behaviours.PermissionBasedPolicy(ctx, permissions.TemplateView)
 }

@@ -19,6 +19,10 @@ type AssignRoleToUser struct {
 	ApplicationId     *uuid.UUID
 }
 
+func (a AssignRoleToUser) LogResponse() bool {
+	return true
+}
+
 func (a AssignRoleToUser) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
 	return behaviours.PermissionBasedPolicy(ctx, permissions.RoleAssign)
 }

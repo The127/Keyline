@@ -18,6 +18,10 @@ type PatchApplication struct {
 	DisplayName       *string
 }
 
+func (a PatchApplication) LogResponse() bool {
+	return true
+}
+
 func (a PatchApplication) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
 	return behaviours.PermissionBasedPolicy(ctx, permissions.ApplicationUpdate)
 }
