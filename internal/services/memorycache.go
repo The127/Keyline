@@ -3,8 +3,8 @@ package services
 import "sync"
 
 type Cache[TKey comparable, TValue any] interface {
-	TryGet(name TKey) (TValue, bool)
-	Put(name TKey, pair TValue)
+	TryGet(key TKey) (TValue, bool)
+	Put(key TKey, pair TValue)
 }
 
 type memoryCache[TKey comparable, TValue any] struct {
@@ -18,17 +18,17 @@ func NewMemoryCache[TKey comparable, TValue any]() Cache[TKey, TValue] {
 	}
 }
 
-func (k *memoryCache[TKey, TValue]) TryGet(name TKey) (TValue, bool) {
+func (k *memoryCache[TKey, TValue]) TryGet(key TKey) (TValue, bool) {
 	k.mu.RLock()
 	defer k.mu.RUnlock()
 
-	keyPair, ok := k.keyPairs[name]
+	keyPair, ok := k.keyPairs[key]
 	return keyPair, ok
 }
 
-func (k *memoryCache[TKey, TValue]) Put(name TKey, pair TValue) {
+func (k *memoryCache[TKey, TValue]) Put(key TKey, pair TValue) {
 	k.mu.Lock()
 	defer k.mu.Unlock()
 
-	k.keyPairs[name] = pair
+	k.keyPairs[key] = pair
 }
