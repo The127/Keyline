@@ -5,6 +5,7 @@ import "sync"
 type Cache[TKey comparable, TValue any] interface {
 	TryGet(key TKey) (TValue, bool)
 	Put(key TKey, pair TValue)
+	Clear()
 }
 
 type memoryCache[TKey comparable, TValue any] struct {
@@ -31,4 +32,11 @@ func (k *memoryCache[TKey, TValue]) Put(key TKey, pair TValue) {
 	defer k.mu.Unlock()
 
 	k.keyPairs[key] = pair
+}
+
+func (k *memoryCache[TKey, TValue]) Clear() {
+	k.mu.Lock()
+	defer k.mu.Unlock()
+
+	k.keyPairs = make(map[TKey]TValue)
 }
