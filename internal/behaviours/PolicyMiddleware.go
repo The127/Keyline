@@ -5,6 +5,7 @@ import (
 	"Keyline/internal/authentication/permissions"
 	"Keyline/internal/authentication/roles"
 	"Keyline/internal/middlewares"
+	"Keyline/internal/repositories"
 	"Keyline/ioc"
 	"Keyline/mediator"
 	"Keyline/utils"
@@ -19,9 +20,10 @@ type AuditLogger interface {
 }
 
 type PolicyResult struct {
-	allowed bool
-	userId  uuid.UUID
-	reason  AllowReason
+	allowed         bool
+	userId          uuid.UUID
+	virtualServerId uuid.UUID
+	reason          AllowReason
 }
 
 func (p PolicyResult) IsAllowed() bool {
@@ -32,6 +34,10 @@ func (p PolicyResult) UserId() uuid.UUID {
 	return p.userId
 }
 
+func (p PolicyResult) VirtualServerId() uuid.UUID {
+	return p.virtualServerId
+}
+
 func (p PolicyResult) Reason() AllowReason {
 	return p.reason
 }
@@ -39,12 +45,17 @@ func (p PolicyResult) Reason() AllowReason {
 type AllowReason interface {
 	ImplementsAllowReason()
 	GetReasonType() string
+	IsServiceUserReason() bool
 }
 
 type AllowedByAnyone struct{}
 
 func NewAllowedByAnyone() AllowedByAnyone {
 	return AllowedByAnyone{}
+}
+
+func (a AllowedByAnyone) IsServiceUserReason() bool {
+	return false
 }
 
 func (a AllowedByAnyone) GetReasonType() string {
@@ -63,6 +74,10 @@ func NewAllowedByOwnership() AllowedByOwnership {
 	return AllowedByOwnership{}
 }
 
+func (a AllowedByOwnership) IsServiceUserReason() bool {
+	return false
+}
+
 func (a AllowedByOwnership) GetReasonType() string {
 	return "ownership"
 }
@@ -76,6 +91,10 @@ func (a AllowedByOwnership) ImplementsAllowReason() {}
 type AllowedByPermission struct {
 	Permission  permissions.Permission
 	SourceRoles []roles.Role
+}
+
+func (a AllowedByPermission) IsServiceUserReason() bool {
+	return a.Permission == permissions.SystemUser
 }
 
 func NewAllowedByPermission(permission permissions.Permission, sourceRoles []roles.Role) AllowedByPermission {
@@ -95,18 +114,20 @@ func (a AllowedByPermission) String() string {
 
 func (a AllowedByPermission) ImplementsAllowReason() {}
 
-func Allowed(userId uuid.UUID, reason AllowReason) PolicyResult {
+func Allowed(userId uuid.UUID, virtualServerId uuid.UUID, reason AllowReason) PolicyResult {
 	return PolicyResult{
-		allowed: true,
-		userId:  userId,
-		reason:  reason,
+		allowed:         true,
+		userId:          userId,
+		virtualServerId: virtualServerId,
+		reason:          reason,
 	}
 }
 
-func Denied(userId uuid.UUID) PolicyResult {
+func Denied(userId uuid.UUID, virtualServerId uuid.UUID) PolicyResult {
 	return PolicyResult{
-		allowed: false,
-		userId:  userId,
+		allowed:         false,
+		userId:          userId,
+		virtualServerId: virtualServerId,
 	}
 }
 
@@ -138,10 +159,39 @@ func PolicyBehaviour(ctx context.Context, request Policy, next mediator.Next) er
 func evaluatePolicy(ctx context.Context, request Policy) (PolicyResult, error) {
 	currentUser := authentication.GetCurrentUser(ctx)
 	isSystemUser := currentUser.HasPermission(permissions.SystemUser)
+
+	virtualServerName, err := middlewares.GetVirtualServerName(ctx)
+	if err != nil {
+		virtualServerName = ""
+	}
+	virtualServerId := uuid.Nil
+
+	// if virtual server name is not set, we don't need to check for virtual server
+	// this should only happen for internal bootrstrap requests where there is no virtual server yet
+	// and we don't want to fail on that
+	// this can only be the case for the system user
+	// cron jobs and other internal requests should ensure that the virtual server is set in the context
+	if virtualServerName != "" {
+		scope := middlewares.GetScope(ctx)
+
+		virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
+		virtualServerFilter := repositories.NewVirtualServerFilter().Name(virtualServerName)
+		virtualServer, err := virtualServerRepository.First(ctx, virtualServerFilter)
+		if err != nil {
+			return PolicyResult{}, fmt.Errorf("getting virtual server: %w", err)
+		}
+
+		virtualServerId = virtualServer.Id()
+	}
+
 	if isSystemUser.IsSuccess() {
 		return Allowed(
 			currentUser.UserId,
-			NewAllowedByPermission(permissions.SystemUser, isSystemUser.SourceRoles),
+			virtualServerId,
+			NewAllowedByPermission(
+				permissions.SystemUser,
+				isSystemUser.SourceRoles,
+			),
 		), nil
 	}
 
@@ -149,18 +199,39 @@ func evaluatePolicy(ctx context.Context, request Policy) (PolicyResult, error) {
 }
 
 func PermissionBasedPolicy(ctx context.Context, permission permissions.Permission) (PolicyResult, error) {
+	virtualServerName, err := middlewares.GetVirtualServerName(ctx)
+	if err != nil {
+		virtualServerName = ""
+	}
+
+	virtualServerId := uuid.Nil
+
+	if virtualServerName != "" {
+		scope := middlewares.GetScope(ctx)
+
+		virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
+		virtualServerFilter := repositories.NewVirtualServerFilter().Name(virtualServerName)
+		virtualServer, err := virtualServerRepository.First(ctx, virtualServerFilter)
+		if err != nil {
+			return PolicyResult{}, fmt.Errorf("getting virtual server: %w", err)
+		}
+
+		virtualServerId = virtualServer.Id()
+	}
+
 	currentUser := authentication.GetCurrentUser(ctx)
 	if !currentUser.IsAuthenticated() {
-		return Denied(currentUser.UserId), nil
+		return Denied(currentUser.UserId, virtualServerId), nil
 	}
 
 	hasPermission := currentUser.HasPermission(permission)
 	if !hasPermission.IsSuccess() {
-		return Denied(currentUser.UserId), nil
+		return Denied(currentUser.UserId, virtualServerId), nil
 	}
 
 	return Allowed(
 		currentUser.UserId,
+		virtualServerId,
 		NewAllowedByPermission(
 			permission,
 			hasPermission.SourceRoles,
