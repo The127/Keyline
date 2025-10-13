@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"Keyline/internal/caching"
 	"Keyline/internal/config"
 	"Keyline/internal/database"
 	"Keyline/internal/logging"
@@ -107,8 +108,20 @@ type VirtualServerFilter struct {
 	id   *uuid.UUID
 }
 
+type virtualServerFilterCacheKey struct {
+	name string
+	id   uuid.UUID
+}
+
 func NewVirtualServerFilter() VirtualServerFilter {
 	return VirtualServerFilter{}
+}
+
+func (f VirtualServerFilter) getCacheKey() virtualServerFilterCacheKey {
+	return virtualServerFilterCacheKey{
+		name: utils.ZeroIfNil(f.name),
+		id:   utils.ZeroIfNil(f.id),
+	}
 }
 
 func (f VirtualServerFilter) Clone() VirtualServerFilter {
@@ -143,11 +156,16 @@ type VirtualServerRepository interface {
 	Update(ctx context.Context, virtualServer *VirtualServer) error
 }
 
+type virtualServerCache caching.Cache[virtualServerFilterCacheKey, *VirtualServer]
+
 type virtualServerRepository struct {
+	cache virtualServerCache
 }
 
 func NewVirtualServerRepository() VirtualServerRepository {
-	return &virtualServerRepository{}
+	return &virtualServerRepository{
+		cache: caching.NewMemoryCache[virtualServerFilterCacheKey, *VirtualServer](),
+	}
 }
 
 func (r *virtualServerRepository) selectQuery(filter VirtualServerFilter) *sqlbuilder.SelectBuilder {
@@ -219,6 +237,13 @@ func (r *virtualServerRepository) Single(ctx context.Context, filter VirtualServ
 }
 
 func (r *virtualServerRepository) First(ctx context.Context, filter VirtualServerFilter) (*VirtualServer, error) {
+	cacheKey := filter.getCacheKey()
+	cachedValue, ok := r.cache.TryGet(cacheKey)
+	if ok {
+		logging.Logger.Debug("cache hit for virtual server")
+		return cachedValue, nil
+	}
+
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -245,6 +270,8 @@ func (r *virtualServerRepository) First(ctx context.Context, filter VirtualServe
 	case err != nil:
 		return nil, fmt.Errorf("scanning row: %w", err)
 	}
+
+	r.cache.Put(cacheKey, &virtualServer)
 
 	return &virtualServer, nil
 }
