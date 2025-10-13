@@ -1,6 +1,7 @@
 package services
 
 import (
+	"Keyline/internal/caching"
 	"Keyline/internal/config"
 	"Keyline/utils"
 	"crypto/ed25519"
@@ -146,7 +147,7 @@ func (d *directoryKeyStore) getPath(virtualServerName string, algorithm config.S
 	return filepath.Join(config.C.KeyStore.Directory.Path, virtualServerName, string(algorithm))
 }
 
-type KeyCache Cache[string, KeyPair]
+type KeyCache caching.Cache[string, KeyPair]
 
 type KeyPair struct {
 	algorithm  config.SigningAlgorithm
