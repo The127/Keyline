@@ -48,8 +48,8 @@ func (d *dbAuditLogger) Log(ctx context.Context, policy behaviours.Policy, polic
 	var auditLogEntry *repositories.AuditLog
 	if policyResult.IsAllowed() {
 		entry, err := repositories.NewAllowedAuditLog(
-			policyResult.UserId(),
 			policyResult.VirtualServerId(),
+			policyResult.UserId(),
 			policy,
 			nil, // TODO pass the result into the logger
 			policyResult.Reason(),
@@ -60,8 +60,8 @@ func (d *dbAuditLogger) Log(ctx context.Context, policy behaviours.Policy, polic
 		auditLogEntry = entry
 	} else {
 		entry, err := repositories.NewDeniedAuditLog(
-			policyResult.UserId(),
 			policyResult.VirtualServerId(),
+			policyResult.UserId(),
 			policy,
 		)
 		if err != nil {
