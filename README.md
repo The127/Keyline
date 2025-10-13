@@ -11,13 +11,13 @@
 - 👥 **User Management** - Complete user lifecycle management with registration, verification, and password reset
 - 🎭 **Role-Based Access Control (RBAC)** - Fine-grained permissions with roles and groups
 - 🔑 **Multiple Application Support** - Manage multiple client applications (public and confidential)
-- 📧 **Email Integration** - Built-in email verification and notification system
+- 📧 **Email Integration** - Built-in email verification and notification system (work-in-progress)
 - 🔒 **Multi-Factor Authentication (MFA)** - TOTP-based 2FA support
 - 🏢 **Virtual Servers** - Multi-tenancy support via virtual servers
 - 📝 **Template System** - Customizable email templates
 - 📊 **Audit Logging** - Comprehensive audit trail for security and compliance
 - 🔄 **Session Management** - Secure session handling with Redis support
-- 🔐 **Flexible Key Storage** - Support for directory-based and OpenBao key stores
+- 🔐 **Flexible Key Storage** - Support for directory-based key stores (OpenBao support work-in-progress)
 - 🎯 **Service Users** - Support for service accounts with public key authentication
 - 📦 **User Metadata** - Store custom user and application-specific metadata
 - 🔧 **Built-in IoC Container** - Lightweight dependency injection with transient, scoped, and singleton lifetimes
@@ -34,11 +34,6 @@ Keyline follows a clean architecture pattern with clear separation of concerns:
 - **Services** - Core business services
 - **Mediator** - Request/event mediator pattern for decoupled communication
 - **IoC Container** - Custom dependency injection container
-
-### Supported Signing Algorithms
-
-- RS256 (RSA with SHA-256)
-- EdDSA (Ed25519)
 
 ## Prerequisites
 
@@ -133,18 +128,37 @@ go build -o keyline ./cmd/api
 ./keyline --config config.local.yaml
 ```
 
-Or use the Makefile if available:
-
-```bash
-make build
-make run
-```
-
 ### 6. Access the Application
 
 - **API**: http://localhost:8081
 - **API Documentation**: http://localhost:8081/swagger/index.html
 - **Mailpit UI**: http://localhost:8025
+
+## Admin UI
+
+Keyline has a separate web UI for administration available at [KeylineUI](https://github.com/The127/KeylineUi).
+
+### Running KeylineUI with Docker
+
+The UI is available as a container image: `ghcr.io/the127/keyline-ui:v0.1.2`
+
+Example docker-compose configuration:
+
+```yaml
+keyline-ui:
+  image: ghcr.io/the127/keyline-ui:v0.1.2
+  container_name: keyline-ui
+  restart: unless-stopped
+  environment:
+    KEYLINE_API_URL: "https://api.sso.example.com"  # URL to your Keyline API
+    KEYLINE_HOST: "https://sso.example.com"          # Public URL for the UI
+  ports:
+    - "3000:80"  # Map to your desired port
+```
+
+**Environment Variables:**
+- `KEYLINE_API_URL` - The URL where your Keyline API is accessible
+- `KEYLINE_HOST` - The public URL where the UI will be accessed
 
 ## Configuration
 
