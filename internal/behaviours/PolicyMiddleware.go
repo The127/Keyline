@@ -16,7 +16,7 @@ import (
 )
 
 type AuditLogger interface {
-	Log(ctx context.Context, policy Policy, result PolicyResult) error
+	Log(ctx context.Context, policy Policy, policyResult PolicyResult, response any) error
 }
 
 type PolicyResult struct {
@@ -142,19 +142,22 @@ func PolicyBehaviour(ctx context.Context, request Policy, next mediator.Next) (a
 		return nil, fmt.Errorf("failed to check if request is allowed: %w", err)
 	}
 
-	scope := middlewares.GetScope(ctx)
-	auditLogger := ioc.GetDependency[AuditLogger](scope)
-	err = auditLogger.Log(ctx, request, policyResult)
-	if err != nil {
-		return fmt.Errorf("failed to log request: %w", err)
-	}
-
 	if !policyResult.allowed {
 		return nil, fmt.Errorf("request not allowed: %w", utils.ErrHttpUnauthorized)
 	}
 
-	return next()
 	response, err := next()
+
+	// don't log if there was an error
+	if err == nil {
+		scope := middlewares.GetScope(ctx)
+		auditLogger := ioc.GetDependency[AuditLogger](scope)
+		// only log the response if the request says so (TODO: add function to interface)
+		err = auditLogger.Log(ctx, request, policyResult, response)
+		if err != nil {
+			return nil, fmt.Errorf("failed to log request: %w", err)
+		}
+	}
 
 	return response, err
 }
