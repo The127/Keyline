@@ -144,6 +144,9 @@ func main() {
 	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.ApplicationUserMetadataRepository {
 		return repositories.NewApplicationUserMetadataRepository()
 	})
+	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.AuditLogRepository {
+		return repositories.NewAuditLogRepository()
+	})
 
 	setupMediator(dc)
 	dp := dc.BuildProvider()
