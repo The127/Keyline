@@ -27,6 +27,7 @@ import (
 	"Keyline/internal/server"
 	"Keyline/internal/services"
 	"Keyline/internal/services/audit"
+	"Keyline/internal/services/claimsMapping"
 	"Keyline/ioc"
 	"Keyline/mediator"
 	"Keyline/utils"
@@ -89,6 +90,9 @@ func main() {
 			ioc.GetDependency[services.KeyCache](dp),
 			ioc.GetDependency[services.KeyStore](dp),
 		)
+	})
+	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) claimsMapping.ClaimsMapper {
+		return claimsMapping.NewClaimsMapper()
 	})
 	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) services.MailService {
 		return services.NewMailService()
