@@ -19,18 +19,18 @@ type PagedAuditLogResponseDto struct {
 }
 
 type ListAuditLogResponseDto struct {
-	Id     uuid.UUID `json:"id"`
-	UserId *uuid.UUID
+	Id     uuid.UUID  `json:"id"`
+	UserId *uuid.UUID `json:"userId"`
 
-	RequestType  string
-	RequestData  map[string]any
-	ResponseData *map[string]any
+	RequestType  string          `json:"requestType"`
+	RequestData  map[string]any  `json:"requestData"`
+	ResponseData *map[string]any `json:"responseData"`
 
-	Allowed         bool
-	AllowReasonType *string
-	AllowReason     *map[string]any
+	Allowed         bool            `json:"allowed"`
+	AllowReasonType *string         `json:"allowReasonType"`
+	AllowReason     *map[string]any `json:"allowReason"`
 
-	CreatedAt time.Time
+	CreatedAt time.Time `json:"createdAt"`
 }
 
 // ListAuditLog
