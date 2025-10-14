@@ -84,6 +84,23 @@ func NewDeniedAuditLog(virtualServerId uuid.UUID, userId uuid.UUID, request Requ
 	}, nil
 }
 
+func (a *AuditLog) getScanPointers() []any {
+	return []any{
+		&a.id,
+		&a.auditCreatedAt,
+		&a.auditUpdatedAt,
+		&a.version,
+		&a.virtualServerId,
+		&a.userId,
+		&a.requestType,
+		&a.request,
+		&a.response,
+		&a.allowed,
+		&a.allowReasonType,
+		&a.allowReason,
+	}
+}
+
 func (a *AuditLog) VirtualServerId() uuid.UUID {
 	return a.virtualServerId
 }
@@ -117,6 +134,8 @@ func (a *AuditLog) AllowReason() *string {
 }
 
 type AuditLogFilter struct {
+	pagingInfo
+	orderInfo
 	virtualServerId *uuid.UUID
 	userId          *uuid.UUID
 }
@@ -141,7 +160,26 @@ func (f AuditLogFilter) UserId(userId uuid.UUID) AuditLogFilter {
 	return filter
 }
 
+func (f AuditLogFilter) Pagination(page int, pageSize int) AuditLogFilter {
+	filter := f.Clone()
+	filter.pagingInfo = pagingInfo{
+		page: page,
+		size: pageSize,
+	}
+	return filter
+}
+
+func (f AuditLogFilter) Order(by string, direction string) AuditLogFilter {
+	filter := f.Clone()
+	filter.orderInfo = orderInfo{
+		orderBy:  by,
+		orderDir: direction,
+	}
+	return filter
+}
+
 type AuditLogRepository interface {
+	List(ctx context.Context, filter AuditLogFilter) ([]*AuditLog, int, error)
 	Insert(ctx context.Context, auditLog *AuditLog) error
 }
 
@@ -149,6 +187,73 @@ type auditLogRepository struct{}
 
 func NewAuditLogRepository() AuditLogRepository {
 	return &auditLogRepository{}
+}
+
+func (r *auditLogRepository) selectQuery(filter AuditLogFilter) *sqlbuilder.SelectBuilder {
+	s := sqlbuilder.Select(
+		"id",
+		"audit_created_at",
+		"audit_updated_at",
+		"version",
+		"virtual_server_id",
+		"user_id",
+		"request_type",
+		"request",
+		"response",
+		"allowed",
+		"allow_reason_type",
+		"allow_reason",
+	).From("audit_logs")
+
+	if filter.virtualServerId != nil {
+		s.Where(s.Equal("virtual_server_id", filter.virtualServerId))
+	}
+
+	if filter.userId != nil {
+		s.Where(s.Equal("user_id", filter.userId))
+	}
+
+	filter.pagingInfo.apply(s)
+	filter.orderInfo.apply(s)
+
+	return s
+}
+
+func (r *auditLogRepository) List(ctx context.Context, filter AuditLogFilter) ([]*AuditLog, int, error) {
+	scope := middlewares.GetScope(ctx)
+	dbService := ioc.GetDependency[database.DbService](scope)
+
+	tx, err := dbService.GetTx()
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to open tx: %w", err)
+	}
+
+	s := r.selectQuery(filter)
+	s.SelectMore("count(*) over()")
+
+	query, args := s.Build()
+	logging.Logger.Debug("executing sql: ", query)
+	rows, err := tx.Query(query, args...)
+	if err != nil {
+		return nil, 0, fmt.Errorf("querying db: %w", err)
+	}
+	defer utils.PanicOnError(rows.Close, "closing rows")
+
+	var auditLogs []*AuditLog
+	var totalCount int
+	for rows.Next() {
+		auditLog := AuditLog{
+			ModelBase: NewModelBase(),
+		}
+		err = rows.Scan(append(auditLog.getScanPointers(), &totalCount)...)
+		if err != nil {
+			return nil, 0, fmt.Errorf("scanning row: %w", err)
+		}
+
+		auditLogs = append(auditLogs, &auditLog)
+	}
+
+	return auditLogs, totalCount, nil
 }
 
 func (r *auditLogRepository) Insert(ctx context.Context, auditLog *AuditLog) error {
