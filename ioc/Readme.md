@@ -8,7 +8,7 @@ with support for `transient`, `scoped`, and `singleton` lifetimes.
 - Transient, scoped, and singleton lifetimes
 - Scope hierarchy (`NewScope`)
 - Resource cleanup with close handlers
-- Thread-safe singleton initialization (using `sync.Once`)
+- Thread-safe singleton initialization (using `sync.Mutex`)
 
 ## Usage
 
