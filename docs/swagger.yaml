@@ -288,6 +288,30 @@ definitions:
       type:
         type: string
     type: object
+  handlers.ListAuditLogResponseDto:
+    properties:
+      allowReason:
+        additionalProperties: {}
+        type: object
+      allowReasonType:
+        type: string
+      allowed:
+        type: boolean
+      createdAt:
+        type: string
+      id:
+        type: string
+      requestData:
+        additionalProperties: {}
+        type: object
+      requestType:
+        type: string
+      responseData:
+        additionalProperties: {}
+        type: object
+      userId:
+        type: string
+    type: object
   handlers.ListGroupsResponseDto:
     properties:
       id:
@@ -380,6 +404,15 @@ definitions:
       items:
         items:
           $ref: '#/definitions/handlers.ListApplicationsResponseDto'
+        type: array
+      pagination:
+        $ref: '#/definitions/handlers.Pagination'
+    type: object
+  handlers.PagedAuditLogResponseDto:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/handlers.ListAuditLogResponseDto'
         type: array
       pagination:
         $ref: '#/definitions/handlers.Pagination'
@@ -553,6 +586,8 @@ definitions:
         - 1000000000
         - 60000000000
         - 3600000000000
+        - -9223372036854775808
+        - 9223372036854775807
         - 1
         - 1000
         - 1000000
@@ -570,6 +605,8 @@ definitions:
         - Second
         - Minute
         - Hour
+        - minDuration
+        - maxDuration
         - Nanosecond
         - Microsecond
         - Millisecond
@@ -666,6 +703,49 @@ paths:
       summary: Patch virtual server
       tags:
       - Admin
+  /api/virtual-servers/{virtualServerName}/audit:
+    get:
+      description: Retrieve a paginated list of audit log entries within a virtual
+        server.
+      parameters:
+      - default: keyline
+        description: Virtual server name
+        in: path
+        name: virtualServerName
+        required: true
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: pageSize
+        type: integer
+      - description: Order by field (e.g., name, createdAt)
+        in: query
+        name: orderBy
+        type: string
+      - description: Order direction (asc|desc)
+        in: query
+        name: orderDir
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.PagedAuditLogResponseDto'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: List audit log entries
+      tags:
+      - Audit
   /api/virtual-servers/{virtualServerName}/health:
     get:
       parameters:

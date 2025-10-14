@@ -134,6 +134,71 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/virtual-servers/{virtualServerName}/audit": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieve a paginated list of audit log entries within a virtual server.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Audit"
+                ],
+                "summary": "List audit log entries",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "keyline",
+                        "description": "Virtual server name",
+                        "name": "virtualServerName",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size",
+                        "name": "pageSize",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order by field (e.g., name, createdAt)",
+                        "name": "orderBy",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order direction (asc|desc)",
+                        "name": "orderDir",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.PagedAuditLogResponseDto"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/virtual-servers/{virtualServerName}/health": {
             "get": {
                 "produces": [
@@ -2823,6 +2888,41 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.ListAuditLogResponseDto": {
+            "type": "object",
+            "properties": {
+                "allowReason": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "allowReasonType": {
+                    "type": "string"
+                },
+                "allowed": {
+                    "type": "boolean"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "requestData": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "requestType": {
+                    "type": "string"
+                },
+                "responseData": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "userId": {
+                    "type": "string"
+                }
+            }
+        },
         "handlers.ListGroupsResponseDto": {
             "type": "object",
             "properties": {
@@ -2964,6 +3064,20 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/handlers.ListApplicationsResponseDto"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/handlers.Pagination"
+                }
+            }
+        },
+        "handlers.PagedAuditLogResponseDto": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.ListAuditLogResponseDto"
                     }
                 },
                 "pagination": {
@@ -3223,6 +3337,8 @@ const docTemplate = `{
                         1000000000,
                         60000000000,
                         3600000000000,
+                        -9223372036854775808,
+                        9223372036854775807,
                         1,
                         1000,
                         1000000,
@@ -3239,6 +3355,8 @@ const docTemplate = `{
                         "Second",
                         "Minute",
                         "Hour",
+                        "minDuration",
+                        "maxDuration",
                         "Nanosecond",
                         "Microsecond",
                         "Millisecond",
