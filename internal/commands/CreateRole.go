@@ -23,6 +23,10 @@ type CreateRole struct {
 	MaxTokenAge       time.Duration
 }
 
+func (a CreateRole) LogRequest() bool {
+	return true
+}
+
 func (a CreateRole) LogResponse() bool {
 	return true
 }

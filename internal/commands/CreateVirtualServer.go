@@ -29,6 +29,10 @@ type CreateVirtualServer struct {
 	SigningAlgorithm   config.SigningAlgorithm
 }
 
+func (a CreateVirtualServer) LogRequest() bool {
+	return true
+}
+
 func (a CreateVirtualServer) LogResponse() bool {
 	return true
 }

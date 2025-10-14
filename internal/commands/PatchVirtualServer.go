@@ -19,6 +19,10 @@ type PatchVirtualServer struct {
 	RequireEmailVerification *bool
 }
 
+func (a PatchVirtualServer) LogRequest() bool {
+	return true
+}
+
 func (a PatchVirtualServer) LogResponse() bool {
 	return true
 }

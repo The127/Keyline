@@ -24,6 +24,10 @@ type CreateApplication struct {
 	HashedSecret *string
 }
 
+func (c CreateApplication) LogRequest() bool {
+	return true
+}
+
 func (c CreateApplication) LogResponse() bool {
 	return true
 }

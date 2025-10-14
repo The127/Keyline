@@ -20,6 +20,10 @@ type ListUsersInRole struct {
 	RoleId            uuid.UUID
 }
 
+func (a ListUsersInRole) LogRequest() bool {
+	return true
+}
+
 func (a ListUsersInRole) LogResponse() bool {
 	return false
 }

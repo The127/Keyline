@@ -20,6 +20,10 @@ type ListApplications struct {
 	SearchText        string
 }
 
+func (a ListApplications) LogRequest() bool {
+	return true
+}
+
 func (a ListApplications) LogResponse() bool {
 	return false
 }

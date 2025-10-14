@@ -17,6 +17,10 @@ type CreateServiceUser struct {
 	Username          string
 }
 
+func (a CreateServiceUser) LogRequest() bool {
+	return true
+}
+
 func (a CreateServiceUser) LogResponse() bool {
 	return true
 }

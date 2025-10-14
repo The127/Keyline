@@ -19,6 +19,10 @@ type UpdateUserMetadata struct {
 	Metadata          map[string]any
 }
 
+func (a UpdateUserMetadata) LogRequest() bool {
+	return true
+}
+
 func (a UpdateUserMetadata) LogResponse() bool {
 	return true
 }

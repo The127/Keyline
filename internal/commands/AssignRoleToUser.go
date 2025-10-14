@@ -19,6 +19,10 @@ type AssignRoleToUser struct {
 	ApplicationId     *uuid.UUID
 }
 
+func (a AssignRoleToUser) LogRequest() bool {
+	return true
+}
+
 func (a AssignRoleToUser) LogResponse() bool {
 	return true
 }

@@ -18,6 +18,10 @@ type GetUserQuery struct {
 	VirtualServerName string
 }
 
+func (a GetUserQuery) LogRequest() bool {
+	return true
+}
+
 func (a GetUserQuery) LogResponse() bool {
 	return false
 }

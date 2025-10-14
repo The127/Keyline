@@ -18,6 +18,10 @@ type DeleteApplication struct {
 	ApplicationId     uuid.UUID
 }
 
+func (a DeleteApplication) LogRequest() bool {
+	return true
+}
+
 func (a DeleteApplication) LogResponse() bool {
 	return true
 }

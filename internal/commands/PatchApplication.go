@@ -18,6 +18,10 @@ type PatchApplication struct {
 	DisplayName       *string
 }
 
+func (a PatchApplication) LogRequest() bool {
+	return true
+}
+
 func (a PatchApplication) LogResponse() bool {
 	return true
 }

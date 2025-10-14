@@ -21,6 +21,10 @@ type ListRoles struct {
 	SearchText        string
 }
 
+func (a ListRoles) LogRequest() bool {
+	return true
+}
+
 func (a ListRoles) LogResponse() bool {
 	return false
 }

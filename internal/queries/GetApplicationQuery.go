@@ -18,6 +18,10 @@ type GetApplication struct {
 	ApplicationId     uuid.UUID
 }
 
+func (a GetApplication) LogRequest() bool {
+	return true
+}
+
 func (a GetApplication) LogResponse() bool {
 	return false
 }

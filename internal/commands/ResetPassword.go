@@ -21,6 +21,10 @@ type ResetPassword struct {
 	Temporary   bool
 }
 
+func (a ResetPassword) LogRequest() bool {
+	return true
+}
+
 func (a ResetPassword) LogResponse() bool {
 	return true
 }

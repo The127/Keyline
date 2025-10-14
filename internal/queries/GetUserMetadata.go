@@ -20,6 +20,10 @@ type GetUserMetadata struct {
 	ApplicationIds                *[]uuid.UUID
 }
 
+func (a GetUserMetadata) LogRequest() bool {
+	return true
+}
+
 func (a GetUserMetadata) LogResponse() bool {
 	return false
 }

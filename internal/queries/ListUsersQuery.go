@@ -20,6 +20,10 @@ type ListUsers struct {
 	SearchText        string
 }
 
+func (a ListUsers) LogRequest() bool {
+	return true
+}
+
 func (a ListUsers) LogResponse() bool {
 	return false
 }

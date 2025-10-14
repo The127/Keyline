@@ -20,6 +20,10 @@ type ListGroups struct {
 	SearchText        string
 }
 
+func (a ListGroups) LogRequest() bool {
+	return true
+}
+
 func (a ListGroups) LogResponse() bool {
 	return false
 }

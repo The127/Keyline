@@ -21,6 +21,10 @@ type PatchUserAppMetadata struct {
 	Metadata          map[string]any
 }
 
+func (a PatchUserAppMetadata) LogRequest() bool {
+	return true
+}
+
 func (a PatchUserAppMetadata) LogResponse() bool {
 	return true
 }

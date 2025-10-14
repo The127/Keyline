@@ -22,6 +22,10 @@ type CreateUser struct {
 	EmailVerified     bool
 }
 
+func (a CreateUser) LogRequest() bool {
+	return true
+}
+
 func (a CreateUser) LogResponse() bool {
 	return true
 }

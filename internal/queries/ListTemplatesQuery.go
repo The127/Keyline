@@ -20,6 +20,10 @@ type ListTemplates struct {
 	SearchText        string
 }
 
+func (a ListTemplates) LogRequest() bool {
+	return true
+}
+
 func (a ListTemplates) LogResponse() bool {
 	return false
 }

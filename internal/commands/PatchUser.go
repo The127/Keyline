@@ -18,6 +18,10 @@ type PatchUser struct {
 	DisplayName       *string
 }
 
+func (a PatchUser) LogRequest() bool {
+	return true
+}
+
 func (a PatchUser) LogResponse() bool {
 	return true
 }

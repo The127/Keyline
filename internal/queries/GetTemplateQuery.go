@@ -18,6 +18,10 @@ type GetTemplate struct {
 	Type              repositories.TemplateType
 }
 
+func (a GetTemplate) LogRequest() bool {
+	return true
+}
+
 func (a GetTemplate) LogResponse() bool {
 	return false
 }

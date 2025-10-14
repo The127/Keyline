@@ -135,6 +135,7 @@ type Policy interface {
 	IsAllowed(ctx context.Context) (PolicyResult, error)
 	GetRequestName() string
 	LogResponse() bool
+	LogRequest() bool
 }
 
 func PolicyBehaviour(ctx context.Context, request Policy, next mediator.Next) (any, error) {
@@ -150,7 +151,7 @@ func PolicyBehaviour(ctx context.Context, request Policy, next mediator.Next) (a
 	response, err := next()
 
 	// don't log if there was an error
-	if err == nil {
+	if err == nil || !request.LogRequest() {
 		scope := middlewares.GetScope(ctx)
 		auditLogger := ioc.GetDependency[AuditLogger](scope)
 

@@ -18,6 +18,10 @@ type AssociateServiceUserPublicKey struct {
 	PublicKey         string
 }
 
+func (a AssociateServiceUserPublicKey) LogRequest() bool {
+	return true
+}
+
 func (a AssociateServiceUserPublicKey) LogResponse() bool {
 	return true
 }

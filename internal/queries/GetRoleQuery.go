@@ -18,6 +18,10 @@ type GetRoleQuery struct {
 	RoleId            uuid.UUID
 }
 
+func (a GetRoleQuery) LogRequest() bool {
+	return true
+}
+
 func (a GetRoleQuery) LogResponse() bool {
 	return false
 }

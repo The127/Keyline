@@ -17,6 +17,10 @@ type GetVirtualServerQuery struct {
 	VirtualServerName string
 }
 
+func (a GetVirtualServerQuery) LogRequest() bool {
+	return true
+}
+
 func (a GetVirtualServerQuery) LogResponse() bool {
 	return false
 }

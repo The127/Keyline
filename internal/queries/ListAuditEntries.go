@@ -21,6 +21,10 @@ type ListAuditEntries struct {
 	VirtualServerName string
 }
 
+func (a ListAuditEntries) LogRequest() bool {
+	return false
+}
+
 func (a ListAuditEntries) LogResponse() bool {
 	return false
 }
