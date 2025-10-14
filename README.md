@@ -284,6 +284,15 @@ Keyline includes a custom IoC (Inversion of Control) container with support for:
 
 See [ioc/Readme.md](ioc/Readme.md) for detailed documentation.
 
+## Mediator Pattern
+
+Keyline uses the mediator pattern to decouple components and implement CQRS (Command Query Responsibility Segregation):
+- **Handlers** - Process requests and return responses
+- **Behaviors** - Cross-cutting concerns like validation and logging
+- **Events** - Publish/subscribe pattern for notifications
+
+See [mediator/README.md](mediator/README.md) for detailed documentation.
+
 ## Security
 
 ### Password Hashing
