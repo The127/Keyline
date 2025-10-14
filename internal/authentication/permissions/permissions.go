@@ -5,6 +5,8 @@ type Permission string
 const (
 	SystemUser Permission = "system_user"
 
+	AuditView Permission = "audit:view"
+
 	ApplicationCreate Permission = "application:create"
 	ApplicationDelete Permission = "application:delete"
 	ApplicationUpdate Permission = "application:update"

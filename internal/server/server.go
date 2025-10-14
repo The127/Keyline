@@ -132,6 +132,8 @@ func Serve(dp *ioc.DependencyProvider) {
 	vsApiRouter.HandleFunc("/applications/{appId}", handlers.DeleteApplication).Methods(http.MethodDelete, http.MethodOptions)
 	vsApiRouter.HandleFunc("/applications/{appId}/roles", handlers.ListAppRoles).Methods(http.MethodGet, http.MethodOptions)
 
+	vsApiRouter.HandleFunc("/audit", handlers.ListAuditLog).Methods(http.MethodGet, http.MethodOptions)
+
 	r.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
 
 	addr := fmt.Sprintf("%s:%d", config.C.Server.Host, config.C.Server.Port)
