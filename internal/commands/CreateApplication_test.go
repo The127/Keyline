@@ -53,6 +53,44 @@ func (s *CreateApplicationCommandSuite) TestVirtualServerError() {
 	s.Error(err)
 }
 
+func (s *CreateApplicationCommandSuite) TestApplicationError() {
+	ctrl := gomock.NewController(s.T())
+	defer ctrl.Finish()
+
+	now := time.Now()
+
+	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
+	virtualServer.Mock(now)
+	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
+	virtualServerRepository.
+		EXPECT().Single(gomock.Any(), gomock.Any()).
+		Return(virtualServer, nil)
+
+	applicationRepository := mocks.NewMockApplicationRepository(ctrl)
+	applicationRepository.EXPECT().
+		Insert(gomock.Any(), gomock.Any()).
+		Return(errors.New("error"))
+
+	dc := ioc.NewDependencyCollection()
+	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.VirtualServerRepository {
+		return virtualServerRepository
+	})
+	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.ApplicationRepository {
+		return applicationRepository
+	})
+	scope := dc.BuildProvider()
+	defer utils.PanicOnError(scope.Close, "closing scope")
+	ctx := middlewares.ContextWithScope(s.T().Context(), scope)
+
+	cmd := CreateApplication{}
+
+	// act
+	_, err := HandleCreateApplication(ctx, cmd)
+
+	// assert
+	s.Error(err)
+}
+
 func (s *CreateApplicationCommandSuite) TestHappyPath() {
 	ctrl := gomock.NewController(s.T())
 	defer ctrl.Finish()
