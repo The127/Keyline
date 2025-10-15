@@ -136,7 +136,7 @@ func (s *CreateApplicationCommandSuite) TestPublicApplicationHappyPath() {
 	resp, err := HandleCreateApplication(ctx, cmd)
 
 	// assert
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.NotNil(resp)
 }
 
@@ -179,6 +179,6 @@ func (s *CreateApplicationCommandSuite) TestConfidentialApplicationHappyPath() {
 	resp, err := HandleCreateApplication(ctx, cmd)
 
 	// assert
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.NotNil(resp)
 }
