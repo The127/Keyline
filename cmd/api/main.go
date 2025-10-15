@@ -38,11 +38,28 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"Keyline/docs"
 
 	"github.com/huandu/go-sqlbuilder"
 )
+
+func tryFiveTimes(f func() error, msg string) {
+	var err error
+	for i := 0; i < 5; i++ {
+		err = f()
+		if err == nil {
+			return
+		}
+
+		logging.Logger.Info(msg)
+		logging.Logger.Infof("retrying in 5 seconds (attempt %d)", i+1)
+		time.Sleep(5 * time.Second)
+	}
+
+	panic(err)
+}
 
 func main() {
 	config.Init()
@@ -52,7 +69,10 @@ func main() {
 
 	logging.Init()
 	metrics.Init()
-	database.Migrate()
+
+	tryFiveTimes(func() error {
+		return database.Migrate()
+	}, "failed to migrate database")
 
 	dc := ioc.NewDependencyCollection()
 	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) *sql.DB {

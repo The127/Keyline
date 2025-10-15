@@ -15,7 +15,7 @@ import (
 //go:embed migrations/*
 var dbMigrations embed.FS
 
-func Migrate() {
+func Migrate() error {
 	migrations := migrate.EmbedFileSystemMigrationSource{
 		FileSystem: dbMigrations,
 		Root:       "migrations",
@@ -28,10 +28,11 @@ func Migrate() {
 
 	n, err := migrate.Exec(db, "postgres", migrations, migrate.Up)
 	if err != nil {
-		logging.Logger.Fatalf("failed to apply migrations: %v", err)
+		return fmt.Errorf("failed to apply migrations: %v", err)
 	}
 
 	logging.Logger.Infof("Applied %d migrations", n)
+	return nil
 }
 
 func ConnectToDatabase() *sql.DB {
