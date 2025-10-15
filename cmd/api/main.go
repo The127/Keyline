@@ -53,8 +53,8 @@ func tryFiveTimes(f func() error, msg string) {
 			return
 		}
 
-		logging.Logger.Info(msg)
-		logging.Logger.Infof("retrying in 5 seconds (attempt %d)", i+1)
+		logging.Logger.Infof(msg+": %v", err)
+		logging.Logger.Infof("Retrying in 5 seconds (attempt %d/5)", i+1)
 		time.Sleep(5 * time.Second)
 	}
 
