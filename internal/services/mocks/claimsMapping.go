@@ -11,8 +11,10 @@ package mocks
 
 import (
 	claimsMapping "Keyline/internal/services/claimsMapping"
+	context "context"
 	reflect "reflect"
 
+	uuid "github.com/google/uuid"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -41,15 +43,15 @@ func (m *MockClaimsMapper) EXPECT() *MockClaimsMapperMockRecorder {
 }
 
 // MapClaims mocks base method.
-func (m *MockClaimsMapper) MapClaims(params claimsMapping.Params) map[string]any {
+func (m *MockClaimsMapper) MapClaims(ctx context.Context, ApplicationId uuid.UUID, params claimsMapping.Params) map[string]any {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MapClaims", params)
+	ret := m.ctrl.Call(m, "MapClaims", ctx, ApplicationId, params)
 	ret0, _ := ret[0].(map[string]any)
 	return ret0
 }
 
 // MapClaims indicates an expected call of MapClaims.
-func (mr *MockClaimsMapperMockRecorder) MapClaims(params any) *gomock.Call {
+func (mr *MockClaimsMapperMockRecorder) MapClaims(ctx, ApplicationId, params any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MapClaims", reflect.TypeOf((*MockClaimsMapper)(nil).MapClaims), params)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MapClaims", reflect.TypeOf((*MockClaimsMapper)(nil).MapClaims), ctx, ApplicationId, params)
 }

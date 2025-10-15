@@ -44,7 +44,7 @@ func newTestContext(t *testing.T) context.Context {
 	})
 
 	claimsMapper := serviceMocks.NewMockClaimsMapper(ctrl)
-	claimsMapper.EXPECT().MapClaims(gomock.Any()).Return(jwt.MapClaims{})
+	claimsMapper.EXPECT().MapClaims(gomock.Any(), gomock.Any(), gomock.Any()).Return(jwt.MapClaims{})
 	ioc.RegisterSingleton(dependencyCollection, func(dp *ioc.DependencyProvider) claimsMapping.ClaimsMapper {
 		return claimsMapper
 	})

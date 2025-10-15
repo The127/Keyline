@@ -1055,6 +1055,8 @@ func mapClaims(ctx context.Context, params AccessTokenGenerationParams) (jwt.Map
 
 	claimsMapper := ioc.GetDependency[claimsMapping.ClaimsMapper](scope)
 	mappedClaims := claimsMapper.MapClaims(
+		ctx,
+		params.ApplicationId,
 		claimsMapping.Params{
 			Roles:            globalRoles,
 			ApplicationRoles: applicationRoles,
