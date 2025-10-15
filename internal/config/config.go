@@ -3,8 +3,13 @@ package config
 import (
 	"flag"
 	"fmt"
+	"log"
+	"strings"
 
-	"github.com/spf13/viper"
+	"github.com/knadh/koanf/parsers/yaml"
+	"github.com/knadh/koanf/providers/env/v2"
+	"github.com/knadh/koanf/providers/file"
+	"github.com/knadh/koanf/v2"
 )
 
 // KeyStoreMode has the following constants: KeyStoreModeDirectory, KeyStoreModeOpenBao
@@ -106,22 +111,31 @@ func Init() {
 	readConfigFile()
 }
 
+var k = koanf.New(".")
+
 func readConfigFile() {
-	v := viper.NewWithOptions(viper.KeyDelimiter("_"))
-
-	v.SetEnvPrefix("KEYLINE")
-	v.AutomaticEnv()
-
-	v.SetConfigFile(configFilePath)
-
-	err := v.ReadInConfig()
-	if err != nil {
-		panic(err)
+	if configFilePath != "" {
+		if err := k.Load(file.Provider(configFilePath), yaml.Parser()); err != nil {
+			log.Fatalf("error loading config from file: %v", err)
+		}
 	}
 
-	err = v.Unmarshal(&C)
+	err := k.Load(env.Provider(".", env.Opt{
+		Prefix: "KEYLINE_",
+		TransformFunc: func(k, v string) (string, any) {
+			// Transform the key.
+			k = strings.ReplaceAll(strings.ToLower(strings.TrimPrefix(k, "KEYLINE_")), "_", ".")
+
+			return k, v
+		},
+	}), nil)
 	if err != nil {
-		panic(err)
+		log.Fatalf("error loading config from env: %v", err)
+	}
+
+	err = k.Unmarshal("", &C)
+	if err != nil {
+		log.Fatalf("error unmarshalling config: %v", err)
 	}
 
 	setDefaultsOrPanic()
@@ -312,7 +326,7 @@ func setDatabaseDefaultsOrPanic() {
 
 func readFlags() {
 	// read flags passed to the program
-	flag.StringVar(&configFilePath, "config", "./config.yaml", "The path for the config file.")
+	flag.StringVar(&configFilePath, "config", "", "The path for the config file.")
 	flag.StringVar(&environment, "environment", "PRODUCTION", "The environment that this application is running in (can be PRODUCTION or DEVELOPMENT).")
 	flag.Parse()
 }
