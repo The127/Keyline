@@ -31,13 +31,13 @@ func (s *CreateApplicationCommandSuite) createContext(
 	dc := ioc.NewDependencyCollection()
 
 	if vsr != nil {
-		ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.VirtualServerRepository {
+		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.VirtualServerRepository {
 			return vsr
 		})
 	}
 
 	if ar != nil {
-		ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.ApplicationRepository {
+		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.ApplicationRepository {
 			return ar
 		})
 	}
@@ -150,7 +150,7 @@ func (s *CreateApplicationCommandSuite) TestConfidentialApplicationHappyPath() {
 	virtualServer.Mock(now)
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
 	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories.VirtualServerFilter) bool {
-		return *x.GetName() == virtualServer.Name()
+		return x.GetName() != nil && *x.GetName() == virtualServer.Name()
 	})).Return(virtualServer, nil)
 
 	applicationRepository := mocks.NewMockApplicationRepository(ctrl)
