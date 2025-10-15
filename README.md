@@ -15,6 +15,7 @@ Keyline is still under active development and not ready for production use. Cons
 - 👥 **User Management** - Complete user lifecycle management with registration, verification, and password reset
 - 🎭 **Role-Based Access Control (RBAC)** - Fine-grained permissions with roles and groups
 - 🔑 **Multiple Application Support** - Manage multiple client applications (public and confidential)
+- 🎨 **Custom Claims Mapping** - Transform roles into custom JWT claims using JavaScript
 - 📧 **Email Integration** - Built-in email verification and notification system (work-in-progress)
 - 🔒 **Multi-Factor Authentication (MFA)** - TOTP-based 2FA support
 - 🏢 **Virtual Servers** - Multi-tenancy support via virtual servers
