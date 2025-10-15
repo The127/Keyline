@@ -66,7 +66,11 @@ func HandlePatchApplication(ctx context.Context, command PatchApplication) (*Pat
 			return nil, fmt.Errorf("cannot update claims mapping script for system application: %w", utils.ErrHttpBadRequest)
 		}
 
-		application.SetClaimsMappingScript(command.ClaimsMappingScript)
+		if *command.ClaimsMappingScript == "" {
+			application.SetClaimsMappingScript(nil)
+		} else {
+			application.SetClaimsMappingScript(command.ClaimsMappingScript)
+		}
 	}
 
 	err = applicationRepository.Update(ctx, application)

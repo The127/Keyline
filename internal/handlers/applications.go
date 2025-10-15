@@ -177,7 +177,7 @@ func GetApplication(w http.ResponseWriter, r *http.Request) {
 
 type PatchApplicationRequestDto struct {
 	DisplayName         *string `json:"displayName"`
-	ClaimsMappingScript *string `json:"claimsMappingScript"`
+	ClaimsMappingScript *string `json:"customClaimsMappingScript"`
 }
 
 // PatchApplication updates fields of a specific application by ID
@@ -221,9 +221,10 @@ func PatchApplication(w http.ResponseWriter, r *http.Request) {
 	m := ioc.GetDependency[mediator.Mediator](scope)
 
 	_, err = mediator.Send[*commands.PatchApplicationResponse](ctx, m, commands.PatchApplication{
-		VirtualServerName: vsName,
-		ApplicationId:     appId,
-		DisplayName:       utils.TrimSpace(dto.DisplayName),
+		VirtualServerName:   vsName,
+		ApplicationId:       appId,
+		DisplayName:         utils.TrimSpace(dto.DisplayName),
+		ClaimsMappingScript: dto.ClaimsMappingScript,
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)
