@@ -36,12 +36,12 @@ func defaultMapping(params Params) map[string]any {
 	}
 }
 
-func (c *claimsMapper) MapClaims(ctx context.Context, ApplicationId uuid.UUID, params Params) map[string]any {
+func (c *claimsMapper) MapClaims(ctx context.Context, applicationId uuid.UUID, params Params) map[string]any {
 	scope := middlewares.GetScope(ctx)
 
 	applicationRepository := ioc.GetDependency[repositories.ApplicationRepository](scope)
 	applicationFilter := repositories.NewApplicationFilter().
-		Id(ApplicationId)
+		Id(applicationId)
 	application, err := applicationRepository.First(ctx, applicationFilter)
 	if err != nil {
 		logging.Logger.Error(fmt.Errorf("falling back to default mapping, failed getting application: %w", err))
