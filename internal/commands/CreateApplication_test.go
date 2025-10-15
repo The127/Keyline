@@ -6,6 +6,7 @@ import (
 	"Keyline/internal/repositories/mocks"
 	"Keyline/ioc"
 	"Keyline/utils"
+	"context"
 	"errors"
 	"testing"
 	"time"
@@ -23,6 +24,32 @@ func TestCreateApplicationCommandSuite(t *testing.T) {
 	suite.Run(t, new(CreateApplicationCommandSuite))
 }
 
+func (s *CreateApplicationCommandSuite) createContext(
+	vsr repositories.VirtualServerRepository,
+	ar repositories.ApplicationRepository,
+) context.Context {
+	dc := ioc.NewDependencyCollection()
+
+	if vsr != nil {
+		ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.VirtualServerRepository {
+			return vsr
+		})
+	}
+
+	if ar != nil {
+		ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.ApplicationRepository {
+			return ar
+		})
+	}
+
+	scope := dc.BuildProvider()
+	s.T().Cleanup(func() {
+		utils.PanicOnError(scope.Close, "closing scope")
+	})
+
+	return middlewares.ContextWithScope(s.T().Context(), scope)
+}
+
 func (s *CreateApplicationCommandSuite) TestVirtualServerError() {
 	ctrl := gomock.NewController(s.T())
 	defer ctrl.Finish()
@@ -32,14 +59,7 @@ func (s *CreateApplicationCommandSuite) TestVirtualServerError() {
 		EXPECT().Single(gomock.Any(), gomock.Any()).
 		Return(nil, errors.New("error"))
 
-	dc := ioc.NewDependencyCollection()
-	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.VirtualServerRepository {
-		return virtualServerRepository
-	})
-	scope := dc.BuildProvider()
-	defer utils.PanicOnError(scope.Close, "closing scope")
-	ctx := middlewares.ContextWithScope(s.T().Context(), scope)
-
+	ctx := s.createContext(virtualServerRepository, nil)
 	cmd := CreateApplication{}
 
 	// act
@@ -67,17 +87,7 @@ func (s *CreateApplicationCommandSuite) TestApplicationError() {
 		Insert(gomock.Any(), gomock.Any()).
 		Return(errors.New("error"))
 
-	dc := ioc.NewDependencyCollection()
-	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.VirtualServerRepository {
-		return virtualServerRepository
-	})
-	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.ApplicationRepository {
-		return applicationRepository
-	})
-	scope := dc.BuildProvider()
-	defer utils.PanicOnError(scope.Close, "closing scope")
-	ctx := middlewares.ContextWithScope(s.T().Context(), scope)
-
+	ctx := s.createContext(virtualServerRepository, applicationRepository)
 	cmd := CreateApplication{}
 
 	// act
@@ -110,17 +120,7 @@ func (s *CreateApplicationCommandSuite) TestPublicApplicationHappyPath() {
 			x.RedirectUris()[1] == "redirectUri2"
 	}))
 
-	dc := ioc.NewDependencyCollection()
-	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.VirtualServerRepository {
-		return virtualServerRepository
-	})
-	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.ApplicationRepository {
-		return applicationRepository
-	})
-	scope := dc.BuildProvider()
-	defer utils.PanicOnError(scope.Close, "closing scope")
-	ctx := middlewares.ContextWithScope(s.T().Context(), scope)
-
+	ctx := s.createContext(virtualServerRepository, applicationRepository)
 	cmd := CreateApplication{
 		VirtualServerName: virtualServer.Name(),
 		Name:              "applicationName",
@@ -163,17 +163,7 @@ func (s *CreateApplicationCommandSuite) TestConfidentialApplicationHappyPath() {
 			x.RedirectUris()[1] == "redirectUri2"
 	}))
 
-	dc := ioc.NewDependencyCollection()
-	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.VirtualServerRepository {
-		return virtualServerRepository
-	})
-	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.ApplicationRepository {
-		return applicationRepository
-	})
-	scope := dc.BuildProvider()
-	defer utils.PanicOnError(scope.Close, "closing scope")
-	ctx := middlewares.ContextWithScope(s.T().Context(), scope)
-
+	ctx := s.createContext(virtualServerRepository, applicationRepository)
 	cmd := CreateApplication{
 		VirtualServerName: virtualServer.Name(),
 		Name:              "applicationName",
