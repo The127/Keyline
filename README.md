@@ -363,7 +363,7 @@ This project is licensed under the GNU Affero General Public License v3.0 (AGPL-
 Built with:
 - [Gorilla Mux](https://github.com/gorilla/mux) - HTTP router
 - [sqlbuilder](https://github.com/huandu/go-sqlbuilder) - SQL query builder
-- [Viper](https://github.com/spf13/viper) - Configuration management
+- [Koanf](github.com/knadh/koanf) - Configuration management
 - [Zap](https://github.com/uber-go/zap) - Structured logging
 - [jwt-go](https://github.com/golang-jwt/jwt) - JWT implementation
 - [Swagger](https://github.com/swaggo/swag) - API documentation
