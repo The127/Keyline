@@ -1,10 +1,12 @@
 package claimsMapping
 
 import (
+	"Keyline/internal/logging"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/ioc"
 	"context"
+	"fmt"
 
 	"github.com/dop251/goja"
 	"github.com/google/uuid"
@@ -42,14 +44,17 @@ func (c *claimsMapper) MapClaims(ctx context.Context, ApplicationId uuid.UUID, p
 		Id(ApplicationId)
 	application, err := applicationRepository.First(ctx, applicationFilter)
 	if err != nil {
+		logging.Logger.Error(fmt.Errorf("falling back to default mapping, failed getting application: %w", err))
 		return defaultMapping(params)
 	}
 	if application == nil {
+		logging.Logger.Error(fmt.Errorf("falling back to default mapping, application not found"))
 		return defaultMapping(params)
 	}
 
 	claimsMappingScript := application.GetClaimsMappingScript()
 	if claimsMappingScript == nil {
+		// no need to log here, this is the default behaviour
 		return defaultMapping(params)
 	}
 
@@ -57,26 +62,31 @@ func (c *claimsMapper) MapClaims(ctx context.Context, ApplicationId uuid.UUID, p
 
 	err = vm.Set("roles", params.Roles)
 	if err != nil {
-		panic(err)
+		logging.Logger.Error(fmt.Errorf("falling back to default mapping, failed setting roles: %w", err))
+		return defaultMapping(params)
 	}
 
 	err = vm.Set("applicationRoles", params.ApplicationRoles)
 	if err != nil {
-		panic(err)
+		logging.Logger.Error(fmt.Errorf("falling back to default mapping, failed setting applicationRoles: %w", err))
+		return defaultMapping(params)
 	}
 
 	p, err := goja.Compile("mappingScript.js", *claimsMappingScript, true)
 	if err != nil {
-		panic(err)
+		logging.Logger.Error(fmt.Errorf("falling back to default mapping, failed compiling script: %w", err))
+		return defaultMapping(params)
 	}
 
 	result, err := vm.RunProgram(p)
 	if err != nil {
+		logging.Logger.Error(fmt.Errorf("falling back to default mapping, failed running script: %w", err))
 		return defaultMapping(params)
 	}
 
 	mappingResult, ok := result.Export().(map[string]any)
 	if !ok {
+		logging.Logger.Error(fmt.Errorf("falling back to default mapping, failed casting result"))
 		return defaultMapping(params)
 	}
 
