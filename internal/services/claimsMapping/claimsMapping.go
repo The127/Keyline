@@ -60,7 +60,7 @@ func (c *claimsMapper) MapClaims(ctx context.Context, ApplicationId uuid.UUID, p
 
 	mappedClaims, err := c.runCustomClaimsMappingScript(claimsMappingScript, params)
 	if err != nil {
-		logging.Logger.Error(fmt.Errorf("failed running custom claims mapping script: %w", err))
+		logging.Logger.Error(fmt.Errorf("falling back to default mapping, failed running custom claims mapping script: %w", err))
 		return defaultMapping(params)
 	}
 
