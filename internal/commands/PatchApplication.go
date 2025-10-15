@@ -6,6 +6,7 @@ import (
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/ioc"
+	"Keyline/utils"
 	"context"
 	"fmt"
 
@@ -61,6 +62,10 @@ func HandlePatchApplication(ctx context.Context, command PatchApplication) (*Pat
 	}
 
 	if command.ClaimsMappingScript != nil {
+		if application.SystemApplication() {
+			return nil, fmt.Errorf("cannot update claims mapping script for system application: %w", utils.ErrHttpBadRequest)
+		}
+
 		application.SetClaimsMappingScript(command.ClaimsMappingScript)
 	}
 
