@@ -9,16 +9,21 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
 
-func TestHandleCreateApplication(t *testing.T) {
-	t.Parallel()
+type CreateApplicationCommandSuite struct {
+	suite.Suite
+}
 
-	// arrange
-	ctrl := gomock.NewController(t)
+func TestCreateApplicationCommandSuite(t *testing.T) {
+	t.Parallel()
+	suite.Run(t, new(CreateApplicationCommandSuite))
+}
+
+func (s *CreateApplicationCommandSuite) TestAssignRoleToUser() {
+	ctrl := gomock.NewController(s.T())
 	defer ctrl.Finish()
 
 	now := time.Now()
@@ -47,7 +52,7 @@ func TestHandleCreateApplication(t *testing.T) {
 	})
 	scope := dc.BuildProvider()
 	defer utils.PanicOnError(scope.Close, "closing scope")
-	ctx := middlewares.ContextWithScope(t.Context(), scope)
+	ctx := middlewares.ContextWithScope(s.T().Context(), scope)
 
 	cmd := CreateApplication{
 		VirtualServerName: virtualServer.Name(),
@@ -64,6 +69,6 @@ func TestHandleCreateApplication(t *testing.T) {
 	resp, err := HandleCreateApplication(ctx, cmd)
 
 	// assert
-	require.NoError(t, err)
-	assert.NotNil(t, resp)
+	s.NoError(err)
+	s.NotNil(resp)
 }
