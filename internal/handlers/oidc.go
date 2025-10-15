@@ -7,6 +7,7 @@ import (
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/internal/services"
+	"Keyline/internal/services/claimsMapping"
 	"Keyline/ioc"
 	"Keyline/utils"
 	"context"
@@ -1052,10 +1053,17 @@ func mapClaims(ctx context.Context, params AccessTokenGenerationParams) (jwt.Map
 		applicationRoles = append(applicationRoles, userRoleAssignment.RoleInfo().Name)
 	}
 
-	claims := jwt.MapClaims{
-		"roles":             globalRoles,
-		"application_roles": applicationRoles,
-	}
+	claimsMapper := ioc.GetDependency[claimsMapping.ClaimsMapper](scope)
+	mappedClaims := claimsMapper.MapClaims(
+		ctx,
+		params.ApplicationId,
+		claimsMapping.Params{
+			Roles:            globalRoles,
+			ApplicationRoles: applicationRoles,
+		},
+	)
+
+	claims := jwt.MapClaims(mappedClaims)
 	return claims, nil
 }
 

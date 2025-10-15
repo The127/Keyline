@@ -38,6 +38,8 @@ type Application struct {
 	postLogoutRedirectUris []string
 
 	systemApplication bool
+
+	claimsMappingScript *string
 }
 
 func NewApplication(
@@ -72,6 +74,7 @@ func (a *Application) getScanPointers() []any {
 		pq.Array(&a.redirectUris),
 		pq.Array(&a.postLogoutRedirectUris),
 		&a.systemApplication,
+		&a.claimsMappingScript,
 	}
 }
 
@@ -85,6 +88,15 @@ func (a *Application) GenerateSecret() string {
 
 func (a *Application) VirtualServerId() uuid.UUID {
 	return a.virtualServerId
+}
+
+func (a *Application) GetClaimsMappingScript() *string {
+	return a.claimsMappingScript
+}
+
+func (a *Application) SetClaimsMappingScript(script *string) {
+	a.claimsMappingScript = script
+	a.TrackChange("claims_mapping_script", script)
 }
 
 func (a *Application) Name() string {
@@ -236,6 +248,7 @@ func (r *applicationRepository) selectQuery(filter ApplicationFilter) *sqlbuilde
 		"redirect_uris",
 		"post_logout_redirect_uris",
 		"system_application",
+		"claims_mapping_script",
 	).From("applications")
 
 	if filter.name != nil {
@@ -355,7 +368,7 @@ func (r *applicationRepository) Insert(ctx context.Context, application *Applica
 	}
 
 	s := sqlbuilder.InsertInto("applications").
-		Cols("virtual_server_id", "name", "display_name", "type", "hashed_secret", "redirect_uris", "post_logout_redirect_uris", "system_application").
+		Cols("virtual_server_id", "name", "display_name", "type", "hashed_secret", "redirect_uris", "post_logout_redirect_uris", "system_application", "claims_mapping_script").
 		Values(
 			application.virtualServerId,
 			application.name,
@@ -365,6 +378,7 @@ func (r *applicationRepository) Insert(ctx context.Context, application *Applica
 			pq.Array(application.redirectUris),
 			pq.Array(application.postLogoutRedirectUris),
 			application.systemApplication,
+			application.claimsMappingScript,
 		).Returning("id", "audit_created_at", "audit_updated_at", "version")
 
 	query, args := s.Build()

@@ -102,6 +102,8 @@ type GetApplicationResponseDto struct {
 
 	SystemApplication bool `json:"systemApplication"`
 
+	ClaimsMappingScript *string `json:"customClaimsMappingScript"`
+
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }
@@ -173,7 +175,8 @@ func GetApplication(w http.ResponseWriter, r *http.Request) {
 }
 
 type PatchApplicationRequestDto struct {
-	DisplayName *string `json:"displayName"`
+	DisplayName         *string `json:"displayName"`
+	ClaimsMappingScript *string `json:"claimsMappingScript"`
 }
 
 // PatchApplication updates fields of a specific application by ID

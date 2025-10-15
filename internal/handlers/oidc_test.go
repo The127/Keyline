@@ -4,8 +4,10 @@ import (
 	"Keyline/internal/config"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
-	"Keyline/internal/repositories/mocks"
+	repoMocks "Keyline/internal/repositories/mocks"
 	"Keyline/internal/services"
+	"Keyline/internal/services/claimsMapping"
+	serviceMocks "Keyline/internal/services/mocks"
 	"Keyline/ioc"
 	"Keyline/utils"
 	"context"
@@ -27,7 +29,7 @@ func newTestContext(t *testing.T) context.Context {
 
 	ctrl := gomock.NewController(t)
 
-	userRepository := mocks.NewMockUserRepository(ctrl)
+	userRepository := repoMocks.NewMockUserRepository(ctrl)
 	user := repositories.NewUser("user", "User", "user@mail", uuid.New())
 	user.Mock(time.Now())
 	userRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(user, nil)
@@ -35,10 +37,16 @@ func newTestContext(t *testing.T) context.Context {
 		return userRepository
 	})
 
-	userRoleAssignmentRepository := mocks.NewMockUserRoleAssignmentRepository(ctrl)
+	userRoleAssignmentRepository := repoMocks.NewMockUserRoleAssignmentRepository(ctrl)
 	userRoleAssignmentRepository.EXPECT().List(gomock.Any(), gomock.Any()).Return(nil, 0, nil).Times(2)
 	ioc.RegisterTransient(dependencyCollection, func(dp *ioc.DependencyProvider) repositories.UserRoleAssignmentRepository {
 		return userRoleAssignmentRepository
+	})
+
+	claimsMapper := serviceMocks.NewMockClaimsMapper(ctrl)
+	claimsMapper.EXPECT().MapClaims(gomock.Any(), gomock.Any(), gomock.Any()).Return(jwt.MapClaims{})
+	ioc.RegisterSingleton(dependencyCollection, func(dp *ioc.DependencyProvider) claimsMapping.ClaimsMapper {
+		return claimsMapper
 	})
 
 	scope := dependencyCollection.BuildProvider().NewScope()
