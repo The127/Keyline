@@ -6,6 +6,7 @@ import (
 	"Keyline/internal/repositories/mocks"
 	"Keyline/ioc"
 	"Keyline/utils"
+	"errors"
 	"testing"
 	"time"
 
@@ -22,7 +23,37 @@ func TestCreateApplicationCommandSuite(t *testing.T) {
 	suite.Run(t, new(CreateApplicationCommandSuite))
 }
 
-func (s *CreateApplicationCommandSuite) TestAssignRoleToUser() {
+func (s *CreateApplicationCommandSuite) SetupTest() {
+	s.T().Parallel()
+}
+
+func (s *CreateApplicationCommandSuite) TestVirtualServerError() {
+	ctrl := gomock.NewController(s.T())
+	defer ctrl.Finish()
+
+	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
+	virtualServerRepository.
+		EXPECT().Single(gomock.Any(), gomock.Any()).
+		Return(nil, errors.New("error"))
+
+	dc := ioc.NewDependencyCollection()
+	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.VirtualServerRepository {
+		return virtualServerRepository
+	})
+	scope := dc.BuildProvider()
+	defer utils.PanicOnError(scope.Close, "closing scope")
+	ctx := middlewares.ContextWithScope(s.T().Context(), scope)
+
+	cmd := CreateApplication{}
+
+	// act
+	_, err := HandleCreateApplication(ctx, cmd)
+
+	// assert
+	s.Error(err)
+}
+
+func (s *CreateApplicationCommandSuite) TestHappyPath() {
 	ctrl := gomock.NewController(s.T())
 	defer ctrl.Finish()
 
