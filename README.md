@@ -15,6 +15,7 @@ Keyline is still under active development and not ready for production use. Cons
 - 👥 **User Management** - Complete user lifecycle management with registration, verification, and password reset
 - 🎭 **Role-Based Access Control (RBAC)** - Fine-grained permissions with roles and groups
 - 🔑 **Multiple Application Support** - Manage multiple client applications (public and confidential)
+- 🎨 **Custom Claims Mapping** - Transform roles into custom JWT claims using JavaScript
 - 📧 **Email Integration** - Built-in email verification and notification system (work-in-progress)
 - 🔒 **Multi-Factor Authentication (MFA)** - TOTP-based 2FA support
 - 🏢 **Virtual Servers** - Multi-tenancy support via virtual servers
@@ -260,6 +261,81 @@ Applications represent OAuth2/OIDC clients that integrate with Keyline. Supporte
 - **Public** - For client-side applications (SPAs, mobile apps)
 - **Confidential** - For server-side applications with client secrets
 - **System** - For internal system operations
+
+#### Custom Claims Mapping
+
+Keyline supports custom claims mapping for each application, allowing you to transform roles into custom JWT claims using JavaScript. This feature enables flexible authorization patterns tailored to your application's needs.
+
+**Default Behavior**
+
+By default, access tokens include two standard claims:
+```json
+{
+  "roles": ["admin", "user"],
+  "application_roles": ["app-editor", "app-viewer"]
+}
+```
+
+**Custom Claims Mapping**
+
+You can configure a JavaScript mapping script for each application that transforms the default role data into custom claims. The script has access to:
+- `roles` - Array of global role names assigned to the user
+- `applicationRoles` - Array of application-specific role names assigned to the user
+
+The script must return a JavaScript object representing the custom claims to include in the access token.
+
+**Example Scripts**
+
+Transform roles into groups:
+```javascript
+({
+  groups: roles.concat(applicationRoles)
+})
+```
+
+Map specific roles to permissions:
+```javascript
+({
+  permissions: roles.map(role => {
+    if (role === 'admin') return 'full_access';
+    if (role === 'editor') return 'write';
+    return 'read';
+  }),
+  app_permissions: applicationRoles
+})
+```
+
+Create nested claim structures:
+```javascript
+({
+  authorization: {
+    global: roles,
+    application: applicationRoles,
+    level: roles.includes('admin') ? 'full' : 'limited'
+  }
+})
+```
+
+**API Configuration**
+
+Set custom claims mapping via the PATCH endpoint:
+```bash
+PATCH /api/virtual-servers/{vsName}/applications/{appId}
+Content-Type: application/json
+
+{
+  "claimsMappingScript": "({ groups: roles.concat(applicationRoles) })"
+}
+```
+
+Get the current mapping:
+```bash
+GET /api/virtual-servers/{vsName}/applications/{appId}
+```
+
+**Error Handling**
+
+If the custom script fails to compile or execute, Keyline automatically falls back to the default claims mapping and logs the error. This ensures tokens are always generated successfully, even if the custom script has issues.
 
 ### Roles and Permissions
 
