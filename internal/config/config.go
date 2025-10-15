@@ -126,6 +126,10 @@ func readConfigFile() {
 			// Transform the key.
 			k = strings.ReplaceAll(strings.ToLower(strings.TrimPrefix(k, "KEYLINE_")), "_", ".")
 
+			if strings.Contains(v, " ") {
+				return k, strings.Split(v, " ")
+			}
+
 			return k, v
 		},
 	}), nil)
