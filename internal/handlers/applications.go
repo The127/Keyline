@@ -166,6 +166,7 @@ func GetApplication(w http.ResponseWriter, r *http.Request) {
 		RedirectUris:           application.RedirectUris,
 		PostLogoutRedirectUris: application.PostLogoutUris,
 		SystemApplication:      application.SystemApplication,
+		ClaimsMappingScript:    application.ClaimsMappingScript,
 		CreatedAt:              application.CreatedAt,
 		UpdatedAt:              application.UpdatedAt,
 	})
