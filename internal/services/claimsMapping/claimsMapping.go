@@ -58,37 +58,42 @@ func (c *claimsMapper) MapClaims(ctx context.Context, ApplicationId uuid.UUID, p
 		return defaultMapping(params)
 	}
 
+	mappedClaims, err := c.runCustomClaimsMappingScript(claimsMappingScript, params)
+	if err != nil {
+		logging.Logger.Error(fmt.Errorf("failed running custom claims mapping script: %w", err))
+		return defaultMapping(params)
+	}
+
+	return mappedClaims
+}
+
+func (c *claimsMapper) runCustomClaimsMappingScript(claimsMappingScript *string, params Params) (map[string]any, error) {
 	vm := goja.New()
 
-	err = vm.Set("roles", params.Roles)
+	err := vm.Set("roles", params.Roles)
 	if err != nil {
-		logging.Logger.Error(fmt.Errorf("falling back to default mapping, failed setting roles: %w", err))
-		return defaultMapping(params)
+		return nil, fmt.Errorf("failed setting roles: %w", err)
 	}
 
 	err = vm.Set("applicationRoles", params.ApplicationRoles)
 	if err != nil {
-		logging.Logger.Error(fmt.Errorf("falling back to default mapping, failed setting applicationRoles: %w", err))
-		return defaultMapping(params)
+		return nil, fmt.Errorf("failed setting applicationRoles: %w", err)
 	}
 
 	p, err := goja.Compile("mappingScript.js", *claimsMappingScript, true)
 	if err != nil {
-		logging.Logger.Error(fmt.Errorf("falling back to default mapping, failed compiling script: %w", err))
-		return defaultMapping(params)
+		return nil, fmt.Errorf("failed compiling script: %w", err)
 	}
 
 	result, err := vm.RunProgram(p)
 	if err != nil {
-		logging.Logger.Error(fmt.Errorf("falling back to default mapping, failed running script: %w", err))
-		return defaultMapping(params)
+		return nil, fmt.Errorf("failed running script: %w", err)
 	}
 
 	mappingResult, ok := result.Export().(map[string]any)
 	if !ok {
-		logging.Logger.Error(fmt.Errorf("falling back to default mapping, failed casting result"))
-		return defaultMapping(params)
+		return nil, fmt.Errorf("failed casting result to map[string]any")
 	}
 
-	return mappingResult
+	return mappingResult, nil
 }
