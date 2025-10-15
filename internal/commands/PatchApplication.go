@@ -13,9 +13,10 @@ import (
 )
 
 type PatchApplication struct {
-	VirtualServerName string
-	ApplicationId     uuid.UUID
-	DisplayName       *string
+	VirtualServerName   string
+	ApplicationId       uuid.UUID
+	DisplayName         *string
+	ClaimsMappingScript *string
 }
 
 func (a PatchApplication) LogRequest() bool {
@@ -57,6 +58,10 @@ func HandlePatchApplication(ctx context.Context, command PatchApplication) (*Pat
 
 	if command.DisplayName != nil {
 		application.SetDisplayName(*command.DisplayName)
+	}
+
+	if command.ClaimsMappingScript != nil {
+		application.SetClaimsMappingScript(command.ClaimsMappingScript)
 	}
 
 	err = applicationRepository.Update(ctx, application)
