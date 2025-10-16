@@ -43,7 +43,7 @@ jobs:
 
       - name: Build & Push dev image
         if: github.ref == 'refs/heads/main'
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: Containerfile
