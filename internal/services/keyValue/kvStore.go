@@ -45,6 +45,14 @@ type memoryStoreItem struct {
 	expiration time.Time
 }
 
+func (m *memoryStoreItem) IsExpired(now time.Time) bool {
+	if m.expiration.IsZero() {
+		return false
+	}
+
+	return m.expiration.Before(now)
+}
+
 type memoryStore struct {
 	data map[string]memoryStoreItem
 	mu   sync.RWMutex
@@ -85,11 +93,10 @@ func (m *memoryStore) Get(ctx context.Context, key string) (string, error) {
 	}
 	m.mu.RUnlock()
 
-	if item.expiration.Before(
-		clockService.Now()) {
+	if item.IsExpired(clockService.Now()) {
 		m.mu.Lock()
 		itemBeforeDeletion := m.data[key]
-		if itemBeforeDeletion.expiration.Before(clockService.Now()) {
+		if itemBeforeDeletion.IsExpired(clockService.Now()) {
 			delete(m.data, key)
 		}
 		m.mu.Unlock()
