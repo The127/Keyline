@@ -12,12 +12,11 @@ func (i *orderInfo) apply(s *sqlbuilder.SelectBuilder) {
 		return
 	}
 
-	s.OrderBy(i.orderBy)
 	if i.orderDir != "" {
 		if i.orderDir == "asc" {
-			s.Asc()
+			s.OrderByAsc(i.orderBy)
 		} else {
-			s.Desc()
+			s.OrderByDesc(i.orderBy)
 		}
 	}
 }
