@@ -72,6 +72,11 @@ func (c *Credential) PasswordDetails() (*CredentialPasswordDetails, error) {
 		return nil, fmt.Errorf("expected password credential, got %s: %w", c._type, ErrWrongCredentialCast)
 	}
 
+	result, ok := c.details.(*CredentialPasswordDetails)
+	if ok {
+		return result, nil
+	}
+
 	detailBytes, ok := c.details.([]byte)
 	if !ok {
 		return nil, fmt.Errorf("cannot access detail bytes: %w", ErrWrongCredentialCast)
@@ -91,6 +96,11 @@ func (c *Credential) TotpDetails() (*CredentialTotpDetails, error) {
 		return nil, fmt.Errorf("expected totp credential, got %s: %w", c._type, ErrWrongCredentialCast)
 	}
 
+	result, ok := c.details.(*CredentialTotpDetails)
+	if ok {
+		return result, nil
+	}
+
 	detailBytes, ok := c.details.([]byte)
 	if !ok {
 		return nil, fmt.Errorf("cannot access detail bytes: %w", ErrWrongCredentialCast)
@@ -108,6 +118,11 @@ func (c *Credential) TotpDetails() (*CredentialTotpDetails, error) {
 func (c *Credential) ServiceUserKeyDetails() (*CredentialServiceUserKey, error) {
 	if c._type != CredentialTypeServiceUserKey {
 		return nil, fmt.Errorf("expected service user key credential, got %s: %w", c._type, ErrWrongCredentialCast)
+	}
+
+	result, ok := c.details.(*CredentialServiceUserKey)
+	if ok {
+		return result, nil
 	}
 
 	detailBytes, ok := c.details.([]byte)
