@@ -2,12 +2,16 @@ package repositories
 
 import "github.com/huandu/go-sqlbuilder"
 
-type pagingInfo struct {
+type PagingInfo struct {
 	page int
 	size int
 }
 
-func (i *pagingInfo) apply(s *sqlbuilder.SelectBuilder) {
+func (i PagingInfo) IsZero() bool {
+	return i.page == 0 && i.size == 0
+}
+
+func (i PagingInfo) Apply(s *sqlbuilder.SelectBuilder) {
 	if i.page == 0 {
 		return
 	}
@@ -15,6 +19,6 @@ func (i *pagingInfo) apply(s *sqlbuilder.SelectBuilder) {
 	s.Limit(i.size).Offset(i.offset())
 }
 
-func (i *pagingInfo) offset() int {
+func (i PagingInfo) offset() int {
 	return (i.page - 1) * i.size
 }

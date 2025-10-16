@@ -1,18 +1,10 @@
 package repositories
 
 import (
-	"Keyline/internal/database"
-	"Keyline/internal/logging"
-	"Keyline/internal/middlewares"
-	"Keyline/ioc"
 	"Keyline/utils"
 	"context"
-	"database/sql"
-	"errors"
-	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/huandu/go-sqlbuilder"
 )
 
 type TemplateType string
@@ -50,7 +42,7 @@ func (t *Template) TemplateType() TemplateType {
 	return t.templateType
 }
 
-func (t *Template) getScanPointers() []any {
+func (t *Template) GetScanPointers() []any {
 	return []any{
 		&t.id,
 		&t.auditCreatedAt,
@@ -63,8 +55,8 @@ func (t *Template) getScanPointers() []any {
 }
 
 type TemplateFilter struct {
-	pagingInfo
-	orderInfo
+	PagingInfo
+	OrderInfo
 	virtualServerId *uuid.UUID
 	templateType    *TemplateType
 	searchFilter    *SearchFilter
@@ -84,10 +76,26 @@ func (f TemplateFilter) VirtualServerId(virtualServerId uuid.UUID) TemplateFilte
 	return filter
 }
 
+func (f TemplateFilter) HasVirtualServerId() bool {
+	return f.virtualServerId != nil
+}
+
+func (f TemplateFilter) GetVirtualServerId() uuid.UUID {
+	return utils.ZeroIfNil(f.virtualServerId)
+}
+
 func (f TemplateFilter) TemplateType(templateType TemplateType) TemplateFilter {
 	filter := f.Clone()
 	filter.templateType = &templateType
 	return filter
+}
+
+func (f TemplateFilter) HasTemplateType() bool {
+	return f.templateType != nil
+}
+
+func (f TemplateFilter) GetTemplateType() TemplateType {
+	return utils.ZeroIfNil(f.templateType)
 }
 
 func (f TemplateFilter) Search(searchFilter SearchFilter) TemplateFilter {
@@ -96,22 +104,46 @@ func (f TemplateFilter) Search(searchFilter SearchFilter) TemplateFilter {
 	return filter
 }
 
+func (f TemplateFilter) HasSearch() bool {
+	return f.searchFilter != nil
+}
+
+func (f TemplateFilter) GetSearch() SearchFilter {
+	return *f.searchFilter
+}
+
 func (f TemplateFilter) Pagination(page int, size int) TemplateFilter {
 	filter := f.Clone()
-	filter.pagingInfo = pagingInfo{
+	filter.PagingInfo = PagingInfo{
 		page: page,
 		size: size,
 	}
 	return filter
 }
 
+func (f TemplateFilter) HasPagination() bool {
+	return !f.PagingInfo.IsZero()
+}
+
+func (f TemplateFilter) GetPagingInfo() PagingInfo {
+	return f.PagingInfo
+}
+
 func (f TemplateFilter) Order(by string, direction string) TemplateFilter {
 	filter := f.Clone()
-	filter.orderInfo = orderInfo{
+	filter.OrderInfo = OrderInfo{
 		orderBy:  by,
 		orderDir: direction,
 	}
 	return filter
+}
+
+func (f TemplateFilter) HasOrder() bool {
+	return !f.OrderInfo.IsZero()
+}
+
+func (f TemplateFilter) GetOrderInfo() OrderInfo {
+	return f.OrderInfo
 }
 
 //go:generate mockgen -destination=./mocks/template_repository.go -package=mocks Keyline/internal/repositories TemplateRepository
@@ -120,157 +152,4 @@ type TemplateRepository interface {
 	First(ctx context.Context, filter TemplateFilter) (*Template, error)
 	Insert(ctx context.Context, template *Template) error
 	List(ctx context.Context, filter TemplateFilter) ([]*Template, int, error)
-}
-
-type templateRepository struct {
-}
-
-func NewTemplateRepository() TemplateRepository {
-	return &templateRepository{}
-}
-
-func (r *templateRepository) selectQuery(filter TemplateFilter) *sqlbuilder.SelectBuilder {
-	s := sqlbuilder.Select(
-		"id",
-		"audit_created_at",
-		"audit_updated_at",
-		"version",
-		"virtual_server_id",
-		"file_id",
-		"type",
-	).From("templates")
-
-	if filter.virtualServerId != nil {
-		s.Where(s.Equal("virtual_server_id", filter.virtualServerId))
-	}
-
-	if filter.templateType != nil {
-		s.Where(s.Equal("type", filter.templateType))
-	}
-
-	if filter.searchFilter != nil {
-		term := filter.searchFilter.Term()
-		s.Where(s.Or(
-			s.ILike("type", term),
-		))
-	}
-
-	filter.orderInfo.apply(s)
-	filter.pagingInfo.apply(s)
-
-	return s
-}
-
-func (r *templateRepository) Single(ctx context.Context, filter TemplateFilter) (*Template, error) {
-	template, err := r.First(ctx, filter)
-	if err != nil {
-		return nil, err
-	}
-	if template == nil {
-		return nil, utils.ErrTemplateNotFound
-	}
-	return template, nil
-}
-
-func (r *templateRepository) First(ctx context.Context, filter TemplateFilter) (*Template, error) {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
-
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return nil, fmt.Errorf("failed to open tx: %w", err)
-	}
-
-	s := r.selectQuery(filter)
-	s.Limit(1)
-
-	query, args := s.Build()
-	logging.Logger.Debug("executing sql: ", query)
-	row := tx.QueryRowContext(ctx, query, args...)
-
-	template := Template{
-		ModelBase: NewModelBase(),
-	}
-	err = row.Scan(template.getScanPointers()...)
-
-	switch {
-	case errors.Is(err, sql.ErrNoRows):
-		return nil, nil
-
-	case err != nil:
-		return nil, fmt.Errorf("scanning row: %w", err)
-	}
-
-	return &template, nil
-}
-
-func (r *templateRepository) Insert(ctx context.Context, template *Template) error {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
-
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return fmt.Errorf("failed to open tx: %w", err)
-	}
-
-	s := sqlbuilder.InsertInto("templates").
-		Cols(
-			"virtual_server_id",
-			"file_id",
-			"type",
-		).
-		Values(
-			template.virtualServerId,
-			template.fileId,
-			template.templateType,
-		).Returning("id", "audit_created_at", "audit_updated_at", "version")
-
-	query, args := s.Build()
-	logging.Logger.Debug("executing sql: ", query)
-	row := tx.QueryRowContext(ctx, query, args...)
-
-	err = row.Scan(&template.id, &template.auditCreatedAt, &template.auditUpdatedAt, &template.version)
-	if err != nil {
-		return fmt.Errorf("scanning row: %w", err)
-	}
-
-	template.clearChanges()
-	return nil
-}
-
-func (r *templateRepository) List(ctx context.Context, filter TemplateFilter) ([]*Template, int, error) {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
-
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return nil, 0, fmt.Errorf("failed to open tx: %w", err)
-	}
-
-	s := r.selectQuery(filter)
-	s.SelectMore("count(*) over()")
-
-	query, args := s.Build()
-	logging.Logger.Debug("executing sql: ", query)
-	rows, err := tx.QueryContext(ctx, query, args...)
-	if err != nil {
-		return nil, 0, fmt.Errorf("querying rows: %w", err)
-	}
-	defer utils.PanicOnError(rows.Close, "closing rows")
-
-	var templates []*Template
-	var totalCount int
-	for rows.Next() {
-		template := Template{
-			ModelBase: NewModelBase(),
-		}
-		err = rows.Scan(append(template.getScanPointers(), &totalCount)...)
-		if err != nil {
-			return nil, 0, fmt.Errorf("scanning row: %w", err)
-		}
-
-		templates = append(templates, &template)
-	}
-
-	return templates, totalCount, nil
 }

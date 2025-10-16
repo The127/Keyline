@@ -52,7 +52,7 @@ func (c *claimsMapper) MapClaims(ctx context.Context, applicationId uuid.UUID, p
 		return defaultMapping(params)
 	}
 
-	claimsMappingScript := application.GetClaimsMappingScript()
+	claimsMappingScript := application.ClaimsMappingScript()
 	if claimsMappingScript == nil {
 		// no need to log here, this is the default behaviour
 		return defaultMapping(params)

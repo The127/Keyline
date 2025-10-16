@@ -1,6 +1,10 @@
 package repositories
 
-import "github.com/google/uuid"
+import (
+	"Keyline/utils"
+
+	"github.com/google/uuid"
+)
 
 type GroupRole struct {
 	ModelBase
@@ -44,19 +48,28 @@ func (f GroupRoleFilter) GroupId(groupId uuid.UUID) GroupRoleFilter {
 	return filter
 }
 
+func (f GroupRoleFilter) HasGroupId() bool {
+	return f.groupId != nil
+}
+
+func (f GroupRoleFilter) GetGroupId() uuid.UUID {
+	return utils.ZeroIfNil(f.groupId)
+}
+
 func (f GroupRoleFilter) RoleId(roleId uuid.UUID) GroupRoleFilter {
 	filter := f.Clone()
 	filter.roleId = &roleId
 	return filter
 }
 
+func (f GroupRoleFilter) HasRoleId() bool {
+	return f.roleId != nil
+}
+
+func (f GroupRoleFilter) GetRoleId() uuid.UUID {
+	return utils.ZeroIfNil(f.roleId)
+}
+
 //go:generate mockgen -destination=./mocks/grouprole_repository.go -package=mocks Keyline/internal/repositories GroupRoleRepository
 type GroupRoleRepository interface {
-}
-
-type groupRoleRepository struct {
-}
-
-func NewGroupRoleRepository() GroupRoleRepository {
-	return &groupRoleRepository{}
 }

@@ -2,12 +2,12 @@ package repositories
 
 import "github.com/huandu/go-sqlbuilder"
 
-type orderInfo struct {
+type OrderInfo struct {
 	orderBy  string
 	orderDir string
 }
 
-func (i *orderInfo) apply(s *sqlbuilder.SelectBuilder) {
+func (i OrderInfo) Apply(s *sqlbuilder.SelectBuilder) {
 	if i.orderBy == "" {
 		return
 	}
@@ -19,4 +19,8 @@ func (i *orderInfo) apply(s *sqlbuilder.SelectBuilder) {
 			s.OrderByDesc(i.orderBy)
 		}
 	}
+}
+
+func (i OrderInfo) IsZero() bool {
+	return i.orderBy == ""
 }

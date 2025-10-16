@@ -1,17 +1,12 @@
 package repositories
 
 import (
-	"Keyline/internal/database"
-	"Keyline/internal/logging"
-	"Keyline/internal/middlewares"
-	"Keyline/ioc"
 	"Keyline/utils"
 	"context"
 	"encoding/json"
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/huandu/go-sqlbuilder"
 )
 
 type AuditLog struct {
@@ -84,7 +79,7 @@ func NewDeniedAuditLog(virtualServerId uuid.UUID, userId uuid.UUID, request Requ
 	}, nil
 }
 
-func (a *AuditLog) getScanPointers() []any {
+func (a *AuditLog) GetScanPointers() []any {
 	return []any{
 		&a.id,
 		&a.auditCreatedAt,
@@ -134,8 +129,8 @@ func (a *AuditLog) AllowReason() *string {
 }
 
 type AuditLogFilter struct {
-	pagingInfo
-	orderInfo
+	PagingInfo
+	OrderInfo
 	virtualServerId *uuid.UUID
 	userId          *uuid.UUID
 }
@@ -154,139 +149,64 @@ func (f AuditLogFilter) VirtualServerId(virtualServerId uuid.UUID) AuditLogFilte
 	return filter
 }
 
+func (f AuditLogFilter) HasVirtualServerId() bool {
+	return f.virtualServerId != nil
+}
+
+func (f AuditLogFilter) GetVirtualServerId() uuid.UUID {
+	return utils.ZeroIfNil(f.virtualServerId)
+}
+
 func (f AuditLogFilter) UserId(userId uuid.UUID) AuditLogFilter {
 	filter := f.Clone()
 	filter.userId = &userId
 	return filter
 }
 
+func (f AuditLogFilter) HasUserId() bool {
+	return f.userId != nil
+}
+
+func (f AuditLogFilter) GetUserId() uuid.UUID {
+	return utils.ZeroIfNil(f.userId)
+}
+
 func (f AuditLogFilter) Pagination(page int, pageSize int) AuditLogFilter {
 	filter := f.Clone()
-	filter.pagingInfo = pagingInfo{
+	filter.PagingInfo = PagingInfo{
 		page: page,
 		size: pageSize,
 	}
 	return filter
 }
 
+func (f AuditLogFilter) HasPagination() bool {
+	return !f.PagingInfo.IsZero()
+}
+
+func (f AuditLogFilter) GetPagingInfo() PagingInfo {
+	return f.PagingInfo
+}
+
 func (f AuditLogFilter) Order(by string, direction string) AuditLogFilter {
 	filter := f.Clone()
-	filter.orderInfo = orderInfo{
+	filter.OrderInfo = OrderInfo{
 		orderBy:  by,
 		orderDir: direction,
 	}
 	return filter
 }
 
+func (f AuditLogFilter) HasOrder() bool {
+	return !f.OrderInfo.IsZero()
+}
+
+func (f AuditLogFilter) GetOrderInfo() OrderInfo {
+	return f.OrderInfo
+}
+
+//go:generate mockgen -destination=./mocks/auditlog_repository.go -package=mocks Keyline/internal/repositories AuditLogRepository
 type AuditLogRepository interface {
 	List(ctx context.Context, filter AuditLogFilter) ([]*AuditLog, int, error)
 	Insert(ctx context.Context, auditLog *AuditLog) error
-}
-
-type auditLogRepository struct{}
-
-func NewAuditLogRepository() AuditLogRepository {
-	return &auditLogRepository{}
-}
-
-func (r *auditLogRepository) selectQuery(filter AuditLogFilter) *sqlbuilder.SelectBuilder {
-	s := sqlbuilder.Select(
-		"id",
-		"audit_created_at",
-		"audit_updated_at",
-		"version",
-		"virtual_server_id",
-		"user_id",
-		"request_type",
-		"request",
-		"response",
-		"allowed",
-		"allow_reason_type",
-		"allow_reason",
-	).From("audit_logs")
-
-	if filter.virtualServerId != nil {
-		s.Where(s.Equal("virtual_server_id", filter.virtualServerId))
-	}
-
-	if filter.userId != nil {
-		s.Where(s.Equal("user_id", filter.userId))
-	}
-
-	filter.pagingInfo.apply(s)
-	filter.orderInfo.apply(s)
-
-	return s
-}
-
-func (r *auditLogRepository) List(ctx context.Context, filter AuditLogFilter) ([]*AuditLog, int, error) {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
-
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return nil, 0, fmt.Errorf("failed to open tx: %w", err)
-	}
-
-	s := r.selectQuery(filter)
-	s.SelectMore("count(*) over()")
-
-	query, args := s.Build()
-	logging.Logger.Debug("executing sql: ", query)
-	rows, err := tx.Query(query, args...)
-	if err != nil {
-		return nil, 0, fmt.Errorf("querying db: %w", err)
-	}
-	defer utils.PanicOnError(rows.Close, "closing rows")
-
-	var auditLogs []*AuditLog
-	var totalCount int
-	for rows.Next() {
-		auditLog := AuditLog{
-			ModelBase: NewModelBase(),
-		}
-		err = rows.Scan(append(auditLog.getScanPointers(), &totalCount)...)
-		if err != nil {
-			return nil, 0, fmt.Errorf("scanning row: %w", err)
-		}
-
-		auditLogs = append(auditLogs, &auditLog)
-	}
-
-	return auditLogs, totalCount, nil
-}
-
-func (r *auditLogRepository) Insert(ctx context.Context, auditLog *AuditLog) error {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
-
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return fmt.Errorf("failed to open tx: %w", err)
-	}
-
-	s := sqlbuilder.InsertInto("audit_logs").
-		Cols("virtual_server_id", "user_id", "request_type", "request", "response", "allowed", "allow_reason_type", "allow_reason").
-		Values(
-			auditLog.virtualServerId,
-			auditLog.userId,
-			auditLog.requestType,
-			auditLog.request,
-			auditLog.response,
-			auditLog.allowed,
-			auditLog.allowReasonType,
-			auditLog.allowReason,
-		).Returning("id", "audit_created_at", "audit_updated_at", "version")
-
-	query, args := s.Build()
-	logging.Logger.Debug("executing sql: ", query)
-	row := tx.QueryRowContext(ctx, query, args...)
-
-	err = row.Scan(&auditLog.id, &auditLog.auditCreatedAt, &auditLog.auditUpdatedAt, &auditLog.version)
-	if err != nil {
-		return fmt.Errorf("scanning row: %w", err)
-	}
-
-	auditLog.clearChanges()
-	return nil
 }

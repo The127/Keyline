@@ -1,18 +1,10 @@
 package repositories
 
 import (
-	"Keyline/internal/database"
-	"Keyline/internal/logging"
-	"Keyline/internal/middlewares"
-	"Keyline/ioc"
 	"Keyline/utils"
 	"context"
-	"database/sql"
-	"errors"
-	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/huandu/go-sqlbuilder"
 )
 
 type User struct {
@@ -104,7 +96,7 @@ func (m *User) SetMetadata(metadata string) {
 	m.TrackChange("metadata", metadata)
 }
 
-func (m *User) getScanPointers(filter UserFilter) []any {
+func (m *User) GetScanPointers(filter UserFilter) []any {
 	pointers := []any{
 		&m.id,
 		&m.auditCreatedAt,
@@ -126,8 +118,8 @@ func (m *User) getScanPointers(filter UserFilter) []any {
 }
 
 type UserFilter struct {
-	pagingInfo
-	orderInfo
+	PagingInfo
+	OrderInfo
 	virtualServerId *uuid.UUID
 	id              *uuid.UUID
 	username        *string
@@ -150,10 +142,22 @@ func (f UserFilter) VirtualServerId(virtualServerId uuid.UUID) UserFilter {
 	return filter
 }
 
+func (f UserFilter) HasVirtualServerId() bool {
+	return f.virtualServerId != nil
+}
+
+func (f UserFilter) GetVirtualServerId() uuid.UUID {
+	return utils.ZeroIfNil(f.virtualServerId)
+}
+
 func (f UserFilter) Id(id uuid.UUID) UserFilter {
 	filter := f.Clone()
 	filter.id = &id
 	return filter
+}
+
+func (f UserFilter) HasId() bool {
+	return f.id != nil
 }
 
 func (f UserFilter) GetId() uuid.UUID {
@@ -166,10 +170,26 @@ func (f UserFilter) ServiceUser(serviceUser bool) UserFilter {
 	return filter
 }
 
+func (f UserFilter) HasServiceUser() bool {
+	return f.serviceUser != nil
+}
+
+func (f UserFilter) GetServiceUser() bool {
+	return utils.ZeroIfNil(f.serviceUser)
+}
+
 func (f UserFilter) Username(username string) UserFilter {
 	filter := f.Clone()
 	filter.username = &username
 	return filter
+}
+
+func (f UserFilter) HasUsername() bool {
+	return f.username != nil
+}
+
+func (f UserFilter) GetUsername() string {
+	return utils.ZeroIfNil(f.username)
 }
 
 func (f UserFilter) IncludeMetadata() UserFilter {
@@ -178,22 +198,42 @@ func (f UserFilter) IncludeMetadata() UserFilter {
 	return filter
 }
 
+func (f UserFilter) GetIncludeMetadata() bool {
+	return f.includeMetadata
+}
+
 func (f UserFilter) Pagination(page int, size int) UserFilter {
 	filter := f.Clone()
-	filter.pagingInfo = pagingInfo{
+	filter.PagingInfo = PagingInfo{
 		page: page,
 		size: size,
 	}
 	return filter
 }
 
+func (f UserFilter) HasPagination() bool {
+	return !f.PagingInfo.IsZero()
+}
+
+func (f UserFilter) GetPagingInfo() PagingInfo {
+	return f.PagingInfo
+}
+
 func (f UserFilter) Order(by string, direction string) UserFilter {
 	filter := f.Clone()
-	filter.orderInfo = orderInfo{
+	filter.OrderInfo = OrderInfo{
 		orderBy:  by,
 		orderDir: direction,
 	}
 	return filter
+}
+
+func (f UserFilter) HasOrder() bool {
+	return !f.OrderInfo.IsZero()
+}
+
+func (f UserFilter) GetOrderInfo() OrderInfo {
+	return f.OrderInfo
 }
 
 func (f UserFilter) Search(searchFilter SearchFilter) UserFilter {
@@ -202,8 +242,12 @@ func (f UserFilter) Search(searchFilter SearchFilter) UserFilter {
 	return filter
 }
 
-func (f UserFilter) GetUsername() *string {
-	return f.username
+func (f UserFilter) HasSearch() bool {
+	return f.searchFilter != nil
+}
+
+func (f UserFilter) GetSearch() SearchFilter {
+	return *f.searchFilter
 }
 
 //go:generate mockgen -destination=./mocks/user_repository.go -package=mocks Keyline/internal/repositories UserRepository
@@ -213,229 +257,4 @@ type UserRepository interface {
 	First(ctx context.Context, filter UserFilter) (*User, error)
 	Update(ctx context.Context, user *User) error
 	Insert(ctx context.Context, user *User) error
-}
-
-type userRepository struct {
-}
-
-func NewUserRepository() UserRepository {
-	return &userRepository{}
-}
-
-func (r *userRepository) selectQuery(filter UserFilter) *sqlbuilder.SelectBuilder {
-	s := sqlbuilder.Select(
-		"id",
-		"audit_created_at",
-		"audit_updated_at",
-		"version",
-		"virtual_server_id",
-		"display_name",
-		"username",
-		"primary_email",
-		"email_verified",
-		"service_user",
-	).From("users")
-
-	if filter.includeMetadata {
-		s.SelectMore("metadata")
-	}
-
-	if filter.username != nil {
-		s.Where(s.Equal("username", filter.username))
-	}
-
-	if filter.virtualServerId != nil {
-		s.Where(s.Equal("virtual_server_id", filter.virtualServerId))
-	}
-
-	if filter.id != nil {
-		s.Where(s.Equal("id", filter.id))
-	}
-
-	if filter.serviceUser != nil {
-		s.Where(s.Equal("service_user", filter.serviceUser))
-	}
-
-	if filter.searchFilter != nil {
-		term := filter.searchFilter.Term()
-		s.Where(s.Or(
-			s.ILike("username", term),
-			s.ILike("display_name", term),
-		))
-	}
-
-	filter.orderInfo.apply(s)
-	filter.pagingInfo.apply(s)
-
-	return s
-}
-
-func (r *userRepository) List(ctx context.Context, filter UserFilter) ([]*User, int, error) {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
-
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return nil, 0, fmt.Errorf("failed to open tx: %w", err)
-	}
-
-	s := r.selectQuery(filter)
-	s.SelectMore("count(*) over()")
-
-	query, args := s.Build()
-	logging.Logger.Debug("executing sql: ", query)
-	rows, err := tx.Query(query, args...)
-	if err != nil {
-		return nil, 0, fmt.Errorf("querying db: %w", err)
-	}
-	defer utils.PanicOnError(rows.Close, "closing rows")
-
-	var users []*User
-	var totalCount int
-	for rows.Next() {
-		user := User{
-			ModelBase: NewModelBase(),
-		}
-
-		err = rows.Scan(append(user.getScanPointers(filter), &totalCount)...)
-		if err != nil {
-			return nil, 0, fmt.Errorf("scanning row: %w", err)
-		}
-
-		users = append(users, &user)
-	}
-
-	return users, totalCount, nil
-}
-
-func (r *userRepository) Single(ctx context.Context, filter UserFilter) (*User, error) {
-	result, err := r.First(ctx, filter)
-	if err != nil {
-		return nil, err
-	}
-	if result == nil {
-		return nil, utils.ErrUserNotFound
-	}
-	return result, nil
-}
-
-func (r *userRepository) First(ctx context.Context, filter UserFilter) (*User, error) {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
-
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return nil, fmt.Errorf("failed to open tx: %w", err)
-	}
-
-	s := r.selectQuery(filter)
-	s.Limit(1)
-
-	query, args := s.Build()
-	logging.Logger.Debug("executing sql: ", query)
-	row := tx.QueryRowContext(ctx, query, args...)
-
-	user := User{
-		ModelBase: NewModelBase(),
-	}
-	err = row.Scan(user.getScanPointers(filter)...)
-	switch {
-	case errors.Is(err, sql.ErrNoRows):
-		return nil, nil
-
-	case err != nil:
-		return nil, fmt.Errorf("scanning row: %w", err)
-	}
-
-	return &user, nil
-}
-
-func (r *userRepository) Update(ctx context.Context, user *User) error {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
-
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return fmt.Errorf("failed to open tx: %w", err)
-	}
-
-	s := sqlbuilder.Update("users")
-	for fieldName, value := range user.changes {
-		s.SetMore(s.Assign(fieldName, value))
-	}
-	s.SetMore(s.Assign("version", user.version+1))
-
-	s.Where(s.Equal("id", user.id))
-	s.Where(s.Equal("version", user.version))
-	s.Returning("audit_updated_at", "version")
-
-	query, args := s.Build()
-	logging.Logger.Debug("executing sql: ", query)
-	row := tx.QueryRowContext(ctx, query, args...)
-
-	err = row.Scan(&user.auditUpdatedAt, &user.version)
-	switch {
-	case errors.Is(err, sql.ErrNoRows):
-		return fmt.Errorf("updating user: %w", ErrVersionMismatch)
-	case err != nil:
-		return fmt.Errorf("scanning row: %w", err)
-	}
-
-	user.clearChanges()
-	return nil
-}
-
-func (r *userRepository) Insert(ctx context.Context, user *User) error {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
-
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return fmt.Errorf("failed to open tx: %w", err)
-	}
-
-	cols := []string{
-		"username",
-		"display_name",
-		"primary_email",
-		"email_verified",
-		"service_user",
-	}
-	if user.virtualServerId != uuid.Nil {
-		cols = append(cols, "virtual_server_id")
-	} else {
-		cols = append(cols, "id")
-	}
-
-	s := sqlbuilder.InsertInto("users").
-		Cols(cols...)
-
-	values := []any{
-		user.username,
-		user.displayName,
-		user.primaryEmail,
-		user.emailVerified,
-		user.serviceUser,
-	}
-	if user.virtualServerId != uuid.Nil {
-		values = append(values, user.virtualServerId)
-	} else {
-		values = append(values, user.id)
-	}
-
-	s.Values(values...)
-
-	s.Returning("id", "audit_created_at", "audit_updated_at", "version")
-
-	query, args := s.Build()
-	logging.Logger.Debug("executing sql: ", query)
-	row := tx.QueryRowContext(ctx, query, args...)
-
-	err = row.Scan(&user.id, &user.auditCreatedAt, &user.auditUpdatedAt, &user.version)
-	if err != nil {
-		return fmt.Errorf("scanning row: %w", err)
-	}
-
-	user.clearChanges()
-	return nil
 }

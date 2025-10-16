@@ -1,20 +1,11 @@
 package repositories
 
 import (
-	"Keyline/internal/database"
-	"Keyline/internal/database/helpers"
-	"Keyline/internal/logging"
-	"Keyline/internal/middlewares"
-	"Keyline/ioc"
 	"Keyline/utils"
 	"context"
-	"database/sql"
-	"errors"
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/huandu/go-sqlbuilder"
 )
 
 type Role struct {
@@ -49,7 +40,7 @@ func NewApplicationRole(virtualServerId uuid.UUID, applicationId uuid.UUID, name
 	}
 }
 
-func (r *Role) getScanPointers() []any {
+func (r *Role) GetScanPointers() []any {
 	return []any{
 		&r.id,
 		&r.auditCreatedAt,
@@ -109,8 +100,8 @@ func (r *Role) SetMaxTokenAge(maxTokenAge *time.Duration) {
 }
 
 type RoleFilter struct {
-	pagingInfo
-	orderInfo
+	PagingInfo
+	OrderInfo
 	name            *string
 	id              *uuid.UUID
 	virtualServerId *uuid.UUID
@@ -132,8 +123,12 @@ func (f RoleFilter) Name(name string) RoleFilter {
 	return filter
 }
 
-func (f RoleFilter) GetName() *string {
-	return f.name
+func (f RoleFilter) HasName() bool {
+	return f.name != nil
+}
+
+func (f RoleFilter) GetName() string {
+	return utils.ZeroIfNil(f.name)
 }
 
 func (f RoleFilter) Id(id uuid.UUID) RoleFilter {
@@ -142,10 +137,26 @@ func (f RoleFilter) Id(id uuid.UUID) RoleFilter {
 	return filter
 }
 
+func (f RoleFilter) HasId() bool {
+	return f.id != nil
+}
+
+func (f RoleFilter) GetId() uuid.UUID {
+	return utils.ZeroIfNil(f.id)
+}
+
 func (f RoleFilter) ApplicationId(applicationId uuid.UUID) RoleFilter {
 	filter := f.Clone()
 	filter.applicationId = &applicationId
 	return filter
+}
+
+func (f RoleFilter) HasApplicationId() bool {
+	return f.applicationId != nil
+}
+
+func (f RoleFilter) GetApplicationId() uuid.UUID {
+	return utils.ZeroIfNil(f.applicationId)
 }
 
 func (f RoleFilter) Search(searchFilter SearchFilter) RoleFilter {
@@ -154,26 +165,46 @@ func (f RoleFilter) Search(searchFilter SearchFilter) RoleFilter {
 	return filter
 }
 
+func (f RoleFilter) HasSearch() bool {
+	return f.searchFilter != nil
+}
+
+func (f RoleFilter) GetSearch() SearchFilter {
+	return *f.searchFilter
+}
+
 func (f RoleFilter) Pagination(page int, size int) RoleFilter {
 	filter := f.Clone()
-	filter.pagingInfo = pagingInfo{
+	filter.PagingInfo = PagingInfo{
 		page: page,
 		size: size,
 	}
 	return filter
 }
 
+func (f RoleFilter) HasPagination() bool {
+	return !f.PagingInfo.IsZero()
+}
+
+func (f RoleFilter) GetPagingInfo() PagingInfo {
+	return f.PagingInfo
+}
+
 func (f RoleFilter) Order(by string, direction string) RoleFilter {
 	filter := f.Clone()
-	filter.orderInfo = orderInfo{
+	filter.OrderInfo = OrderInfo{
 		orderBy:  by,
 		orderDir: direction,
 	}
 	return filter
 }
 
-func (f RoleFilter) GetId() *uuid.UUID {
-	return f.id
+func (f RoleFilter) HasOrder() bool {
+	return !f.OrderInfo.IsZero()
+}
+
+func (f RoleFilter) GetOrderInfo() OrderInfo {
+	return f.OrderInfo
 }
 
 func (f RoleFilter) VirtualServerId(virtualServerId uuid.UUID) RoleFilter {
@@ -182,8 +213,12 @@ func (f RoleFilter) VirtualServerId(virtualServerId uuid.UUID) RoleFilter {
 	return filter
 }
 
-func (f RoleFilter) GetVirtualServerId() *uuid.UUID {
-	return f.virtualServerId
+func (f RoleFilter) HasVirtualServerId() bool {
+	return f.virtualServerId != nil
+}
+
+func (f RoleFilter) GetVirtualServerId() uuid.UUID {
+	return utils.ZeroIfNil(f.virtualServerId)
 }
 
 //go:generate mockgen -destination=./mocks/role_repository.go -package=mocks Keyline/internal/repositories RoleRepository
@@ -192,176 +227,4 @@ type RoleRepository interface {
 	Single(ctx context.Context, filter RoleFilter) (*Role, error)
 	First(ctx context.Context, filter RoleFilter) (*Role, error)
 	Insert(ctx context.Context, role *Role) error
-}
-
-type roleRepository struct {
-}
-
-func NewRoleRepository() RoleRepository {
-	return &roleRepository{}
-}
-
-func (r *roleRepository) selectQuery(filter RoleFilter) *sqlbuilder.SelectBuilder {
-	s := sqlbuilder.Select(
-		"id",
-		"audit_created_at",
-		"audit_updated_at",
-		"version",
-		"virtual_server_id",
-		"application_id",
-		"name",
-		"description",
-		"require_mfa",
-		"max_token_age",
-	).From("roles")
-
-	if filter.name != nil {
-		s.Where(s.Equal("name", filter.name))
-	}
-
-	if filter.id != nil {
-		s.Where(s.Equal("id", filter.id))
-	}
-
-	if filter.virtualServerId != nil {
-		s.Where(s.Equal("virtual_server_id", filter.virtualServerId))
-	}
-
-	if filter.applicationId != nil {
-		s.Where(s.Equal("application_id", filter.applicationId))
-	} else {
-		s.Where(s.IsNull("application_id"))
-	}
-
-	if filter.searchFilter != nil {
-		term := filter.searchFilter.Term()
-		s.Where(s.Or(
-			s.ILike("name", term),
-		))
-	}
-
-	filter.orderInfo.apply(s)
-	filter.pagingInfo.apply(s)
-
-	return s
-}
-
-func (r *roleRepository) List(ctx context.Context, filter RoleFilter) ([]*Role, int, error) {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
-
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return nil, 0, fmt.Errorf("failed to open tx: %w", err)
-	}
-
-	s := r.selectQuery(filter)
-	s.SelectMore("count(*) over()")
-
-	query, args := s.Build()
-	logging.Logger.Debug("executing sql: ", query)
-	rows, err := tx.QueryContext(ctx, query, args...)
-	if err != nil {
-		return nil, 0, fmt.Errorf("querying rows: %w", err)
-	}
-	defer utils.PanicOnError(rows.Close, "closing rows")
-
-	var roles []*Role
-	var totalCount int
-	for rows.Next() {
-		role := Role{
-			ModelBase: NewModelBase(),
-		}
-		err = rows.Scan(append(role.getScanPointers(), &totalCount)...)
-		if err != nil {
-			return nil, 0, fmt.Errorf("scanning row: %w", err)
-		}
-
-		roles = append(roles, &role)
-	}
-
-	return roles, totalCount, nil
-}
-
-func (r *roleRepository) Single(ctx context.Context, filter RoleFilter) (*Role, error) {
-	result, err := r.First(ctx, filter)
-	if err != nil {
-		return nil, err
-	}
-	if result == nil {
-		return nil, utils.ErrRoleNotFound
-	}
-	return result, nil
-}
-
-func (r *roleRepository) First(ctx context.Context, filter RoleFilter) (*Role, error) {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
-
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return nil, fmt.Errorf("failed to open tx: %w", err)
-	}
-
-	s := r.selectQuery(filter)
-
-	s.Limit(1)
-
-	query, args := s.Build()
-	logging.Logger.Debug("executing sql: ", query)
-	row := tx.QueryRowContext(ctx, query, args...)
-
-	role := Role{
-		ModelBase: NewModelBase(),
-	}
-	err = row.Scan(role.getScanPointers()...)
-	switch {
-	case errors.Is(err, sql.ErrNoRows):
-		return nil, nil
-
-	case err != nil:
-		return nil, fmt.Errorf("scanning row: %w", err)
-	}
-
-	return &role, nil
-}
-
-func (r *roleRepository) Insert(ctx context.Context, role *Role) error {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
-
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return fmt.Errorf("failed to open tx: %w", err)
-	}
-
-	s := sqlbuilder.InsertInto("roles").
-		Cols(
-			"virtual_server_id",
-			"application_id",
-			"name",
-			"description",
-			"require_mfa",
-			"max_token_age",
-		).
-		Values(
-			role.virtualServerId,
-			role.applicationId,
-			role.name,
-			role.description,
-			role.requireMfa,
-			helpers.PqIntervalPtr(role.maxTokenAge),
-		).Returning("id", "audit_created_at", "audit_updated_at", "version")
-
-	query, args := s.Build()
-	logging.Logger.Debug("executing sql: ", query)
-	row := tx.QueryRowContext(ctx, query, args...)
-
-	err = row.Scan(&role.id, &role.auditCreatedAt, &role.auditUpdatedAt, &role.version)
-	if err != nil {
-		return fmt.Errorf("scanning row: %w", err)
-	}
-
-	role.clearChanges()
-	return nil
 }
