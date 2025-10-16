@@ -181,7 +181,7 @@ func (f AuditLogFilter) Pagination(page int, pageSize int) AuditLogFilter {
 }
 
 func (f AuditLogFilter) HasPagination() bool {
-	return f.PagingInfo.IsZero() == false
+	return !f.PagingInfo.IsZero()
 }
 
 func (f AuditLogFilter) GetPagingInfo() PagingInfo {
@@ -198,7 +198,7 @@ func (f AuditLogFilter) Order(by string, direction string) AuditLogFilter {
 }
 
 func (f AuditLogFilter) HasOrder() bool {
-	return f.OrderInfo.IsZero() == false
+	return !f.OrderInfo.IsZero()
 }
 
 func (f AuditLogFilter) GetOrderInfo() OrderInfo {

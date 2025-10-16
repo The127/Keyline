@@ -183,7 +183,7 @@ func (f RoleFilter) Pagination(page int, size int) RoleFilter {
 }
 
 func (f RoleFilter) HasPagination() bool {
-	return f.PagingInfo.IsZero() == false
+	return !f.PagingInfo.IsZero()
 }
 
 func (f RoleFilter) GetPagingInfo() PagingInfo {
@@ -200,7 +200,7 @@ func (f RoleFilter) Order(by string, direction string) RoleFilter {
 }
 
 func (f RoleFilter) HasOrder() bool {
-	return f.OrderInfo.IsZero() == false
+	return !f.OrderInfo.IsZero()
 }
 
 func (f RoleFilter) GetOrderInfo() OrderInfo {

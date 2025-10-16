@@ -122,7 +122,7 @@ func (f TemplateFilter) Pagination(page int, size int) TemplateFilter {
 }
 
 func (f TemplateFilter) HasPagination() bool {
-	return f.PagingInfo.IsZero() == false
+	return !f.PagingInfo.IsZero()
 }
 
 func (f TemplateFilter) GetPagingInfo() PagingInfo {
@@ -139,7 +139,7 @@ func (f TemplateFilter) Order(by string, direction string) TemplateFilter {
 }
 
 func (f TemplateFilter) HasOrder() bool {
-	return f.OrderInfo.IsZero() == false
+	return !f.OrderInfo.IsZero()
 }
 
 func (f TemplateFilter) GetOrderInfo() OrderInfo {

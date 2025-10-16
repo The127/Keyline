@@ -86,7 +86,7 @@ func (f GroupFilter) Pagination(page int, size int) GroupFilter {
 }
 
 func (f GroupFilter) HasPagination() bool {
-	return f.PagingInfo.IsZero() == false
+	return !f.PagingInfo.IsZero()
 }
 
 func (f GroupFilter) GetPagingInfo() PagingInfo {
@@ -103,7 +103,7 @@ func (f GroupFilter) Order(by string, direction string) GroupFilter {
 }
 
 func (f GroupFilter) HasOrder() bool {
-	return f.OrderInfo.IsZero() == false
+	return !f.OrderInfo.IsZero()
 }
 
 func (f GroupFilter) GetOrderInfo() OrderInfo {
