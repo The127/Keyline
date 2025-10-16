@@ -29,8 +29,9 @@ KEYLINE_SERVER_PORT=8080
 KEYLINE_SERVER_EXTERNALURL=https://auth.example.com
 
 # Database configuration
-KEYLINE_DATABASE_HOST=db.example.com
-KEYLINE_DATABASE_PASSWORD=secret
+KEYLINE_DATABASE_MODE=postgres
+KEYLINE_DATABASE_POSTGRES_HOST=db.example.com
+KEYLINE_DATABASE_POSTGRES_PASSWORD=secret
 
 # Cache configuration
 KEYLINE_CACHE_MODE=redis
@@ -78,23 +79,59 @@ frontend:
 
 ### Database Configuration
 
-PostgreSQL database connection settings.
+Keyline supports multiple database backends with a mode-based configuration.
 
 ```yaml
 database:
-  host: "localhost"        # Database host
-  port: 5432              # Database port
-  database: "keyline"     # Database name
-  username: "keyline"     # Database username
-  password: "secret"      # Database password
-  sslMode: "require"      # SSL mode: disable, require, verify-ca, verify-full
+  mode: "postgres"  # Database mode: "postgres" or "sqlite"
+  postgres:
+    host: "localhost"        # Database host
+    port: 5432              # Database port
+    database: "keyline"     # Database name
+    username: "keyline"     # Database username
+    password: "secret"      # Database password
+    sslMode: "require"      # SSL mode: disable, require, verify-ca, verify-full
+  sqlite:
+    database: "./keyline.db"  # SQLite database file path
 ```
 
-**Defaults:**
+**Database Modes:**
+
+#### PostgreSQL Mode
+Production-ready relational database suitable for multi-instance deployments.
+
+```yaml
+database:
+  mode: "postgres"
+  postgres:
+    host: "postgres.example.com"
+    port: 5432
+    database: "keyline"
+    username: "keyline_user"
+    password: "secure_password"
+    sslMode: "require"
+```
+
+**Defaults (PostgreSQL mode):**
 - **database**: `keyline`
 - **port**: `5432`
 - **sslMode**: `enable`
 - **host**, **username**, **password**: *required*
+
+#### SQLite Mode (Work in Progress)
+Lightweight file-based database suitable for development and single-server deployments.
+
+```yaml
+database:
+  mode: "sqlite"
+  sqlite:
+    database: "./data/keyline.db"
+```
+
+**Defaults (SQLite mode):**
+- **database**: *required* (path to SQLite database file)
+
+**Note:** SQLite support is currently work in progress and not yet fully implemented.
 
 ### Cache Configuration
 
@@ -300,12 +337,14 @@ frontend:
   externalUrl: "https://ui.example.com"
 
 database:
-  host: "postgres.example.com"
-  port: 5432
-  database: "keyline"
-  username: "keyline_user"
-  password: "secure_db_password"
-  sslMode: "require"
+  mode: "postgres"
+  postgres:
+    host: "postgres.example.com"
+    port: 5432
+    database: "keyline"
+    username: "keyline_user"
+    password: "secure_db_password"
+    sslMode: "require"
 
 cache:
   mode: "redis"
@@ -362,11 +401,13 @@ server:
   port: 8081
 
 database:
-  host: "localhost"
-  port: 5732
-  username: "dev"
-  password: "dev"
-  sslMode: "disable"
+  mode: "postgres"
+  postgres:
+    host: "localhost"
+    port: 5732
+    username: "dev"
+    password: "dev"
+    sslMode: "disable"
 
 cache:
   mode: "memory"  # Use in-memory cache for development
