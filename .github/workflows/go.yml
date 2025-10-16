@@ -41,11 +41,31 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build & Push latest image
+      - name: Build & Push dev image
         if: github.ref == 'refs/heads/main'
         uses: docker/build-push-action@v5
         with:
           context: .
           file: Containerfile
           push: true
-          tags: ghcr.io/the127/keyline:latest
+          tags: |
+            ghcr.io/the127/keyline:latest
+            ghcr.io/the127/keyline:dev-${{ github.run_number }}
+            ghcr.io/the127/keyline:dev-${{ github.sha }}
+
+  cleanup-old-dev-builds:
+    runs-on: ubuntu-latest
+    needs: lint-test-build
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      packages: write
+    steps:
+      - name: Delete old dev build images
+        uses: dataaxiom/ghcr-cleanup-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          package: keyline
+          owner: The127
+          keep-n-tagged: 10
+          exclude-tags: latest,v*
+          older-than: 7 days
