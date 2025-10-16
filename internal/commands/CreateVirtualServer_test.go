@@ -9,6 +9,7 @@ import (
 	"Keyline/ioc"
 	"Keyline/utils"
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -76,6 +77,54 @@ func (s *CreateVirtualServerCommandSuite) createContext(
 	})
 
 	return middlewares.ContextWithScope(s.T().Context(), scope)
+}
+
+func (s *CreateVirtualServerCommandSuite) TestApplicationError() {
+	// arrange
+	ctrl := gomock.NewController(s.T())
+	defer ctrl.Finish()
+
+	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
+	virtualServerRepository.EXPECT().
+		Insert(gomock.Any(), gomock.Any()).
+		Return(nil)
+
+	templateRepository := mocks.NewMockTemplateRepository(ctrl)
+	templateRepository.EXPECT().
+		Insert(gomock.Any(), gomock.Any()).
+		Return(nil).
+		AnyTimes()
+
+	fileRepository := mocks.NewMockFileRepository(ctrl)
+	fileRepository.EXPECT().
+		Insert(gomock.Any(), gomock.Any()).
+		Return(nil).
+		AnyTimes()
+
+	roleRepository := mocks.NewMockRoleRepository(ctrl)
+	roleRepository.EXPECT().
+		Insert(gomock.Any(), gomock.Any()).
+		Return(nil).
+		AnyTimes()
+
+	keyService := serviceMocks.NewMockKeyService(ctrl)
+	keyService.EXPECT().
+		Generate(gomock.Any(), gomock.Any()).
+		Return(services.KeyPair{}, nil)
+
+	applicationRepository := mocks.NewMockApplicationRepository(ctrl)
+	applicationRepository.EXPECT().
+		Insert(gomock.Any(), gomock.Any()).
+		Return(errors.New("error"))
+
+	ctx := s.createContext(virtualServerRepository, templateRepository, fileRepository, roleRepository, keyService, applicationRepository)
+	cmd := CreateVirtualServer{}
+
+	// act
+	_, err := HandleCreateVirtualServer(ctx, cmd)
+
+	// assert
+	s.Require().Error(err)
 }
 
 func (s *CreateVirtualServerCommandSuite) TestHappyPath() {
