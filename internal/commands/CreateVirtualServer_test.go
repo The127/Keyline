@@ -9,16 +9,22 @@ import (
 	"Keyline/ioc"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
 
-func TestHandleCreateVirtualServer(t *testing.T) {
-	t.Parallel()
+type CreateVirtualServerCommandSuite struct {
+	suite.Suite
+}
 
+func TestCreateVirtualServerCommandSuite(t *testing.T) {
+	t.Parallel()
+	suite.Run(t, new(CreateVirtualServerCommandSuite))
+}
+
+func (s *CreateVirtualServerCommandSuite) TestHandleCreateVirtualServer() {
 	// arrange
-	ctrl := gomock.NewController(t)
+	ctrl := gomock.NewController(s.T())
 	defer ctrl.Finish()
 
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
@@ -75,7 +81,7 @@ func TestHandleCreateVirtualServer(t *testing.T) {
 		return applicationRepository
 	})
 	scope := dc.BuildProvider()
-	ctx := middlewares.ContextWithScope(t.Context(), scope)
+	ctx := middlewares.ContextWithScope(s.T().Context(), scope)
 
 	cmd := CreateVirtualServer{
 		Name:               "virtualServer",
@@ -88,6 +94,6 @@ func TestHandleCreateVirtualServer(t *testing.T) {
 	resp, err := HandleCreateVirtualServer(ctx, cmd)
 
 	// assert
-	require.NoError(t, err)
-	assert.NotNil(t, resp)
+	s.Require().NoError(err)
+	s.NotNil(resp)
 }
