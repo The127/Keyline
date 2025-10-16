@@ -69,6 +69,9 @@ func PanicOnError(f func() error, msg string) {
 	}
 }
 
+// Unwrap returns the value t if err is nil, otherwise it panics.
+// This helper is intended for use in test scenarios or one-off scripts
+// where immediate failure is desired on error. Do not use in production code.
 func Unwrap[T any](t T, err error) T {
 	if err != nil {
 		panic(fmt.Errorf("trying to unwrap error: %w", err))
