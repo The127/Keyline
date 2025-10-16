@@ -261,6 +261,36 @@ docker run -p 8080:8080 \
   keyline:latest
 ```
 
+### Using Pre-built Container Images
+
+Keyline provides pre-built container images on GitHub Container Registry (GHCR):
+
+**Dev Builds** (from main branch):
+- `ghcr.io/the127/keyline:latest` - Most recent dev build
+- `ghcr.io/the127/keyline:dev-<build-number>` - Specific dev build by number (e.g., `dev-123`)
+- `ghcr.io/the127/keyline:dev-<commit-sha>` - Specific dev build by commit (e.g., `dev-abc123def`)
+
+Dev builds are automatically created on every push to the main branch and are cleaned up after 10 builds or 7 days.
+
+**Release Builds** (from version tags):
+- `ghcr.io/the127/keyline:v1.0.0` - Specific release version
+- Release builds are permanently preserved
+
+Example usage:
+```bash
+# Use the latest dev build
+docker pull ghcr.io/the127/keyline:latest
+
+# Use a specific release version (recommended for production)
+docker pull ghcr.io/the127/keyline:v1.0.0
+
+# Run with a specific version
+docker run -p 8080:8080 \
+  -v $(pwd)/config.yaml:/app/config.yaml \
+  -v $(pwd)/keys:/app/keys \
+  ghcr.io/the127/keyline:v1.0.0
+```
+
 ## Key Concepts
 
 ### Virtual Servers
