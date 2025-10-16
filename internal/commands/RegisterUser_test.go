@@ -9,16 +9,22 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
 
-func TestHandleRegisterUser(t *testing.T) {
-	t.Parallel()
+type RegisterUserCommandSuite struct {
+	suite.Suite
+}
 
+func TestRegisterUserCommandSuite(t *testing.T) {
+	t.Parallel()
+	suite.Run(t, new(RegisterUserCommandSuite))
+}
+
+func (s *RegisterUserCommandSuite) TestHandleRegisterUser() {
 	// arrange
-	ctrl := gomock.NewController(t)
+	ctrl := gomock.NewController(s.T())
 	defer ctrl.Finish()
 
 	now := time.Now()
@@ -53,7 +59,7 @@ func TestHandleRegisterUser(t *testing.T) {
 		return m
 	})
 	scope := dc.BuildProvider()
-	ctx := middlewares.ContextWithScope(t.Context(), scope)
+	ctx := middlewares.ContextWithScope(s.T().Context(), scope)
 
 	cmd := RegisterUser{
 		VirtualServerName: virtualServer.Name(),
@@ -67,15 +73,13 @@ func TestHandleRegisterUser(t *testing.T) {
 	user, err := HandleRegisterUser(ctx, cmd)
 
 	// assert
-	require.NoError(t, err)
-	assert.NotNil(t, user)
+	s.Require().NoError(err)
+	s.NotNil(user)
 }
 
-func TestHandleRegisterUser_RegistrationNotEnabled(t *testing.T) {
-	t.Parallel()
-
+func (s *RegisterUserCommandSuite) TestRegistrationNotEnabled() {
 	// arrange
-	ctrl := gomock.NewController(t)
+	ctrl := gomock.NewController(s.T())
 	defer ctrl.Finish()
 
 	now := time.Now()
@@ -93,7 +97,7 @@ func TestHandleRegisterUser_RegistrationNotEnabled(t *testing.T) {
 		return virtualServerRepository
 	})
 	scope := dc.BuildProvider()
-	ctx := middlewares.ContextWithScope(t.Context(), scope)
+	ctx := middlewares.ContextWithScope(s.T().Context(), scope)
 
 	cmd := RegisterUser{
 		VirtualServerName: virtualServer.Name(),
@@ -104,9 +108,8 @@ func TestHandleRegisterUser_RegistrationNotEnabled(t *testing.T) {
 	}
 
 	// act
-	user, err := HandleRegisterUser(ctx, cmd)
+	_, err := HandleRegisterUser(ctx, cmd)
 
 	// assert
-	require.Error(t, err)
-	assert.Nil(t, user)
+	s.Require().Error(err)
 }
