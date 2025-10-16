@@ -41,3 +41,35 @@ func (s *MapPtrSuite) TestMapsIfNotNil() {
 	s.Require().NotNil(result)
 	s.True(*result)
 }
+
+type NilIfZeroSuite struct {
+	suite.Suite
+}
+
+func TestNilIfZeroSuite(t *testing.T) {
+	t.Parallel()
+	suite.Run(t, new(NilIfZeroSuite))
+}
+
+func (s *NilIfZeroSuite) TestReturnsNilIfZeroValue() {
+	// arrange
+	var v int = 0
+
+	// act
+	result := NilIfZero(v)
+
+	// assert
+	s.Nil(result)
+}
+
+func (s *NilIfZeroSuite) TestReturnsValueIfNotZero() {
+	// arrange
+	var v int = 1
+
+	// act
+	result := NilIfZero(v)
+
+	// assert
+	s.NotNil(result)
+	s.Equal(1, *result)
+}
