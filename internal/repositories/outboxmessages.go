@@ -1,16 +1,10 @@
 package repositories
 
 import (
-	"Keyline/internal/database"
-	"Keyline/internal/logging"
-	"Keyline/internal/middlewares"
-	"Keyline/ioc"
 	"Keyline/utils"
 	"context"
-	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/huandu/go-sqlbuilder"
 )
 
 type OutboxMessageType string
@@ -30,7 +24,7 @@ type OutboxMessage struct {
 	details OutboxMessageDetails
 }
 
-func (m *OutboxMessage) getScanPointers() []any {
+func (m *OutboxMessage) GetScanPointers() []any {
 	return []any{
 		&m.id,
 		&m.auditCreatedAt,
@@ -39,6 +33,14 @@ func (m *OutboxMessage) getScanPointers() []any {
 		&m._type,
 		&m.details,
 	}
+}
+
+func (m *OutboxMessage) Type() OutboxMessageType {
+	return m._type
+}
+
+func (m *OutboxMessage) Details() OutboxMessageDetails {
+	return m.details
 }
 
 func NewOutboxMessage(details OutboxMessageDetails) *OutboxMessage {
@@ -67,119 +69,17 @@ func (f OutboxMessageFilter) Id(id uuid.UUID) OutboxMessageFilter {
 	return filter
 }
 
+func (f OutboxMessageFilter) HasId() bool {
+	return f.id != nil
+}
+
+func (f OutboxMessageFilter) GetId() uuid.UUID {
+	return utils.ZeroIfNil(f.id)
+}
+
 //go:generate mockgen -destination=./mocks/outboxmessage_repository.go -package=mocks Keyline/internal/repositories OutboxMessageRepository
 type OutboxMessageRepository interface {
 	List(ctx context.Context, filter OutboxMessageFilter) ([]*OutboxMessage, error)
 	Insert(ctx context.Context, outboxMessage *OutboxMessage) error
 	Delete(ctx context.Context, id uuid.UUID) error
-}
-
-type outboxMessageRepository struct {
-}
-
-func NewOutboxMessageRepository() OutboxMessageRepository {
-	return &outboxMessageRepository{}
-}
-
-func (r *outboxMessageRepository) selectQuery(filter OutboxMessageFilter) *sqlbuilder.SelectBuilder {
-	s := sqlbuilder.Select(
-		"id",
-		"audit_created_at",
-		"audit_updated_at",
-		"version",
-		"type",
-		"details",
-	).From("outbox_messages")
-
-	if filter.id != nil {
-		s.Where(s.Equal("id", filter.id))
-	}
-
-	return s
-}
-
-func (r *outboxMessageRepository) List(ctx context.Context, filter OutboxMessageFilter) ([]*OutboxMessage, error) {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
-
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return nil, fmt.Errorf("failed to open tx: %w", err)
-	}
-
-	s := r.selectQuery(filter)
-
-	query, args := s.Build()
-	logging.Logger.Debug("executing sql: ", query)
-	rows, err := tx.Query(query, args...)
-	if err != nil {
-		return nil, fmt.Errorf("querying db: %w", err)
-	}
-	defer utils.PanicOnError(rows.Close, "closing rows")
-
-	var outboxMessages []*OutboxMessage
-	for rows.Next() {
-		outboxMessage := OutboxMessage{
-			ModelBase: NewModelBase(),
-		}
-		err = rows.Scan(outboxMessage.getScanPointers()...)
-		if err != nil {
-			return nil, fmt.Errorf("scanning row: %w", err)
-		}
-		outboxMessages = append(outboxMessages, &outboxMessage)
-	}
-
-	return outboxMessages, nil
-}
-
-func (r *outboxMessageRepository) Insert(ctx context.Context, outboxMessage *OutboxMessage) error {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
-
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return fmt.Errorf("failed to open tx: %w", err)
-	}
-
-	s := sqlbuilder.InsertInto("outbox_messages").
-		Cols("type", "details").
-		Values(
-			outboxMessage._type,
-			outboxMessage.details,
-		).Returning("id", "audit_created_at", "audit_updated_at", "version")
-
-	query, args := s.Build()
-	logging.Logger.Debug("executing sql: ", query)
-	row := tx.QueryRowContext(ctx, query, args...)
-
-	err = row.Scan(&outboxMessage.id, &outboxMessage.auditCreatedAt, &outboxMessage.auditUpdatedAt, &outboxMessage.version)
-	if err != nil {
-		return fmt.Errorf("scanning row: %w", err)
-	}
-
-	outboxMessage.clearChanges()
-	return nil
-}
-
-func (r *outboxMessageRepository) Delete(ctx context.Context, id uuid.UUID) error {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
-
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return fmt.Errorf("failed to open tx: %w", err)
-	}
-
-	s := sqlbuilder.DeleteFrom("outbox_messages")
-
-	s.Where(s.Equal("id", id))
-
-	query, args := s.Build()
-	logging.Logger.Debug("executing sql: ", query)
-	_, err = tx.ExecContext(ctx, query, args...)
-	if err != nil {
-		return fmt.Errorf("executing delete: %w", err)
-	}
-
-	return nil
 }
