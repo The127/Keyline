@@ -205,6 +205,7 @@ func (r *groupRepository) Insert(ctx context.Context, group *repositories.Group)
 		return fmt.Errorf("scanning row: %w", err)
 	}
 
+	group.ClearChanges()
 	return nil
 }
 
