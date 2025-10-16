@@ -22,7 +22,8 @@ Keyline is still under active development and not ready for production use. Cons
 - 📝 **Template System** - Customizable email templates
 - 📊 **Audit Logging** - Comprehensive audit trail for security and compliance
 - 🔄 **Session Management** - Secure session handling with Redis support
-- 🔐 **Flexible Key Storage** - Support for directory-based key stores (OpenBao support work-in-progress)
+- 🪪 **Flexible Key Storage** - Support for directory-based key stores (OpenBao support work-in-progress)
+- 💾 **Flexible Cache Layer** - in-memory for dev, Redis for production
 - 🎯 **Service Users** - Support for service accounts with public key authentication
 - 📦 **User Metadata** - Store custom user and application-specific metadata
 - 📈 **Metrics & Monitoring** - Prometheus metrics integration
