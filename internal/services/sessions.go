@@ -4,6 +4,7 @@ import (
 	"Keyline/internal/clock"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
+	"Keyline/internal/services/keyValue"
 	"Keyline/ioc"
 	"Keyline/utils"
 	"bytes"
@@ -14,7 +15,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/redis/go-redis/v9"
 )
 
 type sessionService struct {
@@ -55,13 +55,14 @@ func (s *sessionService) NewSession(ctx context.Context, virtualServerName strin
 }
 
 func (s *sessionService) GetSession(ctx context.Context, virtualServerName string, id uuid.UUID) (*middlewares.Session, error) {
-	redisClient := utils.NewRedisClient()
-	redisKey := getRedisSessionKey(virtualServerName, id)
+	scope := middlewares.GetScope(ctx)
+	kvStore := ioc.GetDependency[keyValue.Store](scope)
 
-	stringCmd := redisClient.Get(ctx, redisKey)
-	err := stringCmd.Err()
+	cacheKey := getCacheKey(virtualServerName, id)
+
+	sessionValue, err := kvStore.Get(ctx, cacheKey)
 	switch {
-	case errors.Is(err, redis.Nil):
+	case errors.Is(err, keyValue.ErrNotFound):
 		dbSession, err := s.loadSessionFromDatabase(ctx, virtualServerName, id)
 		if err != nil {
 			return nil, fmt.Errorf("loading session from db: %w", err)
@@ -78,10 +79,9 @@ func (s *sessionService) GetSession(ctx context.Context, virtualServerName strin
 				return nil, fmt.Errorf("marshalling session: %w", err)
 			}
 
-			statusCmd := redisClient.Set(ctx, redisKey, string(valueBytes), time.Minute*15)
-			err = statusCmd.Err()
+			err = kvStore.Set(ctx, cacheKey, string(valueBytes), keyValue.WithExpiration(time.Minute*15))
 			if err != nil {
-				return nil, fmt.Errorf("storing session token in cache: %w", err)
+				return nil, fmt.Errorf("storing session token in kv: %w", err)
 			}
 
 			return middlewares.NewSession(
@@ -97,7 +97,7 @@ func (s *sessionService) GetSession(ctx context.Context, virtualServerName strin
 	}
 
 	tokenValue := sessionTokenValue{}
-	err = json.NewDecoder(bytes.NewBuffer([]byte(stringCmd.Val()))).
+	err = json.NewDecoder(bytes.NewBuffer([]byte(sessionValue))).
 		Decode(&tokenValue)
 	if err != nil {
 		return nil, fmt.Errorf("decoding token from cache: %w", err)
@@ -133,12 +133,12 @@ func (s *sessionService) DeleteSession(ctx context.Context, virtualServerName st
 		return fmt.Errorf("session does not belong to virtual server")
 	}
 
-	redisClient := utils.NewRedisClient()
-	redisKey := getRedisSessionKey(virtualServerName, id)
-	intCmd := redisClient.Del(ctx, redisKey)
-	err = intCmd.Err()
+	kvStore := ioc.GetDependency[keyValue.Store](scope)
+
+	cacheKey := getCacheKey(virtualServerName, id)
+	err = kvStore.Delete(ctx, cacheKey)
 	if err != nil {
-		return fmt.Errorf("deleting session token from cache: %w", err)
+		return fmt.Errorf("deleting session token from kv: %w", err)
 	}
 
 	err = sessionRepository.Delete(ctx, id)
@@ -179,6 +179,6 @@ func (s *sessionService) loadSessionFromDatabase(ctx context.Context, virtualSer
 	), nil
 }
 
-func getRedisSessionKey(virtualServerName string, sessionId uuid.UUID) string {
+func getCacheKey(virtualServerName string, sessionId uuid.UUID) string {
 	return fmt.Sprintf("session:%s:%s", virtualServerName, sessionId)
 }

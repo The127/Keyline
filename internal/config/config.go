@@ -12,6 +12,14 @@ import (
 	"github.com/knadh/koanf/v2"
 )
 
+// CacheMode has the following constants: CacheModeMemory, CacheModeRedis
+type CacheMode string
+
+const (
+	CacheModeMemory CacheMode = "memory"
+	CacheModeRedis  CacheMode = "redis"
+)
+
 // KeyStoreMode has the following constants: KeyStoreModeDirectory, KeyStoreModeOpenBao
 type KeyStoreMode string
 
@@ -86,12 +94,15 @@ type Config struct {
 			Path string
 		}
 	}
-	Redis struct {
-		Host     string
-		Port     int
-		Username string
-		Password string
-		Database int
+	Cache struct {
+		Mode  CacheMode
+		Redis struct {
+			Host     string
+			Port     int
+			Username string
+			Password string
+			Database int
+		}
 	}
 }
 
@@ -151,7 +162,7 @@ func setDefaultsOrPanic() {
 	setDatabaseDefaultsOrPanic()
 	setInitialVirtualServerDefaultsOrPanic()
 	setKeyStoreDefaultsOrPanic()
-	setRedisDefaultsOrPanic()
+	setCacheDefaultsOrPanic()
 }
 
 func setFrontendDefaultsOrPanic() {
@@ -163,17 +174,31 @@ func setFrontendDefaultsOrPanic() {
 	}
 }
 
+func setCacheDefaultsOrPanic() {
+	switch C.Cache.Mode {
+	case CacheModeMemory:
+		// nothing to do
+		break
+
+	case CacheModeRedis:
+		setRedisDefaultsOrPanic()
+
+	default:
+		panic("cache mode missing or not supported")
+	}
+}
+
 func setRedisDefaultsOrPanic() {
-	if C.Redis.Host == "" {
+	if C.Cache.Redis.Host == "" {
 		if IsProduction() {
 			panic("missing redis host")
 		}
 
-		C.Redis.Host = "localhost"
+		C.Cache.Redis.Host = "localhost"
 	}
 
-	if C.Redis.Port == 0 {
-		C.Redis.Port = 6379
+	if C.Cache.Redis.Port == 0 {
+		C.Cache.Redis.Port = 6379
 	}
 }
 

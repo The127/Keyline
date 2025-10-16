@@ -1,14 +1,15 @@
 package services
 
 import (
+	"Keyline/internal/middlewares"
+	"Keyline/internal/services/keyValue"
+	"Keyline/ioc"
 	"Keyline/utils"
 	"context"
 	"encoding/base64"
 	"errors"
 	"fmt"
 	"time"
-
-	"github.com/redis/go-redis/v9"
 )
 
 type TokenType string
@@ -44,51 +45,56 @@ func (t *tokenService) GenerateAndStoreToken(ctx context.Context, tokenType Toke
 	bytes := utils.GetSecureRandomBytes(16)
 	token := base64.URLEncoding.EncodeToString(bytes)
 
-	rdb := utils.NewRedisClient()
-	statusCmd := rdb.Set(ctx, tokenType.Key(token), value, expiration)
-	err := statusCmd.Err()
+	scope := middlewares.GetScope(ctx)
+	kvStore := ioc.GetDependency[keyValue.Store](scope)
+
+	err := kvStore.Set(ctx, tokenType.Key(token), value, keyValue.WithExpiration(expiration))
 	if err != nil {
-		return "", fmt.Errorf("setting token in redis: %w", err)
+		return "", fmt.Errorf("setting token in kv: %w", err)
 	}
 
 	return token, nil
 }
 
 func (t *tokenService) UpdateToken(ctx context.Context, tokenType TokenType, token string, value string, expiration time.Duration) error {
-	rdb := utils.NewRedisClient()
-	statusCmd := rdb.Set(ctx, tokenType.Key(token), value, expiration)
-	err := statusCmd.Err()
+	scope := middlewares.GetScope(ctx)
+	kvStore := ioc.GetDependency[keyValue.Store](scope)
+
+	err := kvStore.Set(ctx, tokenType.Key(token), value, keyValue.WithExpiration(expiration))
 	if err != nil {
-		return fmt.Errorf("updating token in redis: %w", err)
+		return fmt.Errorf("updating token in kv: %w", err)
 	}
 
 	return nil
 }
 
 func (t *tokenService) GetToken(ctx context.Context, tokenType TokenType, token string) (string, error) {
-	rdb := utils.NewRedisClient()
-	token, err := rdb.Get(ctx, tokenType.Key(token)).Result()
+	scope := middlewares.GetScope(ctx)
+	kvStore := ioc.GetDependency[keyValue.Store](scope)
+
+	token, err := kvStore.Get(ctx, tokenType.Key(token))
 	switch {
-	case errors.Is(err, redis.Nil):
+	case errors.Is(err, keyValue.ErrNotFound):
 		return "", ErrTokenNotFound
 
 	case err != nil:
-		return "", fmt.Errorf("getting token from redis: %w", err)
+		return "", fmt.Errorf("getting token from kv: %w", err)
 	}
 
 	return token, nil
 }
 
 func (t *tokenService) DeleteToken(ctx context.Context, tokenType TokenType, token string) error {
-	rdb := utils.NewRedisClient()
-	intCmd := rdb.Del(ctx, tokenType.Key(token))
-	err := intCmd.Err()
+	scope := middlewares.GetScope(ctx)
+	kvStore := ioc.GetDependency[keyValue.Store](scope)
+
+	err := kvStore.Delete(ctx, tokenType.Key(token))
 	switch {
-	case errors.Is(err, redis.Nil):
+	case errors.Is(err, keyValue.ErrNotFound):
 		return nil
 
 	case err != nil:
-		return fmt.Errorf("deleting token from redis: %w", err)
+		return fmt.Errorf("deleting token from kv: %w", err)
 	}
 
 	return nil

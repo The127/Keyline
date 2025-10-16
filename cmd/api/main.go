@@ -28,6 +28,7 @@ import (
 	"Keyline/internal/services"
 	"Keyline/internal/services/audit"
 	"Keyline/internal/services/claimsMapping"
+	"Keyline/internal/services/keyValue"
 	"Keyline/ioc"
 	"Keyline/mediator"
 	"Keyline/utils"
@@ -128,6 +129,18 @@ func main() {
 	})
 	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) behaviours.AuditLogger {
 		return audit.NewDbAuditLogger()
+	})
+	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) keyValue.Store {
+		switch config.C.Cache.Mode {
+		case config.CacheModeMemory:
+			return keyValue.NewMemoryStore()
+
+		case config.CacheModeRedis:
+			return keyValue.NewRedisStore()
+
+		default:
+			panic("cache mode missing or not supported")
+		}
 	})
 
 	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.UserRepository {
