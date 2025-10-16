@@ -179,7 +179,7 @@ func (r *applicationRepository) Insert(ctx context.Context, application *reposit
 	logging.Logger.Debug("executing sql: ", query)
 	row := tx.QueryRowContext(ctx, query, args...)
 
-	err = row.Scan(application.UpdatePointers()...)
+	err = row.Scan(application.InsertPointers()...)
 	if err != nil {
 		return fmt.Errorf("scanning row: %w", err)
 	}
