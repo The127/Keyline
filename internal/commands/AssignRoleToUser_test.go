@@ -6,6 +6,7 @@ import (
 	repoMocks "Keyline/internal/repositories/mocks"
 	"Keyline/ioc"
 	"Keyline/utils"
+	"context"
 	"testing"
 	"time"
 
@@ -20,6 +21,46 @@ type AssignRoleToUserCommandSuite struct {
 func TestAssignRoleToUserCommandSuite(t *testing.T) {
 	t.Parallel()
 	suite.Run(t, new(AssignRoleToUserCommandSuite))
+}
+
+func (s *AssignRoleToUserCommandSuite) createContext(
+	vsr repositories.VirtualServerRepository,
+	ur repositories.UserRepository,
+	rr repositories.RoleRepository,
+	usr repositories.UserRoleAssignmentRepository,
+) context.Context {
+	dc := ioc.NewDependencyCollection()
+
+	if vsr != nil {
+		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.VirtualServerRepository {
+			return vsr
+		})
+	}
+
+	if ur != nil {
+		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.UserRepository {
+			return ur
+		})
+	}
+
+	if rr != nil {
+		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.RoleRepository {
+			return rr
+		})
+	}
+
+	if usr != nil {
+		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.UserRoleAssignmentRepository {
+			return usr
+		})
+	}
+
+	scope := dc.BuildProvider()
+	s.T().Cleanup(func() {
+		utils.PanicOnError(scope.Close, "closing scope")
+	})
+
+	return middlewares.ContextWithScope(s.T().Context(), scope)
 }
 
 func (s *AssignRoleToUserCommandSuite) TestHappyPath() {
@@ -55,23 +96,7 @@ func (s *AssignRoleToUserCommandSuite) TestHappyPath() {
 		return x.RoleId() == role.Id() && x.UserId() == user.Id()
 	})).Return(nil)
 
-	dc := ioc.NewDependencyCollection()
-	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.VirtualServerRepository {
-		return virtualServerRepository
-	})
-	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.UserRepository {
-		return userRepository
-	})
-	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.RoleRepository {
-		return roleRepository
-	})
-	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.UserRoleAssignmentRepository {
-		return userRoleAssignmentRepository
-	})
-	scope := dc.BuildProvider()
-	defer utils.PanicOnError(scope.Close, "closing scope")
-	ctx := middlewares.ContextWithScope(s.T().Context(), scope)
-
+	ctx := s.createContext(virtualServerRepository, userRepository, roleRepository, userRoleAssignmentRepository)
 	cmd := AssignRoleToUser{
 		VirtualServerName: virtualServer.Name(),
 		UserId:            user.Id(),
