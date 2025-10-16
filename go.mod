@@ -10,7 +10,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/handlers v1.5.2
 	github.com/gorilla/mux v1.8.1
-	github.com/huandu/go-sqlbuilder v1.36.0
+	github.com/huandu/go-sqlbuilder v1.38.0
 	github.com/knadh/koanf/parsers/yaml v1.1.0
 	github.com/knadh/koanf/providers/env/v2 v2.0.0
 	github.com/knadh/koanf/providers/file v1.2.0
@@ -50,6 +50,7 @@ require (
 	github.com/go-sourcemap/sourcemap v2.1.3+incompatible // indirect
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/google/pprof v0.0.0-20230207041349-798e818bf904 // indirect
+	github.com/huandu/go-clone v1.7.3 // indirect
 	github.com/huandu/xstrings v1.4.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/knadh/koanf/maps v0.1.2 // indirect
