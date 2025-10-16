@@ -51,6 +51,7 @@ func (s *CreateApplicationCommandSuite) createContext(
 }
 
 func (s *CreateApplicationCommandSuite) TestVirtualServerError() {
+	// arrange
 	ctrl := gomock.NewController(s.T())
 	defer ctrl.Finish()
 
@@ -70,6 +71,7 @@ func (s *CreateApplicationCommandSuite) TestVirtualServerError() {
 }
 
 func (s *CreateApplicationCommandSuite) TestApplicationError() {
+	// arrange
 	ctrl := gomock.NewController(s.T())
 	defer ctrl.Finish()
 
@@ -98,6 +100,7 @@ func (s *CreateApplicationCommandSuite) TestApplicationError() {
 }
 
 func (s *CreateApplicationCommandSuite) TestPublicApplicationHappyPath() {
+	// arrange
 	ctrl := gomock.NewController(s.T())
 	defer ctrl.Finish()
 
@@ -141,6 +144,7 @@ func (s *CreateApplicationCommandSuite) TestPublicApplicationHappyPath() {
 }
 
 func (s *CreateApplicationCommandSuite) TestConfidentialApplicationHappyPath() {
+	// arrange
 	ctrl := gomock.NewController(s.T())
 	defer ctrl.Finish()
 
