@@ -43,7 +43,7 @@ Keyline follows a clean architecture pattern with clear separation of concerns:
 
 - **Go 1.24** or higher
 - **PostgreSQL** database
-- **Redis** (Valkey) for session storage
+- **Cache Storage** - Redis (Valkey) recommended for production, or in-memory for development/single-instance
 - **Mail server** (for email notifications)
 
 ## Quick Start
@@ -110,6 +110,15 @@ initialVirtualServer:
     passwordHash: "$argon2id$v=19$m=16,t=2,p=1$..."
 ```
 
+#### Cache Configuration
+```yaml
+cache:
+  mode: "redis"  # or "memory" for single-instance deployments
+  redis:
+    host: "localhost"
+    port: 6379
+```
+
 #### Key Store Configuration
 ```yaml
 keyStore:
@@ -166,8 +175,10 @@ keyline-ui:
 
 ## Configuration
 
-Configuration can be provided via:
-1. YAML configuration file (default: `config.yaml`)
+Keyline provides flexible configuration management through YAML files and environment variables. Configuration supports multiple cache backends (in-memory or Redis) and key storage options (directory or OpenBao).
+
+**Quick Start:**
+1. YAML configuration file (specify with `--config` flag)
 2. Environment variables with `KEYLINE_` prefix
 
 Example environment variables:
@@ -176,7 +187,11 @@ KEYLINE_SERVER_HOST=0.0.0.0
 KEYLINE_SERVER_PORT=8080
 KEYLINE_DATABASE_HOST=localhost
 KEYLINE_DATABASE_PASSWORD=secret
+KEYLINE_CACHE_MODE=redis
+KEYLINE_CACHE_REDIS_HOST=localhost
 ```
+
+For comprehensive configuration documentation, including all available options, defaults, and validation rules, see the [Configuration Package Documentation](internal/config/README.md).
 
 ## API Documentation
 
@@ -201,7 +216,7 @@ Keyline provides comprehensive API documentation using Swagger/OpenAPI:
 │   ├── repositories/     # Data access layer
 │   ├── services/         # Business services
 │   ├── database/         # Database connection and migrations
-│   ├── config/           # Configuration management
+│   ├── config/           # Configuration management (see internal/config/README.md)
 │   ├── middlewares/      # HTTP middlewares
 │   └── ...
 ├── ioc/                  # IoC container implementation
@@ -322,10 +337,11 @@ TOTP-based 2FA using standard authenticator apps (Google Authenticator, Authy, e
 1. **Use HTTPS** - Always use TLS in production
 2. **Secure Key Storage** - Consider using OpenBao or similar for key management
 3. **Database Backups** - Regular backups of PostgreSQL database
-4. **Redis Persistence** - Configure Redis persistence for session data
-5. **Log Aggregation** - Centralize logs for monitoring and debugging
-6. **Metrics** - Monitor Prometheus metrics for performance insights
-7. **Rate Limiting** - Implement rate limiting at the reverse proxy level
+4. **Distributed Caching** - Use Redis cache mode for multi-instance deployments (in-memory cache is not shared)
+5. **Redis Persistence** - Configure Redis persistence for cache data if using Redis mode
+6. **Log Aggregation** - Centralize logs for monitoring and debugging
+7. **Metrics** - Monitor Prometheus metrics for performance insights
+8. **Rate Limiting** - Implement rate limiting at the reverse proxy level
 
 ### Environment Variables for Production
 
@@ -333,7 +349,8 @@ TOTP-based 2FA using standard authenticator apps (Google Authenticator, Authy, e
 KEYLINE_SERVER_EXTERNALURL=https://auth.example.com
 KEYLINE_DATABASE_HOST=prod-db.example.com
 KEYLINE_DATABASE_PASSWORD=secure-password
-KEYLINE_REDIS_HOST=prod-redis.example.com
+KEYLINE_CACHE_MODE=redis
+KEYLINE_CACHE_REDIS_HOST=prod-redis.example.com
 KEYLINE_KEYSTORE_MODE=openbao
 ```
 
