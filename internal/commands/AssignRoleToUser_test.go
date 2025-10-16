@@ -9,17 +9,22 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
-
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
 
-func TestHandleAssignRoleToUser(t *testing.T) {
-	t.Parallel()
+type AssignRoleToUserCommandSuite struct {
+	suite.Suite
+}
 
+func TestAssignRoleToUserCommandSuite(t *testing.T) {
+	t.Parallel()
+	suite.Run(t, new(AssignRoleToUserCommandSuite))
+}
+
+func (s *AssignRoleToUserCommandSuite) TestHappyPath() {
 	// arrange
-	ctrl := gomock.NewController(t)
+	ctrl := gomock.NewController(s.T())
 	defer ctrl.Finish()
 
 	now := time.Now()
@@ -65,7 +70,7 @@ func TestHandleAssignRoleToUser(t *testing.T) {
 	})
 	scope := dc.BuildProvider()
 	defer utils.PanicOnError(scope.Close, "closing scope")
-	ctx := middlewares.ContextWithScope(t.Context(), scope)
+	ctx := middlewares.ContextWithScope(s.T().Context(), scope)
 
 	cmd := AssignRoleToUser{
 		VirtualServerName: virtualServer.Name(),
@@ -77,6 +82,6 @@ func TestHandleAssignRoleToUser(t *testing.T) {
 	resp, err := HandleAssignRoleToUser(ctx, cmd)
 
 	// assert
-	require.NoError(t, err)
-	assert.NotNil(t, resp)
+	s.Require().NoError(err)
+	s.NotNil(resp)
 }
