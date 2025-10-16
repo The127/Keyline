@@ -7,6 +7,7 @@ import (
 	"reflect"
 )
 
+//go:generate mockgen -destination=./mocks/mediator.go -package=mocks Keyline/mediator Mediator
 type Mediator interface {
 	Send(ctx context.Context, request any, requestType reflect.Type, responseType reflect.Type) (any, error)
 	SendEvent(ctx context.Context, evt any, eventType reflect.Type) error

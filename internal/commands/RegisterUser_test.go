@@ -28,7 +28,7 @@ func TestHandleRegisterUser(t *testing.T) {
 	virtualServer.SetEnableRegistration(true)
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
 	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories.VirtualServerFilter) bool {
-		return *x.GetName() == virtualServer.Name()
+		return x.GetName() == virtualServer.Name()
 	})).Return(virtualServer, nil)
 
 	userRepository := mocks.NewMockUserRepository(ctrl)
@@ -85,7 +85,7 @@ func TestHandleRegisterUser_RegistrationNotEnabled(t *testing.T) {
 	virtualServer.SetEnableRegistration(false)
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
 	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories.VirtualServerFilter) bool {
-		return *x.GetName() == virtualServer.Name()
+		return x.GetName() == virtualServer.Name()
 	})).Return(virtualServer, nil)
 
 	dc := ioc.NewDependencyCollection()
