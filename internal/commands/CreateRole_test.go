@@ -10,6 +10,7 @@ import (
 	mediatorMocks "Keyline/mediator/mocks"
 	"Keyline/utils"
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -59,6 +60,48 @@ func (s *CreateRoleCommandSuite) createContext(
 	return middlewares.ContextWithScope(s.T().Context(), scope)
 }
 
+func (s *CreateRoleCommandSuite) TestVirtualServerError() {
+	// arrange
+	ctrl := gomock.NewController(s.T())
+	defer ctrl.Finish()
+
+	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
+	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).
+		Return(nil, errors.New("error"))
+
+	ctx := s.createContext(virtualServerRepository, nil, nil)
+	cmd := CreateRole{}
+
+	// act
+	_, err := HandleCreateRole(ctx, cmd)
+
+	// assert
+	s.Error(err)
+}
+
+func (s *CreateRoleCommandSuite) TestRoleError() {
+	// arrange
+	ctrl := gomock.NewController(s.T())
+	defer ctrl.Finish()
+
+	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
+	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
+	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
+
+	roleRepository := mocks.NewMockRoleRepository(ctrl)
+	roleRepository.EXPECT().Insert(gomock.Any(), gomock.Any()).
+		Return(errors.New("error"))
+
+	ctx := s.createContext(virtualServerRepository, roleRepository, nil)
+	cmd := CreateRole{}
+
+	// act
+	_, err := HandleCreateRole(ctx, cmd)
+
+	// assert
+	s.Error(err)
+}
+
 func (s *CreateRoleCommandSuite) TestHappyPath() {
 	// arrange
 	ctrl := gomock.NewController(s.T())
@@ -77,7 +120,7 @@ func (s *CreateRoleCommandSuite) TestHappyPath() {
 			x.VirtualServerId() == virtualServer.Id() &&
 			x.RequireMfa() == true &&
 			*x.MaxTokenAge() == time.Hour
-	}))
+	})).Return(nil)
 
 	m := mediatorMocks.NewMockMediator(ctrl)
 	m.EXPECT().SendEvent(gomock.Any(), gomock.AssignableToTypeOf(events.RoleCreatedEvent{}), gomock.Any())
