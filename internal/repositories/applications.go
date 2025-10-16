@@ -172,7 +172,7 @@ func (f ApplicationFilter) Pagination(page int, size int) ApplicationFilter {
 }
 
 func (f ApplicationFilter) HasPagination() bool {
-	return f.page > 0 && f.size > 0
+	return f.PagingInfo.IsZero() == false
 }
 
 func (f ApplicationFilter) GetPagingInfo() PagingInfo {
@@ -189,7 +189,7 @@ func (f ApplicationFilter) Order(by string, direction string) ApplicationFilter 
 }
 
 func (f ApplicationFilter) HasOrder() bool {
-	return f.orderBy != ""
+	return f.OrderInfo.IsZero() == false
 }
 
 func (f ApplicationFilter) GetOrderInfo() OrderInfo {

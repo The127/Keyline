@@ -7,6 +7,10 @@ type PagingInfo struct {
 	size int
 }
 
+func (i PagingInfo) IsZero() bool {
+	return i.page == 0 && i.size == 0
+}
+
 func (i PagingInfo) Apply(s *sqlbuilder.SelectBuilder) {
 	if i.page == 0 {
 		return

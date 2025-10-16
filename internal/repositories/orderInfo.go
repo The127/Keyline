@@ -20,3 +20,7 @@ func (i OrderInfo) Apply(s *sqlbuilder.SelectBuilder) {
 		}
 	}
 }
+
+func (i OrderInfo) IsZero() bool {
+	return i.orderBy == ""
+}
