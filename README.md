@@ -24,6 +24,7 @@ Keyline is still under active development and not ready for production use. Cons
 - 🔄 **Session Management** - Secure session handling with Redis support
 - 🪪 **Flexible Key Storage** - Support for directory-based key stores (OpenBao support work-in-progress)
 - 💾 **Flexible Cache Layer** - in-memory for dev, Redis for production
+- 🗄️ **Configurable Database** - PostgreSQL for production, SQLite for development/single-server (work-in-progress)
 - 🎯 **Service Users** - Support for service accounts with public key authentication
 - 📦 **User Metadata** - Store custom user and application-specific metadata
 - 📈 **Metrics & Monitoring** - Prometheus metrics integration
@@ -43,7 +44,7 @@ Keyline follows a clean architecture pattern with clear separation of concerns:
 ## Prerequisites
 
 - **Go 1.24** or higher
-- **PostgreSQL** database
+- **Database** - PostgreSQL (recommended for production) or SQLite (work-in-progress, for development/single-server)
 - **Cache Storage** - Redis (Valkey) recommended for production, or in-memory for development/single-instance
 - **Mail server** (for email notifications)
 
@@ -89,11 +90,16 @@ server:
 #### Database Configuration
 ```yaml
 database:
-  host: "localhost"
-  port: 5732
-  username: "user"
-  password: "password"
-  sslMode: "disable"
+  mode: "postgres"  # "postgres" or "sqlite" (sqlite is work-in-progress)
+  postgres:
+    host: "localhost"
+    port: 5732
+    username: "user"
+    password: "password"
+    sslMode: "disable"
+  # For SQLite (work-in-progress):
+  # sqlite:
+  #   database: "./keyline.db"
 ```
 
 #### Initial Virtual Server
@@ -176,7 +182,7 @@ keyline-ui:
 
 ## Configuration
 
-Keyline provides flexible configuration management through YAML files and environment variables. Configuration supports multiple cache backends (in-memory or Redis) and key storage options (directory or OpenBao).
+Keyline provides flexible configuration management through YAML files and environment variables. Configuration supports multiple database backends (PostgreSQL, SQLite work-in-progress), cache backends (in-memory or Redis) and key storage options (directory or OpenBao).
 
 **Quick Start:**
 1. YAML configuration file (specify with `--config` flag)
@@ -186,8 +192,9 @@ Example environment variables:
 ```bash
 KEYLINE_SERVER_HOST=0.0.0.0
 KEYLINE_SERVER_PORT=8080
-KEYLINE_DATABASE_HOST=localhost
-KEYLINE_DATABASE_PASSWORD=secret
+KEYLINE_DATABASE_MODE=postgres
+KEYLINE_DATABASE_POSTGRES_HOST=localhost
+KEYLINE_DATABASE_POSTGRES_PASSWORD=secret
 KEYLINE_CACHE_MODE=redis
 KEYLINE_CACHE_REDIS_HOST=localhost
 ```
@@ -375,20 +382,22 @@ TOTP-based 2FA using standard authenticator apps (Google Authenticator, Authy, e
 ### Production Considerations
 
 1. **Use HTTPS** - Always use TLS in production
-2. **Secure Key Storage** - Consider using OpenBao or similar for key management
-3. **Database Backups** - Regular backups of PostgreSQL database
-4. **Distributed Caching** - Use Redis cache mode for multi-instance deployments (in-memory cache is not shared)
-5. **Redis Persistence** - Configure Redis persistence for cache data if using Redis mode
-6. **Log Aggregation** - Centralize logs for monitoring and debugging
-7. **Metrics** - Monitor Prometheus metrics for performance insights
-8. **Rate Limiting** - Implement rate limiting at the reverse proxy level
+2. **Database Choice** - Use PostgreSQL for production deployments (SQLite is for development only)
+3. **Secure Key Storage** - Consider using OpenBao or similar for key management
+4. **Database Backups** - Regular backups of PostgreSQL database
+5. **Distributed Caching** - Use Redis cache mode for multi-instance deployments (in-memory cache is not shared)
+6. **Redis Persistence** - Configure Redis persistence for cache data if using Redis mode
+7. **Log Aggregation** - Centralize logs for monitoring and debugging
+8. **Metrics** - Monitor Prometheus metrics for performance insights
+9. **Rate Limiting** - Implement rate limiting at the reverse proxy level
 
 ### Environment Variables for Production
 
 ```bash
 KEYLINE_SERVER_EXTERNALURL=https://auth.example.com
-KEYLINE_DATABASE_HOST=prod-db.example.com
-KEYLINE_DATABASE_PASSWORD=secure-password
+KEYLINE_DATABASE_MODE=postgres
+KEYLINE_DATABASE_POSTGRES_HOST=prod-db.example.com
+KEYLINE_DATABASE_POSTGRES_PASSWORD=secure-password
 KEYLINE_CACHE_MODE=redis
 KEYLINE_CACHE_REDIS_HOST=prod-redis.example.com
 KEYLINE_KEYSTORE_MODE=openbao
