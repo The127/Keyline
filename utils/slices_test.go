@@ -53,3 +53,36 @@ func (s *MapSliceSuite) TestMapsValues() {
 	// assert
 	s.Equal([]bool{false, true, false}, result)
 }
+
+type EmptyIfNilSuite struct {
+	suite.Suite
+}
+
+func TestEmptyIfNilSuite(t *testing.T) {
+	t.Parallel()
+	suite.Run(t, new(EmptyIfNilSuite))
+}
+
+func (s *EmptyIfNilSuite) TestEmptyIfNil() {
+	// arrange
+	var v []string = nil
+
+	// act
+	result := EmptyIfNil(v)
+
+	// assert
+	s.Empty(result)
+	s.NotNil(result)
+	s.Equal([]string{}, result)
+}
+
+func (s *EmptyIfNilSuite) TestKeepsOriginalIfNotNil() {
+	// arrange
+	var v = []string{"a", "b", "c"}
+
+	// act
+	result := EmptyIfNil(v)
+
+	// assert
+	s.Equal(v, result)
+}
