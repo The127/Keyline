@@ -9,16 +9,22 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
 
-func TestHandleCreateRole(t *testing.T) {
-	t.Parallel()
+type CreateRoleCommandSuite struct {
+	suite.Suite
+}
 
+func TestCreateRoleCommandSuite(t *testing.T) {
+	t.Parallel()
+	suite.Run(t, new(CreateRoleCommandSuite))
+}
+
+func (s *CreateRoleCommandSuite) TestHappyPath() {
 	// arrange
-	ctrl := gomock.NewController(t)
+	ctrl := gomock.NewController(s.T())
 	defer ctrl.Finish()
 
 	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
@@ -47,7 +53,7 @@ func TestHandleCreateRole(t *testing.T) {
 		return mediator.NewMediator()
 	})
 	scope := dc.BuildProvider()
-	ctx := middlewares.ContextWithScope(t.Context(), scope)
+	ctx := middlewares.ContextWithScope(s.T().Context(), scope)
 
 	cmd := CreateRole{
 		VirtualServerName: virtualServer.Name(),
@@ -61,6 +67,6 @@ func TestHandleCreateRole(t *testing.T) {
 	resp, err := HandleCreateRole(ctx, cmd)
 
 	// assert
-	require.NoError(t, err)
-	assert.NotNil(t, resp)
+	s.Require().NoError(err)
+	s.NotNil(resp)
 }
