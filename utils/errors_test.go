@@ -25,7 +25,7 @@ func (s *UnwrapSuite) TestNoErrorReturnsValue() {
 	unwrapped := Unwrap(t, err)
 
 	// assert
-	s.Equal(t, unwrapped, t)
+	s.Equal(t, unwrapped)
 }
 
 func (s *UnwrapSuite) TestPanicsOnError() {
