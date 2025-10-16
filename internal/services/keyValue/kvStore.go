@@ -80,11 +80,13 @@ func (m *memoryStore) Get(ctx context.Context, key string) (string, error) {
 	m.mu.RLock()
 	item, ok := m.data[key]
 	if !ok {
+		m.mu.RUnlock()
 		return "", ErrNotFound
 	}
 	m.mu.RUnlock()
 
-	if item.expiration.Before(clockService.Now()) {
+	if item.expiration.Before(
+		clockService.Now()) {
 		m.mu.Lock()
 		itemBeforeDeletion := m.data[key]
 		if itemBeforeDeletion.expiration.Before(clockService.Now()) {
