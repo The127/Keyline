@@ -5,11 +5,13 @@ server:
 frontend:
   externalUrl: "http://localhost:5173"
 database:
-  host: "localhost"
-  port: 5732
-  username: "user"
-  password: "password"
-  sslMode: "disable"
+  mode: "postgres"
+  postgres:
+    host: "localhost"
+    port: 5732
+    username: "user"
+    password: "password"
+    sslMode: "disable"
 initialVirtualServer:
   enableRegistration: true
   createInitialAdmin: true

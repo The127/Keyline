@@ -12,6 +12,14 @@ import (
 	"github.com/knadh/koanf/v2"
 )
 
+// DatabaseMode has the following constants: DatabaseModePostgres, DatabaseModeSqlite
+type DatabaseMode string
+
+const (
+	DatabaseModePostgres DatabaseMode = "postgres"
+	DatabaseModeSqlite   DatabaseMode = "sqlite"
+)
+
 // CacheMode has the following constants: CacheModeMemory, CacheModeRedis
 type CacheMode string
 
@@ -51,12 +59,18 @@ type Config struct {
 		ExternalUrl string
 	}
 	Database struct {
-		Database string
-		Host     string
-		Port     int
-		Username string
-		Password string
-		SslMode  string
+		Mode     DatabaseMode
+		Postgres struct {
+			Database string
+			Host     string
+			Port     int
+			Username string
+			Password string
+			SslMode  string
+		}
+		Sqlite struct {
+			Database string
+		}
 	}
 	InitialVirtualServer struct {
 		Name               string
@@ -328,28 +342,50 @@ func setServerDefaultsOrPanic() {
 }
 
 func setDatabaseDefaultsOrPanic() {
-	if C.Database.Database == "" {
-		C.Database.Database = "keyline"
+	switch C.Database.Mode {
+	case DatabaseModePostgres:
+		setPostgresDefaultsOrPanic()
+
+	case DatabaseModeSqlite:
+		setSqliteDefaultsOrPanic()
+
+	default:
+		panic("database mode missing or not supported")
+	}
+}
+
+func setSqliteDefaultsOrPanic() {
+	if C.Database.Sqlite.Database == "" {
+		panic("missing sqlite file path")
 	}
 
-	if C.Database.Username == "" {
-		panic("missing database username")
+	panic("sqlite not implemented yet")
+}
+
+func setPostgresDefaultsOrPanic() {
+
+	if C.Database.Postgres.Database == "" {
+		C.Database.Postgres.Database = "keyline"
 	}
 
-	if C.Database.Port == 0 {
-		C.Database.Port = 5432
+	if C.Database.Postgres.Username == "" {
+		panic("missing postgres username")
 	}
 
-	if C.Database.Host == "" {
-		panic("missing database host")
+	if C.Database.Postgres.Port == 0 {
+		C.Database.Postgres.Port = 5432
 	}
 
-	if C.Database.SslMode == "" {
-		C.Database.SslMode = "enable"
+	if C.Database.Postgres.Host == "" {
+		panic("missing postgres host")
 	}
 
-	if C.Database.Password == "" {
-		panic("missing database password")
+	if C.Database.Postgres.SslMode == "" {
+		C.Database.Postgres.SslMode = "enable"
+	}
+
+	if C.Database.Postgres.Password == "" {
+		panic("missing postgres password")
 	}
 }
 
