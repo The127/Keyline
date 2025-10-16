@@ -266,20 +266,29 @@ docker run -p 8080:8080 \
 Keyline provides pre-built container images on GitHub Container Registry (GHCR):
 
 **Dev Builds** (from main branch):
-- `ghcr.io/the127/keyline:latest` - Most recent dev build
-- `ghcr.io/the127/keyline:dev-<build-number>` - Specific dev build by number (e.g., `dev-123`)
-- `ghcr.io/the127/keyline:dev-<commit-sha>` - Specific dev build by commit (e.g., `dev-abc123def`)
+- `ghcr.io/the127/keyline:latest` - Always points to the most recent dev build from the main branch
+- `ghcr.io/the127/keyline:dev-<build-number>` - Specific dev build by CI run number (e.g., `dev-123`)
+- `ghcr.io/the127/keyline:dev-<commit-sha>` - Specific dev build by commit SHA (e.g., `dev-abc123def`)
 
-Dev builds are automatically created on every push to the main branch and are cleaned up after 10 builds or 7 days.
+Dev builds are automatically created on every push to the main branch. Each push creates three tags: `latest` (updated to point to the new build), `dev-<build-number>`, and `dev-<commit-sha>`.
+
+**Image Retention Policy:**
+- **Dev builds**: Cleaned up automatically after 10 builds or 7 days (whichever comes first)
+- **`latest` tag**: Never cleaned up - always points to the most recent dev build
+- **Release builds** (`v*` tags): Permanently preserved, never cleaned up
 
 **Release Builds** (from version tags):
-- `ghcr.io/the127/keyline:v1.0.0` - Specific release version
-- Release builds are permanently preserved
+- `ghcr.io/the127/keyline:v1.0.0` - Specific release version (e.g., v1.0.0, v1.2.3)
+- Created automatically when a version tag (e.g., `v1.0.0`) is pushed
+- Permanently preserved for production use
 
 Example usage:
 ```bash
-# Use the latest dev build
+# Use the latest dev build (for testing/development)
 docker pull ghcr.io/the127/keyline:latest
+
+# Use a specific dev build by run number
+docker pull ghcr.io/the127/keyline:dev-123
 
 # Use a specific release version (recommended for production)
 docker pull ghcr.io/the127/keyline:v1.0.0
