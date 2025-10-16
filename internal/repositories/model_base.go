@@ -21,6 +21,14 @@ type ModelBase struct {
 	changes map[string]any
 }
 
+// UpdatePointers is an internal function that returns the pointers to the auditUpdatedAt and version fields (in that order).
+func (m *ModelBase) UpdatePointers() []any {
+	return []any{
+		&m.auditUpdatedAt,
+		&m.version,
+	}
+}
+
 func NewModelBase() ModelBase {
 	return ModelBase{
 		changes: make(map[string]any),
