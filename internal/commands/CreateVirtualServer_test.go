@@ -7,6 +7,8 @@ import (
 	"Keyline/internal/services"
 	serviceMocks "Keyline/internal/services/mocks"
 	"Keyline/ioc"
+	"Keyline/utils"
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -22,7 +24,61 @@ func TestCreateVirtualServerCommandSuite(t *testing.T) {
 	suite.Run(t, new(CreateVirtualServerCommandSuite))
 }
 
-func (s *CreateVirtualServerCommandSuite) TestHandleCreateVirtualServer() {
+func (s *CreateVirtualServerCommandSuite) createContext(
+	virtualServerRepository repositories.VirtualServerRepository,
+	templateRepository repositories.TemplateRepository,
+	fileRepository repositories.FileRepository,
+	roleRepository repositories.RoleRepository,
+	keyService services.KeyService,
+	applicationRepository repositories.ApplicationRepository,
+) context.Context {
+	dc := ioc.NewDependencyCollection()
+
+	if virtualServerRepository != nil {
+		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.VirtualServerRepository {
+			return virtualServerRepository
+		})
+	}
+
+	if templateRepository != nil {
+		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.TemplateRepository {
+			return templateRepository
+		})
+	}
+
+	if fileRepository != nil {
+		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.FileRepository {
+			return fileRepository
+		})
+	}
+
+	if roleRepository != nil {
+		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.RoleRepository {
+			return roleRepository
+		})
+	}
+
+	if keyService != nil {
+		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) services.KeyService {
+			return keyService
+		})
+	}
+
+	if applicationRepository != nil {
+		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.ApplicationRepository {
+			return applicationRepository
+		})
+	}
+
+	scope := dc.BuildProvider()
+	s.T().Cleanup(func() {
+		utils.PanicOnError(scope.Close, "closing scope")
+	})
+
+	return middlewares.ContextWithScope(s.T().Context(), scope)
+}
+
+func (s *CreateVirtualServerCommandSuite) TestHappyPath() {
 	// arrange
 	ctrl := gomock.NewController(s.T())
 	defer ctrl.Finish()
@@ -61,28 +117,7 @@ func (s *CreateVirtualServerCommandSuite) TestHandleCreateVirtualServer() {
 		Return(nil).
 		AnyTimes()
 
-	dc := ioc.NewDependencyCollection()
-	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.VirtualServerRepository {
-		return virtualServerRepository
-	})
-	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) services.KeyService {
-		return keyService
-	})
-	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.TemplateRepository {
-		return templateRepository
-	})
-	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.RoleRepository {
-		return roleRepository
-	})
-	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.FileRepository {
-		return fileRepository
-	})
-	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.ApplicationRepository {
-		return applicationRepository
-	})
-	scope := dc.BuildProvider()
-	ctx := middlewares.ContextWithScope(s.T().Context(), scope)
-
+	ctx := s.createContext(virtualServerRepository, templateRepository, fileRepository, roleRepository, keyService, applicationRepository)
 	cmd := CreateVirtualServer{
 		Name:               "virtualServer",
 		DisplayName:        "Virtual Server",
