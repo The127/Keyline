@@ -68,3 +68,10 @@ func PanicOnError(f func() error, msg string) {
 		logging.Logger.Fatalf("%s: %v", msg, err)
 	}
 }
+
+func Unwrap[T any](t T, err error) T {
+	if err != nil {
+		panic(fmt.Errorf("trying to unwrap error: %w", err))
+	}
+	return t
+}
