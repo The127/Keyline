@@ -28,7 +28,7 @@ func (s *ZeroSuite) TestString() {
 	zero := Zero[string]()
 
 	// assert
-	s.Equal("", zero)
+	s.Empty(zero)
 }
 
 func (s *ZeroSuite) TestStruct() {
@@ -37,7 +37,7 @@ func (s *ZeroSuite) TestStruct() {
 		Field string
 	}]()
 
-	//assert
+	// assert
 	s.Equal(struct {
 		Field string
 	}{}, zero)

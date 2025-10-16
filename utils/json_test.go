@@ -50,5 +50,5 @@ func (s *JsonMergePatchSuite) TestRemovesFromObject() {
 	result := JsonMergePatch(base, patch)
 
 	// assert
-	s.Len(result, 0)
+	s.Empty(result)
 }

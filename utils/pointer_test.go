@@ -53,7 +53,7 @@ func TestNilIfZeroSuite(t *testing.T) {
 
 func (s *NilIfZeroSuite) TestReturnsNilIfZeroValue() {
 	// arrange
-	var v int = 0
+	var v = 0
 
 	// act
 	result := NilIfZero(v)
@@ -64,7 +64,7 @@ func (s *NilIfZeroSuite) TestReturnsNilIfZeroValue() {
 
 func (s *NilIfZeroSuite) TestReturnsValueIfNotZero() {
 	// arrange
-	var v int = 1
+	var v = 1
 
 	// act
 	result := NilIfZero(v)
@@ -96,7 +96,7 @@ func (s *ZeroIfNilSuite) TestReturnsZeroIfNil() {
 
 func (s *ZeroIfNilSuite) TestReturnsValueIfNotZero() {
 	// arrange
-	var v int = 1
+	var v = 1
 
 	// act
 	result := ZeroIfNil(&v)

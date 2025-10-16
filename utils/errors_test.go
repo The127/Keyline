@@ -31,7 +31,7 @@ func (s *UnwrapSuite) TestNoErrorReturnsValue() {
 func (s *UnwrapSuite) TestPanicsOnError() {
 	// arrange
 	t := ""
-	var err error = errors.New("error")
+	var err = errors.New("error")
 
 	// act
 	s.Panics(func() {
@@ -50,7 +50,7 @@ func TestPanicOnErrorSuite(t *testing.T) {
 
 func (s *PanicOnErrorSuite) TestPanicsOnError() {
 	// arrange
-	var err error = errors.New("error")
+	var err = errors.New("error")
 
 	// act
 	s.Panics(func() {
