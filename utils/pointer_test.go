@@ -73,3 +73,34 @@ func (s *NilIfZeroSuite) TestReturnsValueIfNotZero() {
 	s.NotNil(result)
 	s.Equal(1, *result)
 }
+
+type ZeroIfNilSuite struct {
+	suite.Suite
+}
+
+func TestZeroIfNilSuite(t *testing.T) {
+	t.Parallel()
+	suite.Run(t, new(ZeroIfNilSuite))
+}
+
+func (s *ZeroIfNilSuite) TestReturnsZeroIfNil() {
+	// arrange
+	var v *int = nil
+
+	// act
+	result := ZeroIfNil(v)
+
+	// assert
+	s.Equal(0, result)
+}
+
+func (s *ZeroIfNilSuite) TestReturnsValueIfNotZero() {
+	// arrange
+	var v int = 1
+
+	// act
+	result := ZeroIfNil(&v)
+
+	// assert
+	s.Equal(1, result)
+}
