@@ -21,6 +21,16 @@ type ModelBase struct {
 	changes map[string]any
 }
 
+// InsertPointers is an internal function that returns the pointers to the id, auditCreatedAt, auditUpdatedAt and version fields (in that order).
+func (m *ModelBase) InsertPointers() []any {
+	return []any{
+		&m.id,
+		&m.auditCreatedAt,
+		&m.auditUpdatedAt,
+		&m.version,
+	}
+}
+
 // UpdatePointers is an internal function that returns the pointers to the auditUpdatedAt and version fields (in that order).
 func (m *ModelBase) UpdatePointers() []any {
 	return []any{
