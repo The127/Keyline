@@ -110,7 +110,7 @@ func (s *CreateApplicationCommandSuite) TestPublicApplicationHappyPath() {
 	virtualServer.Mock(now)
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
 	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories.VirtualServerFilter) bool {
-		return *x.GetName() == virtualServer.Name()
+		return x.GetName() == virtualServer.Name()
 	})).Return(virtualServer, nil)
 
 	applicationRepository := mocks.NewMockApplicationRepository(ctrl)
@@ -154,7 +154,7 @@ func (s *CreateApplicationCommandSuite) TestConfidentialApplicationHappyPath() {
 	virtualServer.Mock(now)
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
 	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories.VirtualServerFilter) bool {
-		return x.GetName() != nil && *x.GetName() == virtualServer.Name()
+		return x.GetName() == virtualServer.Name()
 	})).Return(virtualServer, nil)
 
 	applicationRepository := mocks.NewMockApplicationRepository(ctrl)

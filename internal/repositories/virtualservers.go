@@ -134,8 +134,8 @@ func (f VirtualServerFilter) Name(name string) VirtualServerFilter {
 	return filter
 }
 
-func (f VirtualServerFilter) GetName() *string {
-	return f.name
+func (f VirtualServerFilter) GetName() string {
+	return utils.ZeroIfNil(f.name)
 }
 
 func (f VirtualServerFilter) Id(id uuid.UUID) VirtualServerFilter {

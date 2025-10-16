@@ -110,7 +110,7 @@ func (s *CreateRoleCommandSuite) TestHappyPath() {
 	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
 	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories.VirtualServerFilter) bool {
-		return *x.GetName() == virtualServer.Name()
+		return x.GetName() == virtualServer.Name()
 	})).Return(virtualServer, nil)
 
 	roleRepository := mocks.NewMockRoleRepository(ctrl)

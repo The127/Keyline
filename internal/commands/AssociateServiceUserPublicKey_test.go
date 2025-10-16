@@ -67,7 +67,7 @@ func (s *AssociateServiceUserPublicKeyCommandSuite) TestHappyPath() {
 	virtualServer.Mock(now)
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
 	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories.VirtualServerFilter) bool {
-		return x.GetName() != nil && *x.GetName() == "virtualServer"
+		return x.GetName() == "virtualServer"
 	})).Return(virtualServer, nil)
 
 	user := repositories.NewUser("user", "User", "user@mail", virtualServer.Id())

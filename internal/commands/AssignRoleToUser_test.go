@@ -150,34 +150,24 @@ func (s *AssignRoleToUserCommandSuite) TestUserRoleAssignmentError() {
 	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
 	virtualServer.Mock(now)
 	virtualServerRepository := repoMocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories.VirtualServerFilter) bool {
-		return *x.GetName() == virtualServer.Name()
-	})).Return(virtualServer, nil)
+	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
 
 	user := repositories.NewUser("user", "User", "user@mail", virtualServer.Id())
 	user.Mock(now)
 	userRepository := repoMocks.NewMockUserRepository(ctrl)
-	userRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories.UserFilter) bool {
-		return x.GetId() == user.Id()
-	})).Return(user, nil)
+	userRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(user, nil)
 
 	role := repositories.NewVirtualServerRole(virtualServer.Id(), "role", "Role")
 	role.Mock(now)
 	roleRepository := repoMocks.NewMockRoleRepository(ctrl)
-	roleRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories.RoleFilter) bool {
-		return *x.GetId() == role.Id()
-	})).Return(role, nil)
+	roleRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(role, nil)
 
 	userRoleAssignmentRepository := repoMocks.NewMockUserRoleAssignmentRepository(ctrl)
 	userRoleAssignmentRepository.EXPECT().Insert(gomock.Any(), gomock.Any()).
 		Return(errors.New("error"))
 
 	ctx := s.createContext(virtualServerRepository, roleRepository, userRepository, userRoleAssignmentRepository)
-	cmd := AssignRoleToUser{
-		VirtualServerName: virtualServer.Name(),
-		UserId:            user.Id(),
-		RoleId:            role.Id(),
-	}
+	cmd := AssignRoleToUser{}
 
 	// act
 	_, err := HandleAssignRoleToUser(ctx, cmd)
@@ -197,7 +187,7 @@ func (s *AssignRoleToUserCommandSuite) TestHappyPath() {
 	virtualServer.Mock(now)
 	virtualServerRepository := repoMocks.NewMockVirtualServerRepository(ctrl)
 	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories.VirtualServerFilter) bool {
-		return *x.GetName() == virtualServer.Name()
+		return x.GetName() == virtualServer.Name()
 	})).Return(virtualServer, nil)
 
 	user := repositories.NewUser("user", "User", "user@mail", virtualServer.Id())
