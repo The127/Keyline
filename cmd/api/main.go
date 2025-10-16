@@ -24,6 +24,7 @@ import (
 	"Keyline/internal/middlewares"
 	"Keyline/internal/queries"
 	"Keyline/internal/repositories"
+	"Keyline/internal/repositories/postgres"
 	"Keyline/internal/server"
 	"Keyline/internal/services"
 	"Keyline/internal/services/audit"
@@ -144,46 +145,46 @@ func main() {
 	})
 
 	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.UserRepository {
-		return repositories.NewUserRepository()
+		return postgres.NewUserRepository()
 	})
 	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.VirtualServerRepository {
-		return repositories.NewVirtualServerRepository()
+		return postgres.NewVirtualServerRepository()
 	})
 	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.CredentialRepository {
-		return repositories.NewCredentialRepository()
+		return postgres.NewCredentialRepository()
 	})
 	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.OutboxMessageRepository {
-		return repositories.NewOutboxMessageRepository()
+		return postgres.NewOutboxMessageRepository()
 	})
 	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.FileRepository {
-		return repositories.NewFileRepository()
+		return postgres.NewFileRepository()
 	})
 	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.TemplateRepository {
-		return repositories.NewTemplateRepository()
+		return postgres.NewTemplateRepository()
 	})
 	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.RoleRepository {
-		return repositories.NewRoleRepository()
+		return postgres.NewRoleRepository()
 	})
 	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.GroupRepository {
-		return repositories.NewGroupRepository()
+		return postgres.NewGroupRepository()
 	})
 	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.GroupRoleRepository {
-		return repositories.NewGroupRoleRepository()
+		return postgres.NewGroupRoleRepository()
 	})
 	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.UserRoleAssignmentRepository {
-		return repositories.NewUserRoleAssignmentRepository()
+		return postgres.NewUserRoleAssignmentRepository()
 	})
 	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.ApplicationRepository {
-		return repositories.NewApplicationRepository()
+		return postgres.NewApplicationRepository()
 	})
 	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.SessionRepository {
-		return repositories.NewSessionRepository()
+		return postgres.NewSessionRepository()
 	})
 	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.ApplicationUserMetadataRepository {
-		return repositories.NewApplicationUserMetadataRepository()
+		return postgres.NewApplicationUserMetadataRepository()
 	})
 	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.AuditLogRepository {
-		return repositories.NewAuditLogRepository()
+		return postgres.NewAuditLogRepository()
 	})
 
 	setupMediator(dc)
