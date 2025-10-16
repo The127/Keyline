@@ -201,7 +201,7 @@ func (s *AssignRoleToUserCommandSuite) TestHappyPath() {
 	role.Mock(now)
 	roleRepository := repoMocks.NewMockRoleRepository(ctrl)
 	roleRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories.RoleFilter) bool {
-		return *x.GetId() == role.Id()
+		return x.GetId() == role.Id()
 	})).Return(role, nil)
 
 	userRoleAssignmentRepository := repoMocks.NewMockUserRoleAssignmentRepository(ctrl)

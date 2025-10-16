@@ -79,7 +79,7 @@ func HandleGetApplication(ctx context.Context, query GetApplication) (*GetApplic
 		RedirectUris:        application.RedirectUris(),
 		PostLogoutUris:      application.PostLogoutRedirectUris(),
 		SystemApplication:   application.SystemApplication(),
-		ClaimsMappingScript: application.GetClaimsMappingScript(),
+		ClaimsMappingScript: application.ClaimsMappingScript(),
 		CreatedAt:           application.AuditCreatedAt(),
 		UpdatedAt:           application.AuditUpdatedAt(),
 	}, nil
