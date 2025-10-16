@@ -38,3 +38,36 @@ func (s *UnwrapSuite) TestPanicsOnError() {
 		_ = Unwrap(t, err)
 	})
 }
+
+type PanicOnErrorSuite struct {
+	suite.Suite
+}
+
+func TestPanicOnErrorSuite(t *testing.T) {
+	t.Parallel()
+	suite.Run(t, new(PanicOnErrorSuite))
+}
+
+func (s *PanicOnErrorSuite) TestPanicsOnError() {
+	// arrange
+	var err error = errors.New("error")
+
+	// act
+	s.Panics(func() {
+		PanicOnError(func() error {
+			return err
+		}, "message")
+	})
+}
+
+func (s *PanicOnErrorSuite) TestDoesNotPanicWhenNoError() {
+	// arrange
+	var err error = nil
+
+	// act
+	s.NotPanics(func() {
+		PanicOnError(func() error {
+			return err
+		}, "message")
+	})
+}
