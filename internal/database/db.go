@@ -37,17 +37,17 @@ func Migrate() error {
 
 func ConnectToDatabase() *sql.DB {
 	logging.Logger.Infof("Connecting to database %s via %s:%d",
-		config.C.Database.Database,
-		config.C.Database.Host,
-		config.C.Database.Port)
+		config.C.Database.Postgres.Database,
+		config.C.Database.Postgres.Host,
+		config.C.Database.Postgres.Port)
 
 	connectionString := fmt.Sprintf("host=%s port=%d dbname=%s user=%s password=%s sslmode=%s",
-		config.C.Database.Host,
-		config.C.Database.Port,
-		config.C.Database.Database,
-		config.C.Database.Username,
-		config.C.Database.Password,
-		config.C.Database.SslMode)
+		config.C.Database.Postgres.Host,
+		config.C.Database.Postgres.Port,
+		config.C.Database.Postgres.Database,
+		config.C.Database.Postgres.Username,
+		config.C.Database.Postgres.Password,
+		config.C.Database.Postgres.SslMode)
 
 	db, err := sql.Open("postgres", connectionString)
 	if err != nil {
