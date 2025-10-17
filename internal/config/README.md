@@ -185,7 +185,7 @@ Manage cryptographic keys for token signing.
 
 ```yaml
 keyStore:
-  mode: "directory"  # Key store mode: "directory" or "openbao"
+  mode: "directory"  # Key store mode: "memory", "directory", or "openbao"
   directory:
     path: "./keys"   # Directory path for key storage
   # openbao:
@@ -193,6 +193,18 @@ keyStore:
 ```
 
 **Key Store Modes:**
+
+#### Memory Mode (Testing Only)
+Store keys in memory. **Only for testing and development** - keys are lost on restart.
+
+```yaml
+keyStore:
+  mode: "memory"
+```
+
+**Warning:** This mode stores keys only in application memory. All keys will be lost when the application restarts. This mode is intended **only for testing and development purposes** and should **never be used in production**.
+
+No additional configuration needed.
 
 #### Directory Mode
 Store keys as files in a directory. Suitable for single-instance or development setups.
@@ -413,9 +425,11 @@ cache:
   mode: "memory"  # Use in-memory cache for development
 
 keyStore:
-  mode: "directory"
-  directory:
-    path: "./keys"
+  mode: "memory"  # Use in-memory key store for testing (keys lost on restart)
+  # Or use directory mode for persistent keys:
+  # mode: "directory"
+  # directory:
+  #   path: "./keys"
 
 initialVirtualServer:
   enableRegistration: true

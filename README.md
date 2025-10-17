@@ -22,7 +22,7 @@ Keyline is still under active development and not ready for production use. Cons
 - 📝 **Template System** - Customizable email templates
 - 📊 **Audit Logging** - Comprehensive audit trail for security and compliance
 - 🔄 **Session Management** - Secure session handling with Redis support
-- 🪪 **Flexible Key Storage** - Support for directory-based key stores (OpenBao support work-in-progress)
+- 🪪 **Flexible Key Storage** - In-memory (testing), directory-based, or OpenBao (work-in-progress)
 - 💾 **Flexible Cache Layer** - in-memory for dev, Redis for production
 - 🗄️ **Configurable Database** - PostgreSQL for production, SQLite for development/single-server (work-in-progress)
 - 🎯 **Service Users** - Support for service accounts with public key authentication
@@ -129,10 +129,12 @@ cache:
 #### Key Store Configuration
 ```yaml
 keyStore:
-  mode: "directory"  # or "openbao"
+  mode: "directory"  # "memory" (testing only), "directory", or "openbao"
   directory:
     path: "./keys"
 ```
+
+**Note:** Use `mode: "memory"` only for testing/development - keys are lost on restart.
 
 ### 4. Run Database Migrations
 
