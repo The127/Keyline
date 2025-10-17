@@ -26,7 +26,7 @@ func KeyRotateJob() JobFn {
 		}
 
 		for _, virtualServer := range virtualServers {
-			err = rotateKeysForVirtualServer(ctx, scope, virtualServer)
+			err = rotateKeysForVirtualServer(scope, virtualServer)
 			if err != nil {
 				// TODO: we dont want to stop the whole job if one virtual server fails
 				return fmt.Errorf("rotating keys for virtual server %s: %w", virtualServer.Name(), err)
@@ -37,7 +37,7 @@ func KeyRotateJob() JobFn {
 	}
 }
 
-func rotateKeysForVirtualServer(ctx context.Context, dp *ioc.DependencyProvider, server *repositories.VirtualServer) error {
+func rotateKeysForVirtualServer(dp *ioc.DependencyProvider, server *repositories.VirtualServer) error {
 	keyStore := ioc.GetDependency[services.KeyStore](dp)
 	keyPairs, err := keyStore.GetAll(server.Name())
 	if err != nil {
@@ -93,7 +93,7 @@ func generateNewKeys(
 		}
 	}
 
-	for alg, _ := range algorithmsToRotate {
+	for alg := range algorithmsToRotate {
 		keyPair, err := keyService.Generate(server.Name(), alg)
 		if err != nil {
 			return fmt.Errorf("generating key pair: %w", err)
