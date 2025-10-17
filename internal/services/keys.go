@@ -28,6 +28,12 @@ type memoryKeyStore struct {
 	keyPairs map[string]KeyPair
 }
 
+func NewMemoryKeyStore() KeyStore {
+	return &memoryKeyStore{
+		keyPairs: make(map[string]KeyPair),
+	}
+}
+
 func (m *memoryKeyStore) Get(virtualServerName string, algorithm config.SigningAlgorithm, kid string) (*KeyPair, error) {
 	key := fmt.Sprintf("%s:%s:%s", virtualServerName, algorithm, kid)
 	if keyPair, ok := m.keyPairs[key]; ok {

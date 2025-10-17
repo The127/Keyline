@@ -32,6 +32,7 @@ const (
 type KeyStoreMode string
 
 const (
+	KeyStoreModeMemory    KeyStoreMode = "memory"
 	KeyStoreModeDirectory KeyStoreMode = "directory"
 	KeyStoreModeOpenBao   KeyStoreMode = "openbao"
 )
@@ -218,6 +219,9 @@ func setRedisDefaultsOrPanic() {
 
 func setKeyStoreDefaultsOrPanic() {
 	switch C.KeyStore.Mode {
+	case KeyStoreModeMemory:
+		// nothing to do
+
 	case KeyStoreModeOpenBao:
 		setKeyStoreModeOpenBaoDefaultsOrPanic()
 

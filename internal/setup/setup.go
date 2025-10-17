@@ -133,6 +133,9 @@ func KeyServices(dc *ioc.DependencyCollection, keyStoreMode config.KeyStoreMode)
 	})
 	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) services.KeyStore {
 		switch keyStoreMode {
+		case config.KeyStoreModeMemory:
+			return services.NewMemoryKeyStore()
+
 		case config.KeyStoreModeDirectory:
 			return services.NewDirectoryKeyStore()
 
