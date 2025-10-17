@@ -3,18 +3,98 @@ package services
 import (
 	"Keyline/internal/caching"
 	"Keyline/internal/config"
-	"Keyline/utils"
 	"crypto/ed25519"
+	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
 	"crypto/x509"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 )
+
+type KeyAlgorithmStrategy interface {
+	Generate() (any, any, error)
+	Import(serializedPrivateKey string) (any, any, error)
+	Export(privateKey any) (string, error)
+}
+
+func GetKeyStrategy(algorithm config.SigningAlgorithm) KeyAlgorithmStrategy {
+	switch algorithm {
+	case config.SigningAlgorithmRS256:
+		return &RSAKeyStrategy{}
+
+	case config.SigningAlgorithmEdDSA:
+		return &EdDSAKeyStrategy{}
+
+	default:
+		panic(fmt.Sprintf("not implemented for algorithm: %s", algorithm))
+	}
+}
+
+type RSAKeyStrategy struct{}
+
+func (s *RSAKeyStrategy) Generate() (any, any, error) {
+	privateKey, err := rsa.GenerateKey(rand.Reader, 4096)
+	if err != nil {
+		return nil, nil, fmt.Errorf("generating key pair: %w", err)
+	}
+
+	return privateKey, &privateKey.PublicKey, nil
+}
+
+func (s *RSAKeyStrategy) Import(serializedPrivateKey string) (any, any, error) {
+	key, err := x509.ParsePKCS1PrivateKey([]byte(serializedPrivateKey))
+	if err != nil {
+		return nil, nil, fmt.Errorf("parsing private key: %w", err)
+	}
+
+	return key, key.PublicKey, nil
+}
+
+func (s *RSAKeyStrategy) Export(privateKey any) (string, error) {
+	rsaPrivateKey, ok := privateKey.(*rsa.PrivateKey)
+	if !ok {
+		return "", fmt.Errorf("invalid private key type, expected *rsa.PrivateKey got %T", privateKey)
+	}
+
+	key := x509.MarshalPKCS1PrivateKey(rsaPrivateKey)
+	return string(key), nil
+}
+
+type EdDSAKeyStrategy struct{}
+
+func (s *EdDSAKeyStrategy) Generate() (any, any, error) {
+	privateKey, publicKey, err := ed25519.GenerateKey(nil)
+	if err != nil {
+		return nil, nil, fmt.Errorf("generating key pair: %w", err)
+	}
+
+	return privateKey, publicKey, nil
+}
+
+func (s *EdDSAKeyStrategy) Export(privateKey any) (string, error) {
+	ed25519PrivateKey, ok := privateKey.(ed25519.PrivateKey)
+	if !ok {
+		return "", fmt.Errorf("invalid private key type, expected ed25519.PrivateKey got %T", privateKey)
+	}
+
+	return base64.RawURLEncoding.EncodeToString(ed25519PrivateKey), nil
+}
+
+func (s *EdDSAKeyStrategy) Import(serializedPrivateKey string) (any, any, error) {
+	privateKey, err := base64.RawURLEncoding.DecodeString(serializedPrivateKey)
+	if err != nil {
+		return nil, nil, fmt.Errorf("decoding private key: %w", err)
+	}
+
+	publicKey := ed25519.PublicKey(privateKey)
+	return privateKey, publicKey, nil
+}
 
 //go:generate mockgen -destination=./mocks/key_store.go -package=mocks Keyline/internal/services KeyStore
 type KeyStore interface {
@@ -82,6 +162,60 @@ func NewDirectoryKeyStore() KeyStore {
 	return &directoryKeyStore{}
 }
 
+type keyPairJson struct {
+	Algorithm  string    `json:"algorithm"`
+	PrivateKey string    `json:"private_key"`
+	CreatedAt  time.Time `json:"created_at"`
+	RotatesAt  time.Time `json:"rotates_at"`
+	ExpiresAt  time.Time `json:"expires_at"`
+}
+
+func (d *directoryKeyStore) Serialize(keyPair KeyPair) ([]byte, error) {
+	strategy := GetKeyStrategy(keyPair.algorithm)
+	serializedPrivateKey, err := strategy.Export(keyPair.privateKey)
+	if err != nil {
+		return nil, fmt.Errorf("exporting key pair: %w", err)
+	}
+
+	dto := keyPairJson{
+		Algorithm:  string(keyPair.algorithm),
+		PrivateKey: serializedPrivateKey,
+		CreatedAt:  keyPair.createdAt,
+		RotatesAt:  keyPair.rotatesAt,
+		ExpiresAt:  keyPair.expiresAt,
+	}
+
+	bytes, err := json.Marshal(dto)
+	if err != nil {
+		return nil, fmt.Errorf("marshaling key pair: %w", err)
+	}
+
+	return bytes, nil
+}
+
+func (d *directoryKeyStore) Deserialize(data []byte) (KeyPair, error) {
+	dto := keyPairJson{}
+	err := json.Unmarshal(data, &dto)
+	if err != nil {
+		return KeyPair{}, fmt.Errorf("unmarshaling key pair: %w", err)
+	}
+
+	strategy := GetKeyStrategy(config.SigningAlgorithm(dto.Algorithm))
+	privateKey, publicKey, err := strategy.Import(dto.PrivateKey)
+	if err != nil {
+		return KeyPair{}, fmt.Errorf("importing key pair: %w", err)
+	}
+
+	return KeyPair{
+		algorithm:  config.SigningAlgorithm(dto.Algorithm),
+		publicKey:  publicKey,
+		privateKey: privateKey,
+		createdAt:  dto.CreatedAt,
+		rotatesAt:  dto.RotatesAt,
+		expiresAt:  dto.ExpiresAt,
+	}, nil
+}
+
 func (d *directoryKeyStore) Add(virtualServerName string, keyPair KeyPair) error {
 	algPath := d.getPath(virtualServerName, keyPair.algorithm)
 	info, err := os.Stat(algPath)
@@ -98,7 +232,13 @@ func (d *directoryKeyStore) Add(virtualServerName string, keyPair KeyPair) error
 	}
 
 	keyPath := filepath.Join(algPath, keyPair.ComputeKid())
-	err = os.WriteFile(keyPath, keyPair.PrivateKeyBytes(), 0600)
+
+	serializedKeyPair, err := d.Serialize(keyPair)
+	if err != nil {
+		return fmt.Errorf("serializing key pair: %w", err)
+	}
+
+	err = os.WriteFile(keyPath, serializedKeyPair, 0600)
 	if err != nil {
 		return fmt.Errorf("writing key: %w", err)
 	}
@@ -144,12 +284,17 @@ func (d *directoryKeyStore) GetAllForAlgorithm(virtualServerName string, algorit
 			continue
 		}
 
-		privateKeyBytes, err := os.ReadFile(filepath.Join(algPath, file.Name()))
+		serializedKeyPair, err := os.ReadFile(filepath.Join(algPath, file.Name()))
 		if err != nil {
 			return nil, fmt.Errorf("reading key: %w", err)
 		}
 
-		privateKey, publicKey := utils.ImportPrivateKey(privateKeyBytes, algorithm)
+		strategy := GetKeyStrategy(algorithm)
+		privateKey, publicKey, err := strategy.Import(string(serializedKeyPair))
+		if err != nil {
+			return nil, fmt.Errorf("importing key pair: %w", err)
+		}
+
 		keyPairs = append(keyPairs, KeyPair{
 			algorithm:  algorithm,
 			publicKey:  publicKey,
@@ -187,7 +332,12 @@ func (d *directoryKeyStore) Get(virtualServerName string, algorithm config.Signi
 		return nil, fmt.Errorf("reading key: %w", err)
 	}
 
-	privateKey, publicKey := utils.ImportPrivateKey(privateKeyBytes, algorithm)
+	strategy := GetKeyStrategy(algorithm)
+	privateKey, publicKey, err := strategy.Import(string(privateKeyBytes))
+	if err != nil {
+		return nil, fmt.Errorf("importing key pair: %w", err)
+	}
+
 	return &KeyPair{
 		algorithm:  algorithm,
 		publicKey:  publicKey,
@@ -303,7 +453,11 @@ func NewKeyService(cache KeyCache, store KeyStore) KeyService {
 }
 
 func (s *keyServiceImpl) Generate(virtualServerName string, algorithm config.SigningAlgorithm) (KeyPair, error) {
-	privateKey, publicKey := utils.GenerateKeyPair(algorithm)
+	strategy := GetKeyStrategy(algorithm)
+	privateKey, publicKey, err := strategy.Generate()
+	if err != nil {
+		return KeyPair{}, fmt.Errorf("generating key pair: %w", err)
+	}
 
 	keyPair := KeyPair{
 		algorithm:  algorithm,
@@ -311,7 +465,7 @@ func (s *keyServiceImpl) Generate(virtualServerName string, algorithm config.Sig
 		privateKey: privateKey,
 	}
 
-	err := s.store.Add(virtualServerName, keyPair)
+	err = s.store.Add(virtualServerName, keyPair)
 	if err != nil {
 		return KeyPair{}, fmt.Errorf("storing key pair: %w", err)
 	}

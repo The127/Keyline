@@ -4,7 +4,6 @@ import (
 	"Keyline/internal/config"
 	"crypto/ed25519"
 	"crypto/rand"
-	"crypto/rsa"
 	"crypto/x509"
 	"fmt"
 )
@@ -17,31 +16,6 @@ func GetSecureRandomBytes(length int) []byte {
 	bytes := make([]byte, length)
 	_, _ = rand.Read(bytes)
 	return bytes
-}
-
-func GenerateKeyPair(algorithm config.SigningAlgorithm) (any, any) {
-	switch algorithm {
-	case config.SigningAlgorithmEdDSA:
-		publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
-		if err != nil {
-			panic(fmt.Errorf("failed to generate key pair: %w", err))
-		}
-		return privateKey, publicKey
-
-	case config.SigningAlgorithmRS256:
-		key, err := rsa.GenerateKey(rand.Reader, 4096)
-		if err != nil {
-			panic(fmt.Errorf("failed to generate key pair: %w", err))
-		}
-		return key, key.Public()
-
-	default:
-		panic(fmt.Errorf("invalid signing algorithm: %s", algorithm))
-	}
-}
-
-func ExportPrivateKey(privateKey ed25519.PrivateKey) []byte {
-	return privateKey
 }
 
 func ImportPrivateKey(privateKeyBytes []byte, algorithm config.SigningAlgorithm) (any, any) {
