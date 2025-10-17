@@ -210,6 +210,7 @@ func (r *virtualServerRepository) List(ctx context.Context, filter repositories.
 		if err != nil {
 			return nil, 0, fmt.Errorf("scanning row: %w", err)
 		}
+		virtualServers = append(virtualServers, &virtualServer)
 	}
 
 	return virtualServers, totalCount, nil
