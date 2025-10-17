@@ -77,7 +77,7 @@ func main() {
 	setup.KeyServices(dc, config.C.KeyStore.Mode)
 	setup.Caching(dc, config.C.Cache.Mode)
 	setup.Services(dc)
-	setup.Repositories(dc)
+	setup.Repositories(dc, config.C.Database.Mode)
 	setup.Mediator(dc)
 	dp := dc.BuildProvider()
 
