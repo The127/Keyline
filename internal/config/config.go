@@ -28,7 +28,7 @@ const (
 	CacheModeRedis  CacheMode = "redis"
 )
 
-// KeyStoreMode has the following constants: KeyStoreModeDirectory, KeyStoreModeOpenBao
+// KeyStoreMode has the following constants: KeyStoreModeMemory (testing only), KeyStoreModeDirectory, KeyStoreModeOpenBao
 type KeyStoreMode string
 
 const (
