@@ -13,6 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 //go:generate mockgen -destination=./mocks/key_store.go -package=mocks Keyline/internal/services KeyStore
@@ -204,13 +205,24 @@ type KeyPair struct {
 	algorithm  config.SigningAlgorithm
 	publicKey  any
 	privateKey any
+	createdAt  time.Time
+	rotatesAt  time.Time
+	expiresAt  time.Time
 }
 
 func NewKeyPair(algorithm config.SigningAlgorithm, publicKey any, privateKey any) KeyPair {
+	// TODO: use clock service and settings in virtual server
+	now := time.Now()
+	rotatesAt := now.Add(time.Hour * 24 * 20)
+	expiresAt := now.Add(time.Hour * 24 * 30)
+
 	return KeyPair{
 		algorithm:  algorithm,
 		publicKey:  publicKey,
 		privateKey: privateKey,
+		createdAt:  now,
+		rotatesAt:  rotatesAt,
+		expiresAt:  expiresAt,
 	}
 }
 
@@ -258,6 +270,18 @@ func (k *KeyPair) PrivateKeyBytes() []byte {
 
 func (k *KeyPair) PublicKey() any {
 	return k.publicKey
+}
+
+func (k *KeyPair) CreatedAt() time.Time {
+	return k.createdAt
+}
+
+func (k *KeyPair) RotatesAt() time.Time {
+	return k.rotatesAt
+}
+
+func (k *KeyPair) ExpiresAt() time.Time {
+	return k.expiresAt
 }
 
 //go:generate mockgen -destination=./mocks/key_service.go -package=mocks Keyline/internal/services KeyService
