@@ -69,7 +69,7 @@ func (s *RSAKeyStrategy) Export(privateKey any) (string, error) {
 type EdDSAKeyStrategy struct{}
 
 func (s *EdDSAKeyStrategy) Generate() (any, any, error) {
-	publicKey, privateKey, err := ed25519.GenerateKey(nil)
+	publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
 		return nil, nil, fmt.Errorf("generating key pair: %w", err)
 	}
@@ -87,12 +87,13 @@ func (s *EdDSAKeyStrategy) Export(privateKey any) (string, error) {
 }
 
 func (s *EdDSAKeyStrategy) Import(serializedPrivateKey string) (any, any, error) {
-	privateKey, err := base64.RawURLEncoding.DecodeString(serializedPrivateKey)
+	privateKeyBytes, err := base64.RawURLEncoding.DecodeString(serializedPrivateKey)
 	if err != nil {
 		return nil, nil, fmt.Errorf("decoding private key: %w", err)
 	}
 
-	publicKey := ed25519.PublicKey(privateKey)
+	privateKey := ed25519.PrivateKey(privateKeyBytes)
+	publicKey := privateKey.Public().(ed25519.PublicKey)
 	return privateKey, publicKey, nil
 }
 
