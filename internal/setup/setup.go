@@ -20,22 +20,26 @@ import (
 	"database/sql"
 )
 
-func Repositories(dc *ioc.DependencyCollection, mode config.DatabaseMode) {
+func Repositories(dc *ioc.DependencyCollection, mode config.DatabaseMode, c any) {
 	switch mode {
 	case config.DatabaseModeSqlite:
 		panic("not implemented")
 
 	case config.DatabaseModePostgres:
-		postgresRepositories(dc)
+		pc, ok := c.(config.PostgresConfig)
+		if !ok {
+			panic("required postgres config missing")
+		}
+		postgresRepositories(dc, pc)
 
 	default:
 		panic("database mode missing or not supported")
 	}
 }
 
-func postgresRepositories(dc *ioc.DependencyCollection) {
+func postgresRepositories(dc *ioc.DependencyCollection, pc config.PostgresConfig) {
 	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) *sql.DB {
-		return database.ConnectToDatabase()
+		return database.ConnectToDatabase(pc)
 	})
 
 	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) database.DbService {

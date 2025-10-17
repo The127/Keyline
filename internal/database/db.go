@@ -21,7 +21,7 @@ func Migrate() error {
 		Root:       "migrations",
 	}
 
-	db := ConnectToDatabase()
+	db := ConnectToDatabase(config.C.Database.Postgres)
 	defer utils.PanicOnError(db.Close, "failed to close database connection")
 
 	logging.Logger.Infof("Applying migrations...")
@@ -35,19 +35,19 @@ func Migrate() error {
 	return nil
 }
 
-func ConnectToDatabase() *sql.DB {
+func ConnectToDatabase(pc config.PostgresConfig) *sql.DB {
 	logging.Logger.Infof("Connecting to database %s via %s:%d",
-		config.C.Database.Postgres.Database,
-		config.C.Database.Postgres.Host,
-		config.C.Database.Postgres.Port)
+		pc.Database,
+		pc.Host,
+		pc.Port)
 
 	connectionString := fmt.Sprintf("host=%s port=%d dbname=%s user=%s password=%s sslmode=%s",
-		config.C.Database.Postgres.Host,
-		config.C.Database.Postgres.Port,
-		config.C.Database.Postgres.Database,
-		config.C.Database.Postgres.Username,
-		config.C.Database.Postgres.Password,
-		config.C.Database.Postgres.SslMode)
+		pc.Host,
+		pc.Port,
+		pc.Database,
+		pc.Username,
+		pc.Password,
+		pc.SslMode)
 
 	db, err := sql.Open("postgres", connectionString)
 	if err != nil {

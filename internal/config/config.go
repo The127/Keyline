@@ -61,15 +61,8 @@ type Config struct {
 	}
 	Database struct {
 		Mode     DatabaseMode
-		Postgres struct {
-			Database string
-			Host     string
-			Port     int
-			Username string
-			Password string
-			SslMode  string
-		}
-		Sqlite struct {
+		Postgres PostgresConfig
+		Sqlite   struct {
 			Database string
 		}
 	}
@@ -119,6 +112,15 @@ type Config struct {
 			Database int
 		}
 	}
+}
+
+type PostgresConfig struct {
+	Database string
+	Host     string
+	Port     int
+	Username string
+	Password string
+	SslMode  string
 }
 
 var configFilePath string
