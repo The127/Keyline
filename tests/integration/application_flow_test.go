@@ -45,7 +45,7 @@ var _ = Describe("Application flow", Ordered, func() {
 			VirtualServerName: harness.VirtualServer(),
 			SearchText:        "test-app",
 		}
-		response, err := mediator.Send[*queries.ListApplicationsResponse](harness.ctx, harness.Mediator(), req)
+		response, err := mediator.Send[*queries.ListApplicationsResponse](harness.Ctx(), harness.Mediator(), req)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(response.Items).To(ContainElement(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
 			"Id":   Equal(applicationId),
