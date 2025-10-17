@@ -99,10 +99,6 @@ func generateNewKeys(
 			return fmt.Errorf("generating key pair: %w", err)
 		}
 
-		err = keyStore.Add(server.Name(), keyPair)
-		if err != nil {
-			return fmt.Errorf("storing key pair: %w", err)
-		}
 	}
 	return nil
 }
