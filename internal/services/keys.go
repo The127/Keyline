@@ -69,7 +69,7 @@ func (s *RSAKeyStrategy) Export(privateKey any) (string, error) {
 type EdDSAKeyStrategy struct{}
 
 func (s *EdDSAKeyStrategy) Generate() (any, any, error) {
-	privateKey, publicKey, err := ed25519.GenerateKey(nil)
+	publicKey, privateKey, err := ed25519.GenerateKey(nil)
 	if err != nil {
 		return nil, nil, fmt.Errorf("generating key pair: %w", err)
 	}
