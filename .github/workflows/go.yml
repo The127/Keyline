@@ -23,7 +23,7 @@ jobs:
           POSTGRES_USER: user
           POSTGRES_PASSWORD: password
         options: >-
-          --health-cmd "pg_isready -U user -d keyline_test"
+          --health-cmd "pg_isready -U user"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
