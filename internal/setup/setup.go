@@ -170,8 +170,11 @@ func Services(dc *ioc.DependencyCollection) {
 	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) behaviours.AuditLogger {
 		return audit.NewDbAuditLogger()
 	})
+}
+
+func Caching(dc *ioc.DependencyCollection, mode config.CacheMode) {
 	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) keyValue.Store {
-		switch config.C.Cache.Mode {
+		switch mode {
 		case config.CacheModeMemory:
 			return keyValue.NewMemoryStore()
 
