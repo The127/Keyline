@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 //go:generate mockgen -destination=./mocks/key_store.go -package=mocks Keyline/internal/services KeyStore
@@ -21,6 +22,50 @@ type KeyStore interface {
 	GetAllForAlgorithm(virtualServerName string, algorithm config.SigningAlgorithm) ([]KeyPair, error)
 	Add(virtualServerName string, keyPair KeyPair) error
 	Remove(virtualServerName string, algorithm config.SigningAlgorithm, kid string) error
+}
+
+type memoryKeyStore struct {
+	keyPairs map[string]KeyPair
+}
+
+func (m *memoryKeyStore) Get(virtualServerName string, algorithm config.SigningAlgorithm, kid string) (*KeyPair, error) {
+	key := fmt.Sprintf("%s:%s:%s", virtualServerName, algorithm, kid)
+	if keyPair, ok := m.keyPairs[key]; ok {
+		return &keyPair, nil
+	}
+	return nil, nil
+}
+
+func (m *memoryKeyStore) GetAll(virtualServerName string) ([]KeyPair, error) {
+	result := make([]KeyPair, 0)
+	for key, keyPair := range m.keyPairs {
+		if strings.HasPrefix(key, virtualServerName+":") {
+			result = append(result, keyPair)
+		}
+	}
+	return result, nil
+}
+
+func (m *memoryKeyStore) GetAllForAlgorithm(virtualServerName string, algorithm config.SigningAlgorithm) ([]KeyPair, error) {
+	result := make([]KeyPair, 0)
+	for key, keyPair := range m.keyPairs {
+		if strings.HasPrefix(key, virtualServerName+":"+string(algorithm)+":") {
+			result = append(result, keyPair)
+		}
+	}
+	return result, nil
+}
+
+func (m *memoryKeyStore) Add(virtualServerName string, keyPair KeyPair) error {
+	key := fmt.Sprintf("%s:%s:%s", virtualServerName, keyPair.algorithm, keyPair.ComputeKid())
+	m.keyPairs[key] = keyPair
+	return nil
+}
+
+func (m *memoryKeyStore) Remove(virtualServerName string, algorithm config.SigningAlgorithm, kid string) error {
+	key := fmt.Sprintf("%s:%s:%s", virtualServerName, algorithm, kid)
+	delete(m.keyPairs, key)
+	return nil
 }
 
 type directoryKeyStore struct {
