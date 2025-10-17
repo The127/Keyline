@@ -65,7 +65,7 @@ func main() {
 	metrics.Init()
 
 	tryFiveTimes(func() error {
-		return database.Migrate()
+		return database.Migrate(config.C.Database.Postgres)
 	}, "failed to migrate database")
 
 	dc := ioc.NewDependencyCollection()
@@ -77,7 +77,7 @@ func main() {
 	setup.KeyServices(dc, config.C.KeyStore.Mode)
 	setup.Caching(dc, config.C.Cache.Mode)
 	setup.Services(dc)
-	setup.Repositories(dc, config.C.Database.Mode)
+	setup.Repositories(dc, config.C.Database.Mode, config.C.Database.Postgres)
 	setup.Mediator(dc)
 	dp := dc.BuildProvider()
 

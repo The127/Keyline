@@ -15,13 +15,13 @@ import (
 //go:embed migrations/*
 var dbMigrations embed.FS
 
-func Migrate() error {
+func Migrate(pc config.PostgresConfig) error {
 	migrations := migrate.EmbedFileSystemMigrationSource{
 		FileSystem: dbMigrations,
 		Root:       "migrations",
 	}
 
-	db := ConnectToDatabase(config.C.Database.Postgres)
+	db := ConnectToDatabase(pc)
 	defer utils.PanicOnError(db.Close, "failed to close database connection")
 
 	logging.Logger.Infof("Applying migrations...")
