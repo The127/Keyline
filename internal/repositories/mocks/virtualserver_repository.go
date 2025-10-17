@@ -70,6 +70,22 @@ func (mr *MockVirtualServerRepositoryMockRecorder) Insert(ctx, virtualServer any
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockVirtualServerRepository)(nil).Insert), ctx, virtualServer)
 }
 
+// List mocks base method.
+func (m *MockVirtualServerRepository) List(ctx context.Context, filter repositories.VirtualServerFilter) ([]*repositories.VirtualServer, int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "List", ctx, filter)
+	ret0, _ := ret[0].([]*repositories.VirtualServer)
+	ret1, _ := ret[1].(int)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// List indicates an expected call of List.
+func (mr *MockVirtualServerRepositoryMockRecorder) List(ctx, filter any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockVirtualServerRepository)(nil).List), ctx, filter)
+}
+
 // Single mocks base method.
 func (m *MockVirtualServerRepository) Single(ctx context.Context, filter repositories.VirtualServerFilter) (*repositories.VirtualServer, error) {
 	m.ctrl.T.Helper()
