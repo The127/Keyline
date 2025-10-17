@@ -13,6 +13,21 @@ permissions:
 jobs:
   lint-test-build:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        ports:
+          - 5732:5432
+        env:
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: password
+        options: >-
+          --health-cmd "pg_isready -U user"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -27,8 +42,11 @@ jobs:
         with:
           version: v2.1.6
 
-      - name: Run tests
+      - name: Run unit tests
         run: go test -v ./...
+
+      - name: Run integration tests
+        run: go test -v ./tests/integration/... -tags=integration
 
       - name: Build binary
         run: go build ./...

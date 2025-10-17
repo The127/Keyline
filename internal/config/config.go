@@ -32,6 +32,7 @@ const (
 type KeyStoreMode string
 
 const (
+	KeyStoreModeMemory    KeyStoreMode = "memory"
 	KeyStoreModeDirectory KeyStoreMode = "directory"
 	KeyStoreModeOpenBao   KeyStoreMode = "openbao"
 )
@@ -60,15 +61,8 @@ type Config struct {
 	}
 	Database struct {
 		Mode     DatabaseMode
-		Postgres struct {
-			Database string
-			Host     string
-			Port     int
-			Username string
-			Password string
-			SslMode  string
-		}
-		Sqlite struct {
+		Postgres PostgresConfig
+		Sqlite   struct {
 			Database string
 		}
 	}
@@ -118,6 +112,15 @@ type Config struct {
 			Database int
 		}
 	}
+}
+
+type PostgresConfig struct {
+	Database string
+	Host     string
+	Port     int
+	Username string
+	Password string
+	SslMode  string
 }
 
 var configFilePath string
@@ -218,6 +221,9 @@ func setRedisDefaultsOrPanic() {
 
 func setKeyStoreDefaultsOrPanic() {
 	switch C.KeyStore.Mode {
+	case KeyStoreModeMemory:
+		// nothing to do
+
 	case KeyStoreModeOpenBao:
 		setKeyStoreModeOpenBaoDefaultsOrPanic()
 
