@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"Keyline/internal/logging"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -9,5 +10,6 @@ import (
 
 func TestIntegration(t *testing.T) {
 	RegisterFailHandler(Fail)
+	logging.Init()
 	RunSpecs(t, "Integration Suite")
 }
