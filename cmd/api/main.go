@@ -11,8 +11,6 @@ package main
 
 import (
 	"Keyline/internal/authentication"
-	"Keyline/internal/behaviours"
-	"Keyline/internal/caching"
 	"Keyline/internal/clock"
 	"Keyline/internal/commands"
 	"Keyline/internal/config"
@@ -23,18 +21,12 @@ import (
 	"Keyline/internal/middlewares"
 	"Keyline/internal/queries"
 	"Keyline/internal/repositories"
-	"Keyline/internal/repositories/postgres"
 	"Keyline/internal/server"
-	"Keyline/internal/services"
-	"Keyline/internal/services/audit"
-	"Keyline/internal/services/claimsMapping"
-	"Keyline/internal/services/keyValue"
 	"Keyline/internal/setup"
 	"Keyline/ioc"
 	"Keyline/mediator"
 	"Keyline/utils"
 	"context"
-	"database/sql"
 	"fmt"
 	"net/url"
 	"os"
@@ -77,117 +69,15 @@ func main() {
 	}, "failed to migrate database")
 
 	dc := ioc.NewDependencyCollection()
-	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) *sql.DB {
-		return database.ConnectToDatabase()
-	})
-
-	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) database.DbService {
-		return database.NewDbService(dp)
-	})
-	ioc.RegisterCloseHandler(dc, func(dbService database.DbService) error {
-		return dbService.Close()
-	})
 
 	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) clock.Service {
 		return clock.NewClockService()
 	})
 
-	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) services.KeyCache {
-		return caching.NewMemoryCache[string, services.KeyPair]()
-	})
-	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) services.KeyStore {
-		switch config.C.KeyStore.Mode {
-		case config.KeyStoreModeDirectory:
-			return services.NewDirectoryKeyStore()
-
-		case config.KeyStoreModeOpenBao:
-			panic("not implemented yet")
-
-		default:
-			panic("not implemented")
-		}
-	})
-	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) services.KeyService {
-		return services.NewKeyService(
-			ioc.GetDependency[services.KeyCache](dp),
-			ioc.GetDependency[services.KeyStore](dp),
-		)
-	})
-	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) claimsMapping.ClaimsMapper {
-		return claimsMapping.NewClaimsMapper()
-	})
-	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) services.MailService {
-		return services.NewMailService()
-	})
-	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) services.TemplateService {
-		return services.NewTemplateService()
-	})
-	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) services.TokenService {
-		return services.NewTokenService()
-	})
-	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) middlewares.SessionService {
-		return services.NewSessionService()
-	})
-	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) behaviours.AuditLogger {
-		return audit.NewDbAuditLogger()
-	})
-	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) keyValue.Store {
-		switch config.C.Cache.Mode {
-		case config.CacheModeMemory:
-			return keyValue.NewMemoryStore()
-
-		case config.CacheModeRedis:
-			return keyValue.NewRedisStore()
-
-		default:
-			panic("cache mode missing or not supported")
-		}
-	})
-
-	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.UserRepository {
-		return postgres.NewUserRepository()
-	})
-	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.VirtualServerRepository {
-		return postgres.NewVirtualServerRepository()
-	})
-	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.CredentialRepository {
-		return postgres.NewCredentialRepository()
-	})
-	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.OutboxMessageRepository {
-		return postgres.NewOutboxMessageRepository()
-	})
-	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.FileRepository {
-		return postgres.NewFileRepository()
-	})
-	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.TemplateRepository {
-		return postgres.NewTemplateRepository()
-	})
-	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.RoleRepository {
-		return postgres.NewRoleRepository()
-	})
-	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.GroupRepository {
-		return postgres.NewGroupRepository()
-	})
-	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.GroupRoleRepository {
-		return postgres.NewGroupRoleRepository()
-	})
-	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.UserRoleAssignmentRepository {
-		return postgres.NewUserRoleAssignmentRepository()
-	})
-	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.ApplicationRepository {
-		return postgres.NewApplicationRepository()
-	})
-	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.SessionRepository {
-		return postgres.NewSessionRepository()
-	})
-	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.ApplicationUserMetadataRepository {
-		return postgres.NewApplicationUserMetadataRepository()
-	})
-	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.AuditLogRepository {
-		return postgres.NewAuditLogRepository()
-	})
-
-	setup.SetupMediator(dc)
+	setup.KeyServices(dc, config.C.KeyStore.Mode)
+	setup.Services(dc)
+	setup.Repositories(dc)
+	setup.Mediator(dc)
 	dp := dc.BuildProvider()
 
 	jobManager := jobs.NewJobManager(jobs.WithOnError(func(err error) {
