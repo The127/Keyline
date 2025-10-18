@@ -50,6 +50,19 @@ Keyline follows a clean architecture pattern with clear separation of concerns:
 
 ## Quick Start
 
+Keyline uses [just](https://github.com/casey/just) as a command runner for development tasks. Install it first:
+
+```bash
+# macOS
+brew install just
+
+# Linux
+# On Ubuntu/Debian
+apt install just
+
+# Other methods: https://github.com/casey/just#installation
+```
+
 ### 1. Clone the Repository
 
 ```bash
@@ -60,7 +73,7 @@ cd Keyline
 ### 2. Start Dependencies with Docker Compose
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 This will start:
@@ -141,6 +154,15 @@ keyStore:
 Migrations are automatically run on startup. The application will create all necessary tables and initial data.
 
 ### 5. Build and Run
+
+Using just (recommended):
+
+```bash
+# Build and run the application
+just run
+```
+
+Or manually:
 
 ```bash
 # Build the application
@@ -234,10 +256,65 @@ Keyline provides comprehensive API documentation using Swagger/OpenAPI:
 ├── utils/                # Utility functions
 ├── docs/                 # Swagger documentation
 ├── templates/            # Email templates
+├── justfile              # Development task runner
 └── config.yaml           # Configuration file
 ```
 
+### Using Just for Development
+
+Keyline uses [just](https://github.com/casey/just) as a command runner. Available commands:
+
+```bash
+# List all available commands
+just --list
+
+# Build the application
+just build
+
+# Build and run the application
+just run
+
+# Run unit tests
+just test
+
+# Run integration tests
+just integration
+
+# Format code
+just fmt
+
+# Run linter (check only)
+just lint
+
+# Run linter with auto-fix
+just lint fix
+
+# Run all CI checks (format, lint, test, integration)
+just ci
+
+# Run all CI checks with auto-fix
+just ci fix
+
+# Clean build artifacts
+just clean
+```
+
 ### Running Tests
+
+Using just (recommended):
+
+```bash
+# Run all unit tests
+just test
+
+# Run integration tests
+just integration
+
+# Run all tests with CI checks
+just ci
+```
+
+Or manually:
 
 ```bash
 # Run all tests
@@ -251,6 +328,18 @@ go test ./ioc/...
 ```
 
 ### Linting
+
+Using just (recommended):
+
+```bash
+# Check for linting issues
+just lint
+
+# Auto-fix linting issues
+just lint fix
+```
+
+Or manually:
 
 ```bash
 # Run golangci-lint
