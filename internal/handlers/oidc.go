@@ -337,7 +337,7 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 
 		codeInfo := jsonTypes.NewCodeInfo(
 			virtualServer.Name(),
-			[]string{"email", "openid", "sub"},
+			authRequest.Scopes,
 			s.UserId(),
 			authRequest.Nonce,
 		)
@@ -912,6 +912,7 @@ func (t *TokenGenerationParams) ToIdTokenGenerationParams() IdTokenGenerationPar
 		UserDisplayName:   t.UserDisplayName,
 		UserPrimaryEmail:  t.UserPrimaryEmail,
 		VirtualServerName: t.VirtualServerName,
+		GrantedScopes:     t.GrantedScopes,
 		Nonce:             t.Nonce,
 		IssuedAt:          t.IssuedAt,
 		Expiry:            t.IdTokenExpiry,
@@ -959,6 +960,7 @@ type IdTokenGenerationParams struct {
 	Expiry            time.Duration
 	UserId            uuid.UUID
 	KeyPair           services.KeyPair
+	GrantedScopes     []string
 }
 
 type GeneratedTokens struct {
@@ -977,13 +979,19 @@ func generateIdToken(params IdTokenGenerationParams) (string, error) {
 	}
 
 	idTokenClaims := jwt.MapClaims{
-		"sub":   params.UserId,
-		"iss":   fmt.Sprintf("%s/oidc/%s", params.ExternalUrl, params.VirtualServerName),
-		"aud":   []string{params.ClientId},
-		"iat":   params.IssuedAt.Unix(),
-		"exp":   params.IssuedAt.Add(params.Expiry).Unix(),
-		"name":  params.UserDisplayName,
-		"email": params.UserPrimaryEmail,
+		"sub": params.UserId,
+		"iss": fmt.Sprintf("%s/oidc/%s", params.ExternalUrl, params.VirtualServerName),
+		"aud": []string{params.ClientId},
+		"iat": params.IssuedAt.Unix(),
+		"exp": params.IssuedAt.Add(params.Expiry).Unix(),
+	}
+
+	if slices.Contains(params.GrantedScopes, "profile") {
+		idTokenClaims["name"] = params.UserDisplayName
+	}
+
+	if slices.Contains(params.GrantedScopes, "email") {
+		idTokenClaims["email"] = params.UserPrimaryEmail
 	}
 
 	if params.Nonce != "" {
