@@ -1,6 +1,6 @@
 # Keyline API Client
 
-The Keyline API Client is a Go package that provides a convenient, type-safe way to interact with the Keyline API. It's designed to simplify integration testing and can also be used for building custom tools or integrations.
+The Keyline API Client is a Go package that provides a convenient, type-safe way to interact with the Keyline API. It's designed to simplify building custom tools or integrations.
 
 ## Overview
 
@@ -145,91 +145,6 @@ c := client.NewClient(
 )
 ```
 
-## Resource Clients
-
-### Application Client
-
-The `ApplicationClient` provides methods for managing OAuth2/OIDC applications.
-
-#### Create Application
-
-```go
-app, err := c.Application().Create(ctx, handlers.CreateApplicationRequestDto{
-    Name:           "my-app",
-    DisplayName:    "My Application",
-    Description:    "Application description",
-    RedirectUris:   []string{
-        "http://localhost:3000/callback",
-        "http://localhost:3000/auth/callback",
-    },
-    PostLogoutUris: []string{
-        "http://localhost:3000/logout",
-    },
-    Type:           "confidential", // "public", "confidential", or "system"
-})
-if err != nil {
-    // Handle error
-}
-
-// For confidential apps, secret is returned
-if app.Secret != nil {
-    fmt.Printf("Client Secret: %s\n", *app.Secret)
-}
-```
-
-#### List Applications
-
-```go
-apps, err := c.Application().List(ctx, client.ListApplicationParams{
-    Page: 1,
-    Size: 20,
-})
-if err != nil {
-    // Handle error
-}
-
-for _, app := range apps.Items {
-    fmt.Printf("App: %s (%s)\n", app.Name, app.DisplayName)
-}
-
-// Pagination info
-if apps.Pagination != nil {
-    fmt.Printf("Page %d of %d (Total: %d items)\n",
-        apps.Pagination.Page,
-        apps.Pagination.TotalPages,
-        apps.Pagination.TotalItems,
-    )
-}
-```
-
-#### Get Application
-
-```go
-import "github.com/google/uuid"
-
-appId := uuid.MustParse("550e8400-e29b-41d4-a716-446655440000")
-
-app, err := c.Application().Get(ctx, appId)
-if err != nil {
-    // Handle error
-}
-
-fmt.Printf("Application: %s\n", app.DisplayName)
-fmt.Printf("Type: %s\n", app.Type)
-fmt.Printf("Redirect URIs: %v\n", app.RedirectUris)
-```
-
-#### Delete Application
-
-```go
-appId := uuid.MustParse("550e8400-e29b-41d4-a716-446655440000")
-
-err := c.Application().Delete(ctx, appId)
-if err != nil {
-    // Handle error
-}
-```
-
 ## Error Handling
 
 The client returns structured errors that can be inspected:
@@ -317,7 +232,7 @@ func main() {
     }
 }
 
-// authMiddleware adds bearer token authentication
+// authMiddleware adds bearer token authentication (just a readme example, not for production use)
 func authMiddleware(token string) client.TransportOptions {
     return client.WithRoundTripper(func(next http.RoundTripper) http.RoundTripper {
         return roundTripperFunc(func(req *http.Request) (*http.Response, error) {
@@ -339,50 +254,6 @@ func handleError(err error) {
     } else {
         fmt.Printf("✗ Error: %v\n", err)
     }
-}
-```
-
-## Testing with the Client
-
-The client is particularly useful for integration and end-to-end testing:
-
-```go
-package mytest
-
-import (
-    "testing"
-    "context"
-    
-    "Keyline/client"
-    "Keyline/internal/handlers"
-    
-    "github.com/stretchr/testify/require"
-)
-
-func TestApplicationCreation(t *testing.T) {
-    // Setup
-    c := client.NewClient("http://localhost:8081", "test-vs")
-    ctx := context.Background()
-
-    // Create application
-    app, err := c.Application().Create(ctx, handlers.CreateApplicationRequestDto{
-        Name:           "test-app",
-        DisplayName:    "Test Application",
-        RedirectUris:   []string{"http://localhost:3000/callback"},
-        PostLogoutUris: []string{"http://localhost:3000/logout"},
-        Type:           "public",
-    })
-    require.NoError(t, err)
-    require.NotEmpty(t, app.Id)
-
-    // Verify it can be retrieved
-    retrieved, err := c.Application().Get(ctx, app.Id)
-    require.NoError(t, err)
-    require.Equal(t, app.Name, retrieved.Name)
-
-    // Cleanup
-    err = c.Application().Delete(ctx, app.Id)
-    require.NoError(t, err)
 }
 ```
 
