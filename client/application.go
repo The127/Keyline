@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 
 	"github.com/google/uuid"
 )
@@ -61,7 +62,11 @@ func (a *application) Create(ctx context.Context, dto handlers.CreateApplication
 }
 
 func (a *application) List(ctx context.Context, params ListApplicationParams) (handlers.PagedApplicationsResponseDto, error) {
-	endpoint := fmt.Sprintf("/applications?page=%d&size=%d", params.Page, params.Size)
+	values := url.Values{}
+	values.Add("page", fmt.Sprintf("%d", params.Page))
+	values.Add("size", fmt.Sprintf("%d", params.Size))
+
+	endpoint := fmt.Sprintf("/applications?%s", values.Encode())
 
 	request, err := a.transport.NewRequest(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
