@@ -4,6 +4,7 @@ import (
 	"Keyline/internal/handlers"
 	"Keyline/utils"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -102,5 +103,35 @@ func (s *ApplicationClientSuite) TestListApplications_HappyPath() {
 	// assert
 	s.Require().NoError(err)
 	s.Equal(response, responseDto)
+}
 
+func (s *ApplicationClientSuite) TestGetApplication_HappyPath() {
+	// arrange
+	requestId := uuid.New()
+
+	response := handlers.GetApplicationResponseDto{
+		Id:                uuid.UUID{},
+		Name:              "name",
+		DisplayName:       "displayName",
+		Type:              "public",
+		SystemApplication: false,
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		s.Equal(http.MethodGet, r.Method)
+		s.Equal(fmt.Sprintf("/applications/%s", requestId), r.URL.Path)
+
+		err := json.NewEncoder(w).Encode(response)
+		s.Require().NoError(err)
+	}))
+	defer server.Close()
+
+	testee := NewClient(server.URL).Application()
+
+	// act
+	responseDto, err := testee.Get(s.T().Context(), requestId)
+
+	// assert
+	s.Require().NoError(err)
+	s.Equal(response, responseDto)
 }
