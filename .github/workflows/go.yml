@@ -85,9 +85,39 @@ jobs:
       - name: Run integration tests
         run: go test -v ./tests/integration/... -tags=integration
 
-  container-build:
+  e2e-tests:
     runs-on: ubuntu-latest
     needs: integration-tests
+
+    services:
+      postgres:
+        image: postgres:15
+        ports:
+          - 5732:5432
+        env:
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: password
+        options: >-
+          --health-cmd "pg_isready -U user"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.24"
+
+      - name: Run e2e tests
+        run: go test -v ./tests/e2e/... -tags=e2e
+
+  container-build:
+    runs-on: ubuntu-latest
+    needs: e2e-tests
     if: github.ref == 'refs/heads/main'
 
     steps:
