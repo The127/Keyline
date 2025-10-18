@@ -58,7 +58,7 @@ func Serve(dp *ioc.DependencyProvider, serverConfig config.ServerConfig) {
 	oidcRouter.HandleFunc("/.well-known/jwks.json", handlers.WellKnownJwks).Methods(http.MethodGet, http.MethodOptions)
 	oidcRouter.HandleFunc("/authorize", handlers.BeginAuthorizationFlow).Methods(http.MethodGet, http.MethodPost, http.MethodOptions)
 	oidcRouter.HandleFunc("/token", handlers.OidcToken).Methods(http.MethodPost, http.MethodOptions)
-	oidcRouter.HandleFunc("/userinfo", handlers.OidcUserinfo).Methods(http.MethodGet, http.MethodOptions)
+	oidcRouter.HandleFunc("/userinfo", handlers.OidcUserinfo).Methods(http.MethodGet, http.MethodPost, http.MethodOptions)
 	oidcRouter.HandleFunc("/end_session", handlers.OidcEndSession).Methods(http.MethodGet, http.MethodOptions)
 
 	loginRouter := r.PathPrefix("/logins").Subrouter()

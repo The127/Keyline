@@ -318,7 +318,7 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(authRequest.ResponseTypes) != 1 || authRequest.ResponseTypes[0] != "code" {
-		utils.HandleHttpError(w, fmt.Errorf("unsupported response type: %s", authRequest.ResponseTypes[0]))
+		http.Redirect(w, r, fmt.Sprintf("%s/login?error=unsupported_response_type", config.C.Frontend.ExternalUrl), http.StatusFound)
 		return
 	}
 
@@ -566,7 +566,7 @@ type OidcUserInfoResponseDto struct {
 // @Security     BearerAuth
 // @Success      200  {object}  handlers.OidcUserInfoResponseDto
 // @Failure      401  {string}  string
-// @Router       /oidc/{virtualServerName}/userinfo [get]
+// @Router       /oidc/{virtualServerName}/userinfo [get, post]
 func OidcUserinfo(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	scope := middlewares.GetScope(ctx)
@@ -594,14 +594,13 @@ func OidcUserinfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bearer := r.Header.Get("Authorization")
-	if bearer == "" {
-		utils.HandleHttpError(w, fmt.Errorf("authorization header not found"))
+	bearer, err := extractAccessToken(r)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("extracting access token: %w", err))
 		return
 	}
-
-	if !strings.HasPrefix(bearer, "Bearer ") {
-		utils.HandleHttpError(w, fmt.Errorf("authorization header is not a bearer token"))
+	if bearer == "" {
+		utils.HandleHttpError(w, fmt.Errorf("authorization header not found"))
 		return
 	}
 
@@ -657,6 +656,19 @@ func OidcUserinfo(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, err)
 		return
 	}
+}
+
+func extractAccessToken(r *http.Request) (string, error) {
+	bearer := r.Header.Get("Authorization")
+	if bearer != "" {
+		if !strings.HasPrefix(bearer, "Bearer ") {
+			return "", fmt.Errorf("authorization header is not a bearer token")
+		}
+
+		return bearer, nil
+	}
+
+	return r.FormValue("access_token"), nil
 }
 
 // OidcToken exchanges authorization code or refresh token for tokens.
