@@ -151,6 +151,7 @@ func (f VirtualServerFilter) GetId() uuid.UUID {
 type VirtualServerRepository interface {
 	Single(ctx context.Context, filter VirtualServerFilter) (*VirtualServer, error)
 	First(ctx context.Context, filter VirtualServerFilter) (*VirtualServer, error)
+	List(ctx context.Context, filter VirtualServerFilter) ([]*VirtualServer, int, error)
 	Insert(ctx context.Context, virtualServer *VirtualServer) error
 	Update(ctx context.Context, virtualServer *VirtualServer) error
 }

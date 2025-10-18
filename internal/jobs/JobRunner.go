@@ -169,6 +169,14 @@ func (m *jobManager) executeJob(ctx context.Context, j *job) {
 		j.cancel.Store(nil)
 	}()
 
+	defer func() {
+		if err := recover(); err != nil {
+			if m.onError != nil {
+				m.onError(fmt.Errorf("panic: %v", err))
+			}
+		}
+	}()
+
 	err := j.jobFn(runCtx)
 	if err != nil {
 		if m.onError != nil {

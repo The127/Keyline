@@ -178,3 +178,40 @@ func (r *virtualServerRepository) Insert(ctx context.Context, virtualServer *rep
 	virtualServer.ClearChanges()
 	return nil
 }
+
+func (r *virtualServerRepository) List(ctx context.Context, filter repositories.VirtualServerFilter) ([]*repositories.VirtualServer, int, error) {
+	scope := middlewares.GetScope(ctx)
+	dbService := ioc.GetDependency[database.DbService](scope)
+
+	tx, err := dbService.GetTx()
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to open tx: %w", err)
+	}
+
+	s := r.selectQuery(filter)
+	s.SelectMore("count(*) over()")
+
+	query, args := s.Build()
+	logging.Logger.Debug("executing sql: ", query)
+	rows, err := tx.Query(query, args...)
+	if err != nil {
+		return nil, 0, fmt.Errorf("querying db: %w", err)
+	}
+	defer utils.PanicOnError(rows.Close, "closing rows")
+
+	var virtualServers []*repositories.VirtualServer
+	var totalCount int
+	for rows.Next() {
+		virtualServer := repositories.VirtualServer{
+			ModelBase: repositories.NewModelBase(),
+		}
+
+		err = rows.Scan(append(virtualServer.GetScanPointers(), &totalCount)...)
+		if err != nil {
+			return nil, 0, fmt.Errorf("scanning row: %w", err)
+		}
+		virtualServers = append(virtualServers, &virtualServer)
+	}
+
+	return virtualServers, totalCount, nil
+}

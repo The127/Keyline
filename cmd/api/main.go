@@ -92,7 +92,14 @@ func main() {
 		jobs.WithStartImmediate(),
 	)*/
 
-	jobManager.Start(context.Background())
+	// jobManager.QueueJob(
+	//	jobs.KeyRotateJob(),
+	//	time.Second,
+	//	jobs.WithName("signing_key_rotation"),
+	//	jobs.WithStartImmediate(),
+	//)
+
+	jobManager.Start(middlewares.ContextWithScope(context.Background(), dp))
 
 	initApplication(dp)
 
