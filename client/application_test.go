@@ -1,0 +1,61 @@
+package client
+
+import (
+	"Keyline/internal/handlers"
+	"Keyline/utils"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/suite"
+)
+
+type ApplicationClientSuite struct {
+	suite.Suite
+}
+
+func TestApplicationClientSuite(t *testing.T) {
+	t.Parallel()
+	suite.Run(t, new(ApplicationClientSuite))
+}
+
+func (s *ApplicationClientSuite) TestCreateApplication_HappyPath() {
+	// arrange
+	request := handlers.CreateApplicationRequestDto{
+		Name:           "applicationName",
+		DisplayName:    "displayName",
+		RedirectUris:   []string{"http://localhost:8080/callback"},
+		PostLogoutUris: []string{"http://localhost:8080/logout"},
+		Type:           "confidential",
+	}
+
+	response := handlers.CreateApplicationResponseDto{
+		Id:     uuid.New(),
+		Secret: utils.Ptr("secret"),
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		s.Equal(http.MethodPost, r.Method)
+		s.Equal("/applications", r.URL.Path)
+
+		var requestDto handlers.CreateApplicationRequestDto
+		err := json.NewDecoder(r.Body).Decode(&requestDto)
+		s.Require().NoError(err)
+		s.EqualValues(request, requestDto)
+
+		err = json.NewEncoder(w).Encode(response)
+		s.Require().NoError(err)
+	}))
+	defer server.Close()
+
+	testee := NewClient(server.URL).Application()
+
+	// act
+	responseDto, err := testee.Create(s.T().Context(), request)
+
+	// assert
+	s.Require().NoError(err)
+	s.Equal(response, responseDto)
+}

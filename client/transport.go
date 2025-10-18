@@ -1,0 +1,75 @@
+package client
+
+import (
+	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+)
+
+type TransportOptions func(*Transport)
+
+func WithClient(client *http.Client) TransportOptions {
+	return func(t *Transport) {
+		t.client = client
+	}
+}
+
+func WithBaseURL(baseURL string) TransportOptions {
+	return func(t *Transport) {
+		t.baseURL = baseURL
+	}
+}
+
+func WithRoundTripper(roundTripperFactory func(next http.RoundTripper) http.RoundTripper) TransportOptions {
+	return func(t *Transport) {
+		t.client.Transport = roundTripperFactory(t.client.Transport)
+	}
+}
+
+type Transport struct {
+	baseURL string
+	client  *http.Client
+}
+
+func NewTransport(baseUrl string, options ...TransportOptions) *Transport {
+	transport := &Transport{
+		baseURL: baseUrl,
+		client:  http.DefaultClient,
+	}
+
+	for _, option := range options {
+		option(transport)
+	}
+
+	return transport
+}
+
+func (t *Transport) NewRequest(method string, endpoint string, body io.Reader) (*http.Request, error) {
+	base, err := url.Parse(t.baseURL)
+	if err != nil {
+		return nil, fmt.Errorf("parsing base URL: %w", err)
+	}
+
+	ref, err := url.Parse(endpoint)
+	if err != nil {
+		return nil, fmt.Errorf("parsing endpoint: %w", err)
+	}
+
+	fullURL := base.ResolveReference(ref)
+
+	request, err := http.NewRequest(method, fullURL.String(), body)
+	if err != nil {
+		return nil, fmt.Errorf("creating request: %w", err)
+	}
+
+	if method == http.MethodPost || method == http.MethodPut || method == http.MethodPatch {
+		request.Header.Set("Content-Type", "application/json")
+	}
+
+	return request, err
+}
+
+func (t *Transport) Do(req *http.Request) (*http.Response, error) {
+	return t.client.Do(req)
+}
