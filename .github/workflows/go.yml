@@ -14,14 +14,15 @@ jobs:
   signoff:
     name: Check commit sign-offs
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' && github.base_ref == 'main'
     steps:
       - name: Checkout code
+        if: github.event_name == 'pull_request' && github.base_ref == 'main'
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
       - name: Check for Signed-off-by lines
+        if: github.event_name == 'pull_request' && github.base_ref == 'main'
         run: |
           echo "Checking commits for Signed-off-by lines..."
           if ! git log origin/main..HEAD --pretty=%B | grep -q "Signed-off-by"; then
