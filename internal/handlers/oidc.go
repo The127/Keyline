@@ -684,9 +684,14 @@ func extractScopes(tokenJwt *jwt.Token) ([]string, error) {
 		return nil, fmt.Errorf("expected array of strings for scope")
 	}
 
-	scopeStrings := utils.MapSlice(scopes, func(t any) string {
-		return t.(string)
-	})
+	scopeStrings := make([]string, 0, len(scopes))
+	for _, t := range scopes {
+		s, ok := t.(string)
+		if !ok {
+			return nil, fmt.Errorf("scope value is not a string: %v", t)
+		}
+		scopeStrings = append(scopeStrings, s)
+	}
 
 	return scopeStrings, nil
 }
