@@ -2,6 +2,7 @@ package client
 
 type Client interface {
 	Application() ApplicationClient
+	VirtualServer() VirtualServerClient
 	User() UserClient
 }
 
@@ -17,6 +18,10 @@ func NewClient(baseUrl string, virtualServer string, opts ...TransportOptions) C
 
 func (c *client) Application() ApplicationClient {
 	return NewApplicationClient(c.transport)
+}
+
+func (c *client) VirtualServer() VirtualServerClient {
+	return NewVirtualServerClient(c.transport)
 }
 
 func (c *client) User() UserClient {
