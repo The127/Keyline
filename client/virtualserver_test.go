@@ -115,7 +115,7 @@ func (s *VirtualServerClientSuite) TestPatch_HappyPath() {
 	// arrange
 	request := handlers.PatchVirtualServerRequestDto{
 		DisplayName:              utils.Ptr("New display name"),
-		EnablefRegistration:      utils.Ptr(true),
+		EnableRegistration:       utils.Ptr(true),
 		Require2fa:               utils.Ptr(false),
 		RequireEmailVerification: nil,
 	}
