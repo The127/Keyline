@@ -59,3 +59,48 @@ func (s *ApplicationClientSuite) TestCreateApplication_HappyPath() {
 	s.Require().NoError(err)
 	s.Equal(response, responseDto)
 }
+
+func (s *ApplicationClientSuite) TestListApplications_HappyPath() {
+	// arrange
+	requestParams := ListApplicationParams{
+		Page: 1,
+		Size: 11,
+	}
+
+	response := handlers.PagedApplicationsResponseDto{
+		Items: []handlers.ListApplicationsResponseDto{
+			{
+				Id:                uuid.UUID{},
+				Name:              "name",
+				DisplayName:       "displayName",
+				Type:              "public",
+				SystemApplication: false,
+			},
+		},
+		Pagination: &handlers.Pagination{
+			Page:       1,
+			Size:       11,
+			TotalPages: 2,
+			TotalItems: 22,
+		},
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		s.Equal(http.MethodGet, r.Method)
+		s.Equal("/applications", r.URL.Path)
+
+		err := json.NewEncoder(w).Encode(response)
+		s.Require().NoError(err)
+	}))
+	defer server.Close()
+
+	testee := NewClient(server.URL).Application()
+
+	// act
+	responseDto, err := testee.List(s.T().Context(), requestParams)
+
+	// assert
+	s.Require().NoError(err)
+	s.Equal(response, responseDto)
+
+}

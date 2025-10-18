@@ -10,8 +10,14 @@ import (
 	"net/http"
 )
 
+type ListApplicationParams struct {
+	Page int
+	Size int
+}
+
 type ApplicationClient interface {
 	Create(ctx context.Context, dto handlers.CreateApplicationRequestDto) (handlers.CreateApplicationResponseDto, error)
+	List(ctx context.Context, params ListApplicationParams) (handlers.PagedApplicationsResponseDto, error)
 }
 
 func NewApplicationClient(transport *Transport) ApplicationClient {
@@ -48,6 +54,25 @@ func (a *application) Create(ctx context.Context, dto handlers.CreateApplication
 	if err != nil {
 		return handlers.CreateApplicationResponseDto{}, fmt.Errorf("decoding response: %w", err)
 	}
+
+	return responseDto, nil
+}
+
+func (a *application) List(ctx context.Context, params ListApplicationParams) (handlers.PagedApplicationsResponseDto, error) {
+	endpoint := fmt.Sprintf("/applications?page=%d&size=%d", params.Page, params.Size)
+
+	request, err := a.transport.NewRequest(ctx, http.MethodGet, endpoint, nil)
+	if err != nil {
+		return handlers.PagedApplicationsResponseDto{}, fmt.Errorf("creating request: %w", err)
+	}
+
+	response, err := a.transport.Do(request)
+	if err != nil {
+		return handlers.PagedApplicationsResponseDto{}, fmt.Errorf("doing request: %w", err)
+	}
+
+	var responseDto handlers.PagedApplicationsResponseDto
+	err = json.NewDecoder(response.Body).Decode(&responseDto)
 
 	return responseDto, nil
 }
