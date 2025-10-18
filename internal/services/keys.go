@@ -231,6 +231,7 @@ func NewDirectoryKeyStore() KeyStore {
 type keyPairJson struct {
 	Algorithm  string    `json:"algorithm"`
 	PrivateKey string    `json:"private_key"`
+	Kid        string    `json:"kid"`
 	CreatedAt  time.Time `json:"created_at"`
 	RotatesAt  time.Time `json:"rotates_at"`
 	ExpiresAt  time.Time `json:"expires_at"`
@@ -246,6 +247,7 @@ func (d *directoryKeyStore) Serialize(keyPair KeyPair) ([]byte, error) {
 	dto := keyPairJson{
 		Algorithm:  string(keyPair.algorithm),
 		PrivateKey: serializedPrivateKey,
+		Kid:        keyPair.kid,
 		CreatedAt:  keyPair.createdAt,
 		RotatesAt:  keyPair.rotatesAt,
 		ExpiresAt:  keyPair.expiresAt,
@@ -356,7 +358,13 @@ func (d *directoryKeyStore) GetAllForAlgorithm(virtualServerName string, algorit
 		}
 
 		strategy := GetKeyStrategy(algorithm)
-		privateKey, publicKey, err := strategy.Import(string(serializedKeyPair))
+		var importedJson keyPairJson
+		err = json.Unmarshal(serializedKeyPair, &importedJson)
+		if err != nil {
+			return nil, fmt.Errorf("unmarshaling key pair: %w", err)
+		}
+
+		privateKey, publicKey, err := strategy.Import(importedJson.PrivateKey)
 		if err != nil {
 			return nil, fmt.Errorf("importing key pair: %w", err)
 		}
@@ -365,6 +373,10 @@ func (d *directoryKeyStore) GetAllForAlgorithm(virtualServerName string, algorit
 			algorithm:  algorithm,
 			publicKey:  publicKey,
 			privateKey: privateKey,
+			kid:        importedJson.Kid,
+			createdAt:  importedJson.CreatedAt,
+			rotatesAt:  importedJson.RotatesAt,
+			expiresAt:  importedJson.ExpiresAt,
 		})
 	}
 
@@ -398,8 +410,14 @@ func (d *directoryKeyStore) Get(virtualServerName string, algorithm config.Signi
 		return nil, fmt.Errorf("reading key: %w", err)
 	}
 
+	var importedJson keyPairJson
+	err = json.Unmarshal(privateKeyBytes, &importedJson)
+	if err != nil {
+		return nil, fmt.Errorf("unmarshaling key pair: %w", err)
+	}
+
 	strategy := GetKeyStrategy(algorithm)
-	privateKey, publicKey, err := strategy.Import(string(privateKeyBytes))
+	privateKey, publicKey, err := strategy.Import(importedJson.PrivateKey)
 	if err != nil {
 		return nil, fmt.Errorf("importing key pair: %w", err)
 	}
@@ -408,6 +426,10 @@ func (d *directoryKeyStore) Get(virtualServerName string, algorithm config.Signi
 		algorithm:  algorithm,
 		publicKey:  publicKey,
 		privateKey: privateKey,
+		kid:        importedJson.Kid,
+		createdAt:  importedJson.CreatedAt,
+		rotatesAt:  importedJson.RotatesAt,
+		expiresAt:  importedJson.ExpiresAt,
 	}, nil
 }
 
