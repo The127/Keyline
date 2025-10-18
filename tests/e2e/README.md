@@ -222,26 +222,7 @@ h.Close()
 
 ### Testing with Authentication
 
-The test harness provides a context with system user authentication. For testing different authentication scenarios:
-
-```go
-It("requires authentication", func() {
-    // Create a client without authentication
-    unauthClient := client.NewClient(
-        h.Client().(*client.client).transport.baseURL,
-        h.VirtualServer(),
-    )
-
-    // This should fail with 401
-    _, err := unauthClient.Application().List(h.Ctx(), client.ListApplicationParams{
-        Page: 1,
-        Size: 10,
-    })
-
-    Expect(err).To(HaveOccurred())
-    Expect(err.Error()).To(ContainSubstring("401"))
-})
-```
+Testing with authentication is a WIP.
 
 ### Testing Time-Dependent Features
 
@@ -260,75 +241,6 @@ It("handles token expiration", func() {
     // Token should now be expired
     err := validateToken(h.Ctx(), h.Client(), token)
     Expect(err).To(MatchError("token expired"))
-})
-```
-
-## Test Organization
-
-### Ordered vs. Unordered Specs
-
-**Ordered specs** (`Ordered` in Describe block):
-- Run in the order they're defined
-- Useful for multi-step workflows
-- Share state between tests in the same suite
-- Use with caution - can create test dependencies
-
-```go
-var _ = Describe("Complete User Flow", Ordered, func() {
-    var userId uuid.UUID
-
-    It("creates user", func() {
-        // userId is set here
-    })
-
-    It("updates user", func() {
-        // uses userId from previous test
-    })
-})
-```
-
-**Unordered specs** (default):
-- Can run in any order
-- Better for test isolation
-- Preferred for most test cases
-
-```go
-var _ = Describe("User Operations", func() {
-    It("creates user", func() {
-        // Independent test
-    })
-
-    It("deletes user", func() {
-        // Independent test
-    })
-})
-```
-
-### Focusing Tests
-
-During development, focus on specific tests:
-
-```go
-// Focus on this spec only
-FIt("important test", func() {
-    // Only this test will run
-})
-
-// Focus on this suite only
-FDescribe("Important Feature", func() {
-    // Only tests in this suite will run
-})
-```
-
-**Warning**: Don't commit focused tests! They'll cause other tests to be skipped in CI.
-
-### Pending Tests
-
-Mark tests as pending (not yet implemented):
-
-```go
-PIt("test to implement later", func() {
-    // This test will be skipped but reported as pending
 })
 ```
 
@@ -369,22 +281,16 @@ The harness automatically creates:
 2. **Admin User**: For authenticated operations
    - Username: `test-admin-user`
    - Email: `test-admin-user@localhost`
-   - Password: Pre-hashed (matches config)
+   - Password: Pre-hashed (matches config) WIP
 
 3. **Admin UI Application**: System application for admin operations
 
 ## Best Practices
 
-### 1. Use Ordered Sparingly
+### 1. Use Ordered Tests
 
 ```go
-// ✓ Good: Independent tests
-var _ = Describe("Application CRUD", func() {
-    It("creates application", func() { /* ... */ })
-    It("deletes application", func() { /* ... */ })
-})
-
-// ⚠ Use Carefully: Dependent tests
+// ✓ Good: Dependent tests, since each Describe blocks shares one DB and application instance
 var _ = Describe("Complete Flow", Ordered, func() {
     It("step 1", func() { /* ... */ })
     It("step 2", func() { /* depends on step 1 */ })
@@ -393,20 +299,8 @@ var _ = Describe("Complete Flow", Ordered, func() {
 
 ### 2. Clean Up Resources
 
-```go
-It("creates and cleans up", func() {
-    // Create resource
-    app, err := h.Client().Application().Create(h.Ctx(), dto)
-    Expect(err).ToNot(HaveOccurred())
-
-    // Use resource
-    // ... test logic ...
-
-    // Clean up
-    err = h.Client().Application().Delete(h.Ctx(), app.Id)
-    Expect(err).ToNot(HaveOccurred())
-})
-```
+Clean up resources that are not created by the keyline server.
+The test harness cleans up db and the server itself automatically.
 
 ### 3. Use Descriptive Test Names
 
@@ -463,108 +357,9 @@ It("handles complex workflow", func() {
 })
 ```
 
-## Troubleshooting
-
-### Tests Hang or Timeout
-
-**Problem**: Test hangs indefinitely or times out.
-
-**Solutions**:
-- Ensure PostgreSQL is running on port 5732
-- Check for port conflicts (starting at port 25001)
-- Verify database connection settings
-- Check server startup logs
-
-### Database Already Exists
-
-**Problem**: Test fails with "database already exists" error.
-
-**Solutions**:
-- Previous test didn't clean up properly
-- Restart PostgreSQL: `docker compose restart postgres`
-- Manually drop test databases: `psql -U user -h localhost -p 5732 -c "DROP DATABASE keyline_test_...;"`
-
-### Port Already in Use
-
-**Problem**: Server fails to start due to port conflict.
-
-**Solutions**:
-- Kill processes on conflicting ports
-- Test harness auto-increments ports - should avoid conflicts
-- Check for orphaned test processes: `ps aux | grep keyline`
-
-### Authentication Failures
-
-**Problem**: All requests return 401 Unauthorized.
-
-**Solutions**:
-- Verify test harness initialization completed
-- Check that system user context is being used
-- Ensure initial admin user was created successfully
-
-### Database Migration Failures
-
-**Problem**: Database migrations fail during test setup.
-
-**Solutions**:
-- Check PostgreSQL version compatibility
-- Ensure database user has sufficient permissions
-- Review migration files for syntax errors
-- Check PostgreSQL logs for detailed errors
-
-## Performance Considerations
-
-### Test Execution Time
-
-E2E tests are slower than unit tests because they:
-- Create real databases
-- Start actual servers
-- Make real HTTP requests
-- Run database migrations
-
-**Typical execution time**: 1-5 seconds per test suite
-
-### Improving Performance
-
-1. **Group related tests**: Use `Ordered` describe blocks for workflows
-2. **Parallel execution**: Use Ginkgo's parallel mode (experimental)
-3. **Reuse harness**: Share harness within a test suite
-4. **Minimize database operations**: Create test data efficiently
-
 ## CI/CD Integration
 
-E2E tests are included in the CI pipeline:
-
-```bash
-# Run all checks including E2E tests
-just ci
-
-# Or individually
-just e2e
-```
-
-### CI Configuration Example
-
-```yaml
-# .github/workflows/test.yml
-- name: Start PostgreSQL
-  run: docker compose up -d postgres
-
-- name: Run E2E Tests
-  run: just e2e
-```
-
-## Future Improvements
-
-Planned enhancements to the E2E test framework:
-
-- [ ] Parallel test execution support
-- [ ] Additional resource clients (User, Role, etc.)
-- [ ] Test data factories for common scenarios
-- [ ] Performance benchmarking
-- [ ] Integration with test coverage reporting
-- [ ] Mock email server integration
-- [ ] OAuth2 flow testing utilities
+E2E tests are included in the CI pipeline and run after the integration tests have passed.
 
 ## Related Documentation
 
