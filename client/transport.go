@@ -29,14 +29,16 @@ func WithRoundTripper(roundTripperFactory func(next http.RoundTripper) http.Roun
 }
 
 type Transport struct {
-	baseURL string
-	client  *http.Client
+	baseURL       string
+	virtualServer string
+	client        *http.Client
 }
 
-func NewTransport(baseUrl string, options ...TransportOptions) *Transport {
+func NewTransport(baseUrl string, virtualServer string, options ...TransportOptions) *Transport {
 	transport := &Transport{
-		baseURL: baseUrl,
-		client:  http.DefaultClient,
+		baseURL:       baseUrl,
+		virtualServer: virtualServer,
+		client:        http.DefaultClient,
 	}
 
 	for _, option := range options {
@@ -52,7 +54,7 @@ func (t *Transport) NewRequest(ctx context.Context, method string, endpoint stri
 		return nil, fmt.Errorf("parsing base URL: %w", err)
 	}
 
-	ref, err := url.Parse(endpoint)
+	ref, err := url.Parse("/api/virtual-servers/" + t.virtualServer + endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("parsing endpoint: %w", err)
 	}
