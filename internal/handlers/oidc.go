@@ -706,7 +706,7 @@ func extractAccessToken(r *http.Request) (string, error) {
 		return bearer, nil
 	}
 
-	return r.FormValue("access_token"), nil
+	return r.PostFormValue("access_token"), nil
 }
 
 // OidcToken exchanges authorization code or refresh token for tokens.
