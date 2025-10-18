@@ -216,6 +216,7 @@ type AuthorizationRequest struct {
 	RedirectUri         string
 	Scopes              []string
 	State               string
+	Nonce               string
 	ResponseMode        string
 	PKCEChallenge       string
 	PKCEChallengeMethod string
@@ -263,6 +264,7 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 		RedirectUri:         r.Form.Get("redirect_uri"),
 		Scopes:              strings.Split(r.Form.Get("scope"), " "),
 		State:               r.Form.Get("state"),
+		Nonce:               r.Form.Get("nonce"),
 		ResponseMode:        r.Form.Get("response_mode"),
 		PKCEChallenge:       r.Form.Get("code_challenge"),
 		PKCEChallengeMethod: r.Form.Get("code_challenge_method"),
@@ -316,7 +318,7 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(authRequest.ResponseTypes) != 1 || authRequest.ResponseTypes[0] != "code" {
-		utils.HandleHttpError(w, fmt.Errorf("unsupported response type: %s", authRequest.ResponseTypes[0]))
+		http.Redirect(w, r, fmt.Sprintf("%s/login?error=unsupported_response_type", config.C.Frontend.ExternalUrl), http.StatusFound)
 		return
 	}
 
@@ -335,8 +337,9 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 
 		codeInfo := jsonTypes.NewCodeInfo(
 			virtualServer.Name(),
-			[]string{"email", "openid", "sub"},
+			authRequest.Scopes,
 			s.UserId(),
+			authRequest.Nonce,
 		)
 
 		codeInfoString, err := json.Marshal(codeInfo)
@@ -550,9 +553,10 @@ func extractClientIdFromJwt(idTokenClaims jwt.MapClaims) (string, error) {
 }
 
 type OidcUserInfoResponseDto struct {
-	Sub   string `json:"sub"`
-	Email string `json:"email"`
-	Name  string `json:"name"`
+	Sub           string `json:"sub"`
+	Email         string `json:"email,omitempty"`
+	EmailVerified *bool  `json:"email_verified,omitempty"`
+	Name          string `json:"name,omitempty"`
 }
 
 // OidcUserinfo returns the userinfo for the presented access token.
@@ -563,7 +567,7 @@ type OidcUserInfoResponseDto struct {
 // @Security     BearerAuth
 // @Success      200  {object}  handlers.OidcUserInfoResponseDto
 // @Failure      401  {string}  string
-// @Router       /oidc/{virtualServerName}/userinfo [get]
+// @Router       /oidc/{virtualServerName}/userinfo [get, post]
 func OidcUserinfo(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	scope := middlewares.GetScope(ctx)
@@ -591,14 +595,13 @@ func OidcUserinfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bearer := r.Header.Get("Authorization")
-	if bearer == "" {
-		utils.HandleHttpError(w, fmt.Errorf("authorization header not found"))
+	bearer, err := extractAccessToken(r)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("extracting access token: %w", err))
 		return
 	}
-
-	if !strings.HasPrefix(bearer, "Bearer ") {
-		utils.HandleHttpError(w, fmt.Errorf("authorization header is not a bearer token"))
+	if bearer == "" {
+		utils.HandleHttpError(w, fmt.Errorf("authorization header not found"))
 		return
 	}
 
@@ -644,9 +647,22 @@ func OidcUserinfo(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	tempResult := OidcUserInfoResponseDto{
-		Sub:   userId.String(),
-		Email: user.PrimaryEmail(),
-		Name:  user.DisplayName(),
+		Sub: userId.String(),
+	}
+
+	scopes, err := extractScopes(tokenJwt)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("extracting scopes: %w", err))
+		return
+	}
+
+	if slices.Contains(scopes, "email") {
+		tempResult.Email = user.PrimaryEmail()
+		tempResult.EmailVerified = utils.Ptr(user.EmailVerified())
+	}
+
+	if slices.Contains(scopes, "profile") {
+		tempResult.Name = user.DisplayName()
 	}
 
 	err = json.NewEncoder(w).Encode(tempResult)
@@ -654,6 +670,43 @@ func OidcUserinfo(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, err)
 		return
 	}
+}
+
+func extractScopes(tokenJwt *jwt.Token) ([]string, error) {
+	claims := tokenJwt.Claims.(jwt.MapClaims)
+	scopesClaim, ok := claims["scopes"]
+	if !ok {
+		return []string{}, nil
+	}
+
+	scopes, ok := scopesClaim.([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("expected array of strings for scope")
+	}
+
+	scopeStrings := make([]string, 0, len(scopes))
+	for _, t := range scopes {
+		s, ok := t.(string)
+		if !ok {
+			return nil, fmt.Errorf("scope value is not a string: %v", t)
+		}
+		scopeStrings = append(scopeStrings, s)
+	}
+
+	return scopeStrings, nil
+}
+
+func extractAccessToken(r *http.Request) (string, error) {
+	bearer := r.Header.Get("Authorization")
+	if bearer != "" {
+		if !strings.HasPrefix(bearer, "Bearer ") {
+			return "", fmt.Errorf("authorization header is not a bearer token")
+		}
+
+		return bearer, nil
+	}
+
+	return r.PostFormValue("access_token"), nil
 }
 
 // OidcToken exchanges authorization code or refresh token for tokens.
@@ -716,7 +769,7 @@ func authenticateApplication(ctx context.Context, applicationName string, applic
 	}
 
 	hashedSecret := application.HashedSecret()
-	if utils.CheapCompareHash(hashedSecret, applicationSecret) {
+	if utils.CheapCompareHash(applicationSecret, hashedSecret) {
 		return application, nil
 	}
 
@@ -821,6 +874,7 @@ func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 		AccessTokenExpiry:  tokenDuration,
 		IdTokenExpiry:      tokenDuration,
 		RefreshTokenExpiry: tokenDuration,
+		Nonce:              codeInfo.Nonce,
 	}
 
 	tokens, err := generateTokens(ctx, params, tokenService)
@@ -884,6 +938,7 @@ type TokenGenerationParams struct {
 	AccessTokenExpiry  time.Duration
 	IdTokenExpiry      time.Duration
 	RefreshTokenExpiry time.Duration
+	Nonce              string
 }
 
 func (t *TokenGenerationParams) ToAccessTokenGenerationParams() AccessTokenGenerationParams {
@@ -905,8 +960,9 @@ func (t *TokenGenerationParams) ToIdTokenGenerationParams() IdTokenGenerationPar
 		ClientId:          t.ClientId,
 		ExternalUrl:       t.ExternalUrl,
 		UserDisplayName:   t.UserDisplayName,
-		UserPrimaryEmail:  t.UserPrimaryEmail,
 		VirtualServerName: t.VirtualServerName,
+		GrantedScopes:     t.GrantedScopes,
+		Nonce:             t.Nonce,
 		IssuedAt:          t.IssuedAt,
 		Expiry:            t.IdTokenExpiry,
 		UserId:            t.UserId,
@@ -946,12 +1002,13 @@ type IdTokenGenerationParams struct {
 	ClientId          string
 	ExternalUrl       string
 	UserDisplayName   string
-	UserPrimaryEmail  string
 	VirtualServerName string
+	Nonce             string
 	IssuedAt          time.Time
 	Expiry            time.Duration
 	UserId            uuid.UUID
 	KeyPair           services.KeyPair
+	GrantedScopes     []string
 }
 
 type GeneratedTokens struct {
@@ -970,13 +1027,19 @@ func generateIdToken(params IdTokenGenerationParams) (string, error) {
 	}
 
 	idTokenClaims := jwt.MapClaims{
-		"sub":   params.UserId,
-		"iss":   fmt.Sprintf("%s/oidc/%s", params.ExternalUrl, params.VirtualServerName),
-		"aud":   []string{params.ClientId},
-		"iat":   params.IssuedAt.Unix(),
-		"exp":   params.IssuedAt.Add(params.Expiry).Unix(),
-		"name":  params.UserDisplayName,
-		"email": params.UserPrimaryEmail,
+		"sub": params.UserId,
+		"iss": fmt.Sprintf("%s/oidc/%s", params.ExternalUrl, params.VirtualServerName),
+		"aud": []string{params.ClientId},
+		"iat": params.IssuedAt.Unix(),
+		"exp": params.IssuedAt.Add(params.Expiry).Unix(),
+	}
+
+	if slices.Contains(params.GrantedScopes, "profile") {
+		idTokenClaims["name"] = params.UserDisplayName
+	}
+
+	if params.Nonce != "" {
+		idTokenClaims["nonce"] = params.Nonce
 	}
 
 	idToken := jwt.NewWithClaims(jwtSigningMethod, idTokenClaims)
