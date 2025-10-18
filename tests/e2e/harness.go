@@ -15,6 +15,7 @@ import (
 	"Keyline/mediator"
 	"Keyline/utils"
 	"context"
+	"database/sql"
 	"fmt"
 	"strings"
 	"sync"
@@ -29,6 +30,7 @@ type harness struct {
 	ctx     context.Context
 	setTime clock.TimeSetterFn
 	dbName  string
+	scope   *ioc.DependencyProvider
 }
 
 func (h *harness) SetTime(t time.Time) {
@@ -48,7 +50,27 @@ func (h *harness) Client() client.Client {
 }
 
 func (h *harness) Close() {
+	dbConnection := ioc.GetDependency[*sql.DB](h.scope)
+	utils.PanicOnError(h.scope.Close, "closing scope")
+	utils.PanicOnError(dbConnection.Close, "closing db connection in test")
 
+	pc := config.PostgresConfig{
+		Database: "postgres",
+		Host:     "localhost",
+		Port:     5732,
+		Username: "user",
+		Password: "password",
+		SslMode:  "disable",
+	}
+
+	db := database.ConnectToDatabase(pc)
+	createQuery := fmt.Sprintf("drop database %s;", h.dbName)
+	_, err := db.Exec(createQuery)
+	if err != nil {
+		panic(err)
+	}
+
+	utils.PanicOnError(db.Close, "closing initial db connection in test")
 }
 
 func newE2eTestHarness() *harness {
@@ -114,6 +136,7 @@ func newE2eTestHarness() *harness {
 
 	return &harness{
 		c:       c,
+		scope:   scope,
 		ctx:     ctx,
 		setTime: timeSetter,
 		dbName:  dbName,
