@@ -3,6 +3,7 @@ package commands
 import (
 	"Keyline/internal/authentication/permissions"
 	"Keyline/internal/behaviours"
+	"Keyline/internal/clock"
 	"Keyline/internal/config"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
@@ -66,8 +67,10 @@ func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer)
 		return nil, fmt.Errorf("inserting virtual server: %w", err)
 	}
 
+	clockService := ioc.GetDependency[clock.Service](scope)
+
 	keyService := ioc.GetDependency[services.KeyService](scope)
-	_, err = keyService.Generate(command.Name, command.SigningAlgorithm)
+	_, err = keyService.Generate(clockService, command.Name, command.SigningAlgorithm)
 	if err != nil {
 		return nil, fmt.Errorf("generating keypair: %w", err)
 	}

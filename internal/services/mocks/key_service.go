@@ -10,6 +10,7 @@
 package mocks
 
 import (
+	clock "Keyline/internal/clock"
 	config "Keyline/internal/config"
 	services "Keyline/internal/services"
 	reflect "reflect"
@@ -42,18 +43,18 @@ func (m *MockKeyService) EXPECT() *MockKeyServiceMockRecorder {
 }
 
 // Generate mocks base method.
-func (m *MockKeyService) Generate(virtualServerName string, algorithm config.SigningAlgorithm) (services.KeyPair, error) {
+func (m *MockKeyService) Generate(clockService clock.Service, virtualServerName string, algorithm config.SigningAlgorithm) (services.KeyPair, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Generate", virtualServerName, algorithm)
+	ret := m.ctrl.Call(m, "Generate", clockService, virtualServerName, algorithm)
 	ret0, _ := ret[0].(services.KeyPair)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Generate indicates an expected call of Generate.
-func (mr *MockKeyServiceMockRecorder) Generate(virtualServerName, algorithm any) *gomock.Call {
+func (mr *MockKeyServiceMockRecorder) Generate(clockService, virtualServerName, algorithm any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Generate", reflect.TypeOf((*MockKeyService)(nil).Generate), virtualServerName, algorithm)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Generate", reflect.TypeOf((*MockKeyService)(nil).Generate), clockService, virtualServerName, algorithm)
 }
 
 // GetKey mocks base method.
