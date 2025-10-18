@@ -18,7 +18,7 @@ var _ = Describe("Application flow", Ordered, func() {
 		h.Close()
 	})
 
-	It("unauthorized", func() {
+	It("rejects unauthorized requests", func() {
 		_, err := h.Client().Application().Create(h.Ctx(), handlers.CreateApplicationRequestDto{
 			Name:           "test-app",
 			DisplayName:    "Test App",
