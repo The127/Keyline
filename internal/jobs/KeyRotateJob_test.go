@@ -39,7 +39,7 @@ func (s *KeyRotateJobSuite) TestDeletesExpiredKeys() {
 		keyPair,
 	}
 	keyStore := mocks.NewMockKeyStore(ctrl)
-	keyStore.EXPECT().Remove("vs-name", signingAlgorithm, keyPair.ComputeKid()).Return(nil)
+	keyStore.EXPECT().Remove("vs-name", signingAlgorithm, keyPair.GetKid()).Return(nil)
 
 	// act
 	err = deleteExpiredKeys(keys, keyStore, "vs-name", clockService.Now())

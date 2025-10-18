@@ -4,12 +4,15 @@ import (
 	"Keyline/internal/caching"
 	"Keyline/internal/clock"
 	"Keyline/internal/config"
+	"crypto"
 	"crypto/ed25519"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/sha256"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -44,13 +47,17 @@ func (s *RSAKeyStrategy) Generate(service clock.Service) (KeyPair, error) {
 		return KeyPair{}, fmt.Errorf("generating key pair: %w", err)
 	}
 
-	kid := base64.RawURLEncoding.EncodeToString(privateKey.N.Bytes())
+	publicKey := privateKey.Public()
+	kid, err := computeRSAPublicKeyKid(publicKey)
+	if err != nil {
+		return KeyPair{}, fmt.Errorf("computing kid: %w", err)
+	}
 
 	now := service.Now()
 
 	return KeyPair{
 		algorithm:  config.SigningAlgorithmRS256,
-		publicKey:  privateKey.Public(),
+		publicKey:  publicKey,
 		privateKey: privateKey,
 		kid:        kid,
 		createdAt:  now, // TODO: use virtual server config for rotate and expires
@@ -59,10 +66,45 @@ func (s *RSAKeyStrategy) Generate(service clock.Service) (KeyPair, error) {
 	}, nil
 }
 
-func (s *RSAKeyStrategy) Import(serializedPrivateKey string) (any, any, error) {
-	key, err := x509.ParsePKCS1PrivateKey([]byte(serializedPrivateKey))
+func computeRSAPublicKeyKid(pub crypto.PublicKey) (string, error) {
+	// RFC 7638: JWK Thumbprint uses the public key fields only
+	jwk := map[string]string{
+		"e":   base64.RawURLEncoding.EncodeToString(bigIntToBytes(pub.(*rsa.PublicKey).E)),
+		"kty": "RSA",
+		"n":   base64.RawURLEncoding.EncodeToString(pub.(*rsa.PublicKey).N.Bytes()),
+	}
+
+	b, err := json.Marshal(jwk)
 	if err != nil {
-		return nil, nil, fmt.Errorf("parsing private key: %w", err)
+		return "", err
+	}
+
+	hash := sha256.Sum256(b)
+	return base64.RawURLEncoding.EncodeToString(hash[:]), nil
+}
+
+// bigIntToBytes encodes an int as a big-endian byte slice
+func bigIntToBytes(i int) []byte {
+	if i == 0 {
+		return []byte{0}
+	}
+	var b []byte
+	for i > 0 {
+		b = append([]byte{byte(i & 0xff)}, b...)
+		i >>= 8
+	}
+	return b
+}
+
+func (s *RSAKeyStrategy) Import(serializedPrivateKey string) (any, any, error) {
+	block, _ := pem.Decode([]byte(serializedPrivateKey))
+	if block == nil || block.Type != "RSA PRIVATE KEY" {
+		return nil, nil, fmt.Errorf("failed to decode PEM block containing RSA private key")
+	}
+
+	key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	if err != nil {
+		return nil, nil, fmt.Errorf("parsing PKCS1 private key: %w", err)
 	}
 
 	return key, &key.PublicKey, nil
@@ -74,8 +116,13 @@ func (s *RSAKeyStrategy) Export(privateKey any) (string, error) {
 		return "", fmt.Errorf("invalid private key type, expected *rsa.PrivateKey got %T", privateKey)
 	}
 
-	key := x509.MarshalPKCS1PrivateKey(rsaPrivateKey)
-	return string(key), nil
+	der := x509.MarshalPKCS1PrivateKey(rsaPrivateKey)
+	pemBlock := &pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: der,
+	}
+
+	return string(pem.EncodeToMemory(pemBlock)), nil
 }
 
 type EdDSAKeyStrategy struct{}
@@ -86,7 +133,7 @@ func (s *EdDSAKeyStrategy) Generate(clockService clock.Service) (KeyPair, error)
 		return KeyPair{}, fmt.Errorf("generating key pair: %w", err)
 	}
 
-	kid := base64.RawURLEncoding.EncodeToString(publicKey)
+	kid := computeEdCSAPublicKeyKid(publicKey)
 
 	now := clockService.Now()
 
@@ -101,24 +148,48 @@ func (s *EdDSAKeyStrategy) Generate(clockService clock.Service) (KeyPair, error)
 	}, nil
 }
 
+func computeEdCSAPublicKeyKid(key ed25519.PublicKey) string {
+	hash := sha256.Sum256(key)
+	return base64.RawURLEncoding.EncodeToString(hash[:])
+}
+
 func (s *EdDSAKeyStrategy) Export(privateKey any) (string, error) {
 	ed25519PrivateKey, ok := privateKey.(ed25519.PrivateKey)
 	if !ok {
 		return "", fmt.Errorf("invalid private key type, expected ed25519.PrivateKey got %T", privateKey)
 	}
 
-	return base64.RawURLEncoding.EncodeToString(ed25519PrivateKey), nil
+	der, err := x509.MarshalPKCS8PrivateKey(ed25519PrivateKey)
+	if err != nil {
+		return "", fmt.Errorf("marshalling private key: %w", err)
+	}
+
+	pemBlock := &pem.Block{
+		Type:  "PRIVATE KEY",
+		Bytes: der,
+	}
+
+	return string(pem.EncodeToMemory(pemBlock)), nil
 }
 
 func (s *EdDSAKeyStrategy) Import(serializedPrivateKey string) (any, any, error) {
-	privateKeyBytes, err := base64.RawURLEncoding.DecodeString(serializedPrivateKey)
-	if err != nil {
-		return nil, nil, fmt.Errorf("decoding private key: %w", err)
+	block, _ := pem.Decode([]byte(serializedPrivateKey))
+	if block == nil {
+		return nil, nil, fmt.Errorf("failed to decode PEM block")
 	}
 
-	privateKey := ed25519.PrivateKey(privateKeyBytes)
-	publicKey := privateKey.Public().(ed25519.PublicKey)
-	return privateKey, publicKey, nil
+	key, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+	if err != nil {
+		return nil, nil, fmt.Errorf("parsing PKCS8 private key: %w", err)
+	}
+
+	ed25519PrivateKey, ok := key.(ed25519.PrivateKey)
+	if !ok {
+		return nil, nil, fmt.Errorf("not an Ed25519 private key")
+	}
+
+	publicKey := ed25519PrivateKey.Public().(ed25519.PublicKey)
+	return ed25519PrivateKey, publicKey, nil
 }
 
 //go:generate mockgen -destination=./mocks/key_store.go -package=mocks Keyline/internal/services KeyStore
@@ -169,7 +240,7 @@ func (m *memoryKeyStore) GetAllForAlgorithm(virtualServerName string, algorithm 
 }
 
 func (m *memoryKeyStore) Add(virtualServerName string, keyPair KeyPair) error {
-	key := fmt.Sprintf("%s:%s:%s", virtualServerName, keyPair.algorithm, keyPair.ComputeKid())
+	key := fmt.Sprintf("%s:%s:%s", virtualServerName, keyPair.algorithm, keyPair.GetKid())
 	m.keyPairs[key] = keyPair
 	return nil
 }
@@ -190,6 +261,7 @@ func NewDirectoryKeyStore() KeyStore {
 type keyPairJson struct {
 	Algorithm  string    `json:"algorithm"`
 	PrivateKey string    `json:"private_key"`
+	Kid        string    `json:"kid"`
 	CreatedAt  time.Time `json:"created_at"`
 	RotatesAt  time.Time `json:"rotates_at"`
 	ExpiresAt  time.Time `json:"expires_at"`
@@ -205,6 +277,7 @@ func (d *directoryKeyStore) Serialize(keyPair KeyPair) ([]byte, error) {
 	dto := keyPairJson{
 		Algorithm:  string(keyPair.algorithm),
 		PrivateKey: serializedPrivateKey,
+		Kid:        keyPair.kid,
 		CreatedAt:  keyPair.createdAt,
 		RotatesAt:  keyPair.rotatesAt,
 		ExpiresAt:  keyPair.expiresAt,
@@ -256,7 +329,7 @@ func (d *directoryKeyStore) Add(virtualServerName string, keyPair KeyPair) error
 		return fmt.Errorf("path %s is not a directory", algPath)
 	}
 
-	keyPath := filepath.Join(algPath, keyPair.ComputeKid())
+	keyPath := filepath.Join(algPath, keyPair.GetKid())
 
 	serializedKeyPair, err := d.Serialize(keyPair)
 	if err != nil {
@@ -315,7 +388,13 @@ func (d *directoryKeyStore) GetAllForAlgorithm(virtualServerName string, algorit
 		}
 
 		strategy := GetKeyStrategy(algorithm)
-		privateKey, publicKey, err := strategy.Import(string(serializedKeyPair))
+		var importedJson keyPairJson
+		err = json.Unmarshal(serializedKeyPair, &importedJson)
+		if err != nil {
+			return nil, fmt.Errorf("unmarshaling key pair: %w", err)
+		}
+
+		privateKey, publicKey, err := strategy.Import(importedJson.PrivateKey)
 		if err != nil {
 			return nil, fmt.Errorf("importing key pair: %w", err)
 		}
@@ -324,6 +403,10 @@ func (d *directoryKeyStore) GetAllForAlgorithm(virtualServerName string, algorit
 			algorithm:  algorithm,
 			publicKey:  publicKey,
 			privateKey: privateKey,
+			kid:        importedJson.Kid,
+			createdAt:  importedJson.CreatedAt,
+			rotatesAt:  importedJson.RotatesAt,
+			expiresAt:  importedJson.ExpiresAt,
 		})
 	}
 
@@ -357,8 +440,14 @@ func (d *directoryKeyStore) Get(virtualServerName string, algorithm config.Signi
 		return nil, fmt.Errorf("reading key: %w", err)
 	}
 
+	var importedJson keyPairJson
+	err = json.Unmarshal(privateKeyBytes, &importedJson)
+	if err != nil {
+		return nil, fmt.Errorf("unmarshaling key pair: %w", err)
+	}
+
 	strategy := GetKeyStrategy(algorithm)
-	privateKey, publicKey, err := strategy.Import(string(privateKeyBytes))
+	privateKey, publicKey, err := strategy.Import(importedJson.PrivateKey)
 	if err != nil {
 		return nil, fmt.Errorf("importing key pair: %w", err)
 	}
@@ -367,6 +456,10 @@ func (d *directoryKeyStore) Get(virtualServerName string, algorithm config.Signi
 		algorithm:  algorithm,
 		publicKey:  publicKey,
 		privateKey: privateKey,
+		kid:        importedJson.Kid,
+		createdAt:  importedJson.CreatedAt,
+		rotatesAt:  importedJson.RotatesAt,
+		expiresAt:  importedJson.ExpiresAt,
 	}, nil
 }
 
@@ -386,7 +479,7 @@ type KeyPair struct {
 	expiresAt  time.Time
 }
 
-func (k *KeyPair) ComputeKid() string {
+func (k *KeyPair) GetKid() string {
 	return k.kid
 }
 
