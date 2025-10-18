@@ -53,7 +53,7 @@ func (s *RSAKeyStrategy) Import(serializedPrivateKey string) (any, any, error) {
 		return nil, nil, fmt.Errorf("parsing private key: %w", err)
 	}
 
-	return key, key.PublicKey, nil
+	return key, &key.PublicKey, nil
 }
 
 func (s *RSAKeyStrategy) Export(privateKey any) (string, error) {
