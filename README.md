@@ -251,8 +251,12 @@ Keyline provides comprehensive API documentation using Swagger/OpenAPI:
 │   ├── config/           # Configuration management (see internal/config/README.md)
 │   ├── middlewares/      # HTTP middlewares
 │   └── ...
-├── ioc/                  # IoC container implementation
-├── mediator/             # Mediator pattern implementation
+├── ioc/                  # IoC container implementation (see ioc/Readme.md)
+├── mediator/             # Mediator pattern implementation (see mediator/README.md)
+├── client/               # API client library (see client/README.md)
+├── tests/
+│   ├── e2e/              # End-to-end tests (see tests/e2e/README.md)
+│   └── integration/      # Integration tests
 ├── utils/                # Utility functions
 ├── docs/                 # Swagger documentation
 ├── templates/            # Email templates
@@ -310,6 +314,9 @@ just test
 # Run integration tests
 just integration
 
+# Run end-to-end tests
+just e2e
+
 # Run all tests with CI checks
 just ci
 ```
@@ -325,7 +332,14 @@ go test -cover ./...
 
 # Run tests for a specific package
 go test ./ioc/...
+
+# Run end-to-end tests
+go test -tags=e2e ./tests/e2e/...
 ```
+
+For detailed information about testing:
+- [E2E Tests Documentation](tests/e2e/README.md) - Complete guide to end-to-end testing
+- [API Client Documentation](client/README.md) - Learn how to use the Keyline API client
 
 ### Linting
 
