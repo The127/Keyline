@@ -58,7 +58,7 @@ func NewTransport(baseUrl string, virtualServer string, options ...TransportOpti
 }
 
 func (t *Transport) NewTenantRequest(ctx context.Context, method string, endpoint string, body io.Reader) (*http.Request, error) {
-	return t.NewRootRequest(ctx, method, fmt.Sprintf("/virtual-servers/%s/%s", t.virtualServer, endpoint), body)
+	return t.NewRootRequest(ctx, method, fmt.Sprintf("/api/virtual-servers/%s%s", t.virtualServer, endpoint), body)
 }
 
 func (t *Transport) NewRootRequest(ctx context.Context, method string, endpoint string, body io.Reader) (*http.Request, error) {

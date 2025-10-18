@@ -40,7 +40,7 @@ func (c *userClient) List(ctx context.Context, params ListUserParams) (handlers.
 
 	endpoint := fmt.Sprintf("/users?%s", values.Encode())
 
-	request, err := c.transport.NewRequest(ctx, http.MethodGet, endpoint, nil)
+	request, err := c.transport.NewTenantRequest(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
 		return handlers.PagedUsersResponseDto{}, fmt.Errorf("creating request: %w", err)
 	}
@@ -62,7 +62,7 @@ func (c *userClient) List(ctx context.Context, params ListUserParams) (handlers.
 func (c *userClient) Get(ctx context.Context, id uuid.UUID) (handlers.GetUserByIdResponseDto, error) {
 	endpoint := fmt.Sprintf("/users/%s", id.String())
 
-	request, err := c.transport.NewRequest(ctx, http.MethodGet, endpoint, nil)
+	request, err := c.transport.NewTenantRequest(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
 		return handlers.GetUserByIdResponseDto{}, fmt.Errorf("creating request: %w", err)
 	}
@@ -89,7 +89,7 @@ func (c *userClient) Patch(ctx context.Context, id uuid.UUID, dto handlers.Patch
 		return fmt.Errorf("marshaling dto: %w", err)
 	}
 
-	request, err := c.transport.NewRequest(ctx, http.MethodPatch, endpoint, bytes.NewBuffer(jsonBytes))
+	request, err := c.transport.NewTenantRequest(ctx, http.MethodPatch, endpoint, bytes.NewBuffer(jsonBytes))
 	if err != nil {
 		return fmt.Errorf("creating request: %w", err)
 	}

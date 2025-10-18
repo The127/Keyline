@@ -134,7 +134,7 @@ func (a *application) Patch(ctx context.Context, id uuid.UUID, dto handlers.Patc
 		return fmt.Errorf("marshaling dto: %w", err)
 	}
 
-	request, err := a.transport.NewRequest(ctx, http.MethodPatch, endpoint, bytes.NewBuffer(jsonBytes))
+	request, err := a.transport.NewTenantRequest(ctx, http.MethodPatch, endpoint, bytes.NewBuffer(jsonBytes))
 	if err != nil {
 		return fmt.Errorf("creating request: %w", err)
 	}
