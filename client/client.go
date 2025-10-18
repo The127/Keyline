@@ -2,6 +2,7 @@ package client
 
 type Client interface {
 	Application() ApplicationClient
+	User() UserClient
 }
 
 type client struct {
@@ -16,4 +17,8 @@ func NewClient(baseUrl string, virtualServer string, opts ...TransportOptions) C
 
 func (c *client) Application() ApplicationClient {
 	return NewApplicationClient(c.transport)
+}
+
+func (c *client) User() UserClient {
+	return NewUserClient(c.transport)
 }

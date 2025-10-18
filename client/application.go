@@ -21,6 +21,7 @@ type ApplicationClient interface {
 	Create(ctx context.Context, dto handlers.CreateApplicationRequestDto) (handlers.CreateApplicationResponseDto, error)
 	List(ctx context.Context, params ListApplicationParams) (handlers.PagedApplicationsResponseDto, error)
 	Get(ctx context.Context, id uuid.UUID) (handlers.GetApplicationResponseDto, error)
+	Patch(ctx context.Context, id uuid.UUID, dto handlers.PatchApplicationRequestDto) error
 	Delete(ctx context.Context, id uuid.UUID) error
 }
 
@@ -113,6 +114,27 @@ func (a *application) Delete(ctx context.Context, id uuid.UUID) error {
 	endpoint := fmt.Sprintf("/applications/%s", id.String())
 
 	request, err := a.transport.NewRequest(ctx, http.MethodDelete, endpoint, nil)
+	if err != nil {
+		return fmt.Errorf("creating request: %w", err)
+	}
+
+	_, err = a.transport.Do(request)
+	if err != nil {
+		return fmt.Errorf("doing request: %w", err)
+	}
+
+	return nil
+}
+
+func (a *application) Patch(ctx context.Context, id uuid.UUID, dto handlers.PatchApplicationRequestDto) error {
+	endpoint := fmt.Sprintf("/applications/%s", id.String())
+
+	jsonBytes, err := json.Marshal(dto)
+	if err != nil {
+		return fmt.Errorf("marshaling dto: %w", err)
+	}
+
+	request, err := a.transport.NewRequest(ctx, http.MethodPatch, endpoint, bytes.NewBuffer(jsonBytes))
 	if err != nil {
 		return fmt.Errorf("creating request: %w", err)
 	}
