@@ -716,7 +716,7 @@ func authenticateApplication(ctx context.Context, applicationName string, applic
 	}
 
 	hashedSecret := application.HashedSecret()
-	if utils.CheapCompareHash(hashedSecret, applicationSecret) {
+	if utils.CheapCompareHash(applicationSecret, hashedSecret) {
 		return application, nil
 	}
 
