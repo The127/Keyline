@@ -68,7 +68,7 @@ func deleteExpiredKeys(
 ) error {
 	for _, keyPair := range keyPairs {
 		if keyPair.ExpiresAt().Before(now) {
-			err := keyStore.Remove(virtualServerName, keyPair.Algorithm(), keyPair.ComputeKid())
+			err := keyStore.Remove(virtualServerName, keyPair.Algorithm(), keyPair.GetKid())
 			if err != nil {
 				return fmt.Errorf("removing key pair: %w", err)
 			}

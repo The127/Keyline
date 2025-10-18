@@ -87,7 +87,7 @@ func WellKnownJwks(w http.ResponseWriter, r *http.Request) {
 
 	keyPair := keyService.GetKey(vsName, virtualServer.SigningAlgorithm())
 
-	kid := keyPair.ComputeKid()
+	kid := keyPair.GetKid()
 
 	keys := make([]any, 0)
 
@@ -962,7 +962,7 @@ type GeneratedTokens struct {
 }
 
 func generateIdToken(params IdTokenGenerationParams) (string, error) {
-	kid := params.KeyPair.ComputeKid()
+	kid := params.KeyPair.GetKid()
 
 	jwtSigningMethod, err := getJwtSigningMethod(params.KeyPair.Algorithm())
 	if err != nil {
@@ -985,7 +985,7 @@ func generateIdToken(params IdTokenGenerationParams) (string, error) {
 }
 
 func generateAccessToken(ctx context.Context, params AccessTokenGenerationParams) (string, error) {
-	kid := params.KeyPair.ComputeKid()
+	kid := params.KeyPair.GetKid()
 
 	jwtSigningMethod, err := getJwtSigningMethod(params.KeyPair.Algorithm())
 	if err != nil {

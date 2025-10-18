@@ -169,7 +169,7 @@ func (m *memoryKeyStore) GetAllForAlgorithm(virtualServerName string, algorithm 
 }
 
 func (m *memoryKeyStore) Add(virtualServerName string, keyPair KeyPair) error {
-	key := fmt.Sprintf("%s:%s:%s", virtualServerName, keyPair.algorithm, keyPair.ComputeKid())
+	key := fmt.Sprintf("%s:%s:%s", virtualServerName, keyPair.algorithm, keyPair.GetKid())
 	m.keyPairs[key] = keyPair
 	return nil
 }
@@ -256,7 +256,7 @@ func (d *directoryKeyStore) Add(virtualServerName string, keyPair KeyPair) error
 		return fmt.Errorf("path %s is not a directory", algPath)
 	}
 
-	keyPath := filepath.Join(algPath, keyPair.ComputeKid())
+	keyPath := filepath.Join(algPath, keyPair.GetKid())
 
 	serializedKeyPair, err := d.Serialize(keyPair)
 	if err != nil {
@@ -386,7 +386,7 @@ type KeyPair struct {
 	expiresAt  time.Time
 }
 
-func (k *KeyPair) ComputeKid() string {
+func (k *KeyPair) GetKid() string {
 	return k.kid
 }
 
