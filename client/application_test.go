@@ -154,3 +154,33 @@ func (s *ApplicationClientSuite) TestDeleteApplication_HappyPath() {
 	// assert
 	s.Require().NoError(err)
 }
+
+func (s *ApplicationClientSuite) TestPatchApplication_HappyPath() {
+	// arrange
+	requestId := uuid.New()
+	request := handlers.PatchApplicationRequestDto{
+		DisplayName:         utils.Ptr("New display name"),
+		ClaimsMappingScript: nil,
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		s.Equal(http.MethodPatch, r.Method)
+		s.Equal(fmt.Sprintf("/api/virtual-servers/test/applications/%s", requestId), r.URL.Path)
+
+		var requestDto handlers.PatchApplicationRequestDto
+		err := json.NewDecoder(r.Body).Decode(&requestDto)
+		s.NoError(err)
+		s.Equal(request, requestDto)
+
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer server.Close()
+
+	testee := NewClient(server.URL, "test").Application()
+
+	// act
+	err := testee.Patch(s.T().Context(), requestId, request)
+
+	// assert
+	s.Require().NoError(err)
+}
