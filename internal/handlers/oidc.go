@@ -553,9 +553,10 @@ func extractClientIdFromJwt(idTokenClaims jwt.MapClaims) (string, error) {
 }
 
 type OidcUserInfoResponseDto struct {
-	Sub   string `json:"sub"`
-	Email string `json:"email"`
-	Name  string `json:"name"`
+	Sub           string `json:"sub"`
+	Email         string `json:"email,omitempty"`
+	EmailVerified *bool  `json:"email_verified,omitempty"`
+	Name          string `json:"name,omitempty"`
 }
 
 // OidcUserinfo returns the userinfo for the presented access token.
@@ -646,9 +647,22 @@ func OidcUserinfo(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	tempResult := OidcUserInfoResponseDto{
-		Sub:   userId.String(),
-		Email: user.PrimaryEmail(),
-		Name:  user.DisplayName(),
+		Sub: userId.String(),
+	}
+
+	scopes, err := extractScopes(tokenJwt)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("extracting scopes: %w", err))
+		return
+	}
+
+	if slices.Contains(scopes, "email") {
+		tempResult.Email = user.PrimaryEmail()
+		tempResult.EmailVerified = utils.Ptr(user.EmailVerified())
+	}
+
+	if slices.Contains(scopes, "profile") {
+		tempResult.Name = user.DisplayName()
 	}
 
 	err = json.NewEncoder(w).Encode(tempResult)
@@ -656,6 +670,25 @@ func OidcUserinfo(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, err)
 		return
 	}
+}
+
+func extractScopes(tokenJwt *jwt.Token) ([]string, error) {
+	claims := tokenJwt.Claims.(jwt.MapClaims)
+	scopesClaim, ok := claims["scopes"]
+	if !ok {
+		return []string{}, nil
+	}
+
+	scopes, ok := scopesClaim.([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("expected array of strings for scope")
+	}
+
+	scopeStrings := utils.MapSlice(scopes, func(t any) string {
+		return t.(string)
+	})
+
+	return scopeStrings, nil
 }
 
 func extractAccessToken(r *http.Request) (string, error) {
