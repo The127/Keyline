@@ -18,7 +18,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func Serve(dp *ioc.DependencyProvider) {
+func Serve(dp *ioc.DependencyProvider, serverConfig config.ServerConfig) {
 	r := mux.NewRouter()
 
 	r.Use(middlewares.RecoverMiddleware())
@@ -64,7 +64,7 @@ func Serve(dp *ioc.DependencyProvider) {
 	loginRouter := r.PathPrefix("/logins").Subrouter()
 
 	loginRouter.Use(gh.CORS(
-		gh.AllowedOrigins(config.C.Server.AllowedOrigins),
+		gh.AllowedOrigins(serverConfig.AllowedOrigins),
 		gh.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "PATCH"}),
 		gh.AllowedHeaders([]string{"Authorization", "Content-Type"}),
 		gh.AllowCredentials(),
@@ -136,7 +136,7 @@ func Serve(dp *ioc.DependencyProvider) {
 
 	r.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
 
-	addr := fmt.Sprintf("%s:%d", config.C.Server.Host, config.C.Server.Port)
+	addr := fmt.Sprintf("%s:%d", serverConfig.Host, serverConfig.Port)
 	logging.Logger.Infof("running server at %s", addr)
 	srv := &http.Server{
 		Handler: r,
