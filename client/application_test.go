@@ -43,11 +43,11 @@ func (s *ApplicationClientSuite) TestCreateApplication_HappyPath() {
 
 		var requestDto handlers.CreateApplicationRequestDto
 		err := json.NewDecoder(r.Body).Decode(&requestDto)
-		s.Require().NoError(err)
-		s.EqualValues(request, requestDto)
+		s.NoError(err)
+		s.Equal(request, requestDto)
 
 		err = json.NewEncoder(w).Encode(response)
-		s.Require().NoError(err)
+		s.NoError(err)
 	}))
 	defer server.Close()
 
@@ -91,7 +91,7 @@ func (s *ApplicationClientSuite) TestListApplications_HappyPath() {
 		s.Equal("/api/virtual-servers/test/applications", r.URL.Path)
 
 		err := json.NewEncoder(w).Encode(response)
-		s.Require().NoError(err)
+		s.NoError(err)
 	}))
 	defer server.Close()
 
@@ -122,7 +122,7 @@ func (s *ApplicationClientSuite) TestGetApplication_HappyPath() {
 		s.Equal(fmt.Sprintf("/api/virtual-servers/test/applications/%s", requestId), r.URL.Path)
 
 		err := json.NewEncoder(w).Encode(response)
-		s.Require().NoError(err)
+		s.NoError(err)
 	}))
 	defer server.Close()
 
