@@ -71,7 +71,7 @@ func (s *ApplicationClientSuite) TestListApplications_HappyPath() {
 	response := handlers.PagedApplicationsResponseDto{
 		Items: []handlers.ListApplicationsResponseDto{
 			{
-				Id:                uuid.UUID{},
+				Id:                uuid.New(),
 				Name:              "name",
 				DisplayName:       "displayName",
 				Type:              "public",
