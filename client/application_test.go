@@ -135,3 +135,22 @@ func (s *ApplicationClientSuite) TestGetApplication_HappyPath() {
 	s.Require().NoError(err)
 	s.Equal(response, responseDto)
 }
+
+func (s *ApplicationClientSuite) TestDeleteApplication_HappyPath() {
+	// arrange
+	requestId := uuid.New()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		s.Equal(http.MethodDelete, r.Method)
+		s.Equal(fmt.Sprintf("/api/virtual-servers/test/applications/%s", requestId), r.URL.Path)
+	}))
+	defer server.Close()
+
+	testee := NewClient(server.URL, "test").Application()
+
+	// act
+	err := testee.Delete(s.T().Context(), requestId)
+
+	// assert
+	s.Require().NoError(err)
+}

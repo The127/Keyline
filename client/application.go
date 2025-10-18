@@ -21,6 +21,7 @@ type ApplicationClient interface {
 	Create(ctx context.Context, dto handlers.CreateApplicationRequestDto) (handlers.CreateApplicationResponseDto, error)
 	List(ctx context.Context, params ListApplicationParams) (handlers.PagedApplicationsResponseDto, error)
 	Get(ctx context.Context, id uuid.UUID) (handlers.GetApplicationResponseDto, error)
+	Delete(ctx context.Context, id uuid.UUID) error
 }
 
 func NewApplicationClient(transport *Transport) ApplicationClient {
@@ -100,4 +101,20 @@ func (a *application) Get(ctx context.Context, id uuid.UUID) (handlers.GetApplic
 	}
 
 	return responseDto, nil
+}
+
+func (a *application) Delete(ctx context.Context, id uuid.UUID) error {
+	endpoint := fmt.Sprintf("/applications/%s", id.String())
+
+	request, err := a.transport.NewRequest(ctx, http.MethodDelete, endpoint, nil)
+	if err != nil {
+		return fmt.Errorf("creating request: %w", err)
+	}
+
+	_, err = a.transport.Do(request)
+	if err != nil {
+		return fmt.Errorf("doing request: %w", err)
+	}
+
+	return nil
 }
