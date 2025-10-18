@@ -48,6 +48,10 @@ integration:
     @echo "🔬 Running integration tests..."
     go test -race -count=1 -tags=integration ./tests/integration/...
 
+e2e:
+    @echo "🛤️ Running e2e tests..."
+    go test -race -count=1 -tags=e2e ./tests/e2e/...
+
 # -----------------------------
 # Linting & Formatting
 # -----------------------------
@@ -83,4 +87,5 @@ ci fix="":
     just lint {{fix}}
     just test
     just integration
+    just e2e
     @echo "✅ All checks passed."
