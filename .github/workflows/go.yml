@@ -11,8 +11,53 @@ permissions:
   packages: write
 
 jobs:
-  lint-test-build:
+  lint:
     runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.24"
+
+      - name: Run golangci-lint (v2)
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.1.6
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.24"
+
+      - name: Run unit tests
+        run: go test -v ./...
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.24"
+
+      - name: Build binary
+        run: go build ./...
+
+  integration-tests:
+    runs-on: ubuntu-latest
+    needs: [lint, test, build]
 
     services:
       postgres:
@@ -37,22 +82,19 @@ jobs:
         with:
           go-version: "1.24"
 
-      - name: Run golangci-lint (v2)
-        uses: golangci/golangci-lint-action@v8
-        with:
-          version: v2.1.6
-
-      - name: Run unit tests
-        run: go test -v ./...
-
       - name: Run integration tests
         run: go test -v ./tests/integration/... -tags=integration
 
-      - name: Build binary
-        run: go build ./...
+  container-build:
+    runs-on: ubuntu-latest
+    needs: integration-tests
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
 
       - name: Log in to GHCR
-        if: github.ref == 'refs/heads/main'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -60,7 +102,6 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build & Push dev image
-        if: github.ref == 'refs/heads/main'
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -73,7 +114,7 @@ jobs:
 
   cleanup-old-dev-builds:
     runs-on: ubuntu-latest
-    needs: lint-test-build
+    needs: container-build
     if: github.ref == 'refs/heads/main'
     permissions:
       packages: write
