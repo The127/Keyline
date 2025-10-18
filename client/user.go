@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+
+	"github.com/google/uuid"
 )
 
 type ListUserParams struct {
@@ -16,6 +18,7 @@ type ListUserParams struct {
 
 type UserClient interface {
 	List(ctx context.Context, params ListUserParams) (handlers.PagedUsersResponseDto, error)
+	Get(ctx context.Context, id uuid.UUID) (handlers.GetUserByIdResponseDto, error)
 }
 
 func NewUserClient(transport *Transport) UserClient {
@@ -49,6 +52,28 @@ func (c *userClient) List(ctx context.Context, params ListUserParams) (handlers.
 	err = json.NewDecoder(response.Body).Decode(&responseDto)
 	if err != nil {
 		return handlers.PagedUsersResponseDto{}, fmt.Errorf("decoding response: %w", err)
+	}
+
+	return responseDto, nil
+}
+
+func (c *userClient) Get(ctx context.Context, id uuid.UUID) (handlers.GetUserByIdResponseDto, error) {
+	endpoint := fmt.Sprintf("/users/%s", id.String())
+
+	request, err := c.transport.NewRequest(ctx, http.MethodGet, endpoint, nil)
+	if err != nil {
+		return handlers.GetUserByIdResponseDto{}, fmt.Errorf("creating request: %w", err)
+	}
+
+	response, err := c.transport.Do(request)
+	if err != nil {
+		return handlers.GetUserByIdResponseDto{}, fmt.Errorf("doing request: %w", err)
+	}
+
+	var responseDto handlers.GetUserByIdResponseDto
+	err = json.NewDecoder(response.Body).Decode(&responseDto)
+	if err != nil {
+		return handlers.GetUserByIdResponseDto{}, fmt.Errorf("decoding response: %w", err)
 	}
 
 	return responseDto, nil
