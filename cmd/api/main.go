@@ -92,12 +92,12 @@ func main() {
 		jobs.WithStartImmediate(),
 	)*/
 
-	jobManager.QueueJob(
-		jobs.KeyRotateJob(),
-		time.Second,
-		jobs.WithName("signing_key_rotation"),
-		jobs.WithStartImmediate(),
-	)
+	// jobManager.QueueJob(
+	//	jobs.KeyRotateJob(),
+	//	time.Second,
+	//	jobs.WithName("signing_key_rotation"),
+	//	jobs.WithStartImmediate(),
+	//)
 
 	jobManager.Start(middlewares.ContextWithScope(context.Background(), dp))
 
