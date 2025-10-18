@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"Keyline/internal/clock"
 	"Keyline/internal/config"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
@@ -11,9 +12,6 @@ import (
 	"Keyline/ioc"
 	"Keyline/utils"
 	"context"
-	"crypto/ed25519"
-	"crypto/rand"
-	"crypto/rsa"
 	"testing"
 	"time"
 
@@ -58,7 +56,12 @@ func newTestContext(t *testing.T) context.Context {
 	return middlewares.ContextWithScope(t.Context(), scope)
 }
 
-func newDefaultParams(pub any, priv any, algorithm config.SigningAlgorithm) TokenGenerationParams {
+func newDefaultParams(algorithm config.SigningAlgorithm) TokenGenerationParams {
+	keyPair, err := services.GetKeyStrategy(algorithm).Generate(clock.NewClockService())
+	if err != nil {
+		panic(err)
+	}
+
 	return TokenGenerationParams{
 		UserId:            uuid.New(),
 		VirtualServerName: "test-server",
@@ -68,7 +71,7 @@ func newDefaultParams(pub any, priv any, algorithm config.SigningAlgorithm) Toke
 		UserDisplayName:   "Test User",
 		UserPrimaryEmail:  "test@example.com",
 		ExternalUrl:       "https://example.com",
-		KeyPair:           services.NewKeyPair(algorithm, pub, priv),
+		KeyPair:           keyPair,
 		IssuedAt:          time.Now(),
 		IdTokenExpiry:     time.Hour,
 		AccessTokenExpiry: time.Hour,
@@ -89,8 +92,7 @@ func TestGenerateIdToken_SignsWithPrivateKey(t *testing.T) {
 	t.Parallel()
 
 	// Arrange
-	pub, priv, _ := ed25519.GenerateKey(rand.Reader)
-	params := newDefaultParams(pub, priv, config.SigningAlgorithmEdDSA)
+	params := newDefaultParams(config.SigningAlgorithmEdDSA)
 
 	// Act
 	tokenString, err := generateIdToken(params.ToIdTokenGenerationParams())
@@ -99,7 +101,7 @@ func TestGenerateIdToken_SignsWithPrivateKey(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, tokenString)
 
-	token := parseToken(t, tokenString, pub)
+	token := parseToken(t, tokenString, params.KeyPair.PublicKey())
 	assert.True(t, token.Valid)
 }
 
@@ -107,8 +109,7 @@ func TestGenerateIdToken_SignsWithRSAKey(t *testing.T) {
 	t.Parallel()
 
 	// Arrange
-	priv, _ := rsa.GenerateKey(rand.Reader, 1024)
-	params := newDefaultParams(&priv.PublicKey, priv, config.SigningAlgorithmRS256)
+	params := newDefaultParams(config.SigningAlgorithmRS256)
 
 	// Act
 	tokenString, err := generateIdToken(params.ToIdTokenGenerationParams())
@@ -117,7 +118,7 @@ func TestGenerateIdToken_SignsWithRSAKey(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, tokenString)
 
-	token := parseToken(t, tokenString, &priv.PublicKey)
+	token := parseToken(t, tokenString, params.KeyPair.PublicKey())
 	assert.True(t, token.Valid)
 }
 
@@ -125,15 +126,14 @@ func TestGenerateIdToken_HasExpectedClaims(t *testing.T) {
 	t.Parallel()
 
 	// Arrange
-	pub, priv, _ := ed25519.GenerateKey(rand.Reader)
 	now := time.Now()
-	params := newDefaultParams(pub, priv, config.SigningAlgorithmEdDSA)
+	params := newDefaultParams(config.SigningAlgorithmEdDSA)
 	params.IssuedAt = now
 	params.IdTokenExpiry = time.Hour
 
 	// Act
 	tokenString, _ := generateIdToken(params.ToIdTokenGenerationParams())
-	token := parseToken(t, tokenString, pub)
+	token := parseToken(t, tokenString, params.KeyPair.PublicKey())
 	claims := token.Claims.(jwt.MapClaims)
 
 	// Assert
@@ -150,12 +150,11 @@ func TestGenerateIdToken_HasExpectedHeaders(t *testing.T) {
 	t.Parallel()
 
 	// Arrange
-	pub, priv, _ := ed25519.GenerateKey(rand.Reader)
-	params := newDefaultParams(pub, priv, config.SigningAlgorithmEdDSA)
+	params := newDefaultParams(config.SigningAlgorithmEdDSA)
 
 	// Act
 	tokenString, _ := generateIdToken(params.ToIdTokenGenerationParams())
-	token := parseToken(t, tokenString, pub)
+	token := parseToken(t, tokenString, params.KeyPair.PublicKey())
 
 	// Assert
 	assert.Contains(t, token.Header, "typ")
@@ -169,8 +168,7 @@ func TestGenerateAccessToken_SignsWithPrivateKey(t *testing.T) {
 	// Arrange
 	ctx := newTestContext(t)
 
-	pub, priv, _ := ed25519.GenerateKey(rand.Reader)
-	params := newDefaultParams(pub, priv, config.SigningAlgorithmEdDSA)
+	params := newDefaultParams(config.SigningAlgorithmEdDSA)
 
 	// Act
 	tokenString, err := generateAccessToken(ctx, params.ToAccessTokenGenerationParams())
@@ -179,7 +177,7 @@ func TestGenerateAccessToken_SignsWithPrivateKey(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, tokenString)
 
-	token := parseToken(t, tokenString, pub)
+	token := parseToken(t, tokenString, params.KeyPair.PublicKey())
 	assert.True(t, token.Valid)
 }
 
@@ -189,15 +187,14 @@ func TestGenerateAccessToken_HasExpectedClaims(t *testing.T) {
 	// Arrange
 	ctx := newTestContext(t)
 
-	pub, priv, _ := ed25519.GenerateKey(rand.Reader)
 	now := time.Now()
-	params := newDefaultParams(pub, priv, config.SigningAlgorithmEdDSA)
+	params := newDefaultParams(config.SigningAlgorithmEdDSA)
 	params.IssuedAt = now
 	params.GrantedScopes = []string{"openid", "email", "profile"}
 
 	// Act
 	tokenString, _ := generateAccessToken(ctx, params.ToAccessTokenGenerationParams())
-	token := parseToken(t, tokenString, pub)
+	token := parseToken(t, tokenString, params.KeyPair.PublicKey())
 	claims := token.Claims.(jwt.MapClaims)
 
 	// Assert
@@ -220,12 +217,11 @@ func TestGenerateAccessToken_HasExpectedHeaders(t *testing.T) {
 	// Arrange
 	ctx := newTestContext(t)
 
-	pub, priv, _ := ed25519.GenerateKey(rand.Reader)
-	params := newDefaultParams(pub, priv, config.SigningAlgorithmEdDSA)
+	params := newDefaultParams(config.SigningAlgorithmEdDSA)
 
 	// Act
 	tokenString, _ := generateAccessToken(ctx, params.ToAccessTokenGenerationParams())
-	token := parseToken(t, tokenString, pub)
+	token := parseToken(t, tokenString, params.KeyPair.PublicKey())
 
 	// Assert
 	assert.Contains(t, token.Header, "kid")

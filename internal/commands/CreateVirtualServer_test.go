@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"Keyline/internal/clock"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/internal/repositories/mocks"
@@ -71,6 +72,11 @@ func (s *CreateVirtualServerCommandSuite) createContext(
 		})
 	}
 
+	ioc.RegisterSingleton[clock.Service](dc, func(_ *ioc.DependencyProvider) clock.Service {
+		clockService, _ := clock.NewMockServiceNow()
+		return clockService
+	})
+
 	scope := dc.BuildProvider()
 	s.T().Cleanup(func() {
 		utils.PanicOnError(scope.Close, "closing scope")
@@ -109,7 +115,7 @@ func (s *CreateVirtualServerCommandSuite) TestApplicationError() {
 
 	keyService := serviceMocks.NewMockKeyService(ctrl)
 	keyService.EXPECT().
-		Generate(gomock.Any(), gomock.Any()).
+		Generate(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(services.KeyPair{}, nil)
 
 	applicationRepository := mocks.NewMockApplicationRepository(ctrl)
@@ -157,7 +163,7 @@ func (s *CreateVirtualServerCommandSuite) TestHappyPath() {
 
 	keyService := serviceMocks.NewMockKeyService(ctrl)
 	keyService.EXPECT().
-		Generate("virtualServer", gomock.Any()).
+		Generate(gomock.Any(), "virtualServer", gomock.Any()).
 		Return(services.KeyPair{}, nil)
 
 	applicationRepository := mocks.NewMockApplicationRepository(ctrl)

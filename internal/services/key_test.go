@@ -1,6 +1,7 @@
 package services
 
 import (
+	"Keyline/internal/clock"
 	"Keyline/internal/config"
 	"testing"
 
@@ -18,6 +19,8 @@ func TestKeyStrategy(t *testing.T) {
 		{"EdDSA", config.SigningAlgorithmEdDSA},
 	}
 
+	clockService, _ := clock.NewMockServiceNow()
+
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
@@ -26,18 +29,16 @@ func TestKeyStrategy(t *testing.T) {
 			strategy := GetKeyStrategy(test.alg)
 
 			// act
-			privateKey, publicKey, err := strategy.Generate()
+			keyPair, err := strategy.Generate(clockService)
 			require.NoError(t, err)
-			require.NotEmpty(t, privateKey)
-			require.NotEmpty(t, publicKey)
 
-			exported, err := strategy.Export(privateKey)
+			exported, err := strategy.Export(keyPair.PrivateKey())
 			require.NoError(t, err)
 
 			importedPriv, importedPub, err := strategy.Import(exported)
 			require.NoError(t, err)
-			require.Equal(t, privateKey, importedPriv)
-			require.Equal(t, publicKey, importedPub)
+			require.Equal(t, keyPair.PrivateKey(), importedPriv)
+			require.Equal(t, keyPair.PublicKey(), importedPub)
 		})
 	}
 }

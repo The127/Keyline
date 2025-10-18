@@ -2,11 +2,11 @@ package services
 
 import (
 	"Keyline/internal/caching"
+	"Keyline/internal/clock"
 	"Keyline/internal/config"
 	"crypto/ed25519"
 	"crypto/rand"
 	"crypto/rsa"
-	"crypto/sha256"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
@@ -18,7 +18,7 @@ import (
 )
 
 type KeyAlgorithmStrategy interface {
-	Generate() (any, any, error)
+	Generate(clockService clock.Service) (KeyPair, error)
 	Import(serializedPrivateKey string) (any, any, error)
 	Export(privateKey any) (string, error)
 }
@@ -38,13 +38,25 @@ func GetKeyStrategy(algorithm config.SigningAlgorithm) KeyAlgorithmStrategy {
 
 type RSAKeyStrategy struct{}
 
-func (s *RSAKeyStrategy) Generate() (any, any, error) {
+func (s *RSAKeyStrategy) Generate(service clock.Service) (KeyPair, error) {
 	privateKey, err := rsa.GenerateKey(rand.Reader, 4096)
 	if err != nil {
-		return nil, nil, fmt.Errorf("generating key pair: %w", err)
+		return KeyPair{}, fmt.Errorf("generating key pair: %w", err)
 	}
 
-	return privateKey, &privateKey.PublicKey, nil
+	kid := base64.RawURLEncoding.EncodeToString(privateKey.N.Bytes())
+
+	now := service.Now()
+
+	return KeyPair{
+		algorithm:  config.SigningAlgorithmRS256,
+		publicKey:  privateKey.Public(),
+		privateKey: privateKey,
+		kid:        kid,
+		createdAt:  now, // TODO: use virtual server config for rotate and expires
+		rotatesAt:  now.Add(time.Hour * 24 * 20),
+		expiresAt:  now.Add(time.Hour * 24 * 30),
+	}, nil
 }
 
 func (s *RSAKeyStrategy) Import(serializedPrivateKey string) (any, any, error) {
@@ -68,13 +80,25 @@ func (s *RSAKeyStrategy) Export(privateKey any) (string, error) {
 
 type EdDSAKeyStrategy struct{}
 
-func (s *EdDSAKeyStrategy) Generate() (any, any, error) {
+func (s *EdDSAKeyStrategy) Generate(clockService clock.Service) (KeyPair, error) {
 	publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
-		return nil, nil, fmt.Errorf("generating key pair: %w", err)
+		return KeyPair{}, fmt.Errorf("generating key pair: %w", err)
 	}
 
-	return privateKey, publicKey, nil
+	kid := base64.RawURLEncoding.EncodeToString(publicKey)
+
+	now := clockService.Now()
+
+	return KeyPair{
+		algorithm:  config.SigningAlgorithmEdDSA,
+		publicKey:  publicKey,
+		privateKey: privateKey,
+		kid:        kid,
+		createdAt:  now, // TODO: use virtual server config for rotate and expires
+		rotatesAt:  now.Add(time.Hour * 24 * 20),
+		expiresAt:  now.Add(time.Hour * 24 * 30),
+	}, nil
 }
 
 func (s *EdDSAKeyStrategy) Export(privateKey any) (string, error) {
@@ -356,30 +380,14 @@ type KeyPair struct {
 	algorithm  config.SigningAlgorithm
 	publicKey  any
 	privateKey any
+	kid        string
 	createdAt  time.Time
 	rotatesAt  time.Time
 	expiresAt  time.Time
 }
 
-func NewKeyPair(algorithm config.SigningAlgorithm, publicKey any, privateKey any) KeyPair {
-	// TODO: use clock service and settings in virtual server
-	now := time.Now()
-	rotatesAt := now.Add(time.Hour * 24 * 20)
-	expiresAt := now.Add(time.Hour * 24 * 30)
-
-	return KeyPair{
-		algorithm:  algorithm,
-		publicKey:  publicKey,
-		privateKey: privateKey,
-		createdAt:  now,
-		rotatesAt:  rotatesAt,
-		expiresAt:  expiresAt,
-	}
-}
-
 func (k *KeyPair) ComputeKid() string {
-	hash := sha256.Sum256(k.PublicKeyBytes())
-	return base64.RawURLEncoding.EncodeToString(hash[:])
+	return k.kid
 }
 
 func (k *KeyPair) PublicKeyBytes() []byte {
@@ -437,7 +445,7 @@ func (k *KeyPair) ExpiresAt() time.Time {
 
 //go:generate mockgen -destination=./mocks/key_service.go -package=mocks Keyline/internal/services KeyService
 type KeyService interface {
-	Generate(virtualServerName string, algorithm config.SigningAlgorithm) (KeyPair, error)
+	Generate(clockService clock.Service, virtualServerName string, algorithm config.SigningAlgorithm) (KeyPair, error)
 	GetKey(virtualServerName string, algorithm config.SigningAlgorithm) KeyPair
 }
 
@@ -453,17 +461,11 @@ func NewKeyService(cache KeyCache, store KeyStore) KeyService {
 	}
 }
 
-func (s *keyServiceImpl) Generate(virtualServerName string, algorithm config.SigningAlgorithm) (KeyPair, error) {
+func (s *keyServiceImpl) Generate(clockService clock.Service, virtualServerName string, algorithm config.SigningAlgorithm) (KeyPair, error) {
 	strategy := GetKeyStrategy(algorithm)
-	privateKey, publicKey, err := strategy.Generate()
+	keyPair, err := strategy.Generate(clockService)
 	if err != nil {
 		return KeyPair{}, fmt.Errorf("generating key pair: %w", err)
-	}
-
-	keyPair := KeyPair{
-		algorithm:  algorithm,
-		publicKey:  publicKey,
-		privateKey: privateKey,
 	}
 
 	err = s.store.Add(virtualServerName, keyPair)

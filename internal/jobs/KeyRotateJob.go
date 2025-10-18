@@ -45,15 +45,14 @@ func rotateKeysForVirtualServer(dp *ioc.DependencyProvider, server *repositories
 	}
 
 	clockService := ioc.GetDependency[clock.Service](dp)
-	now := clockService.Now()
 
-	err = deleteExpiredKeys(keyPairs, keyStore, server, now)
+	err = deleteExpiredKeys(keyPairs, keyStore, server.Name(), clockService.Now())
 	if err != nil {
 		return fmt.Errorf("deleting expired key: %w", err)
 	}
 
 	keyService := ioc.GetDependency[services.KeyService](dp)
-	err = generateNewKeys(keyPairs, keyService, server, now)
+	err = generateNewKeys(keyPairs, keyService, server, clockService)
 	if err != nil {
 		return fmt.Errorf("generating new key: %w", err)
 	}
@@ -64,12 +63,12 @@ func rotateKeysForVirtualServer(dp *ioc.DependencyProvider, server *repositories
 func deleteExpiredKeys(
 	keyPairs []services.KeyPair,
 	keyStore services.KeyStore,
-	server *repositories.VirtualServer,
+	virtualServerName string,
 	now time.Time,
 ) error {
 	for _, keyPair := range keyPairs {
 		if keyPair.ExpiresAt().Before(now) {
-			err := keyStore.Remove(server.Name(), keyPair.Algorithm(), keyPair.ComputeKid())
+			err := keyStore.Remove(virtualServerName, keyPair.Algorithm(), keyPair.ComputeKid())
 			if err != nil {
 				return fmt.Errorf("removing key pair: %w", err)
 			}
@@ -80,21 +79,20 @@ func deleteExpiredKeys(
 }
 
 func generateNewKeys(
-
 	keyPairs []services.KeyPair,
 	keyService services.KeyService,
 	server *repositories.VirtualServer,
-	now time.Time,
+	clockService clock.Service,
 ) error {
 	algorithmsToRotate := make(map[config.SigningAlgorithm]bool)
 	for _, keyPair := range keyPairs {
-		if keyPair.RotatesAt().Before(now) {
+		if keyPair.RotatesAt().Before(clockService.Now()) {
 			algorithmsToRotate[keyPair.Algorithm()] = true
 		}
 	}
 
 	for alg := range algorithmsToRotate {
-		_, err := keyService.Generate(server.Name(), alg)
+		_, err := keyService.Generate(clockService, server.Name(), alg)
 		if err != nil {
 			return fmt.Errorf("generating key pair: %w", err)
 		}
