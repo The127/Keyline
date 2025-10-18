@@ -531,7 +531,7 @@ git commit -s -m "Your commit message"
 Alternatively, your IDE may support signing off commits.
 Sign-off is verified in GitHub Actions.
 
-By signing off, you agree to the [Developer Certificate of Origin](DCO.md) .
+By signing off, you agree to the [Developer Certificate of Origin](DCO.md).
 
 ## License
 
