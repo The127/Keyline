@@ -8,6 +8,15 @@ import (
 	"net/url"
 )
 
+type ApiError struct {
+	Message string `json:"message"`
+	Code    int    `json:"code"`
+}
+
+func (e ApiError) Error() string {
+	return fmt.Sprintf("API error: %s (%d)", e.Message, e.Code)
+}
+
 type TransportOptions func(*Transport)
 
 func WithClient(client *http.Client) TransportOptions {
@@ -74,5 +83,17 @@ func (t *Transport) NewRequest(ctx context.Context, method string, endpoint stri
 }
 
 func (t *Transport) Do(req *http.Request) (*http.Response, error) {
-	return t.client.Do(req)
+	response, err := t.client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("doing request: %w", err)
+	}
+
+	if response.StatusCode >= 400 {
+		return nil, ApiError{
+			Message: response.Status,
+			Code:    response.StatusCode,
+		}
+	}
+
+	return response, nil
 }
