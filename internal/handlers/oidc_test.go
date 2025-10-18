@@ -129,6 +129,7 @@ func TestGenerateIdToken_HasExpectedClaims(t *testing.T) {
 	now := time.Now()
 	params := newDefaultParams(config.SigningAlgorithmEdDSA)
 	params.IssuedAt = now
+	params.GrantedScopes = []string{"openid", "profile"}
 	params.IdTokenExpiry = time.Hour
 
 	// Act
@@ -141,7 +142,6 @@ func TestGenerateIdToken_HasExpectedClaims(t *testing.T) {
 	assert.Equal(t, "https://example.com/oidc/test-server", claims["iss"])
 	assert.Equal(t, []interface{}{"test-client"}, claims["aud"])
 	assert.Equal(t, "Test User", claims["name"])
-	assert.Equal(t, "test@example.com", claims["email"])
 	assert.Equal(t, now.Unix(), int64(claims["iat"].(float64)))
 	assert.Equal(t, now.Add(time.Hour).Unix(), int64(claims["exp"].(float64)))
 }

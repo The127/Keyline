@@ -955,7 +955,6 @@ func (t *TokenGenerationParams) ToIdTokenGenerationParams() IdTokenGenerationPar
 		ClientId:          t.ClientId,
 		ExternalUrl:       t.ExternalUrl,
 		UserDisplayName:   t.UserDisplayName,
-		UserPrimaryEmail:  t.UserPrimaryEmail,
 		VirtualServerName: t.VirtualServerName,
 		GrantedScopes:     t.GrantedScopes,
 		Nonce:             t.Nonce,
@@ -998,7 +997,6 @@ type IdTokenGenerationParams struct {
 	ClientId          string
 	ExternalUrl       string
 	UserDisplayName   string
-	UserPrimaryEmail  string
 	VirtualServerName string
 	Nonce             string
 	IssuedAt          time.Time
@@ -1033,10 +1031,6 @@ func generateIdToken(params IdTokenGenerationParams) (string, error) {
 
 	if slices.Contains(params.GrantedScopes, "profile") {
 		idTokenClaims["name"] = params.UserDisplayName
-	}
-
-	if slices.Contains(params.GrantedScopes, "email") {
-		idTokenClaims["email"] = params.UserPrimaryEmail
 	}
 
 	if params.Nonce != "" {
