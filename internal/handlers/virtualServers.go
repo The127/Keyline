@@ -178,7 +178,7 @@ func GetVirtualServerPublicInfo(w http.ResponseWriter, r *http.Request) {
 type PatchVirtualServerRequestDto struct {
 	DisplayName *string `json:"displayName"`
 
-	EnablefRegistration      *bool `json:"enableRegistration"`
+	EnableRegistration       *bool `json:"enableRegistration"`
 	Require2fa               *bool `json:"require2fa"`
 	RequireEmailVerification *bool `json:"requireEmailVerification"`
 }

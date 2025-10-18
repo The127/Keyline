@@ -57,13 +57,17 @@ func NewTransport(baseUrl string, virtualServer string, options ...TransportOpti
 	return transport
 }
 
-func (t *Transport) NewRequest(ctx context.Context, method string, endpoint string, body io.Reader) (*http.Request, error) {
+func (t *Transport) NewTenantRequest(ctx context.Context, method string, endpoint string, body io.Reader) (*http.Request, error) {
+	return t.NewRootRequest(ctx, method, fmt.Sprintf("/api/virtual-servers/%s%s", t.virtualServer, endpoint), body)
+}
+
+func (t *Transport) NewRootRequest(ctx context.Context, method string, endpoint string, body io.Reader) (*http.Request, error) {
 	base, err := url.Parse(t.baseURL)
 	if err != nil {
 		return nil, fmt.Errorf("parsing base URL: %w", err)
 	}
 
-	ref, err := url.Parse("/api/virtual-servers/" + t.virtualServer + endpoint)
+	ref, err := url.Parse(endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("parsing endpoint: %w", err)
 	}
