@@ -520,6 +520,19 @@ Contributions are welcome! Please follow these guidelines:
 6. Push to the branch (`git push origin feature/amazing-feature`)
 7. Open a Pull Request
 
+### Developer Certificate of Origin
+
+All commits to this repository must be signed off using the `-s` flag:
+
+```bash
+git commit -s -m "Your commit message"
+```
+
+Alternatively, your IDE may support signing off commits.
+Sign-off is verified in GitHub Actions.
+
+By signing off, you agree to the [Developer Certificate of Origin](DCO.md) .
+
 ## License
 
 This project is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0). See the [LICENSE](LICENSE) file for details.
