@@ -32,7 +32,7 @@ func (a *application) Create(ctx context.Context, dto handlers.CreateApplication
 		return handlers.CreateApplicationResponseDto{}, fmt.Errorf("marshaling dto: %w", err)
 	}
 
-	request, err := a.transport.NewRequest(http.MethodPost, endpoint, bytes.NewBuffer(jsonBytes))
+	request, err := a.transport.NewRequest(ctx, http.MethodPost, endpoint, bytes.NewBuffer(jsonBytes))
 	if err != nil {
 		return handlers.CreateApplicationResponseDto{}, fmt.Errorf("creating request: %w", err)
 	}

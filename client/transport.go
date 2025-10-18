@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -45,7 +46,7 @@ func NewTransport(baseUrl string, options ...TransportOptions) *Transport {
 	return transport
 }
 
-func (t *Transport) NewRequest(method string, endpoint string, body io.Reader) (*http.Request, error) {
+func (t *Transport) NewRequest(ctx context.Context, method string, endpoint string, body io.Reader) (*http.Request, error) {
 	base, err := url.Parse(t.baseURL)
 	if err != nil {
 		return nil, fmt.Errorf("parsing base URL: %w", err)
@@ -58,7 +59,7 @@ func (t *Transport) NewRequest(method string, endpoint string, body io.Reader) (
 
 	fullURL := base.ResolveReference(ref)
 
-	request, err := http.NewRequest(method, fullURL.String(), body)
+	request, err := http.NewRequestWithContext(ctx, method, fullURL.String(), body)
 	if err != nil {
 		return nil, fmt.Errorf("creating request: %w", err)
 	}
