@@ -2,6 +2,7 @@ package client
 
 import (
 	"Keyline/internal/handlers"
+	"Keyline/utils"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -94,4 +95,33 @@ func (s *UserClientSuite) TestGetUser_HappyPath() {
 	// assert
 	s.Require().NoError(err)
 	s.Equal(response, responseDto)
+}
+
+func (s *UserClientSuite) TestPatchUser_HappyPath() {
+	// arrange
+	requestId := uuid.New()
+	request := handlers.PatchUserRequestDto{
+		DisplayName: utils.Ptr("New display name"),
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		s.Equal(http.MethodPatch, r.Method)
+		s.Equal(fmt.Sprintf("/api/virtual-servers/test/users/%s", requestId), r.URL.Path)
+
+		var requestDto handlers.PatchUserRequestDto
+		err := json.NewDecoder(r.Body).Decode(&requestDto)
+		s.NoError(err)
+		s.Equal(request, requestDto)
+
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer server.Close()
+
+	testee := NewClient(server.URL, "test").User()
+
+	// act
+	err := testee.Patch(s.T().Context(), requestId, request)
+
+	// assert
+	s.Require().NoError(err)
 }

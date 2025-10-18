@@ -2,6 +2,7 @@ package client
 
 import (
 	"Keyline/internal/handlers"
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -19,6 +20,7 @@ type ListUserParams struct {
 type UserClient interface {
 	List(ctx context.Context, params ListUserParams) (handlers.PagedUsersResponseDto, error)
 	Get(ctx context.Context, id uuid.UUID) (handlers.GetUserByIdResponseDto, error)
+	Patch(ctx context.Context, id uuid.UUID, dto handlers.PatchUserRequestDto) error
 }
 
 func NewUserClient(transport *Transport) UserClient {
@@ -77,4 +79,25 @@ func (c *userClient) Get(ctx context.Context, id uuid.UUID) (handlers.GetUserByI
 	}
 
 	return responseDto, nil
+}
+
+func (c *userClient) Patch(ctx context.Context, id uuid.UUID, dto handlers.PatchUserRequestDto) error {
+	endpoint := fmt.Sprintf("/users/%s", id.String())
+
+	jsonBytes, err := json.Marshal(dto)
+	if err != nil {
+		return fmt.Errorf("marshaling dto: %w", err)
+	}
+
+	request, err := c.transport.NewRequest(ctx, http.MethodPatch, endpoint, bytes.NewBuffer(jsonBytes))
+	if err != nil {
+		return fmt.Errorf("creating request: %w", err)
+	}
+
+	_, err = c.transport.Do(request)
+	if err != nil {
+		return fmt.Errorf("doing request: %w", err)
+	}
+
+	return nil
 }
