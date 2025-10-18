@@ -12,6 +12,7 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -96,9 +97,14 @@ func bigIntToBytes(i int) []byte {
 }
 
 func (s *RSAKeyStrategy) Import(serializedPrivateKey string) (any, any, error) {
-	key, err := x509.ParsePKCS1PrivateKey([]byte(serializedPrivateKey))
+	block, _ := pem.Decode([]byte(serializedPrivateKey))
+	if block == nil || block.Type != "RSA PRIVATE KEY" {
+		return nil, nil, fmt.Errorf("failed to decode PEM block containing RSA private key")
+	}
+
+	key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
 	if err != nil {
-		return nil, nil, fmt.Errorf("parsing private key: %w", err)
+		return nil, nil, fmt.Errorf("parsing PKCS1 private key: %w", err)
 	}
 
 	return key, &key.PublicKey, nil
@@ -110,8 +116,13 @@ func (s *RSAKeyStrategy) Export(privateKey any) (string, error) {
 		return "", fmt.Errorf("invalid private key type, expected *rsa.PrivateKey got %T", privateKey)
 	}
 
-	key := x509.MarshalPKCS1PrivateKey(rsaPrivateKey)
-	return string(key), nil
+	der := x509.MarshalPKCS1PrivateKey(rsaPrivateKey)
+	pemBlock := &pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: der,
+	}
+
+	return string(pem.EncodeToMemory(pemBlock)), nil
 }
 
 type EdDSAKeyStrategy struct{}
@@ -148,18 +159,37 @@ func (s *EdDSAKeyStrategy) Export(privateKey any) (string, error) {
 		return "", fmt.Errorf("invalid private key type, expected ed25519.PrivateKey got %T", privateKey)
 	}
 
-	return base64.RawURLEncoding.EncodeToString(ed25519PrivateKey), nil
+	der, err := x509.MarshalPKCS8PrivateKey(ed25519PrivateKey)
+	if err != nil {
+		return "", fmt.Errorf("marshalling private key: %w", err)
+	}
+
+	pemBlock := &pem.Block{
+		Type:  "PRIVATE KEY",
+		Bytes: der,
+	}
+
+	return string(pem.EncodeToMemory(pemBlock)), nil
 }
 
 func (s *EdDSAKeyStrategy) Import(serializedPrivateKey string) (any, any, error) {
-	privateKeyBytes, err := base64.RawURLEncoding.DecodeString(serializedPrivateKey)
-	if err != nil {
-		return nil, nil, fmt.Errorf("decoding private key: %w", err)
+	block, _ := pem.Decode([]byte(serializedPrivateKey))
+	if block == nil {
+		return nil, nil, fmt.Errorf("failed to decode PEM block")
 	}
 
-	privateKey := ed25519.PrivateKey(privateKeyBytes)
-	publicKey := privateKey.Public().(ed25519.PublicKey)
-	return privateKey, publicKey, nil
+	key, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+	if err != nil {
+		return nil, nil, fmt.Errorf("parsing PKCS8 private key: %w", err)
+	}
+
+	ed25519PrivateKey, ok := key.(ed25519.PrivateKey)
+	if !ok {
+		return nil, nil, fmt.Errorf("not an Ed25519 private key")
+	}
+
+	publicKey := ed25519PrivateKey.Public().(ed25519.PublicKey)
+	return ed25519PrivateKey, publicKey, nil
 }
 
 //go:generate mockgen -destination=./mocks/key_store.go -package=mocks Keyline/internal/services KeyStore
