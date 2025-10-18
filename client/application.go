@@ -2,7 +2,6 @@ package client
 
 import (
 	"Keyline/internal/handlers"
-	"Keyline/utils"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -46,7 +45,6 @@ func (a *application) Create(ctx context.Context, dto handlers.CreateApplication
 	if err != nil {
 		return handlers.CreateApplicationResponseDto{}, fmt.Errorf("creating request: %w", err)
 	}
-	defer utils.PanicOnError(request.Body.Close, "closing request body")
 
 	response, err := a.transport.Do(request)
 	if err != nil {
@@ -77,6 +75,9 @@ func (a *application) List(ctx context.Context, params ListApplicationParams) (h
 
 	var responseDto handlers.PagedApplicationsResponseDto
 	err = json.NewDecoder(response.Body).Decode(&responseDto)
+	if err != nil {
+		return handlers.PagedApplicationsResponseDto{}, fmt.Errorf("decoding response: %w", err)
+	}
 
 	return responseDto, nil
 }

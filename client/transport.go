@@ -70,7 +70,7 @@ func (t *Transport) NewRequest(ctx context.Context, method string, endpoint stri
 		request.Header.Set("Content-Type", "application/json")
 	}
 
-	return request, err
+	return request, nil
 }
 
 func (t *Transport) Do(req *http.Request) (*http.Response, error) {
