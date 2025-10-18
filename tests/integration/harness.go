@@ -22,7 +22,7 @@ import (
 	"github.com/huandu/go-sqlbuilder"
 )
 
-type integrationTestHarness struct {
+type harness struct {
 	m       mediator.Mediator
 	scope   *ioc.DependencyProvider
 	ctx     context.Context
@@ -30,7 +30,7 @@ type integrationTestHarness struct {
 	dbName  string
 }
 
-func (h *integrationTestHarness) Close() {
+func (h *harness) Close() {
 	dbConnection := ioc.GetDependency[*sql.DB](h.scope)
 	utils.PanicOnError(h.scope.Close, "closing scope")
 	utils.PanicOnError(dbConnection.Close, "closing db connection in test")
@@ -54,23 +54,23 @@ func (h *integrationTestHarness) Close() {
 	utils.PanicOnError(db.Close, "closing initial db connection in test")
 }
 
-func (h *integrationTestHarness) SetTime(t time.Time) {
+func (h *harness) SetTime(t time.Time) {
 	h.setTime(t)
 }
 
-func (h *integrationTestHarness) VirtualServer() string {
+func (h *harness) VirtualServer() string {
 	return "test-vs"
 }
 
-func (h *integrationTestHarness) Ctx() context.Context {
+func (h *harness) Ctx() context.Context {
 	return h.ctx
 }
 
-func (h *integrationTestHarness) Mediator() mediator.Mediator {
+func (h *harness) Mediator() mediator.Mediator {
 	return h.m
 }
 
-func newIntegrationTestHarness() *integrationTestHarness {
+func newIntegrationTestHarness() *harness {
 	ctx := context.Background()
 	dc := ioc.NewDependencyCollection()
 	c, timeSetter := clock.NewMockServiceNow()
@@ -126,7 +126,7 @@ func newIntegrationTestHarness() *integrationTestHarness {
 		logging.Logger.Fatalf("failed to create initial virtual server: %v", err)
 	}
 
-	return &integrationTestHarness{
+	return &harness{
 		m:       m,
 		scope:   scope,
 		ctx:     ctx,

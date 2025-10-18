@@ -50,12 +50,7 @@ var SupportedSigningAlgorithms = []SigningAlgorithm{
 }
 
 type Config struct {
-	Server struct {
-		ExternalUrl    string
-		Host           string
-		Port           int
-		AllowedOrigins []string
-	}
+	Server   ServerConfig
 	Frontend struct {
 		ExternalUrl string
 	}
@@ -112,6 +107,13 @@ type Config struct {
 			Database int
 		}
 	}
+}
+
+type ServerConfig struct {
+	ExternalUrl    string
+	Host           string
+	Port           int
+	AllowedOrigins []string
 }
 
 type PostgresConfig struct {
