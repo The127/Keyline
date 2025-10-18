@@ -216,6 +216,7 @@ type AuthorizationRequest struct {
 	RedirectUri         string
 	Scopes              []string
 	State               string
+	Nonce               string
 	ResponseMode        string
 	PKCEChallenge       string
 	PKCEChallengeMethod string
@@ -263,6 +264,7 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 		RedirectUri:         r.Form.Get("redirect_uri"),
 		Scopes:              strings.Split(r.Form.Get("scope"), " "),
 		State:               r.Form.Get("state"),
+		Nonce:               r.Form.Get("nonce"),
 		ResponseMode:        r.Form.Get("response_mode"),
 		PKCEChallenge:       r.Form.Get("code_challenge"),
 		PKCEChallengeMethod: r.Form.Get("code_challenge_method"),
@@ -337,6 +339,7 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 			virtualServer.Name(),
 			[]string{"email", "openid", "sub"},
 			s.UserId(),
+			authRequest.Nonce,
 		)
 
 		codeInfoString, err := json.Marshal(codeInfo)
@@ -821,6 +824,7 @@ func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 		AccessTokenExpiry:  tokenDuration,
 		IdTokenExpiry:      tokenDuration,
 		RefreshTokenExpiry: tokenDuration,
+		Nonce:              codeInfo.Nonce,
 	}
 
 	tokens, err := generateTokens(ctx, params, tokenService)
@@ -884,6 +888,7 @@ type TokenGenerationParams struct {
 	AccessTokenExpiry  time.Duration
 	IdTokenExpiry      time.Duration
 	RefreshTokenExpiry time.Duration
+	Nonce              string
 }
 
 func (t *TokenGenerationParams) ToAccessTokenGenerationParams() AccessTokenGenerationParams {
@@ -907,6 +912,7 @@ func (t *TokenGenerationParams) ToIdTokenGenerationParams() IdTokenGenerationPar
 		UserDisplayName:   t.UserDisplayName,
 		UserPrimaryEmail:  t.UserPrimaryEmail,
 		VirtualServerName: t.VirtualServerName,
+		Nonce:             t.Nonce,
 		IssuedAt:          t.IssuedAt,
 		Expiry:            t.IdTokenExpiry,
 		UserId:            t.UserId,
@@ -948,6 +954,7 @@ type IdTokenGenerationParams struct {
 	UserDisplayName   string
 	UserPrimaryEmail  string
 	VirtualServerName string
+	Nonce             string
 	IssuedAt          time.Time
 	Expiry            time.Duration
 	UserId            uuid.UUID
@@ -977,6 +984,10 @@ func generateIdToken(params IdTokenGenerationParams) (string, error) {
 		"exp":   params.IssuedAt.Add(params.Expiry).Unix(),
 		"name":  params.UserDisplayName,
 		"email": params.UserPrimaryEmail,
+	}
+
+	if params.Nonce != "" {
+		idTokenClaims["nonce"] = params.Nonce
 	}
 
 	idToken := jwt.NewWithClaims(jwtSigningMethod, idTokenClaims)
