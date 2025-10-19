@@ -294,6 +294,40 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 		PKCEChallengeMethod: r.Form.Get("code_challenge_method"),
 	}
 
+	requestParam := r.Form.Get("request")
+	if requestParam != "" {
+		token, _, err := new(jwt.Parser).ParseUnverified(requestParam, jwt.MapClaims{})
+		if err != nil {
+			utils.HandleHttpError(w, fmt.Errorf("parsing request parameter: %w", err))
+			return
+		}
+
+		if claims, ok := token.Claims.(jwt.MapClaims); ok {
+			if claims["response_type"] != nil {
+				authRequest.ResponseTypes = strings.Split(claims["response_type"].(string), " ")
+			}
+			if claims["client_id"] != nil {
+				authRequest.ApplicationName = claims["client_id"].(string)
+			}
+			if claims["redirect_uri"] != nil {
+				authRequest.RedirectUri = claims["redirect_uri"].(string)
+			}
+			if claims["scope"] != nil {
+				authRequest.Scopes = strings.Split(claims["scope"].(string), " ")
+			}
+			if claims["state"] != nil {
+				authRequest.State = claims["state"].(string)
+			}
+			if claims["nonce"] != nil {
+				authRequest.Nonce = claims["nonce"].(string)
+			}
+			if claims["response_mode"] != nil {
+				authRequest.ResponseMode = claims["response_mode"].(string)
+			}
+		}
+
+	}
+
 	// TODO: use validation annotations to validate the auth request
 
 	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
