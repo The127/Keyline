@@ -483,7 +483,13 @@ func ResendEmailVerification(w http.ResponseWriter, r *http.Request) {
 	}
 
 	outboxMessageRepository := ioc.GetDependency[repositories.OutboxMessageRepository](scope)
-	err = outboxMessageRepository.Insert(ctx, repositories.NewOutboxMessage(message))
+	outboxMessage, err := repositories.NewOutboxMessage(message)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("creating email outbox message: %w", err))
+		return
+	}
+
+	err = outboxMessageRepository.Insert(ctx, outboxMessage)
 	if err != nil {
 		utils.HandleHttpError(w, fmt.Errorf("creating email outbox message: %w", err))
 		return

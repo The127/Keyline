@@ -70,7 +70,12 @@ func QueueEmailVerificationJobOnUserCreatedEvent(ctx context.Context, event User
 	}
 
 	outboxMessageRepository := ioc.GetDependency[repositories.OutboxMessageRepository](scope)
-	err = outboxMessageRepository.Insert(ctx, repositories.NewOutboxMessage(message))
+	outboxMessage, err := repositories.NewOutboxMessage(message)
+	if err != nil {
+		return fmt.Errorf("creating email outbox message: %w", err)
+	}
+
+	err = outboxMessageRepository.Insert(ctx, outboxMessage)
 	if err != nil {
 		return fmt.Errorf("creating email outbox message: %w", err)
 	}
