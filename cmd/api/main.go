@@ -75,6 +75,7 @@ func main() {
 		return clock.NewClockService()
 	})
 
+	setup.OutboxDelivery(dc, config.QueueModeInProcess)
 	setup.KeyServices(dc, config.C.KeyStore.Mode)
 	setup.Caching(dc, config.C.Cache.Mode)
 	setup.Services(dc)

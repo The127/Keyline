@@ -4,6 +4,7 @@ import (
 	"Keyline/internal/logging"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
+	"Keyline/internal/services/outbox"
 	"Keyline/ioc"
 	"Keyline/utils"
 	"context"
@@ -26,6 +27,8 @@ func OutboxSendingJob(dp *ioc.DependencyProvider) JobFn {
 		for _, message := range outboxMessages {
 			err = handleMessage(ctx, message, outboxMessageRepository)
 			if err != nil {
+				// we don't want to stop the whole job if one message fails
+				// failed messages will be retried later
 				logging.Logger.Errorf("failed handling message: %v", err)
 			}
 		}
@@ -35,9 +38,15 @@ func OutboxSendingJob(dp *ioc.DependencyProvider) JobFn {
 }
 
 func handleMessage(ctx context.Context, message *repositories.OutboxMessage, repository repositories.OutboxMessageRepository) error {
-	// TODO: send to rabbitmq
+	scope := middlewares.GetScope(ctx)
+	sendingService := ioc.GetDependency[outbox.DeliveryEnqueuer](scope)
 
-	err := repository.Delete(ctx, message.Id())
+	err := sendingService.Enqueue(ctx, message)
+	if err != nil {
+		return fmt.Errorf("failed to handle message: %w", err)
+	}
+
+	err = repository.Delete(ctx, message.Id())
 	if err != nil {
 		return fmt.Errorf("failed to delete message in database: %w", err)
 	}

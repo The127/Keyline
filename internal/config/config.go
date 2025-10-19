@@ -12,6 +12,14 @@ import (
 	"github.com/knadh/koanf/v2"
 )
 
+// QueueMode has the following constants: DeliveryModeNoop, DeliveryModeInProcess
+type QueueMode string
+
+const (
+	QueueModeNoop      QueueMode = "noop"
+	QueueModeInProcess QueueMode = "in-process"
+)
+
 // DatabaseMode has the following constants: DatabaseModePostgres, DatabaseModeSqlite
 type DatabaseMode string
 
