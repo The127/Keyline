@@ -104,6 +104,7 @@ func newIntegrationTestHarness() *harness {
 	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) clock.Service {
 		return c
 	})
+	setup.OutboxDelivery(dc, config.QueueModeNoop)
 	setup.KeyServices(dc, config.KeyStoreModeMemory)
 	setup.Caching(dc, config.CacheModeMemory)
 	setup.Services(dc)

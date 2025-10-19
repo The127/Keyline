@@ -75,6 +75,7 @@ func main() {
 		return clock.NewClockService()
 	})
 
+	setup.OutboxDelivery(dc, config.QueueModeInProcess)
 	setup.KeyServices(dc, config.C.KeyStore.Mode)
 	setup.Caching(dc, config.C.Cache.Mode)
 	setup.Services(dc)
@@ -86,12 +87,12 @@ func main() {
 		logging.Logger.Errorf("an error happened while running a job: %v", err)
 	}))
 
-	/*jobManager.QueueJob(
+	jobManager.QueueJob(
 		jobs.OutboxSendingJob(dp),
-		time.Second,
+		time.Second*10,
 		jobs.WithName("outbox_sender"),
 		jobs.WithStartImmediate(),
-	)*/
+	)
 
 	// jobManager.QueueJob(
 	//	jobs.KeyRotateJob(),

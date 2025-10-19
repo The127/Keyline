@@ -3,6 +3,7 @@ package repositories
 import (
 	"Keyline/utils"
 	"context"
+	"fmt"
 
 	"github.com/google/uuid"
 )
@@ -15,13 +16,14 @@ const (
 
 type OutboxMessageDetails interface {
 	OutboxMessageType() OutboxMessageType
+	Serialize() ([]byte, error)
 }
 
 type OutboxMessage struct {
 	ModelBase
 
 	_type   OutboxMessageType
-	details OutboxMessageDetails
+	details []byte
 }
 
 func (m *OutboxMessage) GetScanPointers() []any {
@@ -39,16 +41,21 @@ func (m *OutboxMessage) Type() OutboxMessageType {
 	return m._type
 }
 
-func (m *OutboxMessage) Details() OutboxMessageDetails {
+func (m *OutboxMessage) Details() []byte {
 	return m.details
 }
 
-func NewOutboxMessage(details OutboxMessageDetails) *OutboxMessage {
+func NewOutboxMessage(details OutboxMessageDetails) (*OutboxMessage, error) {
+	serializedDetails, err := details.Serialize()
+	if err != nil {
+		return nil, fmt.Errorf("failed to serialize details: %w", err)
+	}
+
 	return &OutboxMessage{
 		ModelBase: NewModelBase(),
 		_type:     details.OutboxMessageType(),
-		details:   details,
-	}
+		details:   serializedDetails,
+	}, nil
 }
 
 type OutboxMessageFilter struct {

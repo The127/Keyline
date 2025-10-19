@@ -107,6 +107,7 @@ func newE2eTestHarness() *harness {
 	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) clock.Service {
 		return clockService
 	})
+	setup.OutboxDelivery(dc, config.QueueModeNoop)
 	setup.KeyServices(dc, config.KeyStoreModeMemory)
 	setup.Caching(dc, config.CacheModeMemory)
 	setup.Services(dc)
