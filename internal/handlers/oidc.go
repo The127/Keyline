@@ -1323,7 +1323,7 @@ func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if refreshTokenInfo.ClientId != clientId {
-		utils.HandleHttpError(w, fmt.Errorf("invalid client id"))
+		writeOAuthError(w, "invalid_grant", "The provided authorization grant (e.g., authorization code, resource owner credentials) or refresh token is invalid, expired, revoked, does not match the redirection URI used in the authorization request, or was issued to another client.")
 		return
 	}
 
