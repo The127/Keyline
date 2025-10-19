@@ -150,7 +150,7 @@ func initApplication(dp *ioc.DependencyProvider) {
 	}
 
 	for _, applicationConfig := range config.C.InitialVirtualServer.InitialApplications {
-		_, err := mediator.Send[*commands.CreateApplicationResponse](ctx, m, commands.CreateApplication{
+		appResponse, err := mediator.Send[*commands.CreateApplicationResponse](ctx, m, commands.CreateApplication{
 			VirtualServerName:      config.C.InitialVirtualServer.Name,
 			Name:                   applicationConfig.Name,
 			DisplayName:            applicationConfig.DisplayName,
@@ -160,6 +160,18 @@ func initApplication(dp *ioc.DependencyProvider) {
 		})
 		if err != nil {
 			logging.Logger.Fatalf("failed to create initial application: %v", err)
+		}
+
+		for _, role := range applicationConfig.Roles {
+			_, err = mediator.Send[*commands.CreateApplicationRoleResponse](ctx, m, commands.CreateApplicationRole{
+				VirtualServerName: config.C.InitialVirtualServer.Name,
+				ApplicationId:     appResponse.Id,
+				Name:              role.Name,
+				Description:       role.Description,
+			})
+			if err != nil {
+				logging.Logger.Fatalf("failed to create initial application role: %v", err)
+			}
 		}
 	}
 

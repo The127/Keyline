@@ -80,6 +80,10 @@ type Config struct {
 			HashedSecret           *string
 			RedirectUris           []string
 			PostLogoutRedirectUris []string
+			Roles                  []struct {
+				Name        string
+				Description string
+			}
 		}
 		Mail struct {
 			Host     string
@@ -292,6 +296,12 @@ func setInitialApplicationsDefaultsOrPanic() {
 		if application.Type == "confidential" && application.HashedSecret != nil {
 			if len(*application.HashedSecret) == 0 {
 				panic("application secret is empty")
+			}
+		}
+
+		for _, role := range application.Roles {
+			if role.Name == "" {
+				panic("missing role name")
 			}
 		}
 	}
