@@ -98,13 +98,13 @@ This will start:
 
 ### 3. Configure the Application
 
-Copy and customize the configuration file:
+Copy the configuration template and customize it:
 
 ```bash
-cp config.yaml config.local.yaml
+cp config.yaml.template config.yaml
 ```
 
-Edit `config.local.yaml` with your settings. Key configuration sections:
+Edit `config.yaml` with your settings. Key configuration sections:
 
 #### Server Configuration
 ```yaml
@@ -202,7 +202,7 @@ Or manually:
 go build -o keyline ./cmd/api
 
 # Run the application
-./keyline --config config.local.yaml
+./keyline
 ```
 
 ### 6. Access the Application
@@ -242,8 +242,8 @@ keyline-ui:
 Keyline provides flexible configuration management through YAML files and environment variables. Configuration supports multiple database backends (PostgreSQL, SQLite work-in-progress), cache backends (in-memory or Redis) and key storage options (directory or OpenBao).
 
 **Quick Start:**
-1. YAML configuration file (specify with `--config` flag)
-2. Environment variables with `KEYLINE_` prefix
+1. Copy `config.yaml.template` to `config.yaml` and customize it
+2. Alternatively, use environment variables with `KEYLINE_` prefix to override settings
 
 Example environment variables:
 ```bash
@@ -294,7 +294,7 @@ Keyline provides comprehensive API documentation using Swagger/OpenAPI:
 ├── docs/                 # Swagger documentation
 ├── templates/            # Email templates
 ├── justfile              # Development task runner
-└── config.yaml           # Configuration file
+└── config.yaml.template  # Configuration file template
 ```
 
 ### Using Just for Development

@@ -58,7 +58,7 @@ cd Keyline
 docker compose up -d
 
 # 3. Copy configuration
-cp config.yaml config.local.yaml
+cp config.yaml.template config.yaml
 
 # 4. Download Go dependencies
 go mod download
@@ -69,7 +69,7 @@ just test
 
 ### Configure Your Environment
 
-Edit `config.local.yaml` with your development settings:
+Edit `config.yaml` with your development settings:
 
 ```yaml
 server:
@@ -594,7 +594,7 @@ go build -o bin/keyline-api ./cmd/api
 just run
 
 # Or manually
-./bin/keyline-api --config config.local.yaml
+./bin/keyline-api
 
 # With environment override
 KEYLINE_LOGGING_LEVEL=debug ./bin/keyline-api
@@ -718,7 +718,7 @@ docker compose up -d
 
 ### Application Won't Start
 
-1. Check configuration in `config.local.yaml`
+1. Check configuration in `config.yaml`
 2. Verify dependencies are running: `docker compose ps`
 3. Check logs for errors
 4. Verify database migrations ran successfully
