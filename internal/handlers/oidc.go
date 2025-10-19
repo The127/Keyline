@@ -170,6 +170,7 @@ type OpenIdConfigurationResponseDto struct {
 	ClaimsSupported                   []string `json:"claims_supported"`
 	TokenEndpointAuthMethodsSupported []string `json:"token_endpoint_auth_methods_supported"`
 	RequestParameterSupported         bool     `json:"request_parameter_supported"`
+	GrantTypesSupported               []string `json:"grant_types_supported"`
 }
 
 // WellKnownOpenIdConfiguration exposes the OIDC discovery document.
@@ -217,6 +218,7 @@ func WellKnownOpenIdConfiguration(w http.ResponseWriter, r *http.Request) {
 		SubjectTypesSupported:             []string{"public"},
 		IdTokenSigningAlgValuesSupported:  []string{string(virtualServer.SigningAlgorithm())},
 		TokenEndpointAuthMethodsSupported: []string{"client_secret_basic", "client_secret_post"},
+		GrantTypesSupported:               []string{"authorization_code", "refresh_token", "urn:ietf:params:oauth:grant-type:token-exchange"},
 
 		ScopesSupported: []string{"openid", "email", "profile"}, // TODO: get from db
 		ClaimsSupported: []string{"sub", "name", "email"},       // TODO: get from db
