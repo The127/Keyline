@@ -9,6 +9,7 @@ import (
 
 type SendEmailMessage struct {
 	VirtualServerId uuid.UUID `json:"virtualServerId"`
+	DisplayName     string    `json:"displayName"`
 	To              string    `json:"to"`
 	Subject         string    `json:"subject"`
 	Body            string    `json:"body"`
