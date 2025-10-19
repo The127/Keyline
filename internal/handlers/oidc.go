@@ -940,6 +940,12 @@ func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	err = tokenService.DeleteToken(ctx, services.OidcCodeTokenType, code)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("deleting code: %w", err))
+		return
+	}
+
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
