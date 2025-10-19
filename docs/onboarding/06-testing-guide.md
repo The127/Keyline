@@ -412,137 +412,165 @@ func TestCommandWithTimeout(t *testing.T) {
 
 ## Integration Testing
 
-Integration tests use real dependencies (database, Redis):
+Integration tests test multiple components working together using real dependencies (database, mediator) but without the HTTP layer. Keyline uses **Ginkgo** (BDD testing framework) and **Gomega** (matcher library) for integration tests.
 
-### Setup
+### Test Framework
+
+Integration tests use:
+- **[Ginkgo](https://onsi.github.io/ginkgo/)**: BDD-style testing framework
+- **[Gomega](https://onsi.github.io/gomega/)**: Matcher/assertion library
+- **Test Harness**: Custom test infrastructure (`harness.go`) for isolated test environments
+- **Mediator Pattern**: Commands and queries are tested through the mediator
+
+### Test Structure
 
 ```go
-// tests/integration/setup_test.go
+// tests/integration/suite_test.go
+//go:build integration
+// +build integration
+
 package integration
 
 import (
-    "database/sql"
+    "Keyline/internal/logging"
     "testing"
-    "Keyline/internal/database"
-    "Keyline/internal/repositories/postgres"
+
+    . "github.com/onsi/ginkgo/v2"
+    . "github.com/onsi/gomega"
 )
 
-func setupTestDB(t *testing.T) *sql.DB {
-    // Connect to test database
-    db, err := sql.Open("postgres", "postgres://user:pass@localhost:5732/keyline_test?sslmode=disable")
-    if err != nil {
-        t.Fatalf("failed to connect to test db: %v", err)
-    }
-    
-    // Run migrations
-    err = database.RunMigrations(db)
-    if err != nil {
-        t.Fatalf("failed to run migrations: %v", err)
-    }
-    
-    // Clean up on test completion
-    t.Cleanup(func() {
-        db.Close()
-    })
-    
-    return db
+func TestIntegration(t *testing.T) {
+    RegisterFailHandler(Fail)
+    logging.Init()
+    RunSpecs(t, "Integration Suite")
 }
+```
 
-func cleanupDB(t *testing.T, db *sql.DB) {
-    // Truncate all tables
-    tables := []string{"users", "applications", "roles", "role_assignments"}
-    for _, table := range tables {
-        _, err := db.Exec("TRUNCATE TABLE " + table + " CASCADE")
-        if err != nil {
-            t.Logf("failed to truncate %s: %v", table, err)
-        }
-    }
-}
+### Test Harness
+
+The test harness (`harness.go`) provides:
+- **Unique database**: Randomly named PostgreSQL database for complete isolation
+- **Mediator**: Configured with all dependencies
+- **Context**: Pre-configured with system user authentication
+- **Time mocking**: Ability to set/control time for time-dependent tests
+- **Automatic cleanup**: Database is dropped after tests complete
+
+Key harness methods:
+```go
+h.Mediator()       // Get the mediator instance
+h.Ctx()            // Get the context with authentication
+h.VirtualServer()  // Get the test virtual server name ("test-vs")
+h.SetTime(t)       // Set the current time for testing
+h.Close()          // Clean up (called in AfterAll)
 ```
 
 ### Integration Test Example
 
 ```go
-// tests/integration/user_repository_test.go
+// tests/integration/application_flow_test.go
 //go:build integration
 
 package integration
 
 import (
-    "context"
-    "testing"
-    "Keyline/internal/models"
-    "Keyline/internal/repositories/postgres"
+    "Keyline/internal/commands"
+    "Keyline/internal/queries"
+    "Keyline/internal/repositories"
+    "Keyline/mediator"
+    "Keyline/utils"
+
     "github.com/google/uuid"
-    "github.com/stretchr/testify/assert"
-    "github.com/stretchr/testify/require"
+    . "github.com/onsi/ginkgo/v2"
+    . "github.com/onsi/gomega"
+    "github.com/onsi/gomega/gstruct"
 )
 
-func TestUserRepository_CreateAndGet(t *testing.T) {
-    // Setup
-    db := setupTestDB(t)
-    defer cleanupDB(t, db)
-    
-    repo := postgres.NewUserRepository(db)
-    ctx := context.Background()
-    
-    // Create user
-    user := &models.User{
-        ID:              uuid.New(),
-        VirtualServerID: uuid.New(),
-        Username:        "testuser",
-        Email:           "test@example.com",
-        PasswordHash:    "hashed_password",
-        EmailVerified:   false,
-        IsActive:        true,
-    }
-    
-    err := repo.Create(ctx, user)
-    require.NoError(t, err)
-    
-    // Get user
-    retrieved, err := repo.GetByID(ctx, user.ID)
-    require.NoError(t, err)
-    
-    // Verify
-    assert.Equal(t, user.ID, retrieved.ID)
-    assert.Equal(t, user.Username, retrieved.Username)
-    assert.Equal(t, user.Email, retrieved.Email)
-}
+var _ = Describe("Application flow", Ordered, func() {
+    var h *harness
+    var applicationId uuid.UUID
 
-func TestUserRepository_List(t *testing.T) {
-    db := setupTestDB(t)
-    defer cleanupDB(t, db)
-    
-    repo := postgres.NewUserRepository(db)
-    ctx := context.Background()
-    vsID := uuid.New()
-    
-    // Create multiple users
-    for i := 0; i < 5; i++ {
-        user := &models.User{
-            ID:              uuid.New(),
-            VirtualServerID: vsID,
-            Username:        fmt.Sprintf("user%d", i),
-            Email:           fmt.Sprintf("user%d@example.com", i),
-            IsActive:        true,
-        }
-        err := repo.Create(ctx, user)
-        require.NoError(t, err)
-    }
-    
-    // List users
-    users, total, err := repo.List(ctx, repositories.ListUsersParams{
-        VirtualServerID: vsID,
-        Offset:          0,
-        Limit:           10,
+    BeforeAll(func() {
+        // Create test harness once for all tests in this suite
+        h = newIntegrationTestHarness()
     })
-    
-    require.NoError(t, err)
-    assert.Equal(t, 5, total)
-    assert.Len(t, users, 5)
-}
+
+    AfterAll(func() {
+        // Clean up after all tests
+        h.Close()
+    })
+
+    It("should persist public application successfully", func() {
+        // Arrange
+        req := commands.CreateApplication{
+            VirtualServerName:      h.VirtualServer(),
+            Name:                   "test-app",
+            DisplayName:            "Test App",
+            Type:                   repositories.ApplicationTypePublic,
+            RedirectUris:           []string{"http://localhost:8080/callback"},
+            PostLogoutRedirectUris: []string{"http://localhost:8080/logout"},
+        }
+        
+        // Act
+        response, err := mediator.Send[*commands.CreateApplicationResponse](
+            h.Ctx(), h.Mediator(), req)
+        
+        // Assert
+        Expect(err).ToNot(HaveOccurred())
+        applicationId = response.Id
+    })
+
+    It("should list applications successfully", func() {
+        req := queries.ListApplications{
+            VirtualServerName: h.VirtualServer(),
+            SearchText:        "test-app",
+        }
+        
+        response, err := mediator.Send[*queries.ListApplicationsResponse](
+            h.Ctx(), h.Mediator(), req)
+        
+        Expect(err).ToNot(HaveOccurred())
+        Expect(response.Items).To(ContainElement(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
+            "Id":   Equal(applicationId),
+            "Name": Equal("test-app"),
+        })))
+    })
+
+    It("should edit application successfully", func() {
+        cmd := commands.PatchApplication{
+            VirtualServerName: h.VirtualServer(),
+            ApplicationId:     applicationId,
+            DisplayName:       utils.Ptr("Updated Test App"),
+        }
+        
+        _, err := mediator.Send[*commands.PatchApplicationResponse](
+            h.Ctx(), h.Mediator(), cmd)
+        
+        Expect(err).ToNot(HaveOccurred())
+    })
+
+    It("should reflect updated values", func() {
+        req := queries.GetApplication{
+            VirtualServerName: h.VirtualServer(),
+            ApplicationId:     applicationId,
+        }
+        
+        app, err := mediator.Send[*queries.GetApplicationResult](
+            h.Ctx(), h.Mediator(), req)
+        
+        Expect(err).ToNot(HaveOccurred())
+        Expect(app.DisplayName).To(Equal("Updated Test App"))
+    })
+})
 ```
+
+### Test Isolation
+
+Each test suite (each `Describe` block with a harness) gets:
+- **Unique database**: Complete data isolation between test suites
+- **Fresh dependencies**: Clean mediator and repository instances
+- **No data pollution**: Tests can be run in any order
+
+The `Ordered` flag ensures tests within a suite run sequentially, which is useful when later tests depend on earlier ones (e.g., creating then updating an entity).
 
 ### Running Integration Tests
 
@@ -553,105 +581,147 @@ docker compose up -d postgres
 # Run integration tests
 just integration
 
-# Or manually
-go test -tags=integration ./tests/integration/...
+# Or manually with Go
+go test -race -count=1 -tags=integration ./tests/integration/...
+
+# Or with Ginkgo CLI
+ginkgo -tags=integration ./tests/integration/
 ```
 
 ## End-to-End Testing
 
-E2E tests use the full system including HTTP API:
+End-to-end tests validate the complete Keyline system by running the actual API server and making real HTTP requests. These tests ensure that all components work together correctly in a production-like environment.
+
+### Test Framework
+
+E2E tests use:
+- **[Ginkgo](https://onsi.github.io/ginkgo/)**: BDD-style testing framework
+- **[Gomega](https://onsi.github.io/gomega/)**: Matcher/assertion library
+- **Test Harness**: Custom test infrastructure (`harness.go`) for isolated test environments
+- **Keyline API Client**: Type-safe Go client for API interactions
+
+### Test Structure
+
+```go
+// tests/e2e/suite_test.go
+//go:build e2e
+// +build e2e
+
+package e2e
+
+import (
+    "Keyline/internal/logging"
+    "testing"
+
+    . "github.com/onsi/ginkgo/v2"
+    . "github.com/onsi/gomega"
+)
+
+func TestE2e(t *testing.T) {
+    RegisterFailHandler(Fail)
+    logging.Init()
+    RunSpecs(t, "e2e Suite")
+}
+```
+
+### Test Harness
+
+The E2E test harness provides:
+- **Unique database**: Randomly named PostgreSQL database for complete isolation
+- **Unique server port**: Avoids port conflicts when running tests in parallel
+- **API client**: Configured to communicate with the test server
+- **Context**: Pre-configured with authentication and scope
+- **Time mocking**: Ability to set/control time for time-dependent tests
+- **Automatic cleanup**: Database and server are cleaned up after tests complete
+
+Key harness methods:
+```go
+h.Client()         // Get the API client
+h.Ctx()            // Get the context with authentication
+h.VirtualServer()  // Get the test virtual server name ("test-vs")
+h.SetTime(t)       // Set the current time for testing
+h.Close()          // Clean up (called in AfterAll)
+```
 
 ### E2E Test Example
 
 ```go
-// tests/e2e/user_registration_test.go
+// tests/e2e/application_flow_test.go
 //go:build e2e
 
 package e2e
 
 import (
-    "testing"
-    "Keyline/client"
-    "github.com/stretchr/testify/assert"
-    "github.com/stretchr/testify/require"
+    "Keyline/internal/handlers"
+
+    . "github.com/onsi/ginkgo/v2"
+    . "github.com/onsi/gomega"
 )
 
-func TestUserRegistration_FullFlow(t *testing.T) {
-    // Setup client
-    c := client.NewClient("http://localhost:8081")
-    
-    // 1. Register new user
-    registerResp, err := c.RegisterUser(client.RegisterUserRequest{
-        Username: "newuser",
-        Email:    "newuser@example.com",
-        Password: "SecurePass123!",
-    })
-    require.NoError(t, err)
-    assert.NotEmpty(t, registerResp.UserID)
-    
-    // 2. User should not be able to login (email not verified)
-    _, err = c.Login(client.LoginRequest{
-        Username: "newuser",
-        Password: "SecurePass123!",
-    })
-    assert.Error(t, err)
-    assert.Contains(t, err.Error(), "email not verified")
-    
-    // 3. Verify email (in real test, get token from email)
-    verifyToken := getVerificationTokenFromEmail(t, "newuser@example.com")
-    err = c.VerifyEmail(verifyToken)
-    require.NoError(t, err)
-    
-    // 4. Now login should work
-    loginResp, err := c.Login(client.LoginRequest{
-        Username: "newuser",
-        Password: "SecurePass123!",
-    })
-    require.NoError(t, err)
-    assert.NotEmpty(t, loginResp.AccessToken)
-    
-    // 5. Access protected resource
-    c.SetToken(loginResp.AccessToken)
-    profile, err := c.GetProfile()
-    require.NoError(t, err)
-    assert.Equal(t, "newuser", profile.Username)
-}
+var _ = Describe("Application flow", Ordered, func() {
+    var h *harness
 
-func TestUserRegistration_DuplicateUsername(t *testing.T) {
-    c := client.NewClient("http://localhost:8081")
-    
-    // Create first user
-    _, err := c.RegisterUser(client.RegisterUserRequest{
-        Username: "duplicate",
-        Email:    "user1@example.com",
-        Password: "password123",
+    BeforeAll(func() {
+        // Create test harness once for all tests in this suite
+        h = newE2eTestHarness()
     })
-    require.NoError(t, err)
-    
-    // Try to create user with same username
-    _, err = c.RegisterUser(client.RegisterUserRequest{
-        Username: "duplicate",
-        Email:    "user2@example.com",
-        Password: "password123",
+
+    AfterAll(func() {
+        // Clean up after all tests
+        h.Close()
     })
-    
-    assert.Error(t, err)
-    assert.Contains(t, err.Error(), "username already exists")
-}
+
+    It("rejects unauthorized requests", func() {
+        // Attempt to create application without authentication
+        _, err := h.Client().Application().Create(h.Ctx(), handlers.CreateApplicationRequestDto{
+            Name:           "test-app",
+            DisplayName:    "Test App",
+            RedirectUris:   []string{"http://localhost:8080/callback"},
+            PostLogoutUris: []string{"http://localhost:8080/logout"},
+            Type:           "public",
+        })
+        
+        // Should receive 401 Unauthorized
+        Expect(err).To(HaveOccurred())
+        Expect(err).To(MatchError(ContainSubstring("401 Unauthorized")))
+    })
+})
 ```
+
+### More E2E Examples
+
+For comprehensive examples including:
+- Authentication flows
+- Time-dependent testing
+- Database management
+- Server configuration
+- Best practices
+
+See the [E2E Test README](../../tests/e2e/README.md) which provides detailed documentation on:
+- Test architecture and components
+- Test isolation strategies
+- Writing effective E2E tests
+- Using the test harness
+- Testing with authentication
+- CI/CD integration
 
 ### Running E2E Tests
 
 ```bash
-# Start full system
-docker compose up -d
-just run &
+# Start test dependencies
+docker compose up -d postgres
 
 # Run E2E tests
 just e2e
 
-# Or manually
+# Or manually with Go
 go test -tags=e2e ./tests/e2e/...
+
+# Or with Ginkgo CLI
+ginkgo -tags=e2e ./tests/e2e/
+
+# Run specific test
+ginkgo -tags=e2e --focus "Application flow" ./tests/e2e/
 ```
 
 ## Mocking
