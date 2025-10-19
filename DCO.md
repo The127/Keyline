@@ -2,6 +2,8 @@
 
 By contributing to this project, you agree to the Developer Certificate of Origin (DCO) below:
 
+**Note:** Automated commits from GitHub Copilot bot are exempt from the DCO sign-off requirement. All human contributors must sign off their commits.
+
 ---
 
 Developer Certificate of Origin
