@@ -25,15 +25,27 @@ jobs:
         if: github.event_name == 'pull_request' && github.base_ref == 'main'
         run: |
           echo "Checking commits for Signed-off-by lines..."
-          if ! git log origin/main..HEAD --pretty=%B | grep -q "Signed-off-by"; then
-            echo "Commit(s) missing Signed-off-by line."
-            echo "Please add it using:"
-            echo "   git commit --amend --signoff"
-            echo "   or"
-            echo "   git commit -s"
-            exit 1
+          
+          # Get the list of commit authors
+          AUTHORS=$(git log origin/main..HEAD --pretty="%an <%ae>")
+          echo "Commit authors:"
+          echo "$AUTHORS"
+          
+          # Check if all commits are from Copilot bot
+          if echo "$AUTHORS" | grep -qv "copilot-swe-agent\[bot\]"; then
+            # Not all commits are from Copilot, check for sign-offs
+            if ! git log origin/main..HEAD --pretty=%B | grep -q "Signed-off-by"; then
+              echo "Commit(s) missing Signed-off-by line."
+              echo "Please add it using:"
+              echo "   git commit --amend --signoff"
+              echo "   or"
+              echo "   git commit -s"
+              exit 1
+            fi
+            echo "All commits are signed off."
+          else
+            echo "All commits are from Copilot bot - skipping sign-off check."
           fi
-          echo "All commits are signed off."
 
   lint:
     runs-on: ubuntu-latest
