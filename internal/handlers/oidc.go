@@ -26,6 +26,25 @@ import (
 	"github.com/google/uuid"
 )
 
+type OidcError struct {
+	Error            string
+	ErrorDescription string
+	ErrorUri         string
+}
+
+var (
+	loginRequired = OidcError{
+		Error:            "login_required",
+		ErrorDescription: "The Authorization Server requires End-User authentication",
+		ErrorUri:         "https://openid.net/specs/openid-connect-core-1_0.html#AuthError",
+	}
+	unsupportedResponseType = OidcError{
+		Error:            "unsupported_response_type",
+		ErrorDescription: "The authorization server does not support obtaining an authorization code using this method.",
+		ErrorUri:         "https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.2.1",
+	}
+)
+
 type Ed25519JWK struct {
 	Kty string `json:"kty"` // Key Type
 	Crv string `json:"crv"` // Curve
@@ -319,7 +338,7 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(authRequest.ResponseTypes) != 1 || authRequest.ResponseTypes[0] != "code" {
-		errorRedirect(w, r, authRequest, "unsupported_response_type")
+		errorRedirect(w, r, authRequest, unsupportedResponseType)
 		return
 	}
 
@@ -376,7 +395,7 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if prompt == "none" {
-		errorRedirect(w, r, authRequest, "login_required")
+		errorRedirect(w, r, authRequest, loginRequired)
 		return
 	}
 
@@ -406,7 +425,7 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, redirectUrl, http.StatusFound)
 }
 
-func errorRedirect(w http.ResponseWriter, r *http.Request, authRequest AuthorizationRequest, errorCode string) {
+func errorRedirect(w http.ResponseWriter, r *http.Request, authRequest AuthorizationRequest, oidcError OidcError) {
 	errorUrl, err := url.Parse(authRequest.RedirectUri)
 	if err != nil {
 		utils.HandleHttpError(w, fmt.Errorf("parsing redirect uri: %w", err))
@@ -414,7 +433,15 @@ func errorRedirect(w http.ResponseWriter, r *http.Request, authRequest Authoriza
 	}
 
 	query := errorUrl.Query()
-	query.Set("error", errorCode)
+	query.Set("error", oidcError.Error)
+
+	if oidcError.ErrorDescription != "" {
+		query.Set("error_description", oidcError.ErrorDescription)
+	}
+
+	if oidcError.ErrorUri != "" {
+		query.Set("error_uri", oidcError.ErrorUri)
+	}
 
 	if authRequest.State != "" {
 		query.Set("state", authRequest.State)
