@@ -41,6 +41,19 @@ Keyline follows a clean architecture pattern with clear separation of concerns:
 - **Mediator** - Request/event mediator pattern for decoupled communication
 - **IoC Container** - Custom dependency injection container
 
+### 📚 New to Keyline?
+
+Check out our comprehensive **[Onboarding Guide](docs/onboarding/README.md)** to understand the architecture, design patterns, and development workflows. The guide covers:
+
+- **Architecture Overview** - Understand clean architecture and folder structure
+- **CQRS & Mediator Pattern** - Learn the core communication patterns
+- **Dependency Injection** - Master the IoC container
+- **Development Workflow** - Get started with development
+- **Common Patterns** - Learn by example
+- **Testing Guide** - Write effective tests
+
+Perfect for new contributors and developers wanting to understand Keyline's architecture!
+
 ## Prerequisites
 
 - **Go 1.24** or higher
