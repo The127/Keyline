@@ -157,17 +157,18 @@ func WellKnownJwks(w http.ResponseWriter, r *http.Request) {
 }
 
 type OpenIdConfigurationResponseDto struct {
-	Issuer                           string   `json:"issuer"`
-	AuthorizationEndpoint            string   `json:"authorization_endpoint"`
-	TokenEndpoint                    string   `json:"token_endpoint"`
-	UserinfoEndpoint                 string   `json:"userinfo_endpoint"`
-	EndSessionEndpoint               string   `json:"end_session_endpoint"`
-	JwksUri                          string   `json:"jwks_uri"`
-	ResponseTypesSupported           []string `json:"response_types_supported"`
-	SubjectTypesSupported            []string `json:"subject_types_supported"`
-	IdTokenSigningAlgValuesSupported []string `json:"id_token_signing_alg_values_supported"`
-	ScopesSupported                  []string `json:"scopes_supported"`
-	ClaimsSupported                  []string `json:"claims_supported"`
+	Issuer                            string   `json:"issuer"`
+	AuthorizationEndpoint             string   `json:"authorization_endpoint"`
+	TokenEndpoint                     string   `json:"token_endpoint"`
+	UserinfoEndpoint                  string   `json:"userinfo_endpoint"`
+	EndSessionEndpoint                string   `json:"end_session_endpoint"`
+	JwksUri                           string   `json:"jwks_uri"`
+	ResponseTypesSupported            []string `json:"response_types_supported"`
+	SubjectTypesSupported             []string `json:"subject_types_supported"`
+	IdTokenSigningAlgValuesSupported  []string `json:"id_token_signing_alg_values_supported"`
+	ScopesSupported                   []string `json:"scopes_supported"`
+	ClaimsSupported                   []string `json:"claims_supported"`
+	TokenEndpointAuthMethodsSupported []string `json:"token_endpoint_auth_methods_supported"`
 }
 
 // WellKnownOpenIdConfiguration exposes the OIDC discovery document.
@@ -210,9 +211,10 @@ func WellKnownOpenIdConfiguration(w http.ResponseWriter, r *http.Request) {
 		EndSessionEndpoint:    fmt.Sprintf("%s/oidc/%s/end_session", config.C.Server.ExternalUrl, vsName),
 		JwksUri:               fmt.Sprintf("%s/oidc/%s/.well-known/jwks.json", config.C.Server.ExternalUrl, vsName),
 
-		ResponseTypesSupported:           []string{"code"}, // TODO: maybe support more
-		SubjectTypesSupported:            []string{"public"},
-		IdTokenSigningAlgValuesSupported: []string{string(virtualServer.SigningAlgorithm())},
+		ResponseTypesSupported:            []string{"code"}, // TODO: maybe support more
+		SubjectTypesSupported:             []string{"public"},
+		IdTokenSigningAlgValuesSupported:  []string{string(virtualServer.SigningAlgorithm())},
+		TokenEndpointAuthMethodsSupported: []string{"client_secret_basic", "client_secret_post"},
 
 		ScopesSupported: []string{"openid", "email", "profile"}, // TODO: get from db
 		ClaimsSupported: []string{"sub", "name", "email"},       // TODO: get from db
