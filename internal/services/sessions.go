@@ -57,6 +57,7 @@ func (s *sessionService) NewSession(ctx context.Context, virtualServerName strin
 func (s *sessionService) GetSession(ctx context.Context, virtualServerName string, id uuid.UUID) (*middlewares.Session, error) {
 	scope := middlewares.GetScope(ctx)
 	kvStore := ioc.GetDependency[keyValue.Store](scope)
+	clockService := ioc.GetDependency[clock.Service](scope)
 
 	cacheKey := getCacheKey(virtualServerName, id)
 
@@ -84,10 +85,7 @@ func (s *sessionService) GetSession(ctx context.Context, virtualServerName strin
 				return nil, fmt.Errorf("storing session token in kv: %w", err)
 			}
 
-			return middlewares.NewSession(
-				dbSession.UserId(),
-				dbSession.HashedSecret(),
-			), nil
+			return middlewares.NewSession(dbSession.UserId(), dbSession.HashedSecret(), clockService.Now()), nil
 		} else {
 			return nil, nil
 		}
@@ -103,10 +101,7 @@ func (s *sessionService) GetSession(ctx context.Context, virtualServerName strin
 		return nil, fmt.Errorf("decoding token from cache: %w", err)
 	}
 
-	return middlewares.NewSession(
-		tokenValue.UserId,
-		tokenValue.HashedSecret,
-	), nil
+	return middlewares.NewSession(tokenValue.UserId, tokenValue.HashedSecret, clockService.Now()), nil
 }
 
 func (s *sessionService) DeleteSession(ctx context.Context, virtualServerName string, id uuid.UUID) error {
@@ -173,10 +168,8 @@ func (s *sessionService) loadSessionFromDatabase(ctx context.Context, virtualSer
 		return nil, nil
 	}
 
-	return middlewares.NewSession(
-		dbSession.UserId(),
-		dbSession.HashedToken(),
-	), nil
+	clockService := ioc.GetDependency[clock.Service](scope)
+	return middlewares.NewSession(dbSession.UserId(), dbSession.HashedToken(), clockService.Now()), nil
 }
 
 func getCacheKey(virtualServerName string, sessionId uuid.UUID) string {

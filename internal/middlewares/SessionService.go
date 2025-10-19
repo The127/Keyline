@@ -3,6 +3,7 @@ package middlewares
 import (
 	"Keyline/utils"
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -10,12 +11,14 @@ import (
 type Session struct {
 	userId       uuid.UUID
 	hashedSecret string
+	createdAt    time.Time
 }
 
-func NewSession(userId uuid.UUID, hashedSecret string) *Session {
+func NewSession(userId uuid.UUID, hashedSecret string, createdAt time.Time) *Session {
 	return &Session{
 		userId:       userId,
 		hashedSecret: hashedSecret,
+		createdAt:    createdAt,
 	}
 }
 

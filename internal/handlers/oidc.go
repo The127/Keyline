@@ -43,6 +43,11 @@ var (
 		ErrorDescription: "The authorization server does not support obtaining an authorization code using this method.",
 		ErrorUri:         "https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.2.1",
 	}
+	invalidRedirectUri = OidcError{
+		Error:            "invalid_redirect_uri",
+		ErrorDescription: "The redirect_uri in the Authorization Request does not match a pre-registered value.",
+		ErrorUri:         "https://datatracker.ietf.org/doc/html/rfc6749#section-3.1.2",
+	}
 )
 
 type Ed25519JWK struct {
@@ -157,17 +162,20 @@ func WellKnownJwks(w http.ResponseWriter, r *http.Request) {
 }
 
 type OpenIdConfigurationResponseDto struct {
-	Issuer                           string   `json:"issuer"`
-	AuthorizationEndpoint            string   `json:"authorization_endpoint"`
-	TokenEndpoint                    string   `json:"token_endpoint"`
-	UserinfoEndpoint                 string   `json:"userinfo_endpoint"`
-	EndSessionEndpoint               string   `json:"end_session_endpoint"`
-	JwksUri                          string   `json:"jwks_uri"`
-	ResponseTypesSupported           []string `json:"response_types_supported"`
-	SubjectTypesSupported            []string `json:"subject_types_supported"`
-	IdTokenSigningAlgValuesSupported []string `json:"id_token_signing_alg_values_supported"`
-	ScopesSupported                  []string `json:"scopes_supported"`
-	ClaimsSupported                  []string `json:"claims_supported"`
+	Issuer                            string   `json:"issuer"`
+	AuthorizationEndpoint             string   `json:"authorization_endpoint"`
+	TokenEndpoint                     string   `json:"token_endpoint"`
+	UserinfoEndpoint                  string   `json:"userinfo_endpoint"`
+	EndSessionEndpoint                string   `json:"end_session_endpoint"`
+	JwksUri                           string   `json:"jwks_uri"`
+	ResponseTypesSupported            []string `json:"response_types_supported"`
+	SubjectTypesSupported             []string `json:"subject_types_supported"`
+	IdTokenSigningAlgValuesSupported  []string `json:"id_token_signing_alg_values_supported"`
+	ScopesSupported                   []string `json:"scopes_supported"`
+	ClaimsSupported                   []string `json:"claims_supported"`
+	TokenEndpointAuthMethodsSupported []string `json:"token_endpoint_auth_methods_supported"`
+	RequestParameterSupported         bool     `json:"request_parameter_supported"`
+	GrantTypesSupported               []string `json:"grant_types_supported"`
 }
 
 // WellKnownOpenIdConfiguration exposes the OIDC discovery document.
@@ -210,9 +218,12 @@ func WellKnownOpenIdConfiguration(w http.ResponseWriter, r *http.Request) {
 		EndSessionEndpoint:    fmt.Sprintf("%s/oidc/%s/end_session", config.C.Server.ExternalUrl, vsName),
 		JwksUri:               fmt.Sprintf("%s/oidc/%s/.well-known/jwks.json", config.C.Server.ExternalUrl, vsName),
 
-		ResponseTypesSupported:           []string{"code"}, // TODO: maybe support more
-		SubjectTypesSupported:            []string{"public"},
-		IdTokenSigningAlgValuesSupported: []string{string(virtualServer.SigningAlgorithm())},
+		ResponseTypesSupported:            []string{"code"}, // TODO: maybe support more
+		RequestParameterSupported:         true,
+		SubjectTypesSupported:             []string{"public"},
+		IdTokenSigningAlgValuesSupported:  []string{string(virtualServer.SigningAlgorithm())},
+		TokenEndpointAuthMethodsSupported: []string{"client_secret_basic", "client_secret_post"},
+		GrantTypesSupported:               []string{"authorization_code", "refresh_token", "urn:ietf:params:oauth:grant-type:token-exchange"},
 
 		ScopesSupported: []string{"openid", "email", "profile"}, // TODO: get from db
 		ClaimsSupported: []string{"sub", "name", "email"},       // TODO: get from db
@@ -290,6 +301,40 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 		PKCEChallengeMethod: r.Form.Get("code_challenge_method"),
 	}
 
+	requestParam := r.Form.Get("request")
+	if requestParam != "" {
+		token, _, err := new(jwt.Parser).ParseUnverified(requestParam, jwt.MapClaims{})
+		if err != nil {
+			utils.HandleHttpError(w, fmt.Errorf("parsing request parameter: %w", err))
+			return
+		}
+
+		if claims, ok := token.Claims.(jwt.MapClaims); ok {
+			if claims["response_type"] != nil {
+				authRequest.ResponseTypes = strings.Split(claims["response_type"].(string), " ")
+			}
+			if claims["client_id"] != nil {
+				authRequest.ApplicationName = claims["client_id"].(string)
+			}
+			if claims["redirect_uri"] != nil {
+				authRequest.RedirectUri = claims["redirect_uri"].(string)
+			}
+			if claims["scope"] != nil {
+				authRequest.Scopes = strings.Split(claims["scope"].(string), " ")
+			}
+			if claims["state"] != nil {
+				authRequest.State = claims["state"].(string)
+			}
+			if claims["nonce"] != nil {
+				authRequest.Nonce = claims["nonce"].(string)
+			}
+			if claims["response_mode"] != nil {
+				authRequest.ResponseMode = claims["response_mode"].(string)
+			}
+		}
+
+	}
+
 	// TODO: use validation annotations to validate the auth request
 
 	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
@@ -333,7 +378,7 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if !redirectOk {
-		utils.HandleHttpError(w, fmt.Errorf("redirect uri does not match registered uris"))
+		errorRedirect(w, r, authRequest, invalidRedirectUri)
 		return
 	}
 
@@ -355,12 +400,7 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 	if ok {
 		// TODO: consent page
 
-		codeInfo := jsonTypes.NewCodeInfo(
-			virtualServer.Name(),
-			authRequest.Scopes,
-			s.UserId(),
-			authRequest.Nonce,
-		)
+		codeInfo := jsonTypes.NewCodeInfo(virtualServer.Name(), authRequest.Scopes, s.UserId(), authRequest.Nonce, s.CreatedAt())
 
 		codeInfoString, err := json.Marshal(codeInfo)
 		if err != nil {
@@ -368,7 +408,7 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		code, err := tokenService.GenerateAndStoreToken(ctx, services.OidcCodeTokenType, string(codeInfoString), time.Second*30)
+		code, err := tokenService.GenerateAndStoreToken(ctx, services.OidcCodeTokenType, string(codeInfoString), time.Minute)
 		if err != nil {
 			utils.HandleHttpError(w, fmt.Errorf("generating code: %w", err))
 			return
@@ -837,6 +877,15 @@ type CodeFlowResponse struct {
 	ExpiresIn    int    `json:"expires_in"`
 }
 
+func writeOAuthError(w http.ResponseWriter, code, description string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusBadRequest)
+	_ = json.NewEncoder(w).Encode(map[string]string{
+		"error":             code,
+		"error_description": description,
+	})
+}
+
 func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	scope := middlewares.GetScope(ctx)
@@ -846,7 +895,7 @@ func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 	tokenService := ioc.GetDependency[services.TokenService](scope)
 	valueString, err := tokenService.GetToken(ctx, services.OidcCodeTokenType, code)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting token: %w", err))
+		writeOAuthError(w, "invalid_grant", "authorization code already used")
 		return
 	}
 
@@ -927,11 +976,18 @@ func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 		IdTokenExpiry:      tokenDuration,
 		RefreshTokenExpiry: tokenDuration,
 		Nonce:              codeInfo.Nonce,
+		AuthenticatedAt:    codeInfo.AuthenticatedAt,
 	}
 
 	tokens, err := generateTokens(ctx, params, tokenService)
 	if err != nil {
 		utils.HandleHttpError(w, err)
+		return
+	}
+
+	err = tokenService.DeleteToken(ctx, services.OidcCodeTokenType, code)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("deleting code: %w", err))
 		return
 	}
 
@@ -991,6 +1047,7 @@ type TokenGenerationParams struct {
 	IdTokenExpiry      time.Duration
 	RefreshTokenExpiry time.Duration
 	Nonce              string
+	AuthenticatedAt    time.Time
 }
 
 func (t *TokenGenerationParams) ToAccessTokenGenerationParams() AccessTokenGenerationParams {
@@ -1019,6 +1076,7 @@ func (t *TokenGenerationParams) ToIdTokenGenerationParams() IdTokenGenerationPar
 		Expiry:            t.IdTokenExpiry,
 		UserId:            t.UserId,
 		KeyPair:           t.KeyPair,
+		AuthenticatedAt:   t.AuthenticatedAt,
 	}
 }
 
@@ -1061,6 +1119,7 @@ type IdTokenGenerationParams struct {
 	UserId            uuid.UUID
 	KeyPair           services.KeyPair
 	GrantedScopes     []string
+	AuthenticatedAt   time.Time
 }
 
 type GeneratedTokens struct {
@@ -1084,6 +1143,10 @@ func generateIdToken(params IdTokenGenerationParams) (string, error) {
 		"aud": []string{params.ClientId},
 		"iat": params.IssuedAt.Unix(),
 		"exp": params.IssuedAt.Add(params.Expiry).Unix(),
+	}
+
+	if !params.AuthenticatedAt.IsZero() {
+		idTokenClaims["auth_time"] = params.AuthenticatedAt.Unix()
 	}
 
 	if slices.Contains(params.GrantedScopes, "profile") {
@@ -1260,7 +1323,7 @@ func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if refreshTokenInfo.ClientId != clientId {
-		utils.HandleHttpError(w, fmt.Errorf("invalid client id"))
+		writeOAuthError(w, "invalid_grant", "The provided authorization grant (e.g., authorization code, resource owner credentials) or refresh token is invalid, expired, revoked, does not match the redirection URI used in the authorization request, or was issued to another client.")
 		return
 	}
 
