@@ -174,58 +174,62 @@ package commands
 import (
     "context"
     "errors"
+    "fmt"
+    "Keyline/internal/middlewares"
     "Keyline/internal/repositories"
+    "Keyline/internal/events"
+    "Keyline/ioc"
     "Keyline/mediator"
     "github.com/google/uuid"
 )
 
 // Command request
-type DeactivateUserCommand struct {
+type DeactivateUser struct {
     UserID uuid.UUID
     Reason string
 }
 
-// Command result
-type DeactivateUserResult struct {
+// Command response
+type DeactivateUserResponse struct {
     Success bool
 }
 
-// Command handler
-type DeactivateUserHandler struct {
-    userRepo repositories.UserRepository
-    mediator mediator.Mediator
-}
-
-// Handle the command
-func (h *DeactivateUserHandler) Handle(
+// Handler function
+func HandleDeactivateUser(
     ctx context.Context,
-    cmd DeactivateUserCommand,
-) (DeactivateUserResult, error) {
+    cmd DeactivateUser,
+) (*DeactivateUserResponse, error) {
     // Validate
     if cmd.UserID == uuid.Nil {
-        return DeactivateUserResult{}, errors.New("user ID required")
+        return nil, errors.New("user ID required")
     }
     
+    // Get scope and dependencies
+    scope := middlewares.GetScope(ctx)
+    userRepo := ioc.GetDependency[repositories.UserRepository](scope)
+    m := ioc.GetDependency[mediator.Mediator](scope)
+    
     // Get user
-    user, err := h.userRepo.GetByID(ctx, cmd.UserID)
+    filter := repositories.NewUserFilter().Id(cmd.UserID)
+    user, err := userRepo.First(ctx, filter)
     if err != nil {
-        return DeactivateUserResult{}, err
+        return nil, fmt.Errorf("getting user: %w", err)
     }
     
     // Update status
-    user.IsActive = false
-    err = h.userRepo.Update(ctx, user)
+    user.SetActive(false)
+    err = userRepo.Update(ctx, user)
     if err != nil {
-        return DeactivateUserResult{}, err
+        return nil, fmt.Errorf("updating user: %w", err)
     }
     
     // Emit event for audit logging
-    _ = mediator.SendEvent(ctx, h.mediator, UserDeactivatedEvent{
+    _ = mediator.SendEvent(ctx, m, events.UserDeactivatedEvent{
         UserID: cmd.UserID,
         Reason: cmd.Reason,
     })
     
-    return DeactivateUserResult{Success: true}, nil
+    return &DeactivateUserResponse{Success: true}, nil
 }
 ```
 
@@ -246,25 +250,14 @@ type UserDeactivatedEvent struct {
 
 #### 4. Register the Command
 
-Add to `internal/setup/setup.go` in the `Commands` function:
+Add to `internal/setup/setup.go`:
 
 ```go
-func Commands(dc *ioc.DependencyCollection) {
+func setupHandlers(m mediator.Mediator) {
     // ... existing commands ...
     
     // DeactivateUser command
-    ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) any {
-        m := ioc.GetDependency[mediator.Mediator](dp)
-        userRepo := ioc.GetDependency[repositories.UserRepository](dp)
-        
-        handler := &commands.DeactivateUserHandler{
-            userRepo: userRepo,
-            mediator: m,
-        }
-        
-        mediator.RegisterHandler(m, handler.Handle)
-        return handler
-    })
+    mediator.RegisterHandler(m, commands.HandleDeactivateUser)
 }
 ```
 

@@ -117,58 +117,56 @@ Every command in Keyline follows this pattern:
 
 ```go
 // 1. Define the command (the request)
-type CreateUserCommand struct {
-    VirtualServerID uuid.UUID
-    Username        string
-    Email           string
-    Password        string
+type CreateUser struct {
+    VirtualServerName string
+    Username          string
+    Email             string
+    Password          string
 }
 
-// 2. Define the result (the response)
-type CreateUserResult struct {
-    UserID   uuid.UUID
-    Username string
+// 2. Define the response
+type CreateUserResponse struct {
+    UserID uuid.UUID
 }
 
-// 3. Define the handler
-type CreateUserHandler struct {
-    userRepo    repositories.UserRepository
-    emailService services.EmailService
-    mediator    mediator.Mediator
-}
-
-// 4. Implement the handler
-func (h *CreateUserHandler) Handle(
-    ctx context.Context, 
-    cmd CreateUserCommand,
-) (CreateUserResult, error) {
+// 3. Implement the handler function
+func HandleCreateUser(
+    ctx context.Context,
+    cmd CreateUser,
+) (*CreateUserResponse, error) {
+    // Get scope from context
+    scope := middlewares.GetScope(ctx)
+    
+    // Resolve dependencies
+    userRepo := ioc.GetDependency[repositories.UserRepository](scope)
+    m := ioc.GetDependency[mediator.Mediator](scope)
+    
     // Validate business rules
     if cmd.Username == "" {
-        return CreateUserResult{}, errors.New("username required")
+        return nil, errors.New("username required")
     }
     
     // Execute business logic
-    user, err := h.userRepo.Create(ctx, &models.User{
-        VirtualServerID: cmd.VirtualServerID,
-        Username:        cmd.Username,
-        Email:           cmd.Email,
-        // Hash password...
-    })
+    user := repositories.NewUser(
+        cmd.Username,
+        cmd.Username, // displayName
+        cmd.Email,
+        virtualServerID,
+    )
+    
+    err := userRepo.Insert(ctx, user)
     if err != nil {
-        return CreateUserResult{}, err
+        return nil, fmt.Errorf("inserting user: %w", err)
     }
     
     // Emit domain event (fire and forget)
-    _ = mediator.SendEvent(ctx, h.mediator, UserCreatedEvent{
-        UserID:   user.ID,
-        Username: user.Username,
-        Email:    user.Email,
+    _ = mediator.SendEvent(ctx, m, events.UserCreatedEvent{
+        UserID: user.Id(),
     })
     
     // Return result
-    return CreateUserResult{
-        UserID:   user.ID,
-        Username: user.Username,
+    return &CreateUserResponse{
+        UserID: user.Id(),
     }, nil
 }
 ```
@@ -178,22 +176,12 @@ func (h *CreateUserHandler) Handle(
 Commands are registered during application startup in `internal/setup/setup.go`:
 
 ```go
-func Commands(dc *ioc.DependencyCollection) {
-    // Register command handler with mediator
-    ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) any {
-        m := ioc.GetDependency[mediator.Mediator](dp)
-        userRepo := ioc.GetDependency[repositories.UserRepository](dp)
-        emailService := ioc.GetDependency[services.EmailService](dp)
-        
-        handler := &commands.CreateUserHandler{
-            userRepo:     userRepo,
-            emailService: emailService,
-            mediator:     m,
-        }
-        
-        mediator.RegisterHandler(m, handler.Handle)
-        return handler
-    })
+func Commands(m mediator.Mediator) {
+    // Register handler function directly with mediator
+    mediator.RegisterHandler(m, commands.HandleCreateUser)
+    mediator.RegisterHandler(m, commands.HandleUpdateUser)
+    mediator.RegisterHandler(m, commands.HandleDeleteUser)
+    // ... more commands
 }
 ```
 
@@ -213,45 +201,45 @@ Queries represent **requests for information** without side effects.
 
 ```go
 // 1. Define the query (the request)
-type GetUserQuery struct {
+type GetUser struct {
     UserID uuid.UUID
 }
 
-// 2. Define the result (the response)
-type GetUserResult struct {
-    UserID          uuid.UUID
-    Username        string
-    Email           string
-    DisplayName     string
-    EmailVerified   bool
-    CreatedAt       time.Time
+// 2. Define the response
+type GetUserResponse struct {
+    UserID        uuid.UUID
+    Username      string
+    Email         string
+    DisplayName   string
+    EmailVerified bool
     // ... more fields as needed
 }
 
-// 3. Define the handler
-type GetUserHandler struct {
-    userRepo repositories.UserRepository
-}
-
-// 4. Implement the handler
-func (h *GetUserHandler) Handle(
+// 3. Implement the handler function
+func HandleGetUser(
     ctx context.Context,
-    query GetUserQuery,
-) (GetUserResult, error) {
+    query GetUser,
+) (*GetUserResponse, error) {
+    // Get scope from context
+    scope := middlewares.GetScope(ctx)
+    
+    // Resolve dependencies
+    userRepo := ioc.GetDependency[repositories.UserRepository](scope)
+    
     // Retrieve data
-    user, err := h.userRepo.GetByID(ctx, query.UserID)
+    filter := repositories.NewUserFilter().Id(query.UserID)
+    user, err := userRepo.Single(ctx, filter)
     if err != nil {
-        return GetUserResult{}, err
+        return nil, fmt.Errorf("getting user: %w", err)
     }
     
-    // Map to result DTO
-    return GetUserResult{
-        UserID:        user.ID,
-        Username:      user.Username,
-        Email:         user.Email,
-        DisplayName:   user.DisplayName,
-        EmailVerified: user.EmailVerified,
-        CreatedAt:     user.CreatedAt,
+    // Map to response
+    return &GetUserResponse{
+        UserID:        user.Id(),
+        Username:      user.Username(),
+        Email:         user.PrimaryEmail(),
+        DisplayName:   user.DisplayName(),
+        EmailVerified: user.EmailVerified(),
     }, nil
 }
 ```
@@ -365,58 +353,71 @@ Events represent **notifications that something has happened**. Unlike commands 
 ```go
 // 1. Define the event
 type UserCreatedEvent struct {
-    UserID   uuid.UUID
-    Username string
-    Email    string
+    UserID uuid.UUID
 }
 
-// 2. Define event handlers
-type SendWelcomeEmailHandler struct {
-    emailService services.EmailService
-}
-
-func (h *SendWelcomeEmailHandler) Handle(
+// 2. Implement event handler functions
+func QueueEmailVerificationJobOnUserCreatedEvent(
     ctx context.Context,
     evt UserCreatedEvent,
 ) error {
+    scope := middlewares.GetScope(ctx)
+    
+    // Get dependencies
+    userRepo := ioc.GetDependency[repositories.UserRepository](scope)
+    emailService := ioc.GetDependency[services.EmailService](scope)
+    
+    // Get user
+    user, err := userRepo.First(ctx, repositories.NewUserFilter().Id(evt.UserID))
+    if err != nil {
+        return fmt.Errorf("getting user: %w", err)
+    }
+    
     // Send welcome email
-    return h.emailService.SendWelcomeEmail(evt.Email, evt.Username)
+    return emailService.SendWelcomeEmail(user.PrimaryEmail(), user.Username())
 }
 
-type CreateUserProfileHandler struct {
-    profileRepo repositories.ProfileRepository
-}
-
-func (h *CreateUserProfileHandler) Handle(
+func CreateAuditLogOnUserCreatedEvent(
     ctx context.Context,
     evt UserCreatedEvent,
 ) error {
-    // Create default user profile
-    return h.profileRepo.CreateDefault(ctx, evt.UserID)
+    scope := middlewares.GetScope(ctx)
+    auditRepo := ioc.GetDependency[repositories.AuditLogRepository](scope)
+    
+    // Create audit log
+    return auditRepo.Insert(ctx, repositories.NewAuditLog(
+        "user_created",
+        evt.UserID,
+    ))
 }
 ```
 
 ### Emitting Events
 
 ```go
-func (h *CreateUserHandler) Handle(
+func HandleCreateUser(
     ctx context.Context,
-    cmd CreateUserCommand,
-) (CreateUserResult, error) {
+    cmd CreateUser,
+) (*CreateUserResponse, error) {
+    scope := middlewares.GetScope(ctx)
+    
+    // Get dependencies
+    userRepo := ioc.GetDependency[repositories.UserRepository](scope)
+    m := ioc.GetDependency[mediator.Mediator](scope)
+    
     // Create user...
-    user, err := h.userRepo.Create(ctx, ...)
+    user := repositories.NewUser(cmd.Username, cmd.DisplayName, cmd.Email, vsID)
+    err := userRepo.Insert(ctx, user)
     if err != nil {
-        return CreateUserResult{}, err
+        return nil, fmt.Errorf("inserting user: %w", err)
     }
     
     // Emit event (fire and forget - errors are logged but don't fail the command)
-    _ = mediator.SendEvent(ctx, h.mediator, UserCreatedEvent{
-        UserID:   user.ID,
-        Username: user.Username,
-        Email:    user.Email,
+    _ = mediator.SendEvent(ctx, m, UserCreatedEvent{
+        UserID: user.Id(),
     })
     
-    return CreateUserResult{UserID: user.ID}, nil
+    return &CreateUserResponse{UserID: user.Id()}, nil
 }
 ```
 
@@ -433,20 +434,23 @@ func (h *CreateUserHandler) Handle(
 ### Example 1: User Registration Flow
 
 ```go
-// In Handler
+// In HTTP Handler
 func (h *UserHandlers) RegisterUser(w http.ResponseWriter, r *http.Request) {
     var dto RegisterUserDTO
     json.NewDecoder(r.Body).Decode(&dto)
     
+    scope := middlewares.GetScope(r.Context())
+    m := ioc.GetDependency[mediator.Mediator](scope)
+    
     // Send command via mediator
-    result, err := mediator.Send[commands.RegisterUserResult](
+    result, err := mediator.Send[*commands.RegisterUserResponse](
         r.Context(),
-        h.mediator,
-        commands.RegisterUserCommand{
-            VirtualServerID: h.getVirtualServerID(r),
-            Username:        dto.Username,
-            Email:           dto.Email,
-            Password:        dto.Password,
+        m,
+        commands.RegisterUser{
+            VirtualServerName: getVirtualServerName(r),
+            Username:          dto.Username,
+            Email:             dto.Email,
+            Password:          dto.Password,
         },
     )
     if err != nil {
@@ -458,100 +462,132 @@ func (h *UserHandlers) RegisterUser(w http.ResponseWriter, r *http.Request) {
     json.NewEncoder(w).Encode(result)
 }
 
-// In Command Handler
-func (h *RegisterUserHandler) Handle(
+// Command handler function
+func HandleRegisterUser(
     ctx context.Context,
-    cmd commands.RegisterUserCommand,
-) (commands.RegisterUserResult, error) {
+    cmd commands.RegisterUser,
+) (*commands.RegisterUserResponse, error) {
+    scope := middlewares.GetScope(ctx)
+    
+    vsRepo := ioc.GetDependency[repositories.VirtualServerRepository](scope)
+    userRepo := ioc.GetDependency[repositories.UserRepository](scope)
+    m := ioc.GetDependency[mediator.Mediator](scope)
+    
     // 1. Check if registration is enabled
-    vs, _ := h.vsRepo.GetByID(ctx, cmd.VirtualServerID)
-    if !vs.EnableRegistration {
-        return commands.RegisterUserResult{}, errors.New("registration disabled")
+    vs, err := vsRepo.First(ctx, repositories.NewVirtualServerFilter().Name(cmd.VirtualServerName))
+    if err != nil {
+        return nil, fmt.Errorf("getting virtual server: %w", err)
+    }
+    if !vs.EnableRegistration() {
+        return nil, errors.New("registration disabled")
     }
     
     // 2. Validate username is available
-    existing, _ := h.userRepo.GetByUsername(ctx, cmd.VirtualServerID, cmd.Username)
+    existing, _ := userRepo.First(ctx, repositories.NewUserFilter().
+        VirtualServerId(vs.Id()).
+        Username(cmd.Username))
     if existing != nil {
-        return commands.RegisterUserResult{}, errors.New("username taken")
+        return nil, errors.New("username taken")
     }
     
-    // 3. Hash password
-    hashedPassword, _ := h.passwordService.Hash(cmd.Password)
+    // 3. Create user
+    user := repositories.NewUser(cmd.Username, cmd.Username, cmd.Email, vs.Id())
+    // Set password hash...
     
-    // 4. Create user
-    user, err := h.userRepo.Create(ctx, &models.User{
-        VirtualServerID: cmd.VirtualServerID,
-        Username:        cmd.Username,
-        Email:           cmd.Email,
-        PasswordHash:    hashedPassword,
-        EmailVerified:   false,
-    })
+    err = userRepo.Insert(ctx, user)
     if err != nil {
-        return commands.RegisterUserResult{}, err
+        return nil, fmt.Errorf("inserting user: %w", err)
     }
     
-    // 5. Emit events
-    _ = mediator.SendEvent(ctx, h.mediator, UserCreatedEvent{
-        UserID:   user.ID,
-        Username: user.Username,
-        Email:    user.Email,
+    // 4. Emit events
+    _ = mediator.SendEvent(ctx, m, events.UserCreatedEvent{
+        UserID: user.Id(),
     })
     
-    return commands.RegisterUserResult{UserID: user.ID}, nil
+    return &commands.RegisterUserResponse{UserID: user.Id()}, nil
 }
 
-// Event Handler 1: Send verification email
-func (h *SendVerificationEmailHandler) Handle(
+// Event handler function 1: Send verification email
+func QueueEmailVerificationJobOnUserCreatedEvent(
     ctx context.Context,
-    evt UserCreatedEvent,
+    evt events.UserCreatedEvent,
 ) error {
-    // Generate verification token
-    token := h.tokenService.GenerateVerificationToken(evt.UserID)
+    scope := middlewares.GetScope(ctx)
     
-    // Send email
-    return h.emailService.SendVerificationEmail(evt.Email, token)
+    userRepo := ioc.GetDependency[repositories.UserRepository](scope)
+    tokenService := ioc.GetDependency[services.TokenService](scope)
+    
+    // Get user
+    user, err := userRepo.First(ctx, repositories.NewUserFilter().Id(evt.UserID))
+    if err != nil {
+        return fmt.Errorf("getting user: %w", err)
+    }
+    
+    // Generate verification token
+    token, err := tokenService.GenerateAndStoreToken(ctx, 
+        services.EmailVerificationTokenType, 
+        user.Id().String(), 
+        time.Minute*15)
+    if err != nil {
+        return fmt.Errorf("generating token: %w", err)
+    }
+    
+    // Queue email sending job...
+    return nil
 }
 
-// Event Handler 2: Create audit log
-func (h *AuditUserCreatedHandler) Handle(
+// Event handler function 2: Create audit log
+func CreateAuditLogOnUserCreatedEvent(
     ctx context.Context,
-    evt UserCreatedEvent,
+    evt events.UserCreatedEvent,
 ) error {
-    return h.auditService.Log(ctx, audit.UserCreated, evt.UserID)
+    scope := middlewares.GetScope(ctx)
+    auditRepo := ioc.GetDependency[repositories.AuditLogRepository](scope)
+    
+    return auditRepo.Insert(ctx, repositories.NewAuditLog("user_created", evt.UserID))
 }
 ```
 
 ### Example 2: Query with Authorization
 
 ```go
-// Query
-type GetApplicationQuery struct {
+// Query request
+type GetApplication struct {
     ApplicationID uuid.UUID
 }
 
-// Handler
-func (h *GetApplicationHandler) Handle(
+// Query response
+type GetApplicationResponse struct {
+    ApplicationID uuid.UUID
+    Name          string
+    ClientID      string
+    // ... other fields
+}
+
+// Handler function
+func HandleGetApplication(
     ctx context.Context,
-    query GetApplicationQuery,
-) (GetApplicationResult, error) {
+    query GetApplication,
+) (*GetApplicationResponse, error) {
+    scope := middlewares.GetScope(ctx)
+    
+    appRepo := ioc.GetDependency[repositories.ApplicationRepository](scope)
+    
     // Get application
-    app, err := h.appRepo.GetByID(ctx, query.ApplicationID)
+    filter := repositories.NewApplicationFilter().Id(query.ApplicationID)
+    app, err := appRepo.First(ctx, filter)
     if err != nil {
-        return GetApplicationResult{}, err
+        return nil, fmt.Errorf("getting application: %w", err)
     }
     
-    // Check authorization (behavior already checked, but double-check if needed)
-    userID := authentication.GetUserID(ctx)
-    hasAccess := h.checkAccess(ctx, userID, app)
-    if !hasAccess {
-        return GetApplicationResult{}, errors.New("forbidden")
-    }
+    // Authorization is handled by PolicyBehaviour automatically
+    // based on the query's IsAllowed method
     
-    // Map to result
-    return GetApplicationResult{
-        ApplicationID: app.ID,
-        Name:         app.Name,
-        ClientID:     app.ClientID,
+    // Map to response
+    return &GetApplicationResponse{
+        ApplicationID: app.Id(),
+        Name:          app.Name(),
+        ClientID:      app.ClientId(),
         // ... other fields
     }, nil
 }
@@ -560,42 +596,52 @@ func (h *GetApplicationHandler) Handle(
 ### Example 3: Command with Transaction
 
 ```go
-func (h *AssignRoleHandler) Handle(
+func HandleAssignRole(
     ctx context.Context,
-    cmd AssignRoleCommand,
-) (AssignRoleResult, error) {
+    cmd AssignRole,
+) (*AssignRoleResponse, error) {
+    scope := middlewares.GetScope(ctx)
+    
+    db := ioc.GetDependency[*sql.DB](scope)
+    roleRepo := ioc.GetDependency[repositories.RoleRepository](scope)
+    assignmentRepo := ioc.GetDependency[repositories.RoleAssignmentRepository](scope)
+    m := ioc.GetDependency[mediator.Mediator](scope)
+    
     // Start transaction
-    tx, _ := h.db.BeginTx(ctx, nil)
-    defer tx.Rollback()
+    tx, err := db.BeginTx(ctx, nil)
+    if err != nil {
+        return nil, fmt.Errorf("starting transaction: %w", err)
+    }
+    defer tx.Rollback() // Rollback if not committed
+    
+    // Create context with transaction
+    txCtx := context.WithValue(ctx, "tx", tx)
     
     // 1. Verify role exists
-    role, err := h.roleRepo.GetByID(ctx, cmd.RoleID)
+    role, err := roleRepo.First(txCtx, repositories.NewRoleFilter().Id(cmd.RoleID))
     if err != nil {
-        return AssignRoleResult{}, err
+        return nil, fmt.Errorf("getting role: %w", err)
     }
     
     // 2. Create assignment
-    err = h.assignmentRepo.Create(ctx, &models.RoleAssignment{
-        UserID: cmd.UserID,
-        RoleID: cmd.RoleID,
-    })
+    assignment := repositories.NewRoleAssignment(cmd.UserID, cmd.RoleID)
+    err = assignmentRepo.Insert(txCtx, assignment)
     if err != nil {
-        return AssignRoleResult{}, err
+        return nil, fmt.Errorf("creating assignment: %w", err)
     }
     
-    // 3. Invalidate user permissions cache
-    h.cacheService.InvalidateUserPermissions(cmd.UserID)
+    // 3. Commit transaction
+    if err := tx.Commit(); err != nil {
+        return nil, fmt.Errorf("committing transaction: %w", err)
+    }
     
-    // Commit transaction
-    tx.Commit()
-    
-    // Emit event (after commit)
-    _ = mediator.SendEvent(ctx, h.mediator, RoleAssignedEvent{
+    // 4. Emit event (after commit)
+    _ = mediator.SendEvent(ctx, m, events.RoleAssignedEvent{
         UserID: cmd.UserID,
         RoleID: cmd.RoleID,
     })
     
-    return AssignRoleResult{Success: true}, nil
+    return &AssignRoleResponse{Success: true}, nil
 }
 ```
 
@@ -605,23 +651,21 @@ Commands and queries are easy to test in isolation:
 
 ```go
 func TestCreateUser(t *testing.T) {
-    // Setup
-    mockRepo := &MockUserRepository{}
-    handler := &CreateUserHandler{
-        userRepo: mockRepo,
-    }
+    // Note: Handler functions get dependencies from context/scope
+    // In tests, you can mock the entire mediator or test the handler
+    // function directly with a test scope containing mock repositories
     
-    // Execute
-    result, err := handler.Handle(context.Background(), CreateUserCommand{
-        Username: "testuser",
-        Email:    "test@example.com",
-        Password: "password123",
-    })
+    // Create test dependencies
+    mockUserRepo := new(MockUserRepository)
+    mockUserRepo.On("Insert", mock.Anything, mock.Anything).Return(nil)
     
-    // Assert
-    assert.NoError(t, err)
-    assert.NotEqual(t, uuid.Nil, result.UserID)
-    assert.Equal(t, 1, mockRepo.CreateCallCount)
+    // For unit testing handler functions, you would:
+    // 1. Create a test IoC scope with mocked dependencies
+    // 2. Pass context with that scope
+    // 3. Test the handler function directly
+    
+    // Or test through the mediator with mocked dependencies
+    // See the Testing Guide for detailed examples
 }
 ```
 

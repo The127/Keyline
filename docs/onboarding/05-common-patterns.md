@@ -34,56 +34,56 @@ import (
 )
 
 // 1. Define the command
-type UpdateUserProfileCommand struct {
+type UpdateUserProfile struct {
     UserID      uuid.UUID
     DisplayName string
     Bio         string
 }
 
-// 2. Define the result
-type UpdateUserProfileResult struct {
+// 2. Define the response
+type UpdateUserProfileResponse struct {
     Success bool
 }
 
 // 3. Define the handler
-type UpdateUserProfileHandler struct {
-    userRepo repositories.UserRepository
-    mediator mediator.Mediator
-}
 
-// 4. Implement Handle method
-func (h *UpdateUserProfileHandler) Handle(
+// 3. Implement handler function
+func HandleUpdateUserProfile(
     ctx context.Context,
-    cmd UpdateUserProfileCommand,
-) (UpdateUserProfileResult, error) {
+    cmd UpdateUserProfile,
+) (*UpdateUserProfileResponse, error) {
     // Validate input
     if cmd.UserID == uuid.Nil {
-        return UpdateUserProfileResult{}, errors.New("user ID required")
+        return nil, errors.New("user ID required")
     }
     
+    // Get scope and dependencies
+    scope := middlewares.GetScope(ctx)
+    userRepo := ioc.GetDependency[repositories.UserRepository](scope)
+    m := ioc.GetDependency[mediator.Mediator](scope)
+    
     // Get existing user
-    user, err := h.userRepo.GetByID(ctx, cmd.UserID)
+    filter := repositories.NewUserFilter().Id(cmd.UserID)
+    user, err := userRepo.First(ctx, filter)
     if err != nil {
-        return UpdateUserProfileResult{}, fmt.Errorf("user not found: %w", err)
+        return nil, fmt.Errorf("user not found: %w", err)
     }
     
     // Apply changes
-    user.DisplayName = cmd.DisplayName
-    user.Bio = cmd.Bio
-    user.UpdatedAt = time.Now()
+    user.SetDisplayName(cmd.DisplayName)
     
     // Save changes
-    if err := h.userRepo.Update(ctx, user); err != nil {
-        return UpdateUserProfileResult{}, fmt.Errorf("failed to update: %w", err)
+    if err := userRepo.Update(ctx, user); err != nil {
+        return nil, fmt.Errorf("failed to update: %w", err)
     }
     
     // Emit event (optional)
-    _ = mediator.SendEvent(ctx, h.mediator, UserProfileUpdatedEvent{
-        UserID:      user.ID,
-        DisplayName: user.DisplayName,
+    _ = mediator.SendEvent(ctx, m, events.UserProfileUpdatedEvent{
+        UserID:      user.Id(),
+        DisplayName: user.DisplayName(),
     })
     
-    return UpdateUserProfileResult{Success: true}, nil
+    return &UpdateUserProfileResponse{Success: true}, nil
 }
 ```
 
