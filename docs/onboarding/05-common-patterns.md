@@ -126,15 +126,15 @@ import (
 )
 
 // 1. Define the query
-type ListUsersQuery struct {
-    VirtualServerID uuid.UUID
-    Page            int
-    PageSize        int
-    SearchTerm      string
+type ListUsers struct {
+    VirtualServerName string
+    Page              int
+    PageSize          int
+    SearchTerm        string
 }
 
-// 2. Define the result
-type ListUsersResult struct {
+// 2. Define the response
+type ListUsersResponse struct {
     Users      []UserDTO
     TotalCount int
     Page       int
@@ -150,16 +150,11 @@ type UserDTO struct {
     IsActive      bool      `json:"isActive"`
 }
 
-// 3. Define the handler
-type ListUsersHandler struct {
-    userRepo repositories.UserRepository
-}
-
-// 4. Implement Handle method
-func (h *ListUsersHandler) Handle(
+// 3. Implement handler function
+func HandleListUsers(
     ctx context.Context,
-    query ListUsersQuery,
-) (ListUsersResult, error) {
+    query ListUsers,
+) (*ListUsersResponse, error) {
     // Validate
     if query.Page < 1 {
         query.Page = 1
@@ -168,31 +163,42 @@ func (h *ListUsersHandler) Handle(
         query.PageSize = 20
     }
     
-    // Get users with pagination
-    users, total, err := h.userRepo.List(ctx, repositories.ListUsersParams{
-        VirtualServerID: query.VirtualServerID,
-        Offset:          (query.Page - 1) * query.PageSize,
-        Limit:           query.PageSize,
-        SearchTerm:      query.SearchTerm,
-    })
+    // Get scope and dependencies
+    scope := middlewares.GetScope(ctx)
+    vsRepo := ioc.GetDependency[repositories.VirtualServerRepository](scope)
+    userRepo := ioc.GetDependency[repositories.UserRepository](scope)
+    
+    // Get virtual server
+    vsFilter := repositories.NewVirtualServerFilter().Name(query.VirtualServerName)
+    vs, err := vsRepo.First(ctx, vsFilter)
     if err != nil {
-        return ListUsersResult{}, err
+        return nil, fmt.Errorf("getting virtual server: %w", err)
+    }
+    
+    // Get users with pagination
+    userFilter := repositories.NewUserFilter().
+        VirtualServerId(vs.Id()).
+        Pagination(query.Page, query.PageSize).
+        Search(repositories.NewContainsSearchFilter(query.SearchTerm))
+    users, total, err := userRepo.List(ctx, userFilter)
+    if err != nil {
+        return nil, fmt.Errorf("listing users: %w", err)
     }
     
     // Map to DTOs
     dtos := make([]UserDTO, len(users))
     for i, user := range users {
         dtos[i] = UserDTO{
-            UserID:        user.ID,
-            Username:      user.Username,
-            Email:         user.Email,
-            DisplayName:   user.DisplayName,
-            EmailVerified: user.EmailVerified,
-            IsActive:      user.IsActive,
+            UserID:        user.Id(),
+            Username:      user.Username(),
+            Email:         user.PrimaryEmail(),
+            DisplayName:   user.DisplayName(),
+            EmailVerified: user.EmailVerified(),
+            IsActive:      user.IsActive(),
         }
     }
     
-    return ListUsersResult{
+    return &ListUsersResponse{
         Users:      dtos,
         TotalCount: total,
         Page:       query.Page,
@@ -205,19 +211,12 @@ func (h *ListUsersHandler) Handle(
 
 ```go
 // internal/setup/setup.go
-func Queries(dc *ioc.DependencyCollection) {
+func setupHandlers(m mediator.Mediator) {
     // ... other queries ...
     
-    ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) any {
-        m := ioc.GetDependency[mediator.Mediator](dp)
-        userRepo := ioc.GetDependency[repositories.UserRepository](dp)
-        
-        handler := &queries.ListUsersHandler{
-            userRepo: userRepo,
-        }
-        
-        mediator.RegisterHandler(m, handler.Handle)
-        return handler
+    // Register query handler function
+    mediator.RegisterHandler(m, queries.HandleListUsers)
+}
     })
 }
 ```
@@ -564,44 +563,57 @@ func (h *RegisterUserHandler) Handle(
 // internal/events/SendWelcomeEmail.go
 package events
 
-type SendWelcomeEmailHandler struct {
-    emailService services.EmailService
-    tokenService services.TokenService
-}
+import (
+    "context"
+    "fmt"
+    "Keyline/internal/middlewares"
+    "Keyline/internal/repositories"
+    "Keyline/internal/services"
+    "Keyline/ioc"
+    "time"
+)
 
-func (h *SendWelcomeEmailHandler) Handle(
+// Event handler function
+func SendWelcomeEmailOnUserRegistered(
     ctx context.Context,
     evt UserRegisteredEvent,
 ) error {
-    // Generate verification token
-    token, err := h.tokenService.GenerateEmailVerificationToken(evt.UserID)
+    scope := middlewares.GetScope(ctx)
+    
+    userRepo := ioc.GetDependency[repositories.UserRepository](scope)
+    tokenService := ioc.GetDependency[services.TokenService](scope)
+    emailService := ioc.GetDependency[services.EmailService](scope)
+    
+    // Get user
+    filter := repositories.NewUserFilter().Id(evt.UserID)
+    user, err := userRepo.First(ctx, filter)
     if err != nil {
-        return err
+        return fmt.Errorf("getting user: %w", err)
+    }
+    
+    // Generate verification token
+    token, err := tokenService.GenerateAndStoreToken(
+        ctx,
+        services.EmailVerificationTokenType,
+        user.Id().String(),
+        time.Minute*15,
+    )
+    if err != nil {
+        return fmt.Errorf("generating token: %w", err)
     }
     
     // Send welcome email
-    return h.emailService.SendWelcomeEmail(
-        evt.Email,
-        evt.Username,
+    return emailService.SendWelcomeEmail(
+        user.PrimaryEmail(),
+        user.Username(),
         token,
     )
 }
 
 // Register event handler
-func Events(dc *ioc.DependencyCollection) {
-    ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) any {
-        m := ioc.GetDependency[mediator.Mediator](dp)
-        emailService := ioc.GetDependency[services.EmailService](dp)
-        tokenService := ioc.GetDependency[services.TokenService](dp)
-        
-        handler := &events.SendWelcomeEmailHandler{
-            emailService: emailService,
-            tokenService: tokenService,
-        }
-        
-        mediator.RegisterEventHandler(m, handler.Handle)
-        return handler
-    })
+func setupEventHandlers(m mediator.Mediator) {
+    // Register event handler function
+    mediator.RegisterEventHandler(m, events.SendWelcomeEmailOnUserRegistered)
 }
 ```
 
@@ -748,61 +760,74 @@ func NewPaginatedResult[T any](items []T, total, page, pageSize int) PaginatedRe
 ### Cache Query Results
 
 ```go
-type GetUserHandler struct {
-    userRepo     repositories.UserRepository
-    cacheService services.CacheService
-}
-
-func (h *GetUserHandler) Handle(
+func HandleGetUser(
     ctx context.Context,
-    query GetUserQuery,
-) (GetUserResult, error) {
+    query GetUser,
+) (*GetUserResponse, error) {
+    scope := middlewares.GetScope(ctx)
+    
+    userRepo := ioc.GetDependency[repositories.UserRepository](scope)
+    cacheService := ioc.GetDependency[services.CacheService](scope)
+    
     // Try cache first
     cacheKey := fmt.Sprintf("user:%s", query.UserID)
     
-    var result GetUserResult
-    if h.cacheService.Get(ctx, cacheKey, &result) == nil {
-        return result, nil
+    var result GetUserResponse
+    if cacheService.Get(ctx, cacheKey, &result) == nil {
+        return &result, nil
     }
     
     // Cache miss - get from database
-    user, err := h.userRepo.GetByID(ctx, query.UserID)
+    filter := repositories.NewUserFilter().Id(query.UserID)
+    user, err := userRepo.First(ctx, filter)
     if err != nil {
-        return GetUserResult{}, err
+        return nil, fmt.Errorf("getting user: %w", err)
     }
     
     // Map to result
-    result = GetUserResult{
-        UserID:   user.ID,
-        Username: user.Username,
+    result = GetUserResponse{
+        UserID:   user.Id(),
+        Username: user.Username(),
         // ... other fields
     }
     
     // Store in cache (5 minutes TTL)
-    _ = h.cacheService.Set(ctx, cacheKey, result, 5*time.Minute)
+    _ = cacheService.Set(ctx, cacheKey, result, 5*time.Minute)
     
-    return result, nil
+    return &result, nil
 }
 ```
 
 ### Invalidate Cache on Updates
 
 ```go
-func (h *UpdateUserHandler) Handle(
+func HandleUpdateUser(
     ctx context.Context,
-    cmd UpdateUserCommand,
-) (UpdateUserResult, error) {
+    cmd UpdateUser,
+) (*UpdateUserResponse, error) {
+    scope := middlewares.GetScope(ctx)
+    
+    userRepo := ioc.GetDependency[repositories.UserRepository](scope)
+    cacheService := ioc.GetDependency[services.CacheService](scope)
+    
     // Update user
-    err := h.userRepo.Update(ctx, ...)
+    filter := repositories.NewUserFilter().Id(cmd.UserID)
+    user, err := userRepo.First(ctx, filter)
     if err != nil {
-        return UpdateUserResult{}, err
+        return nil, fmt.Errorf("getting user: %w", err)
+    }
+    
+    // Apply updates...
+    err = userRepo.Update(ctx, user)
+    if err != nil {
+        return nil, fmt.Errorf("updating user: %w", err)
     }
     
     // Invalidate cache
     cacheKey := fmt.Sprintf("user:%s", cmd.UserID)
-    _ = h.cacheService.Delete(ctx, cacheKey)
+    _ = cacheService.Delete(ctx, cacheKey)
     
-    return UpdateUserResult{Success: true}, nil
+    return &UpdateUserResponse{Success: true}, nil
 }
 ```
 
