@@ -85,6 +85,10 @@ type Config struct {
 				Description string
 			}
 		}
+		InitialRoles []struct {
+			Name        string
+			Description string
+		}
 		Mail struct {
 			Host     string
 			Port     int

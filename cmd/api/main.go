@@ -175,6 +175,17 @@ func initApplication(dp *ioc.DependencyProvider) {
 		}
 	}
 
+	for _, role := range config.C.InitialVirtualServer.InitialRoles {
+		_, err := mediator.Send[*commands.CreateRoleResponse](ctx, m, commands.CreateRole{
+			VirtualServerName: config.C.InitialVirtualServer.Name,
+			Name:              role.Name,
+			Description:       role.Description,
+		})
+		if err != nil {
+			logging.Logger.Fatalf("failed to create initial role: %v", err)
+		}
+	}
+
 	if config.C.InitialVirtualServer.CreateInitialAdmin {
 		logging.Logger.Infof("Creating initial admin user")
 
