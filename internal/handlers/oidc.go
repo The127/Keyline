@@ -43,6 +43,11 @@ var (
 		ErrorDescription: "The authorization server does not support obtaining an authorization code using this method.",
 		ErrorUri:         "https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.2.1",
 	}
+	invalidRedirectUri = OidcError{
+		Error:            "invalid_redirect_uri",
+		ErrorDescription: "The redirect_uri in the Authorization Request does not match a pre-registered value.",
+		ErrorUri:         "https://datatracker.ietf.org/doc/html/rfc6749#section-3.1.2",
+	}
 )
 
 type Ed25519JWK struct {
@@ -373,7 +378,7 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if !redirectOk {
-		utils.HandleHttpError(w, fmt.Errorf("redirect uri does not match registered uris"))
+		errorRedirect(w, r, authRequest, invalidRedirectUri)
 		return
 	}
 
