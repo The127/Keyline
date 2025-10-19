@@ -319,7 +319,7 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(authRequest.ResponseTypes) != 1 || authRequest.ResponseTypes[0] != "code" {
-		http.Redirect(w, r, fmt.Sprintf("%s/login?error=unsupported_response_type", config.C.Frontend.ExternalUrl), http.StatusFound)
+		errorRedirect(w, r, authRequest, "unsupported_response_type")
 		return
 	}
 
