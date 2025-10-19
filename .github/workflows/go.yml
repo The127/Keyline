@@ -25,12 +25,12 @@ jobs:
         if: github.event_name == 'pull_request' && github.base_ref == 'main'
         run: |
           echo "Checking commits for Signed-off-by lines..."
-          
+
           # Get the list of commit authors
           AUTHORS=$(git log origin/main..HEAD --pretty="%an <%ae>")
           echo "Commit authors:"
           echo "$AUTHORS"
-          
+
           # Check if all commits are from Copilot bot
           if echo "$AUTHORS" | grep -qv "copilot-swe-agent\[bot\]"; then
             # Not all commits are from Copilot, check for sign-offs
