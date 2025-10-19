@@ -4,7 +4,6 @@ import (
 	"Keyline/internal/clock"
 	"Keyline/internal/config"
 	"Keyline/internal/jsonTypes"
-	"Keyline/internal/logging"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/internal/services"
@@ -259,8 +258,6 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 	}
 
 	prompt := r.Form.Get("prompt")
-	logging.Logger.Debugf("prompt: %s", prompt)
-
 	authRequest := AuthorizationRequest{
 		ResponseTypes:       strings.Split(r.Form.Get("response_type"), " "),
 		VirtualServerName:   vsName,
