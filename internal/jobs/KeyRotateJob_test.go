@@ -3,6 +3,7 @@ package jobs
 import (
 	"Keyline/internal/clock"
 	"Keyline/internal/config"
+	"Keyline/internal/logging"
 	"Keyline/internal/services"
 	"Keyline/internal/services/mocks"
 	"testing"
@@ -18,6 +19,7 @@ type KeyRotateJobSuite struct {
 
 func TestKeyRotateJobSuite(t *testing.T) {
 	t.Parallel()
+	logging.Init()
 	suite.Run(t, new(KeyRotateJobSuite))
 }
 

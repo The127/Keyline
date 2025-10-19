@@ -372,7 +372,10 @@ func (d *directoryKeyStore) GetAllForAlgorithm(virtualServerName string, algorit
 	algPath := d.getPath(virtualServerName, algorithm)
 
 	files, err := os.ReadDir(algPath)
-	if err != nil {
+	switch {
+	case os.IsNotExist(err):
+		return nil, nil
+	case err != nil:
 		return nil, err
 	}
 
