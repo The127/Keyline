@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net/url"
 	"strings"
 
 	"github.com/knadh/koanf/parsers/yaml"
@@ -132,6 +133,7 @@ type Config struct {
 
 type ServerConfig struct {
 	ExternalUrl    string
+	ExternalDomain string
 	Host           string
 	Port           int
 	AllowedOrigins []string
@@ -367,6 +369,14 @@ func setServerDefaultsOrPanic() {
 		}
 
 		C.Server.Host = "localhost"
+	}
+
+	if C.Server.ExternalDomain == "" {
+		externalUrl, err := url.Parse(C.Server.ExternalUrl)
+		if err != nil {
+			panic(fmt.Errorf("extracting domain from external url: %w", err))
+		}
+		C.Server.ExternalDomain = externalUrl.Hostname()
 	}
 
 	if C.Server.Port == 0 {

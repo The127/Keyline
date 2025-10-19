@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"net/url"
 	"time"
 
 	"github.com/google/uuid"
@@ -150,15 +149,11 @@ func CreateSession(w http.ResponseWriter, r *http.Request, vsName string, userId
 }
 
 func setCookie(w http.ResponseWriter, name string, value string, maxAge int) {
-	externalUrl, err := url.Parse(config.C.Server.ExternalUrl)
-	if err != nil {
-		panic(err)
-	}
 	cookie := http.Cookie{
 		Name:     name,
 		Value:    value,
 		Path:     "/",
-		Domain:   externalUrl.Hostname(),
+		Domain:   config.C.Server.ExternalDomain,
 		MaxAge:   maxAge,
 		Secure:   true,
 		HttpOnly: true,
