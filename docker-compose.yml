@@ -30,3 +30,12 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
+  keyline-ui:
+    image: ghcr.io/the127/keyline-ui:v0.1.4
+    platform: linux/amd64
+    container_name: keyline-ui
+    ports: ["5173:80"]
+    environment:
+      KEYLINE_API_URL: "http://localhost:8081"
+      KEYLINE_HOST: "http://localhost:5173"
+    restart: unless-stopped

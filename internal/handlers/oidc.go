@@ -26,6 +26,25 @@ import (
 	"github.com/google/uuid"
 )
 
+type OidcError struct {
+	Error            string
+	ErrorDescription string
+	ErrorUri         string
+}
+
+var (
+	loginRequired = OidcError{
+		Error:            "login_required",
+		ErrorDescription: "The Authorization Server requires End-User authentication",
+		ErrorUri:         "https://openid.net/specs/openid-connect-core-1_0.html#AuthError",
+	}
+	unsupportedResponseType = OidcError{
+		Error:            "unsupported_response_type",
+		ErrorDescription: "The authorization server does not support obtaining an authorization code using this method.",
+		ErrorUri:         "https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.2.1",
+	}
+)
+
 type Ed25519JWK struct {
 	Kty string `json:"kty"` // Key Type
 	Crv string `json:"crv"` // Curve
@@ -257,6 +276,7 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	prompt := r.Form.Get("prompt")
 	authRequest := AuthorizationRequest{
 		ResponseTypes:       strings.Split(r.Form.Get("response_type"), " "),
 		VirtualServerName:   vsName,
@@ -318,7 +338,7 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(authRequest.ResponseTypes) != 1 || authRequest.ResponseTypes[0] != "code" {
-		http.Redirect(w, r, fmt.Sprintf("%s/login?error=unsupported_response_type", config.C.Frontend.ExternalUrl), http.StatusFound)
+		errorRedirect(w, r, authRequest, unsupportedResponseType)
 		return
 	}
 
@@ -374,6 +394,11 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if prompt == "none" {
+		errorRedirect(w, r, authRequest, loginRequired)
+		return
+	}
+
 	loginInfo := jsonTypes.NewLoginInfo(
 		virtualServer,
 		application,
@@ -398,6 +423,33 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 		loginSessionToken,
 	)
 	http.Redirect(w, r, redirectUrl, http.StatusFound)
+}
+
+func errorRedirect(w http.ResponseWriter, r *http.Request, authRequest AuthorizationRequest, oidcError OidcError) {
+	errorUrl, err := url.Parse(authRequest.RedirectUri)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("parsing redirect uri: %w", err))
+		return
+	}
+
+	query := errorUrl.Query()
+	query.Set("error", oidcError.Error)
+
+	if oidcError.ErrorDescription != "" {
+		query.Set("error_description", oidcError.ErrorDescription)
+	}
+
+	if oidcError.ErrorUri != "" {
+		query.Set("error_uri", oidcError.ErrorUri)
+	}
+
+	if authRequest.State != "" {
+		query.Set("state", authRequest.State)
+	}
+
+	errorUrl.RawQuery = query.Encode()
+
+	http.Redirect(w, r, errorUrl.String(), http.StatusFound)
 }
 
 // OidcEndSession ends the user session and redirects.
