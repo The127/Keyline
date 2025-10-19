@@ -39,9 +39,9 @@ func OutboxSendingJob(dp *ioc.DependencyProvider) JobFn {
 
 func handleMessage(ctx context.Context, message *repositories.OutboxMessage, repository repositories.OutboxMessageRepository) error {
 	scope := middlewares.GetScope(ctx)
-	sendingService := ioc.GetDependency[outbox.DeliveryEnqueuer](scope)
+	delivery := ioc.GetDependency[outbox.DeliveryService](scope)
 
-	err := sendingService.Enqueue(ctx, message)
+	err := delivery.Deliver(ctx, message)
 	if err != nil {
 		return fmt.Errorf("failed to handle message: %w", err)
 	}

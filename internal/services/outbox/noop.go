@@ -5,12 +5,12 @@ import (
 	"context"
 )
 
-type noopDeliveryEnqueuer struct{}
+type noopDeliveryService struct{}
 
-func NewNoopDeliveryEnqueuer() DeliveryEnqueuer {
-	return &noopDeliveryEnqueuer{}
+func NewNoopDeliveryService() DeliveryService {
+	return &noopDeliveryService{}
 }
 
-func (n *noopDeliveryEnqueuer) Enqueue(_ context.Context, _ *repositories.OutboxMessage) error {
+func (n *noopDeliveryService) Deliver(_ context.Context, _ *repositories.OutboxMessage) error {
 	return nil
 }
