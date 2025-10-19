@@ -73,6 +73,11 @@ type Config struct {
 			PrimaryEmail string
 			PasswordHash string
 		}
+		InitialServiceUsers []struct {
+			Username  string
+			Roles     []string
+			PublicKey string
+		}
 		InitialApplications []struct {
 			Name                   string
 			DisplayName            string
@@ -80,6 +85,14 @@ type Config struct {
 			HashedSecret           *string
 			RedirectUris           []string
 			PostLogoutRedirectUris []string
+			Roles                  []struct {
+				Name        string
+				Description string
+			}
+		}
+		InitialRoles []struct {
+			Name        string
+			Description string
 		}
 		Mail struct {
 			Host     string
@@ -263,6 +276,20 @@ func setInitialVirtualServerDefaultsOrPanic() {
 
 	setInitialAdminDefaultsOrPanic()
 	setInitialApplicationsDefaultsOrPanic()
+	setInitialServiceUserDefaultsOrPanic()
+}
+
+func setInitialServiceUserDefaultsOrPanic() {
+	for _, serviceUser := range C.InitialVirtualServer.InitialServiceUsers {
+		if serviceUser.Username == "" {
+			panic("missing service user username")
+		}
+
+		if serviceUser.PublicKey == "" {
+			panic("missing service user public key")
+		}
+
+	}
 }
 
 func setInitialApplicationsDefaultsOrPanic() {
@@ -292,6 +319,12 @@ func setInitialApplicationsDefaultsOrPanic() {
 		if application.Type == "confidential" && application.HashedSecret != nil {
 			if len(*application.HashedSecret) == 0 {
 				panic("application secret is empty")
+			}
+		}
+
+		for _, role := range application.Roles {
+			if role.Name == "" {
+				panic("missing role name")
 			}
 		}
 	}
