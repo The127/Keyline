@@ -9,7 +9,6 @@ This guide walks you through the day-to-day development workflow for contributin
 - [Running Tests](#running-tests)
 - [Linting and Formatting](#linting-and-formatting)
 - [Building and Running](#building-and-running)
-- [Debugging](#debugging)
 - [Common Workflows](#common-workflows)
 - [Troubleshooting](#troubleshooting)
 
@@ -618,63 +617,6 @@ go generate ./...
 ```
 
 This command uses the `//go:generate` directives in the codebase to regenerate Swagger documentation and mock files.
-
-## Debugging
-
-### Using Print Debugging
-
-```go
-import "Keyline/internal/logging"
-
-func (h *Handler) Handle(ctx context.Context, cmd Command) (Result, error) {
-    logging.Logger.Debug("handling command",
-        zap.String("commandType", "CreateUser"),
-        zap.Any("command", cmd),
-    )
-    
-    // Your code...
-    
-    logging.Logger.Debug("command result",
-        zap.Any("result", result),
-    )
-}
-```
-
-### Using Delve Debugger
-
-```bash
-# Install delve
-go install github.com/go-delve/delve/cmd/dlv@latest
-
-# Debug the application
-dlv debug ./cmd/api -- --config config.local.yaml
-
-# In delve
-(dlv) break main.main
-(dlv) continue
-(dlv) step
-(dlv) print variableName
-```
-
-### VSCode Debugging
-
-Create `.vscode/launch.json`:
-
-```json
-{
-  "version": "0.2.0",
-  "configurations": [
-    {
-      "name": "Launch API",
-      "type": "go",
-      "request": "launch",
-      "mode": "debug",
-      "program": "${workspaceFolder}/cmd/api",
-      "args": ["--config", "config.local.yaml"]
-    }
-  ]
-}
-```
 
 ## Common Workflows
 
