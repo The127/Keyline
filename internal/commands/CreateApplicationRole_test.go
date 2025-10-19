@@ -153,7 +153,7 @@ func (s *CreateApplicationRoleCommandSuite) TestHappyPath() {
 	})).Return(virtualServer, nil)
 
 	application := repositories.NewApplication(virtualServer.Id(), "application", "Application", repositories.ApplicationTypePublic, []string{})
-	virtualServer.Mock(now)
+	application.Mock(now)
 	applicationRepository := mocks.NewMockApplicationRepository(ctrl)
 	applicationRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories.ApplicationFilter) bool {
 		return x.GetVirtualServerId() == virtualServer.Id() && x.GetId() == application.Id()
