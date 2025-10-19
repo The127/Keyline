@@ -149,6 +149,20 @@ func initApplication(dp *ioc.DependencyProvider) {
 		logging.Logger.Fatalf("failed to create initial virtual server: %v", err)
 	}
 
+	for _, applicationConfig := range config.C.InitialVirtualServer.InitialApplications {
+		_, err := mediator.Send[*commands.CreateApplicationResponse](ctx, m, commands.CreateApplication{
+			VirtualServerName:      config.C.InitialVirtualServer.Name,
+			Name:                   applicationConfig.Name,
+			DisplayName:            applicationConfig.DisplayName,
+			Type:                   repositories.ApplicationType(applicationConfig.Type),
+			RedirectUris:           applicationConfig.RedirectUris,
+			PostLogoutRedirectUris: applicationConfig.PostLogoutRedirectUris,
+		})
+		if err != nil {
+			logging.Logger.Fatalf("failed to create initial application: %v", err)
+		}
+	}
+
 	if config.C.InitialVirtualServer.CreateInitialAdmin {
 		logging.Logger.Infof("Creating initial admin user")
 
@@ -181,20 +195,6 @@ func initApplication(dp *ioc.DependencyProvider) {
 		})
 		if err != nil {
 			logging.Logger.Fatalf("failed to assign admin role to initial admin user: %v", err)
-		}
-	}
-
-	for _, applicationConfig := range config.C.InitialVirtualServer.InitialApplications {
-		_, err := mediator.Send[*commands.CreateApplicationResponse](ctx, m, commands.CreateApplication{
-			VirtualServerName:      config.C.InitialVirtualServer.Name,
-			Name:                   applicationConfig.Name,
-			DisplayName:            applicationConfig.DisplayName,
-			Type:                   repositories.ApplicationType(applicationConfig.Type),
-			RedirectUris:           applicationConfig.RedirectUris,
-			PostLogoutRedirectUris: applicationConfig.PostLogoutRedirectUris,
-		})
-		if err != nil {
-			logging.Logger.Fatalf("failed to create initial application: %v", err)
 		}
 	}
 
