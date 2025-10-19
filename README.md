@@ -134,14 +134,33 @@ initialVirtualServer:
   name: "default"
   displayName: "Default Server"
   enableRegistration: true
-  signingAlgorithm: "RS256"
+  signingAlgorithm: "RS256"  # or "EdDSA"
   createInitialAdmin: true
   initialAdmin:
     username: admin
     displayName: Admin
     primaryEmail: admin@example.com
     passwordHash: "$argon2id$v=19$m=16,t=2,p=1$..."
+  # Optional: Pre-configure applications with roles
+  initialApplications:
+    - name: "my-app"
+      type: "public"
+      redirectUris: ["http://localhost:3000/callback"]
+      roles:
+        - name: "user"
+          description: "Regular user"
+  # Optional: Define global roles
+  initialRoles:
+    - name: "viewer"
+      description: "Can view resources"
+  # Optional: Create service users for machine-to-machine auth
+  initialServiceUsers:
+    - username: "api-service"
+      publicKey: "-----BEGIN PUBLIC KEY-----\n..."
+      roles: ["viewer", "my-app user"]
 ```
+
+For detailed configuration options including service users, application roles, and global roles, see the [Configuration Package Documentation](internal/config/README.md).
 
 #### Cache Configuration
 ```yaml
