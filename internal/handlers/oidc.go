@@ -169,6 +169,7 @@ type OpenIdConfigurationResponseDto struct {
 	ScopesSupported                   []string `json:"scopes_supported"`
 	ClaimsSupported                   []string `json:"claims_supported"`
 	TokenEndpointAuthMethodsSupported []string `json:"token_endpoint_auth_methods_supported"`
+	RequestParameterSupported         bool     `json:"request_parameter_supported"`
 }
 
 // WellKnownOpenIdConfiguration exposes the OIDC discovery document.
@@ -212,6 +213,7 @@ func WellKnownOpenIdConfiguration(w http.ResponseWriter, r *http.Request) {
 		JwksUri:               fmt.Sprintf("%s/oidc/%s/.well-known/jwks.json", config.C.Server.ExternalUrl, vsName),
 
 		ResponseTypesSupported:            []string{"code"}, // TODO: maybe support more
+		RequestParameterSupported:         true,
 		SubjectTypesSupported:             []string{"public"},
 		IdTokenSigningAlgValuesSupported:  []string{string(virtualServer.SigningAlgorithm())},
 		TokenEndpointAuthMethodsSupported: []string{"client_secret_basic", "client_secret_post"},
