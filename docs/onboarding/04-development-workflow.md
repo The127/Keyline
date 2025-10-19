@@ -613,12 +613,11 @@ KEYLINE_LOGGING_LEVEL=debug ./bin/keyline-api
 After adding new API endpoints:
 
 ```bash
-# Install swag
-go install github.com/swaggo/swag/cmd/swag@latest
-
-# Generate docs
-swag init -g cmd/api/main.go
+# Generate docs (also generates mocks)
+go generate ./...
 ```
+
+This command uses the `//go:generate` directives in the codebase to regenerate Swagger documentation and mock files.
 
 ## Debugging
 

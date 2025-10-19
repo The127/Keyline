@@ -174,7 +174,7 @@ golangci-lint run --fix
 ### Swagger Documentation
 - Add Swagger comments to all API endpoints
 - Use `@Summary`, `@Description`, `@Tags`, `@Accept`, `@Produce`, `@Param`, `@Success`, `@Failure`, `@Security`
-- Generate docs with: `swag init -g cmd/api/main.go`
+- Generate docs with: `go generate ./...` (uses `//go:generate` directives in the codebase)
 - Access docs at: `/swagger/index.html`
 
 ### Request/Response
