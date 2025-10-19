@@ -363,7 +363,7 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		code, err := tokenService.GenerateAndStoreToken(ctx, services.OidcCodeTokenType, string(codeInfoString), time.Second*30)
+		code, err := tokenService.GenerateAndStoreToken(ctx, services.OidcCodeTokenType, string(codeInfoString), time.Minute)
 		if err != nil {
 			utils.HandleHttpError(w, fmt.Errorf("generating code: %w", err))
 			return
@@ -832,6 +832,15 @@ type CodeFlowResponse struct {
 	ExpiresIn    int    `json:"expires_in"`
 }
 
+func writeOAuthError(w http.ResponseWriter, code, description string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusBadRequest)
+	_ = json.NewEncoder(w).Encode(map[string]string{
+		"error":             code,
+		"error_description": description,
+	})
+}
+
 func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	scope := middlewares.GetScope(ctx)
@@ -841,7 +850,7 @@ func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 	tokenService := ioc.GetDependency[services.TokenService](scope)
 	valueString, err := tokenService.GetToken(ctx, services.OidcCodeTokenType, code)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting token: %w", err))
+		writeOAuthError(w, "invalid_grant", "authorization code already used")
 		return
 	}
 
