@@ -355,12 +355,7 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 	if ok {
 		// TODO: consent page
 
-		codeInfo := jsonTypes.NewCodeInfo(
-			virtualServer.Name(),
-			authRequest.Scopes,
-			s.UserId(),
-			authRequest.Nonce,
-		)
+		codeInfo := jsonTypes.NewCodeInfo(virtualServer.Name(), authRequest.Scopes, s.UserId(), authRequest.Nonce, s.CreatedAt())
 
 		codeInfoString, err := json.Marshal(codeInfo)
 		if err != nil {
@@ -927,6 +922,7 @@ func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 		IdTokenExpiry:      tokenDuration,
 		RefreshTokenExpiry: tokenDuration,
 		Nonce:              codeInfo.Nonce,
+		AuthenticatedAt:    codeInfo.AuthenticatedAt,
 	}
 
 	tokens, err := generateTokens(ctx, params, tokenService)
@@ -991,6 +987,7 @@ type TokenGenerationParams struct {
 	IdTokenExpiry      time.Duration
 	RefreshTokenExpiry time.Duration
 	Nonce              string
+	AuthenticatedAt    time.Time
 }
 
 func (t *TokenGenerationParams) ToAccessTokenGenerationParams() AccessTokenGenerationParams {
@@ -1019,6 +1016,7 @@ func (t *TokenGenerationParams) ToIdTokenGenerationParams() IdTokenGenerationPar
 		Expiry:            t.IdTokenExpiry,
 		UserId:            t.UserId,
 		KeyPair:           t.KeyPair,
+		AuthenticatedAt:   t.AuthenticatedAt,
 	}
 }
 
@@ -1061,6 +1059,7 @@ type IdTokenGenerationParams struct {
 	UserId            uuid.UUID
 	KeyPair           services.KeyPair
 	GrantedScopes     []string
+	AuthenticatedAt   time.Time
 }
 
 type GeneratedTokens struct {
@@ -1084,6 +1083,10 @@ func generateIdToken(params IdTokenGenerationParams) (string, error) {
 		"aud": []string{params.ClientId},
 		"iat": params.IssuedAt.Unix(),
 		"exp": params.IssuedAt.Add(params.Expiry).Unix(),
+	}
+
+	if !params.AuthenticatedAt.IsZero() {
+		idTokenClaims["auth_time"] = params.AuthenticatedAt.Unix()
 	}
 
 	if slices.Contains(params.GrantedScopes, "profile") {

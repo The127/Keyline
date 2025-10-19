@@ -17,6 +17,7 @@ import (
 type CurrentSession struct {
 	userId    uuid.UUID
 	sessionId uuid.UUID
+	createdAt time.Time
 }
 
 func (s *CurrentSession) UserId() uuid.UUID {
@@ -25,6 +26,10 @@ func (s *CurrentSession) UserId() uuid.UUID {
 
 func (s *CurrentSession) SessionId() uuid.UUID {
 	return s.sessionId
+}
+
+func (s *CurrentSession) CreatedAt() time.Time {
+	return s.createdAt
 }
 
 type currentSessionCtxKeyType string
@@ -88,6 +93,7 @@ func SessionMiddleware() mux.MiddlewareFunc {
 				currentSession := CurrentSession{
 					userId:    session.userId,
 					sessionId: tokenId,
+					createdAt: session.createdAt,
 				}
 				r = r.WithContext(ContextWithSession(r.Context(), currentSession))
 			}
