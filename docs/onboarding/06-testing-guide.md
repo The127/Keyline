@@ -63,34 +63,71 @@ Keyline follows these testing principles:
 
 ### Structure: Arrange-Act-Assert (AAA)
 
+Keyline uses **gomock** for mocking and **testify/suite** for test organization.
+
 ```go
-func TestCreateUser_Success(t *testing.T) {
+package commands
+
+import (
+    "context"
+    "testing"
+    "Keyline/internal/middlewares"
+    "Keyline/internal/repositories"
+    "Keyline/internal/repositories/mocks"
+    "Keyline/ioc"
+    "github.com/stretchr/testify/suite"
+    "go.uber.org/mock/gomock"
+)
+
+type CreateUserCommandSuite struct {
+    suite.Suite
+}
+
+func TestCreateUserCommandSuite(t *testing.T) {
+    t.Parallel()
+    suite.Run(t, new(CreateUserCommandSuite))
+}
+
+// Helper to create context with mocked dependencies
+func (s *CreateUserCommandSuite) createContext(
+    userRepo repositories.UserRepository,
+) context.Context {
+    dc := ioc.NewDependencyCollection()
+    
+    if userRepo != nil {
+        ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.UserRepository {
+            return userRepo
+        })
+    }
+    
+    scope := dc.BuildProvider()
+    s.T().Cleanup(func() {
+        _ = scope.Close()
+    })
+    
+    return middlewares.ContextWithScope(s.T().Context(), scope)
+}
+
+func (s *CreateUserCommandSuite) TestCreateUser_Success() {
     // Arrange - Set up test data and mocks
-    mockRepo := new(mocks.MockUserRepository)
-    mockMediator := new(mocks.MockMediator)
+    ctrl := gomock.NewController(s.T())
+    defer ctrl.Finish()
     
-    handler := &commands.CreateUserHandler{
-        userRepo: mockRepo,
-        mediator: mockMediator,
+    mockUserRepo := mocks.NewMockUserRepository(ctrl)
+    mockUserRepo.EXPECT().Insert(gomock.Any(), gomock.Any()).Return(nil)
+    
+    ctx := s.createContext(mockUserRepo)
+    cmd := CreateUser{
+        Username: "testuser",
+        Email:    "test@example.com",
     }
-    
-    cmd := commands.CreateUserCommand{
-        VirtualServerID: uuid.New(),
-        Username:        "testuser",
-        Email:           "test@example.com",
-        Password:        "password123",
-    }
-    
-    mockRepo.On("Create", mock.Anything, mock.Anything).Return(nil)
-    mockMediator.On("SendEvent", mock.Anything, mock.Anything).Return(nil)
     
     // Act - Execute the code under test
-    result, err := handler.Handle(context.Background(), cmd)
+    result, err := HandleCreateUser(ctx, cmd)
     
     // Assert - Verify the results
-    assert.NoError(t, err)
-    assert.NotEqual(t, uuid.Nil, result.UserID)
-    mockRepo.AssertExpectations(t)
+    s.NoError(err)
+    s.NotNil(result)
 }
 ```
 
@@ -102,122 +139,197 @@ package commands
 
 import (
     "context"
+    "errors"
     "testing"
+    "Keyline/internal/events"
+    "Keyline/internal/middlewares"
+    "Keyline/internal/repositories"
     "Keyline/internal/repositories/mocks"
-    "Keyline/internal/models"
-    "github.com/google/uuid"
-    "github.com/stretchr/testify/assert"
-    "github.com/stretchr/testify/mock"
+    "Keyline/ioc"
+    "Keyline/mediator"
+    mediatormocks "Keyline/mediator/mocks"
+    "github.com/stretchr/testify/suite"
+    "go.uber.org/mock/gomock"
 )
 
-func TestCreateUser_Success(t *testing.T) {
-    // Setup mocks
-    mockRepo := new(mocks.MockUserRepository)
-    mockMediator := new(mocks.MockMediator)
+type CreateUserCommandSuite struct {
+    suite.Suite
+}
+
+func TestCreateUserCommandSuite(t *testing.T) {
+    t.Parallel()
+    suite.Run(t, new(CreateUserCommandSuite))
+}
+
+func (s *CreateUserCommandSuite) createContext(
+    vsRepo repositories.VirtualServerRepository,
+    userRepo repositories.UserRepository,
+    m mediator.Mediator,
+) context.Context {
+    dc := ioc.NewDependencyCollection()
     
-    handler := &CreateUserHandler{
-        userRepo: mockRepo,
-        mediator: mockMediator,
+    if vsRepo != nil {
+        ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.VirtualServerRepository {
+            return vsRepo
+        })
     }
     
-    // Configure mock behavior
-    mockRepo.On("Create", mock.Anything, mock.MatchedBy(func(user *models.User) bool {
-        // Verify the user being created has correct fields
-        return user.Username == "testuser" && user.Email == "test@example.com"
-    })).Return(nil)
+    if userRepo != nil {
+        ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.UserRepository {
+            return userRepo
+        })
+    }
     
-    mockMediator.On("SendEvent", mock.Anything, mock.Anything).Return(nil)
+    if m != nil {
+        ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) mediator.Mediator {
+            return m
+        })
+    }
     
-    // Execute
-    result, err := handler.Handle(context.Background(), CreateUserCommand{
-        VirtualServerID: uuid.New(),
-        Username:        "testuser",
-        Email:           "test@example.com",
-        Password:        "password123",
+    scope := dc.BuildProvider()
+    s.T().Cleanup(func() {
+        _ = scope.Close()
     })
     
-    // Verify
-    assert.NoError(t, err)
-    assert.NotEqual(t, uuid.Nil, result.UserID)
-    mockRepo.AssertExpectations(t)
+    return middlewares.ContextWithScope(s.T().Context(), scope)
 }
 
-func TestCreateUser_DuplicateUsername(t *testing.T) {
-    mockRepo := new(mocks.MockUserRepository)
-    handler := &CreateUserHandler{userRepo: mockRepo}
+func (s *CreateUserCommandSuite) TestCreateUser_Success() {
+    // Arrange
+    ctrl := gomock.NewController(s.T())
+    defer ctrl.Finish()
     
-    // Simulate duplicate username error
-    mockRepo.On("Create", mock.Anything, mock.Anything).
-        Return(repositories.ErrDuplicate)
+    virtualServer := repositories.NewVirtualServer("vs-name", "VS Display")
     
-    result, err := handler.Handle(context.Background(), CreateUserCommand{
-        Username: "duplicate",
-        Email:    "test@example.com",
-    })
+    mockVsRepo := mocks.NewMockVirtualServerRepository(ctrl)
+    mockVsRepo.EXPECT().Single(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
     
-    assert.Error(t, err)
-    assert.Equal(t, uuid.Nil, result.UserID)
+    mockUserRepo := mocks.NewMockUserRepository(ctrl)
+    mockUserRepo.EXPECT().Insert(gomock.Any(), gomock.Any()).Return(nil)
+    
+    mockMediator := mediatormocks.NewMockMediator(ctrl)
+    mockMediator.EXPECT().SendEvent(gomock.Any(), gomock.AssignableToTypeOf(events.UserCreatedEvent{}), gomock.Any())
+    
+    ctx := s.createContext(mockVsRepo, mockUserRepo, mockMediator)
+    cmd := CreateUser{
+        VirtualServerName: "vs-name",
+        Username:          "testuser",
+        Email:             "test@example.com",
+    }
+    
+    // Act
+    result, err := HandleCreateUser(ctx, cmd)
+    
+    // Assert
+    s.Require().NoError(err)
+    s.NotNil(result)
 }
 
-func TestCreateUser_InvalidInput(t *testing.T) {
-    handler := &CreateUserHandler{}
+func (s *CreateUserCommandSuite) TestCreateUser_VirtualServerError() {
+    // Arrange
+    ctrl := gomock.NewController(s.T())
+    defer ctrl.Finish()
     
-    // Test empty username
-    result, err := handler.Handle(context.Background(), CreateUserCommand{
-        Username: "",
-        Email:    "test@example.com",
-    })
+    mockVsRepo := mocks.NewMockVirtualServerRepository(ctrl)
+    mockVsRepo.EXPECT().Single(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
     
-    assert.Error(t, err)
-    assert.Contains(t, err.Error(), "username")
+    ctx := s.createContext(mockVsRepo, nil, nil)
+    cmd := CreateUser{}
+    
+    // Act
+    _, err := HandleCreateUser(ctx, cmd)
+    
+    // Assert
+    s.Error(err)
 }
 ```
 
 ### Testing Queries
 
+Queries follow the same pattern as commands:
+
 ```go
 // internal/queries/GetUser_test.go
 package queries
 
-func TestGetUser_Success(t *testing.T) {
-    // Setup
-    mockRepo := new(mocks.MockUserRepository)
-    handler := &GetUserHandler{userRepo: mockRepo}
-    
-    expectedUser := &models.User{
-        ID:       uuid.New(),
-        Username: "testuser",
-        Email:    "test@example.com",
-    }
-    
-    mockRepo.On("GetByID", mock.Anything, expectedUser.ID).
-        Return(expectedUser, nil)
-    
-    // Execute
-    result, err := handler.Handle(context.Background(), GetUserQuery{
-        UserID: expectedUser.ID,
-    })
-    
-    // Verify
-    assert.NoError(t, err)
-    assert.Equal(t, expectedUser.ID, result.UserID)
-    assert.Equal(t, expectedUser.Username, result.Username)
+import (
+    "context"
+    "errors"
+    "testing"
+    "Keyline/internal/middlewares"
+    "Keyline/internal/repositories"
+    "Keyline/internal/repositories/mocks"
+    "Keyline/ioc"
+    "github.com/stretchr/testify/suite"
+    "go.uber.org/mock/gomock"
+)
+
+type GetUserQuerySuite struct {
+    suite.Suite
 }
 
-func TestGetUser_NotFound(t *testing.T) {
-    mockRepo := new(mocks.MockUserRepository)
-    handler := &GetUserHandler{userRepo: mockRepo}
+func TestGetUserQuerySuite(t *testing.T) {
+    t.Parallel()
+    suite.Run(t, new(GetUserQuerySuite))
+}
+
+func (s *GetUserQuerySuite) createContext(
+    userRepo repositories.UserRepository,
+) context.Context {
+    dc := ioc.NewDependencyCollection()
     
-    userID := uuid.New()
-    mockRepo.On("GetByID", mock.Anything, userID).
-        Return(nil, repositories.ErrNotFound)
+    if userRepo != nil {
+        ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.UserRepository {
+            return userRepo
+        })
+    }
     
-    result, err := handler.Handle(context.Background(), GetUserQuery{
-        UserID: userID,
+    scope := dc.BuildProvider()
+    s.T().Cleanup(func() {
+        _ = scope.Close()
     })
     
-    assert.Error(t, err)
-    assert.True(t, errors.Is(err, repositories.ErrNotFound))
+    return middlewares.ContextWithScope(s.T().Context(), scope)
+}
+
+func (s *GetUserQuerySuite) TestGetUser_Success() {
+    // Arrange
+    ctrl := gomock.NewController(s.T())
+    defer ctrl.Finish()
+    
+    user := repositories.NewUser("testuser", "Test User", "test@example.com", uuid.New())
+    
+    mockUserRepo := mocks.NewMockUserRepository(ctrl)
+    mockUserRepo.EXPECT().First(gomock.Any(), gomock.Any()).Return(user, nil)
+    
+    ctx := s.createContext(mockUserRepo)
+    query := GetUser{UserID: user.Id()}
+    
+    // Act
+    result, err := HandleGetUser(ctx, query)
+    
+    // Assert
+    s.Require().NoError(err)
+    s.Equal(user.Id(), result.UserID)
+    s.Equal(user.Username(), result.Username)
+}
+
+func (s *GetUserQuerySuite) TestGetUser_NotFound() {
+    // Arrange
+    ctrl := gomock.NewController(s.T())
+    defer ctrl.Finish()
+    
+    mockUserRepo := mocks.NewMockUserRepository(ctrl)
+    mockUserRepo.EXPECT().First(gomock.Any(), gomock.Any()).Return(nil, errors.New("not found"))
+    
+    ctx := s.createContext(mockUserRepo)
+    query := GetUser{UserID: uuid.New()}
+    
+    // Act
+    _, err := HandleGetUser(ctx, query)
+    
+    // Assert
+    s.Error(err)
 }
 ```
 
@@ -544,93 +656,97 @@ go test -tags=e2e ./tests/e2e/...
 
 ## Mocking
 
-### Creating Mocks
+### Creating Mocks with gomock
 
-Keyline uses `testify/mock` for mocking:
+Keyline uses **gomock** (go.uber.org/mock/gomock) for generating mocks. Mocks are generated from interfaces using the `mockgen` tool.
+
+#### Generating Mocks
+
+Mocks are generated using `go:generate` directives in the interface files:
 
 ```go
-// internal/repositories/mocks/user_repository.go
-package mocks
+// internal/repositories/users.go
+//go:generate mockgen -destination=mocks/mock_user_repository.go -package=mocks . UserRepository
 
-import (
-    "context"
-    "Keyline/internal/models"
-    "Keyline/internal/repositories"
-    "github.com/google/uuid"
-    "github.com/stretchr/testify/mock"
-)
+package repositories
 
-type MockUserRepository struct {
-    mock.Mock
+type UserRepository interface {
+    Insert(ctx context.Context, user *User) error
+    First(ctx context.Context, filter UserFilter) (*User, error)
+    Single(ctx context.Context, filter UserFilter) (*User, error)
+    List(ctx context.Context, filter UserFilter) ([]*User, int, error)
+    Update(ctx context.Context, user *User) error
+    Delete(ctx context.Context, id uuid.UUID) error
 }
+```
 
-func (m *MockUserRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
-    args := m.Called(ctx, id)
-    if args.Get(0) == nil {
-        return nil, args.Error(1)
-    }
-    return args.Get(0).(*models.User), args.Error(1)
-}
-
-func (m *MockUserRepository) Create(ctx context.Context, user *models.User) error {
-    args := m.Called(ctx, user)
-    return args.Error(0)
-}
-
-// ... other methods
+Generate mocks by running:
+```bash
+go generate ./...
 ```
 
 ### Using Mocks
 
 ```go
-func TestCreateUser(t *testing.T) {
-    // Create mock
-    mockRepo := new(mocks.MockUserRepository)
+func (s *CreateUserCommandSuite) TestCreateUser_Success() {
+    // Create gomock controller
+    ctrl := gomock.NewController(s.T())
+    defer ctrl.Finish()
     
-    // Set expectations
-    mockRepo.On("Create", 
-        mock.Anything,  // any context
-        mock.MatchedBy(func(user *models.User) bool {
-            return user.Username == "testuser"
-        })).Return(nil)
+    // Create mock repository
+    mockRepo := mocks.NewMockUserRepository(ctrl)
     
-    // Use mock
-    handler := &CreateUserHandler{userRepo: mockRepo}
-    result, err := handler.Handle(context.Background(), CreateUserCommand{
+    // Set expectations with EXPECT()
+    mockRepo.EXPECT().
+        Insert(gomock.Any(), gomock.Any()).
+        Return(nil)
+    
+    // Create context with mocked dependency
+    ctx := s.createContext(mockRepo)
+    
+    // Execute command
+    result, err := HandleCreateUser(ctx, CreateUser{
         Username: "testuser",
     })
     
-    // Verify expectations were met
-    assert.NoError(t, err)
-    mockRepo.AssertExpectations(t)
+    // Assertions
+    s.NoError(err)
+    s.NotNil(result)
+    
+    // gomock automatically verifies expectations when ctrl.Finish() is called
 }
 ```
 
-### Mock Patterns
+### Mock Patterns with gomock
 
 ```go
-// Return different values on consecutive calls
-mockRepo.On("GetByID", mock.Anything, userID).
-    Return(user1, nil).Once().
-    On("GetByID", mock.Anything, userID).
-    Return(user2, nil).Once()
+// Match specific parameter values
+mockRepo.EXPECT().
+    Insert(gomock.Any(), gomock.Cond(func(u *repositories.User) bool {
+        return u.Username() == "testuser"
+    })).
+    Return(nil)
 
 // Simulate error
-mockRepo.On("Create", mock.Anything, mock.Anything).
+mockRepo.EXPECT().
+    Insert(gomock.Any(), gomock.Any()).
     Return(errors.New("database error"))
 
-// Run function when called
-mockRepo.On("Create", mock.Anything, mock.Anything).
-    Run(func(args mock.Arguments) {
-        user := args.Get(1).(*models.User)
-        user.ID = uuid.New()  // Simulate ID generation
-    }).Return(nil)
+// Match specific types
+mockMediator.EXPECT().
+    SendEvent(gomock.Any(), gomock.AssignableToTypeOf(events.UserCreatedEvent{}), gomock.Any())
 
-// Match specific argument
-mockRepo.On("GetByUsername", 
-    mock.Anything, 
-    mock.Anything,
-    "specificUsername").Return(user, nil)
+// Return different values on consecutive calls
+mockRepo.EXPECT().Insert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+mockRepo.EXPECT().Insert(gomock.Any(), gomock.Any()).Return(errors.New("error")).Times(1)
+
+// Use DoAndReturn to execute custom logic
+mockRepo.EXPECT().
+    Insert(gomock.Any(), gomock.Any()).
+    DoAndReturn(func(ctx context.Context, user *repositories.User) error {
+        // Custom logic, like setting an ID
+        return nil
+    })
 ```
 
 ## Test Coverage
@@ -706,34 +822,49 @@ func TestCreateUser_StoresHashedPassword(t *testing.T) {
 ### 2. Use Descriptive Test Names
 
 ```go
-// Good
-func TestCreateUser_WithDuplicateUsername_ReturnsError(t *testing.T)
-func TestCreateUser_WithValidData_CreatesUserSuccessfully(t *testing.T)
-func TestCreateUser_WithEmptyUsername_ReturnsValidationError(t *testing.T)
+// Good - Using testify suite
+func (s *CreateUserCommandSuite) TestCreateUser_WithValidData_Success()
+func (s *CreateUserCommandSuite) TestCreateUser_WithDuplicateUsername_ReturnsError()
+func (s *CreateUserCommandSuite) TestCreateUser_VirtualServerNotFound_ReturnsError()
 ```
 
-### 3. One Assertion Per Test (When Possible)
+### 3. Focus Tests on Specific Scenarios
 
 ```go
-// Prefer
-func TestCreateUser_ReturnsUserID(t *testing.T) {
-    result, _ := handler.Handle(ctx, cmd)
-    assert.NotEqual(t, uuid.Nil, result.UserID)
+// Prefer focused tests
+func (s *CreateUserCommandSuite) TestCreateUser_Success() {
+    // Arrange
+    ctrl := gomock.NewController(s.T())
+    defer ctrl.Finish()
+    
+    mockRepo := mocks.NewMockUserRepository(ctrl)
+    mockRepo.EXPECT().Insert(gomock.Any(), gomock.Any()).Return(nil)
+    
+    ctx := s.createContext(mockRepo)
+    
+    // Act
+    result, err := HandleCreateUser(ctx, CreateUser{Username: "testuser"})
+    
+    // Assert
+    s.NoError(err)
+    s.NotNil(result)
 }
 
-func TestCreateUser_EmitsEvent(t *testing.T) {
-    handler.Handle(ctx, cmd)
-    mockMediator.AssertCalled(t, "SendEvent", mock.Anything, mock.Anything)
-}
-
-// Over
-func TestCreateUser_Success(t *testing.T) {
-    result, err := handler.Handle(ctx, cmd)
-    assert.NoError(t, err)
-    assert.NotEqual(t, uuid.Nil, result.UserID)
-    assert.Equal(t, "testuser", result.Username)
-    mockRepo.AssertExpectations(t)
-    mockMediator.AssertCalled(t, "SendEvent")
+func (s *CreateUserCommandSuite) TestCreateUser_RepositoryError() {
+    // Arrange
+    ctrl := gomock.NewController(s.T())
+    defer ctrl.Finish()
+    
+    mockRepo := mocks.NewMockUserRepository(ctrl)
+    mockRepo.EXPECT().Insert(gomock.Any(), gomock.Any()).Return(errors.New("db error"))
+    
+    ctx := s.createContext(mockRepo)
+    
+    // Act
+    _, err := HandleCreateUser(ctx, CreateUser{Username: "testuser"})
+    
+    // Assert
+    s.Error(err)
 }
 ```
 
@@ -741,17 +872,16 @@ func TestCreateUser_Success(t *testing.T) {
 
 ```go
 // Create reusable test data
-func newTestUser() *models.User {
-    return &models.User{
-        ID:              uuid.New(),
-        VirtualServerID: uuid.New(),
-        Username:        "testuser",
-        Email:           "test@example.com",
-        IsActive:        true,
-    }
+func newTestUser() *repositories.User {
+    return repositories.NewUser(
+        "testuser",
+        "Test User",
+        "test@example.com",
+        uuid.New(),
+    )
 }
 
-func TestCreateUser(t *testing.T) {
+func (s *UserTestSuite) TestSomething() {
     user := newTestUser()
     // Use in test...
 }
@@ -760,16 +890,18 @@ func TestCreateUser(t *testing.T) {
 ### 5. Clean Up Resources
 
 ```go
-func TestWithDatabase(t *testing.T) {
-    db := setupTestDB(t)
+func (s *TestSuite) createContext(...) context.Context {
+    dc := ioc.NewDependencyCollection()
+    // ... register dependencies
     
-    // Cleanup when test completes
-    t.Cleanup(func() {
-        cleanupDB(t, db)
-        db.Close()
+    scope := dc.BuildProvider()
+    
+    // Automatic cleanup
+    s.T().Cleanup(func() {
+        _ = scope.Close()
     })
     
-    // Test code...
+    return middlewares.ContextWithScope(s.T().Context(), scope)
 }
 ```
 

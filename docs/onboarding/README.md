@@ -8,14 +8,13 @@ Welcome to Keyline! This comprehensive onboarding guide will help you understand
 2. **[CQRS and Mediator Pattern](02-cqrs-and-mediator.md)** - Learn the core communication patterns
 3. **[Dependency Injection with IoC](03-dependency-injection.md)** - Understand how components are wired together
 4. **[Development Workflow](04-development-workflow.md)** - Get started with development
-5. **[Common Patterns and Examples](05-common-patterns.md)** - Learn by example
-6. **[Testing Guide](06-testing-guide.md)** - Write effective tests
+5. **[Testing Guide](06-testing-guide.md)** - Write effective tests
 
 ## 🎯 Quick Start Path
 
 ### For Contributors New to Keyline
 
-**Estimated Time: 2-3 hours**
+**Estimated Time: 2 hours**
 
 1. Start with the [Architecture Overview](01-architecture-overview.md) (30 min)
    - Understand clean architecture principles
@@ -32,24 +31,18 @@ Welcome to Keyline! This comprehensive onboarding guide will help you understand
    - Understand lifetime management
    - See how dependencies are resolved
 
-4. Follow the [Development Workflow](04-development-workflow.md) (30 min)
+4. Follow the [Development Workflow](04-development-workflow.md) (15 min)
    - Set up your environment
    - Make your first change
    - Run tests and linting
-
-5. Study [Common Patterns](05-common-patterns.md) (30 min)
-   - See real-world examples
-   - Learn best practices
-   - Understand common scenarios
 
 ### For Quick Reference
 
 Already familiar with the basics? Jump to specific sections:
 
-- **Adding a new API endpoint?** → See [Common Patterns: API Endpoints](05-common-patterns.md#adding-a-new-api-endpoint)
-- **Creating a new command?** → See [Common Patterns: Commands](05-common-patterns.md#creating-a-new-command)
 - **Writing tests?** → See [Testing Guide](06-testing-guide.md)
 - **Understanding errors?** → See [Development Workflow: Troubleshooting](04-development-workflow.md#troubleshooting)
+- **Need examples?** → Check existing commands and queries in `internal/commands/` and `internal/queries/`
 
 ## 🏗️ Architecture at a Glance
 

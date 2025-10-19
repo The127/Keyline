@@ -175,6 +175,8 @@ import (
     "context"
     "errors"
     "fmt"
+    "Keyline/internal/authentication/permissions"
+    "Keyline/internal/behaviours"
     "Keyline/internal/middlewares"
     "Keyline/internal/repositories"
     "Keyline/internal/events"
@@ -187,6 +189,23 @@ import (
 type DeactivateUser struct {
     UserID uuid.UUID
     Reason string
+}
+
+// Implement Policy interface for authorization
+func (a DeactivateUser) LogRequest() bool {
+    return true
+}
+
+func (a DeactivateUser) LogResponse() bool {
+    return true
+}
+
+func (a DeactivateUser) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
+    return behaviours.PermissionBasedPolicy(ctx, permissions.UserUpdate)
+}
+
+func (a DeactivateUser) GetRequestName() string {
+    return "DeactivateUser"
 }
 
 // Command response

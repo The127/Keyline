@@ -49,7 +49,6 @@ Check out our comprehensive **[Onboarding Guide](docs/onboarding/README.md)** to
 - **CQRS & Mediator Pattern** - Learn the core communication patterns
 - **Dependency Injection** - Master the IoC container
 - **Development Workflow** - Get started with development
-- **Common Patterns** - Learn by example
 - **Testing Guide** - Write effective tests
 
 Perfect for new contributors and developers wanting to understand Keyline's architecture!
