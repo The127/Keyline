@@ -153,3 +153,4 @@ api
 queue-worker
 keys
 /bin
+config.yaml
