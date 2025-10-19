@@ -14,24 +14,22 @@ Welcome to Keyline! This comprehensive onboarding guide will help you understand
 
 ### For Contributors New to Keyline
 
-**Estimated Time: 2 hours**
-
-1. Start with the [Architecture Overview](01-architecture-overview.md) (30 min)
+1. Start with the [Architecture Overview](01-architecture-overview.md)
    - Understand clean architecture principles
    - Learn the folder structure
    - See how components interact
 
-2. Deep dive into [CQRS and Mediator](02-cqrs-and-mediator.md) (45 min)
+2. Deep dive into [CQRS and Mediator](02-cqrs-and-mediator.md)
    - Understand commands vs queries
    - Learn the mediator pattern
    - See how requests flow through the system
 
-3. Explore [Dependency Injection](03-dependency-injection.md) (30 min)
+3. Explore [Dependency Injection](03-dependency-injection.md)
    - Learn about IoC container
    - Understand lifetime management
    - See how dependencies are resolved
 
-4. Follow the [Development Workflow](04-development-workflow.md) (15 min)
+4. Follow the [Development Workflow](04-development-workflow.md)
    - Set up your environment
    - Make your first change
    - Run tests and linting
