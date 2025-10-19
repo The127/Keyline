@@ -87,12 +87,12 @@ func main() {
 		logging.Logger.Errorf("an error happened while running a job: %v", err)
 	}))
 
-	/*jobManager.QueueJob(
+	jobManager.QueueJob(
 		jobs.OutboxSendingJob(dp),
-		time.Second,
+		time.Second*10,
 		jobs.WithName("outbox_sender"),
 		jobs.WithStartImmediate(),
-	)*/
+	)
 
 	// jobManager.QueueJob(
 	//	jobs.KeyRotateJob(),
