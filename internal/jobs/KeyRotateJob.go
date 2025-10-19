@@ -3,6 +3,7 @@ package jobs
 import (
 	"Keyline/internal/clock"
 	"Keyline/internal/config"
+	"Keyline/internal/logging"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/internal/services"
@@ -68,6 +69,7 @@ func deleteExpiredKeys(
 ) error {
 	for _, keyPair := range keyPairs {
 		if keyPair.ExpiresAt().Before(now) {
+			logging.Logger.Infof("removing expired key for virtual server %s, algorithm %s", virtualServerName, keyPair.Algorithm())
 			err := keyStore.Remove(virtualServerName, keyPair.Algorithm(), keyPair.GetKid())
 			if err != nil {
 				return fmt.Errorf("removing key pair: %w", err)
@@ -86,12 +88,21 @@ func generateNewKeys(
 ) error {
 	algorithmsToRotate := make(map[config.SigningAlgorithm]bool)
 	for _, keyPair := range keyPairs {
-		if keyPair.RotatesAt().Before(clockService.Now()) {
-			algorithmsToRotate[keyPair.Algorithm()] = true
+		algorithmsToRotate[keyPair.Algorithm()] = true
+	}
+
+	for _, keyPair := range keyPairs {
+		if keyPair.RotatesAt().After(clockService.Now()) {
+			algorithmsToRotate[keyPair.Algorithm()] = false
 		}
 	}
 
-	for alg := range algorithmsToRotate {
+	for alg, needsNewKey := range algorithmsToRotate {
+		if !needsNewKey {
+			continue
+		}
+
+		logging.Logger.Infof("generating new key for virtual server %s, algorithm %s", server.Name(), alg)
 		_, err := keyService.Generate(clockService, server.Name(), alg)
 		if err != nil {
 			return fmt.Errorf("generating key pair: %w", err)
