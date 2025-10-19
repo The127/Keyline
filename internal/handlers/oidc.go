@@ -4,6 +4,7 @@ import (
 	"Keyline/internal/clock"
 	"Keyline/internal/config"
 	"Keyline/internal/jsonTypes"
+	"Keyline/internal/logging"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/internal/services"
@@ -257,6 +258,9 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	prompt := r.Form.Get("prompt")
+	logging.Logger.Debugf("prompt: %s", prompt)
+
 	authRequest := AuthorizationRequest{
 		ResponseTypes:       strings.Split(r.Form.Get("response_type"), " "),
 		VirtualServerName:   vsName,
@@ -371,6 +375,11 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 
 		// redirect to that uri with code
 		http.Redirect(w, r, redirectUri.String(), http.StatusFound)
+		return
+	}
+
+	if prompt == "none" {
+		http.Redirect(w, r, fmt.Sprintf("%s?error=login_required&state=%s", authRequest.RedirectUri, authRequest.State), http.StatusFound)
 		return
 	}
 
