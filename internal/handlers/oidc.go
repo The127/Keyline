@@ -407,7 +407,22 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 }
 
 func errorRedirect(w http.ResponseWriter, r *http.Request, authRequest AuthorizationRequest, errorCode string) {
-	http.Redirect(w, r, fmt.Sprintf("%s?error=%s&state=%s", authRequest.RedirectUri, errorCode, authRequest.State), http.StatusFound)
+	errorUrl, err := url.Parse(authRequest.RedirectUri)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("parsing redirect uri: %w", err))
+		return
+	}
+
+	query := errorUrl.Query()
+	query.Set("error", errorCode)
+
+	if authRequest.State != "" {
+		query.Set("state", authRequest.State)
+	}
+
+	errorUrl.RawQuery = query.Encode()
+
+	http.Redirect(w, r, errorUrl.String(), http.StatusFound)
 }
 
 // OidcEndSession ends the user session and redirects.
