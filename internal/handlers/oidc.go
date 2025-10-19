@@ -376,7 +376,7 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if prompt == "none" {
-		http.Redirect(w, r, fmt.Sprintf("%s?error=login_required&state=%s", authRequest.RedirectUri, authRequest.State), http.StatusFound)
+		errorRedirect(w, r, authRequest, "login_required")
 		return
 	}
 
@@ -404,6 +404,10 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 		loginSessionToken,
 	)
 	http.Redirect(w, r, redirectUrl, http.StatusFound)
+}
+
+func errorRedirect(w http.ResponseWriter, r *http.Request, authRequest AuthorizationRequest, errorCode string) {
+	http.Redirect(w, r, fmt.Sprintf("%s?error=%s&state=%s", authRequest.RedirectUri, errorCode, authRequest.State), http.StatusFound)
 }
 
 // OidcEndSession ends the user session and redirects.
