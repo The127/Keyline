@@ -153,7 +153,7 @@ func setCookie(w http.ResponseWriter, name string, value string, maxAge int) {
 		Name:     name,
 		Value:    value,
 		Path:     "/",
-		Domain:   config.C.Server.ExternalDomain,
+		Domain:   config.C.Server.ExternalUrl,
 		MaxAge:   maxAge,
 		Secure:   true,
 		HttpOnly: true,
