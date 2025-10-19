@@ -31,6 +31,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -218,6 +219,80 @@ func initApplication(dp *ioc.DependencyProvider) {
 		})
 		if err != nil {
 			logging.Logger.Fatalf("failed to assign admin role to initial admin user: %v", err)
+		}
+	}
+
+	for _, serviceUserConfig := range config.C.InitialVirtualServer.InitialServiceUsers {
+		serviceUserResponse, err := mediator.Send[*commands.CreateServiceUserResponse](ctx, m, commands.CreateServiceUser{
+			VirtualServerName: config.C.InitialVirtualServer.Name,
+			Username:          serviceUserConfig.Username,
+		})
+		if err != nil {
+			logging.Logger.Fatalf("failed to create initial service user: %v", err)
+		}
+
+		_, err = mediator.Send[*commands.AssociateServiceUserPublicKeyResponse](ctx, m, commands.AssociateServiceUserPublicKey{
+			VirtualServerName: config.C.InitialVirtualServer.Name,
+			ServiceUserId:     serviceUserResponse.Id,
+			PublicKey:         serviceUserConfig.PublicKey,
+		})
+		if err != nil {
+			logging.Logger.Fatalf("failed to associate initial service user public key: %v", err)
+		}
+
+		for _, configuredRole := range serviceUserConfig.Roles {
+			if strings.Contains(configuredRole, " ") {
+				split := strings.Split(configuredRole, " ")
+				applicationName := split[0]
+				roleName := split[1]
+
+				applicationRepository := ioc.GetDependency[repositories.ApplicationRepository](scope)
+				applicationFilter := repositories.NewApplicationFilter().
+					VirtualServerId(createVirtualServerResponse.Id).
+					Name(applicationName)
+				application, err := applicationRepository.Single(ctx, applicationFilter)
+				if err != nil {
+					logging.Logger.Fatalf("failed to get application: %v", err)
+				}
+
+				roleRepository := ioc.GetDependency[repositories.RoleRepository](scope)
+				roleFilter := repositories.NewRoleFilter().
+					VirtualServerId(createVirtualServerResponse.Id).
+					ApplicationId(application.Id()).
+					Name(roleName)
+				role, err := roleRepository.Single(ctx, roleFilter)
+				if err != nil {
+					logging.Logger.Fatalf("failed to get role: %v", err)
+				}
+
+				_, err = mediator.Send[*commands.AssignRoleToUserResponse](ctx, m, commands.AssignRoleToUser{
+					VirtualServerName: config.C.InitialVirtualServer.Name,
+					UserId:            serviceUserResponse.Id,
+					RoleId:            role.Id(),
+					ApplicationId:     utils.Ptr(application.Id()),
+				})
+				if err != nil {
+					logging.Logger.Fatalf("failed to assign role to service user: %v", err)
+				}
+			} else {
+				roleRepository := ioc.GetDependency[repositories.RoleRepository](scope)
+				roleFilter := repositories.NewRoleFilter().
+					VirtualServerId(createVirtualServerResponse.Id).
+					Name(configuredRole)
+				role, err := roleRepository.Single(ctx, roleFilter)
+				if err != nil {
+					logging.Logger.Fatalf("failed to get role: %v", err)
+				}
+
+				_, err = mediator.Send[*commands.AssignRoleToUserResponse](ctx, m, commands.AssignRoleToUser{
+					VirtualServerName: config.C.InitialVirtualServer.Name,
+					UserId:            serviceUserResponse.Id,
+					RoleId:            role.Id(),
+				})
+				if err != nil {
+					logging.Logger.Fatalf("failed to assign role to service user: %v", err)
+				}
+			}
 		}
 	}
 

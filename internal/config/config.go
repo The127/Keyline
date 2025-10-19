@@ -73,6 +73,11 @@ type Config struct {
 			PrimaryEmail string
 			PasswordHash string
 		}
+		InitialServiceUsers []struct {
+			Username  string
+			Roles     []string
+			PublicKey string
+		}
 		InitialApplications []struct {
 			Name                   string
 			DisplayName            string
@@ -271,6 +276,20 @@ func setInitialVirtualServerDefaultsOrPanic() {
 
 	setInitialAdminDefaultsOrPanic()
 	setInitialApplicationsDefaultsOrPanic()
+	setInitialServiceUserDefaultsOrPanic()
+}
+
+func setInitialServiceUserDefaultsOrPanic() {
+	for _, serviceUser := range C.InitialVirtualServer.InitialServiceUsers {
+		if serviceUser.Username == "" {
+			panic("missing service user username")
+		}
+
+		if serviceUser.PublicKey == "" {
+			panic("missing service user public key")
+		}
+
+	}
 }
 
 func setInitialApplicationsDefaultsOrPanic() {
