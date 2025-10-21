@@ -655,17 +655,36 @@ func TestCreateUser(t *testing.T) {
     // In tests, you can mock the entire mediator or test the handler
     // function directly with a test scope containing mock repositories
     
+    // Create gomock controller
+    ctrl := gomock.NewController(t)
+    defer ctrl.Finish()
+    
     // Create test dependencies
-    mockUserRepo := new(MockUserRepository)
-    mockUserRepo.On("Insert", mock.Anything, mock.Anything).Return(nil)
+    mockUserRepo := mocks.NewMockUserRepository(ctrl)
+    mockUserRepo.EXPECT().Insert(gomock.Any(), gomock.Any()).Return(nil)
     
     // For unit testing handler functions, you would:
     // 1. Create a test IoC scope with mocked dependencies
     // 2. Pass context with that scope
     // 3. Test the handler function directly
     
-    // Or test through the mediator with mocked dependencies
-    // See the Testing Guide for detailed examples
+    // Example:
+    dc := ioc.NewDependencyCollection()
+    ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.UserRepository {
+        return mockUserRepo
+    })
+    scope := dc.BuildProvider()
+    defer scope.Close()
+    
+    ctx := middlewares.ContextWithScope(context.Background(), scope)
+    
+    result, err := HandleCreateUser(ctx, CreateUser{
+        Username: "testuser",
+        Email:    "test@example.com",
+    })
+    
+    assert.NoError(t, err)
+    assert.NotNil(t, result)
 }
 ```
 

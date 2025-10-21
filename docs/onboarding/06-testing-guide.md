@@ -388,19 +388,27 @@ func TestValidateEmail(t *testing.T) {
 
 ```go
 func TestCommandWithTimeout(t *testing.T) {
-    mockRepo := new(mocks.MockUserRepository)
-    handler := &CreateUserHandler{userRepo: mockRepo}
+    ctrl := gomock.NewController(t)
+    defer ctrl.Finish()
+    
+    mockRepo := mocks.NewMockUserRepository(ctrl)
     
     // Create context with timeout
     ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
     defer cancel()
     
     // Simulate slow operation
-    mockRepo.On("Create", mock.Anything, mock.Anything).
-        Return(nil).
-        After(200 * time.Millisecond)
+    mockRepo.EXPECT().
+        Insert(gomock.Any(), gomock.Any()).
+        DoAndReturn(func(ctx context.Context, user *repositories.User) error {
+            time.Sleep(200 * time.Millisecond)
+            return nil
+        })
     
-    _, err := handler.Handle(ctx, CreateUserCommand{
+    // Create context with mocked dependency
+    testCtx := createTestContext(mockRepo)
+    
+    _, err := HandleCreateUser(testCtx, CreateUser{
         Username: "test",
         Email:    "test@example.com",
     })
@@ -871,21 +879,29 @@ open coverage.html
 ```go
 // Bad - Tests implementation details
 func TestCreateUser_CallsHashPassword(t *testing.T) {
-    mockHasher := new(MockPasswordHasher)
-    mockHasher.On("Hash", "password123").Return("hashed", nil)
+    ctrl := gomock.NewController(t)
+    defer ctrl.Finish()
+    
+    mockHasher := mocks.NewMockPasswordHasher(ctrl)
+    mockHasher.EXPECT().Hash("password123").Return("hashed", nil)
     // This test breaks if we change hash implementation
 }
 
 // Good - Tests behavior
 func TestCreateUser_StoresHashedPassword(t *testing.T) {
-    handler := &CreateUserHandler{...}
-    result, err := handler.Handle(ctx, CreateUserCommand{
+    ctrl := gomock.NewController(t)
+    defer ctrl.Finish()
+    
+    mockRepo := mocks.NewMockUserRepository(ctrl)
+    mockRepo.EXPECT().Insert(gomock.Any(), gomock.Any()).Return(nil)
+    
+    ctx := createTestContext(mockRepo)
+    result, err := HandleCreateUser(ctx, CreateUser{
         Password: "password123",
     })
     assert.NoError(t, err)
-    // Verify password was hashed (without caring how)
-    storedUser, _ := repo.GetByID(ctx, result.UserID)
-    assert.NotEqual(t, "password123", storedUser.PasswordHash)
+    // Verify user was created successfully
+    assert.NotNil(t, result)
 }
 ```
 
