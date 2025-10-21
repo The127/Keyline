@@ -289,54 +289,92 @@ package commands
 import (
     "context"
     "testing"
+    "Keyline/internal/events"
+    "Keyline/internal/middlewares"
+    "Keyline/internal/repositories"
     "Keyline/internal/repositories/mocks"
+    "Keyline/ioc"
+    "Keyline/mediator"
+    mediatormocks "Keyline/mediator/mocks"
     "github.com/google/uuid"
-    "github.com/stretchr/testify/assert"
-    "github.com/stretchr/testify/mock"
+    "github.com/stretchr/testify/suite"
+    "go.uber.org/mock/gomock"
 )
 
-func TestDeactivateUser_Success(t *testing.T) {
-    // Setup
-    mockRepo := new(mocks.MockUserRepository)
-    mockMediator := new(mocks.MockMediator)
+type DeactivateUserCommandSuite struct {
+    suite.Suite
+}
+
+func TestDeactivateUserCommandSuite(t *testing.T) {
+    t.Parallel()
+    suite.Run(t, new(DeactivateUserCommandSuite))
+}
+
+func (s *DeactivateUserCommandSuite) createContext(
+    userRepo repositories.UserRepository,
+    m mediator.Mediator,
+) context.Context {
+    dc := ioc.NewDependencyCollection()
+    
+    if userRepo != nil {
+        ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.UserRepository {
+            return userRepo
+        })
+    }
+    
+    if m != nil {
+        ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) mediator.Mediator {
+            return m
+        })
+    }
+    
+    scope := dc.BuildProvider()
+    s.T().Cleanup(func() {
+        _ = scope.Close()
+    })
+    
+    return middlewares.ContextWithScope(s.T().Context(), scope)
+}
+
+func (s *DeactivateUserCommandSuite) TestDeactivateUser_Success() {
+    // Arrange
+    ctrl := gomock.NewController(s.T())
+    defer ctrl.Finish()
     
     userID := uuid.New()
-    user := &models.User{
-        ID:       userID,
-        IsActive: true,
-    }
+    user := repositories.NewUser("testuser", "Test User", "test@example.com", uuid.New())
     
-    mockRepo.On("GetByID", mock.Anything, userID).Return(user, nil)
-    mockRepo.On("Update", mock.Anything, mock.Anything).Return(nil)
-    mockMediator.On("SendEvent", mock.Anything, mock.Anything).Return(nil)
+    mockRepo := mocks.NewMockUserRepository(ctrl)
+    mockRepo.EXPECT().First(gomock.Any(), gomock.Any()).Return(user, nil)
+    mockRepo.EXPECT().Update(gomock.Any(), gomock.Any()).Return(nil)
     
-    handler := &DeactivateUserHandler{
-        userRepo: mockRepo,
-        mediator: mockMediator,
-    }
+    mockMediator := mediatormocks.NewMockMediator(ctrl)
+    mockMediator.EXPECT().SendEvent(gomock.Any(), gomock.AssignableToTypeOf(events.UserDeactivatedEvent{}), gomock.Any())
     
-    // Execute
-    result, err := handler.Handle(context.Background(), DeactivateUserCommand{
+    ctx := s.createContext(mockRepo, mockMediator)
+    
+    // Act
+    result, err := HandleDeactivateUser(ctx, DeactivateUser{
         UserID: userID,
         Reason: "Policy violation",
     })
     
     // Assert
-    assert.NoError(t, err)
-    assert.True(t, result.Success)
-    assert.False(t, user.IsActive)
-    mockRepo.AssertExpectations(t)
+    s.NoError(err)
+    s.True(result.Success)
 }
 
-func TestDeactivateUser_InvalidUserID(t *testing.T) {
-    handler := &DeactivateUserHandler{}
+func (s *DeactivateUserCommandSuite) TestDeactivateUser_InvalidUserID() {
+    // Arrange
+    ctx := s.createContext(nil, nil)
     
-    result, err := handler.Handle(context.Background(), DeactivateUserCommand{
+    // Act
+    _, err := HandleDeactivateUser(ctx, DeactivateUser{
         UserID: uuid.Nil,
     })
     
-    assert.Error(t, err)
-    assert.False(t, result.Success)
+    // Assert
+    s.Error(err)
 }
 ```
 
@@ -513,8 +551,11 @@ go test -v -tags=e2e ./tests/e2e/...
 
 3. **Use mocks for external dependencies**:
    ```go
-   mockRepo := new(mocks.MockUserRepository)
-   mockRepo.On("GetByID", mock.Anything, userID).Return(user, nil)
+   ctrl := gomock.NewController(t)
+   defer ctrl.Finish()
+   
+   mockRepo := mocks.NewMockUserRepository(ctrl)
+   mockRepo.EXPECT().First(gomock.Any(), gomock.Any()).Return(user, nil)
    ```
 
 ## Linting and Formatting
