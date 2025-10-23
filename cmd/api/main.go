@@ -20,6 +20,7 @@ import (
 	"Keyline/internal/metrics"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/queries"
+	"Keyline/internal/quorum"
 	"Keyline/internal/repositories"
 	"Keyline/internal/server"
 	"Keyline/internal/setup"
@@ -83,27 +84,44 @@ func main() {
 	setup.Mediator(dc)
 	dp := dc.BuildProvider()
 
-	jobManager := jobs.NewJobManager(jobs.WithOnError(func(err error) {
-		logging.Logger.Errorf("an error happened while running a job: %v", err)
-	}))
-
-	jobManager.QueueJob(
-		jobs.OutboxSendingJob(dp),
-		time.Second*10,
-		jobs.WithName("outbox_sender"),
-		jobs.WithStartImmediate(),
-	)
-
-	jobManager.QueueJob(
-		jobs.KeyRotateJob(),
-		time.Hour,
-		jobs.WithName("signing_key_rotation"),
-		jobs.WithStartImmediate(),
-	)
-
-	jobManager.Start(middlewares.ContextWithScope(context.Background(), dp))
-
 	initApplication(dp)
+
+	var jobManager jobs.JobManager
+	leaderElection := quorum.NewLeaderElectionFactory().
+		OnLeaderChange(func(isLeader bool) {
+			if isLeader {
+				jobManager = jobs.NewJobManager(jobs.WithOnError(func(err error) {
+					logging.Logger.Errorf("an error happened while running a job: %v", err)
+				}))
+
+				jobManager.QueueJob(
+					jobs.OutboxSendingJob(dp),
+					time.Second*10,
+					jobs.WithName("outbox_sender"),
+					jobs.WithStartImmediate(),
+				)
+
+				jobManager.QueueJob(
+					jobs.KeyRotateJob(),
+					time.Hour,
+					jobs.WithName("signing_key_rotation"),
+					jobs.WithStartImmediate(),
+				)
+
+				logging.Logger.Info("Starting job manager")
+				jobManager.Start(middlewares.ContextWithScope(context.Background(), dp))
+			} else {
+				logging.Logger.Info("Stopping job manager")
+				if jobManager != nil {
+					jobManager.Stop()
+				}
+			}
+		}).
+		Build(config.C.LeaderElection)
+	err := leaderElection.Start(middlewares.ContextWithScope(context.Background(), dp))
+	if err != nil {
+		panic(fmt.Errorf("failed to start leader election: %s", err.Error()))
+	}
 
 	server.Serve(dp, config.C.Server)
 
