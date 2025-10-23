@@ -40,3 +40,5 @@ keyStore:
     path: "./keys"
 cache:
   mode: memory
+leaderElection:
+  mode: none

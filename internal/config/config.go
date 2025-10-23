@@ -129,6 +129,32 @@ type Config struct {
 			Database int
 		}
 	}
+	LeaderElection LeaderElectionConfig
+}
+
+type LeaderElectionMode string
+
+const (
+	LeaderElectionModeNone LeaderElectionMode = "none"
+	LeaderElectionModeRaft LeaderElectionMode = "raft"
+)
+
+type LeaderElectionConfig struct {
+	Mode LeaderElectionMode
+	Raft LeaderElectionRaftConfig
+}
+
+type LeaderElectionRaftConfig struct {
+	Host        string
+	Port        int
+	Id          string
+	InitiatorId string
+	Nodes       []RaftNode
+}
+
+type RaftNode struct {
+	Id      string
+	Address string
 }
 
 type ServerConfig struct {
@@ -205,6 +231,52 @@ func setDefaultsOrPanic() {
 	setInitialVirtualServerDefaultsOrPanic()
 	setKeyStoreDefaultsOrPanic()
 	setCacheDefaultsOrPanic()
+	setLeaderElectionDefaultsOrPanic()
+}
+
+func setLeaderElectionDefaultsOrPanic() {
+	switch C.LeaderElection.Mode {
+	case LeaderElectionModeNone:
+		// nothing to do
+
+	case LeaderElectionModeRaft:
+		setLeaderElectionRaftDefaultsOrPanic()
+
+	default:
+		panic("leader election mode missing or not supported")
+	}
+}
+
+func setLeaderElectionRaftDefaultsOrPanic() {
+	if C.LeaderElection.Raft.Host == "" {
+		panic("missing leader election raft host")
+	}
+
+	if C.LeaderElection.Raft.Port == 0 {
+		panic("missing leader election raft port")
+	}
+
+	if C.LeaderElection.Raft.Id == "" {
+		panic("missing leader election raft id")
+	}
+
+	if C.LeaderElection.Raft.InitiatorId == "" {
+		panic("missing leader election raft initiator id")
+	}
+
+	if len(C.LeaderElection.Raft.Nodes) == 0 {
+		panic("missing leader election raft nodes")
+	}
+
+	for _, node := range C.LeaderElection.Raft.Nodes {
+		if node.Id == "" {
+			panic("missing leader election raft node id")
+		}
+
+		if node.Address == "" {
+			panic("missing leader election raft node address")
+		}
+	}
 }
 
 func setFrontendDefaultsOrPanic() {
