@@ -41,4 +41,17 @@ keyStore:
 cache:
   mode: memory
 leaderElection:
-  mode: none
+  mode: none  # Options: "none" (single instance) or "raft" (multi-instance with leader election)
+  # Raft configuration (only needed when mode is "raft"):
+  # raft:
+  #   host: "0.0.0.0"           # Bind address for Raft server
+  #   port: 7000                # Port for Raft inter-node communication
+  #   id: "keyline-node-1"      # Unique identifier for this node
+  #   initiatorId: "keyline-node-1"  # Node that bootstraps the cluster (same on all nodes)
+  #   nodes:                    # List of all nodes in the Raft cluster
+  #     - id: "keyline-node-1"
+  #       address: "keyline-1.internal:7000"
+  #     - id: "keyline-node-2"
+  #       address: "keyline-2.internal:7000"
+  #     - id: "keyline-node-3"
+  #       address: "keyline-3.internal:7000"

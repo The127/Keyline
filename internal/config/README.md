@@ -231,6 +231,164 @@ keyStore:
 
 **Note:** OpenBao mode is not yet implemented.
 
+### Leader Election Configuration
+
+Configure leader election for multi-instance deployments. Leader election ensures only one instance executes background jobs like key rotation and outbox message processing.
+
+```yaml
+leaderElection:
+  mode: "none"  # Leader election mode: "none" or "raft"
+  raft:
+    host: "0.0.0.0"           # Raft bind address
+    port: 7000                # Raft communication port
+    id: "node1"               # Unique node identifier
+    initiatorId: "node1"      # ID of the node that bootstraps the cluster
+    nodes:                    # All nodes in the Raft cluster
+      - id: "node1"
+        address: "node1:7000"
+      - id: "node2"
+        address: "node2:7000"
+      - id: "node3"
+        address: "node3:7000"
+```
+
+**Leader Election Modes:**
+
+#### None Mode (Default)
+Single-instance deployment where the current instance is always the leader.
+
+```yaml
+leaderElection:
+  mode: "none"
+```
+
+Use this mode when:
+- Running a single instance of Keyline
+- Testing or development environments
+- You don't need high availability
+
+No additional configuration needed. The instance will always execute background jobs.
+
+#### Raft Mode
+Distributed leader election using HashiCorp Raft consensus algorithm for multi-instance deployments.
+
+```yaml
+leaderElection:
+  mode: "raft"
+  raft:
+    host: "0.0.0.0"           # Address to bind Raft server
+    port: 7000                # Port for Raft communication
+    id: "keyline-node-1"      # Unique identifier for this node
+    initiatorId: "keyline-node-1"  # Node that bootstraps the cluster
+    nodes:
+      - id: "keyline-node-1"
+        address: "10.0.1.10:7000"
+      - id: "keyline-node-2"
+        address: "10.0.1.11:7000"
+      - id: "keyline-node-3"
+        address: "10.0.1.12:7000"
+```
+
+**Raft Configuration Options:**
+
+- **host**: IP address or hostname where this node's Raft server binds (required)
+- **port**: TCP port for Raft inter-node communication (required)
+- **id**: Unique identifier for this Keyline instance in the cluster (required)
+- **initiatorId**: The node ID that will bootstrap the Raft cluster on first startup (required)
+  - Should be set to the same value on all nodes
+  - Only the node with this ID will initialize the cluster
+- **nodes**: List of all nodes in the Raft cluster (required)
+  - **id**: Unique identifier for the node (must match the node's configured `id`)
+  - **address**: Network address where the node can be reached (host:port format)
+
+**Raft Mode Requirements:**
+
+- Minimum of 3 nodes recommended for fault tolerance (can tolerate 1 failure)
+- 5 nodes recommended for high availability (can tolerate 2 failures)
+- All nodes must be able to communicate with each other on the Raft port
+- The `nodes` list should be identical across all instances
+- Only the node with ID matching `initiatorId` will bootstrap the cluster
+
+**How It Works:**
+
+1. When started, Keyline nodes form a Raft cluster
+2. The cluster automatically elects one node as the leader
+3. Only the leader instance executes background jobs:
+   - Outbox message processing
+   - Signing key rotation
+4. If the leader fails, the cluster automatically elects a new leader
+5. Non-leader instances continue serving HTTP requests normally
+
+**Use Cases:**
+
+- **High Availability**: Multiple Keyline instances with automatic failover
+- **Load Balancing**: Distribute HTTP traffic across multiple instances
+- **Zero Downtime**: Rolling updates without interrupting background jobs
+
+**Example Multi-Instance Setup:**
+
+For a 3-node cluster, configure each node differently:
+
+**Node 1 Configuration:**
+```yaml
+leaderElection:
+  mode: "raft"
+  raft:
+    host: "0.0.0.0"
+    port: 7000
+    id: "keyline-node-1"
+    initiatorId: "keyline-node-1"
+    nodes:
+      - id: "keyline-node-1"
+        address: "keyline-1.internal:7000"
+      - id: "keyline-node-2"
+        address: "keyline-2.internal:7000"
+      - id: "keyline-node-3"
+        address: "keyline-3.internal:7000"
+```
+
+**Node 2 Configuration:**
+```yaml
+leaderElection:
+  mode: "raft"
+  raft:
+    host: "0.0.0.0"
+    port: 7000
+    id: "keyline-node-2"
+    initiatorId: "keyline-node-1"  # Same initiator
+    nodes:
+      - id: "keyline-node-1"
+        address: "keyline-1.internal:7000"
+      - id: "keyline-node-2"
+        address: "keyline-2.internal:7000"
+      - id: "keyline-node-3"
+        address: "keyline-3.internal:7000"
+```
+
+**Node 3 Configuration:**
+```yaml
+leaderElection:
+  mode: "raft"
+  raft:
+    host: "0.0.0.0"
+    port: 7000
+    id: "keyline-node-3"
+    initiatorId: "keyline-node-1"  # Same initiator
+    nodes:
+      - id: "keyline-node-1"
+        address: "keyline-1.internal:7000"
+      - id: "keyline-node-2"
+        address: "keyline-2.internal:7000"
+      - id: "keyline-node-3"
+        address: "keyline-3.internal:7000"
+```
+
+**Defaults:**
+- **mode**: *required* (`none` or `raft`)
+
+**Raft Mode Defaults:**
+- All Raft configuration fields are required when `mode` is set to `raft`
+
 ### Initial Virtual Server Configuration
 
 Configure the initial virtual server (tenant) created on first startup.
