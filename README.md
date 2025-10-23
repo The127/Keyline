@@ -32,6 +32,7 @@ For future major releases, we will be including a link to the conformance test r
 - 📦 **User Metadata** - Store custom user and application-specific metadata
 - 📈 **Metrics & Monitoring** - Prometheus metrics integration
 - 🐳 **Container Ready** - Docker/Podman support with provided Containerfile
+- ⚖️ **Leader Election** - Raft-based leader election for high-availability multi-instance deployments
 
 ## Architecture
 
@@ -182,6 +183,33 @@ keyStore:
 ```
 
 **Note:** Use `mode: "memory"` only for testing/development - keys are lost on restart.
+
+#### Leader Election Configuration
+```yaml
+leaderElection:
+  mode: "none"  # "none" for single instance, "raft" for multi-instance with leader election
+  # Raft configuration (for high-availability deployments):
+  # raft:
+  #   host: "0.0.0.0"
+  #   port: 7000
+  #   id: "keyline-node-1"
+  #   initiatorId: "keyline-node-1"
+  #   nodes:
+  #     - id: "keyline-node-1"
+  #       address: "node1.internal:7000"
+  #     - id: "keyline-node-2"
+  #       address: "node2.internal:7000"
+  #     - id: "keyline-node-3"
+  #       address: "node3.internal:7000"
+```
+
+**Leader Election Modes:**
+- **none** (default) - Single instance deployment, always acts as leader
+- **raft** - Distributed leader election for multi-instance deployments using HashiCorp Raft
+
+When using Raft mode, only the elected leader executes background jobs (key rotation, outbox processing), while all instances serve HTTP requests. This enables high-availability deployments with automatic failover.
+
+For detailed leader election configuration, see the [Configuration Package Documentation](internal/config/README.md#leader-election-configuration).
 
 ### 4. Run Database Migrations
 
@@ -529,6 +557,78 @@ TOTP-based 2FA using standard authenticator apps (Google Authenticator, Authy, e
 7. **Log Aggregation** - Centralize logs for monitoring and debugging
 8. **Metrics** - Monitor Prometheus metrics for performance insights
 9. **Rate Limiting** - Implement rate limiting at the reverse proxy level
+10. **High Availability** - Use Raft leader election mode for multi-instance deployments with automatic failover
+
+### Deployment Architectures
+
+#### Single Instance Deployment
+
+For development, testing, or small-scale production:
+
+```yaml
+leaderElection:
+  mode: "none"  # Single instance, always acts as leader
+cache:
+  mode: "memory"  # Or "redis" for persistence
+database:
+  mode: "postgres"  # Or "sqlite" for single-node only
+```
+
+**Characteristics:**
+- Simple setup and maintenance
+- All background jobs run on the single instance
+- No leader election overhead
+- Suitable for low-traffic applications
+
+#### High-Availability Multi-Instance Deployment
+
+For production environments requiring fault tolerance and load distribution:
+
+```yaml
+leaderElection:
+  mode: "raft"
+  raft:
+    host: "0.0.0.0"
+    port: 7000
+    id: "keyline-node-1"  # Unique per instance
+    initiatorId: "keyline-node-1"  # Same on all instances
+    nodes:
+      - id: "keyline-node-1"
+        address: "node1.internal:7000"
+      - id: "keyline-node-2"
+        address: "node2.internal:7000"
+      - id: "keyline-node-3"
+        address: "node3.internal:7000"
+cache:
+  mode: "redis"  # Required for multi-instance
+  redis:
+    host: "redis.internal"
+    port: 6379
+database:
+  mode: "postgres"  # Required for multi-instance
+  postgres:
+    host: "postgres.internal"
+```
+
+**Characteristics:**
+- Automatic leader election and failover
+- Only the leader executes background jobs (key rotation, outbox processing)
+- All instances serve HTTP requests
+- Minimum 3 nodes recommended (tolerates 1 failure)
+- 5 nodes recommended for high availability (tolerates 2 failures)
+- Requires Redis for shared cache and PostgreSQL for shared database
+
+**Benefits:**
+- **Zero Downtime**: Rolling updates without service interruption
+- **Automatic Failover**: If leader fails, cluster elects new leader within seconds
+- **Load Distribution**: HTTP traffic distributed across all instances
+- **Job Safety**: Background jobs execute on exactly one instance
+
+**Network Requirements:**
+- All instances must communicate on the Raft port (default 7000)
+- Load balancer for HTTP traffic distribution
+- Shared PostgreSQL database accessible from all instances
+- Shared Redis cache accessible from all instances
 
 ### Environment Variables for Production
 
@@ -540,6 +640,13 @@ KEYLINE_DATABASE_POSTGRES_PASSWORD=secure-password
 KEYLINE_CACHE_MODE=redis
 KEYLINE_CACHE_REDIS_HOST=prod-redis.example.com
 KEYLINE_KEYSTORE_MODE=openbao
+
+# For multi-instance with leader election:
+KEYLINE_LEADERELECTION_MODE=raft
+KEYLINE_LEADERELECTION_RAFT_HOST=0.0.0.0
+KEYLINE_LEADERELECTION_RAFT_PORT=7000
+KEYLINE_LEADERELECTION_RAFT_ID=keyline-node-1  # Unique per instance
+KEYLINE_LEADERELECTION_RAFT_INITIATORID=keyline-node-1  # Same on all instances
 ```
 
 ## Contributing
