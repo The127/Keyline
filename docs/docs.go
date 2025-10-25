@@ -228,6 +228,152 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/virtual-servers/{virtualServerName}/password-policies/rules": {
+            "get": {
+                "description": "Retrieve all password rules of a virtual server.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Password rules"
+                ],
+                "summary": "List password rules",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "keyline",
+                        "description": "Virtual server name",
+                        "name": "virtualServerName",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Page size",
+                        "name": "pageSize",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.PagedPasswordRuleResponseDto"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/virtual-servers/{virtualServerName}/password-policies/rules/{ruleType}": {
+            "put": {
+                "description": "Update a password rule for a virtual server.",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Password rules"
+                ],
+                "summary": "Update a password rule",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "keyline",
+                        "description": "Virtual server name",
+                        "name": "virtualServerName",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Password rule details",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.PatchPasswordRuleRequestDto"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a password rule for a virtual server.",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Password rules"
+                ],
+                "summary": "Create password rule",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "keyline",
+                        "description": "Virtual server name",
+                        "name": "virtualServerName",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Password rule details",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.CreatePasswordRuleRequestDto"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/virtual-servers/{virtualServerName}/public-info": {
             "get": {
                 "produces": [
@@ -2418,7 +2564,7 @@ const docTemplate = `{
             }
         },
         "/oidc/{virtualServerName}/userinfo": {
-            "get": {
+            "post": {
                 "security": [
                     {
                         "BearerAuth": []
@@ -2559,6 +2705,22 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "secret": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.CreatePasswordRuleRequestDto": {
+            "type": "object",
+            "required": [
+                "details",
+                "type"
+            ],
+            "properties": {
+                "details": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "type": {
                     "type": "string"
                 }
             }
@@ -2937,6 +3099,21 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.ListPasswordRulesResponseDto": {
+            "type": "object",
+            "properties": {
+                "details": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "id": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
         "handlers.ListRolesResponseDto": {
             "type": "object",
             "properties": {
@@ -2999,6 +3176,9 @@ const docTemplate = `{
                 "email": {
                     "type": "string"
                 },
+                "email_verified": {
+                    "type": "boolean"
+                },
                 "name": {
                     "type": "string"
                 },
@@ -3022,6 +3202,12 @@ const docTemplate = `{
                 "end_session_endpoint": {
                     "type": "string"
                 },
+                "grant_types_supported": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "id_token_signing_alg_values_supported": {
                     "type": "array",
                     "items": {
@@ -3033,6 +3219,9 @@ const docTemplate = `{
                 },
                 "jwks_uri": {
                     "type": "string"
+                },
+                "request_parameter_supported": {
+                    "type": "boolean"
                 },
                 "response_types_supported": {
                     "type": "array",
@@ -3054,6 +3243,12 @@ const docTemplate = `{
                 },
                 "token_endpoint": {
                     "type": "string"
+                },
+                "token_endpoint_auth_methods_supported": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "userinfo_endpoint": {
                     "type": "string"
@@ -3113,6 +3308,17 @@ const docTemplate = `{
                 },
                 "pagination": {
                     "$ref": "#/definitions/handlers.Pagination"
+                }
+            }
+        },
+        "handlers.PagedPasswordRuleResponseDto": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.ListPasswordRulesResponseDto"
+                    }
                 }
             }
         },
@@ -3199,6 +3405,10 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "handlers.PatchPasswordRuleRequestDto": {
+            "type": "object",
+            "additionalProperties": {}
         },
         "handlers.PatchUserApplicationMetadataRequestDto": {
             "type": "object",

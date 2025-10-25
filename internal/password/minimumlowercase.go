@@ -1,9 +1,25 @@
 package password
 
-import "fmt"
+import (
+	"Keyline/internal/repositories"
+	"encoding/json"
+	"fmt"
+)
 
 type minimumLowerCasePolicy struct {
 	MinAmount int `json:"minAmount"`
+}
+
+func (p *minimumLowerCasePolicy) GetPasswordRuleType() repositories.PasswordRuleType {
+	return repositories.PasswordRuleTypeLowerCase
+}
+
+func (p *minimumLowerCasePolicy) Serialize() ([]byte, error) {
+	jsonBytes, err := json.Marshal(p)
+	if err != nil {
+		return nil, fmt.Errorf("failed to serialize lower case rule: %w", err)
+	}
+	return jsonBytes, nil
 }
 
 func (p *minimumLowerCasePolicy) Validate(password string) error {

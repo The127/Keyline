@@ -43,60 +43,13 @@ func (v *validator) Validate(ctx context.Context, password string) error {
 		return fmt.Errorf("failed to get password rules: %w", err)
 	}
 
-	var rules []Policy
+	var rules []Policy //nolint:prealloc
 	for _, passwordRule := range passwordRules {
-		switch passwordRule.Type() {
-		case repositories.PasswordRuleTypeMinLength:
-			var minLengthRule minLengthPolicy
-			err := json.Unmarshal(passwordRule.Details(), &minLengthRule)
-			if err != nil {
-				return fmt.Errorf("failed to unmarshal min length rule: %w", err)
-			}
-			rules = append(rules, &minLengthRule)
-
-		case repositories.PasswordRuleTypeMaxLength:
-			var maxLengthRule maxLengthPolicy
-			err := json.Unmarshal(passwordRule.Details(), &maxLengthRule)
-			if err != nil {
-				return fmt.Errorf("failed to unmarshal max length rule: %w", err)
-			}
-			rules = append(rules, &maxLengthRule)
-
-		case repositories.PasswordRuleTypeDigits:
-			var numberRule minimumNumbersPolicy
-			err := json.Unmarshal(passwordRule.Details(), &numberRule)
-			if err != nil {
-				return fmt.Errorf("failed to unmarshal number rule: %w", err)
-			}
-			rules = append(rules, &numberRule)
-
-		case repositories.PasswordRuleTypeLowerCase:
-			var lowerCaseRule minimumLowerCasePolicy
-			err := json.Unmarshal(passwordRule.Details(), &lowerCaseRule)
-			if err != nil {
-				return fmt.Errorf("failed to unmarshal lower case rule: %w", err)
-			}
-			rules = append(rules, &lowerCaseRule)
-
-		case repositories.PasswordRuleTypeUpperCase:
-			var upperCaseRule minimumUpperCasePolicy
-			err := json.Unmarshal(passwordRule.Details(), &upperCaseRule)
-			if err != nil {
-				return fmt.Errorf("failed to unmarshal upper case rule: %w", err)
-			}
-			rules = append(rules, &upperCaseRule)
-
-		case repositories.PasswordRuleTypeSpecial:
-			var specialRule minimumSpecialPolicy
-			err := json.Unmarshal(passwordRule.Details(), &specialRule)
-			if err != nil {
-				return fmt.Errorf("failed to unmarshal special rule: %w", err)
-			}
-			rules = append(rules, &specialRule)
-
-		default:
-			return fmt.Errorf("unknown password rule type: %s", passwordRule.Type())
+		rule, err := DeserializePolicy(passwordRule.Type(), []byte(passwordRule.Details()))
+		if err != nil {
+			return fmt.Errorf("failed to deserialize password rule: %w", err)
 		}
+		rules = append(rules, rule)
 	}
 
 	// always add common policy
@@ -116,5 +69,61 @@ func (v *validator) Validate(ctx context.Context, password string) error {
 
 //go:generate mockgen -destination=./mock/mock_policy.go -package=mock . Policy
 type Policy interface {
+	repositories.PasswordRuleDetails
 	Validate(password string) error
+}
+
+func DeserializePolicy(ruleType repositories.PasswordRuleType, jsonBytes []byte) (Policy, error) {
+	switch ruleType {
+	case repositories.PasswordRuleTypeMinLength:
+		var minLengthRule minLengthPolicy
+		err := json.Unmarshal(jsonBytes, &minLengthRule)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal min length rule: %w", err)
+		}
+
+	case repositories.PasswordRuleTypeMaxLength:
+		var maxLengthRule maxLengthPolicy
+		err := json.Unmarshal(jsonBytes, &maxLengthRule)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal max length rule: %w", err)
+		}
+
+	case repositories.PasswordRuleTypeDigits:
+		var numberRule minimumNumbersPolicy
+		err := json.Unmarshal(jsonBytes, &numberRule)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal number rule: %w", err)
+		}
+		return &numberRule, nil
+
+	case repositories.PasswordRuleTypeLowerCase:
+		var lowerCaseRule minimumLowerCasePolicy
+		err := json.Unmarshal(jsonBytes, &lowerCaseRule)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal lower case rule: %w", err)
+		}
+		return &lowerCaseRule, nil
+
+	case repositories.PasswordRuleTypeUpperCase:
+		var upperCaseRule minimumUpperCasePolicy
+		err := json.Unmarshal(jsonBytes, &upperCaseRule)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal upper case rule: %w", err)
+		}
+		return &upperCaseRule, nil
+
+	case repositories.PasswordRuleTypeSpecial:
+		var specialRule minimumSpecialPolicy
+		err := json.Unmarshal(jsonBytes, &specialRule)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal special rule: %w", err)
+		}
+		return &specialRule, nil
+
+	default:
+		return nil, fmt.Errorf("unknown password rule type: %s", ruleType)
+	}
+
+	panic("unreachable")
 }

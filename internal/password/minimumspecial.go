@@ -1,9 +1,25 @@
 package password
 
-import "fmt"
+import (
+	"Keyline/internal/repositories"
+	"encoding/json"
+	"fmt"
+)
 
 type minimumSpecialPolicy struct {
 	MinAmount int `json:"minAmount"`
+}
+
+func (p *minimumSpecialPolicy) GetPasswordRuleType() repositories.PasswordRuleType {
+	return repositories.PasswordRuleTypeSpecial
+}
+
+func (p *minimumSpecialPolicy) Serialize() ([]byte, error) {
+	jsonBytes, err := json.Marshal(p)
+	if err != nil {
+		return nil, fmt.Errorf("failed to serialize special character rule: %w", err)
+	}
+	return jsonBytes, nil
 }
 
 func (p *minimumSpecialPolicy) Validate(password string) error {

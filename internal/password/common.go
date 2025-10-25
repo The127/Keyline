@@ -1,6 +1,7 @@
 package password
 
 import (
+	"Keyline/internal/repositories"
 	_ "embed"
 	"fmt"
 	"strings"
@@ -22,6 +23,14 @@ func init() {
 }
 
 type commonPolicy struct {
+}
+
+func (p *commonPolicy) GetPasswordRuleType() repositories.PasswordRuleType {
+	panic("unreachable")
+}
+
+func (p *commonPolicy) Serialize() ([]byte, error) {
+	panic("unreachable")
 }
 
 func (p *commonPolicy) Validate(password string) error {

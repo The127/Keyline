@@ -70,6 +70,17 @@ definitions:
       secret:
         type: string
     type: object
+  handlers.CreatePasswordRuleRequestDto:
+    properties:
+      details:
+        additionalProperties: true
+        type: object
+      type:
+        type: string
+    required:
+    - details
+    - type
+    type: object
   handlers.CreateRoleRequestDto:
     properties:
       description:
@@ -321,6 +332,16 @@ definitions:
       name:
         type: string
     type: object
+  handlers.ListPasswordRulesResponseDto:
+    properties:
+      details:
+        additionalProperties: {}
+        type: object
+      id:
+        type: string
+      type:
+        type: string
+    type: object
   handlers.ListRolesResponseDto:
     properties:
       id:
@@ -361,6 +382,8 @@ definitions:
     properties:
       email:
         type: string
+      email_verified:
+        type: boolean
       name:
         type: string
       sub:
@@ -376,6 +399,10 @@ definitions:
         type: array
       end_session_endpoint:
         type: string
+      grant_types_supported:
+        items:
+          type: string
+        type: array
       id_token_signing_alg_values_supported:
         items:
           type: string
@@ -384,6 +411,8 @@ definitions:
         type: string
       jwks_uri:
         type: string
+      request_parameter_supported:
+        type: boolean
       response_types_supported:
         items:
           type: string
@@ -398,6 +427,10 @@ definitions:
         type: array
       token_endpoint:
         type: string
+      token_endpoint_auth_methods_supported:
+        items:
+          type: string
+        type: array
       userinfo_endpoint:
         type: string
     type: object
@@ -436,6 +469,13 @@ definitions:
         type: array
       pagination:
         $ref: '#/definitions/handlers.Pagination'
+    type: object
+  handlers.PagedPasswordRuleResponseDto:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/handlers.ListPasswordRulesResponseDto'
+        type: array
     type: object
   handlers.PagedRolesResponseDto:
     properties:
@@ -490,6 +530,9 @@ definitions:
         type: string
       displayName:
         type: string
+    type: object
+  handlers.PatchPasswordRuleRequestDto:
+    additionalProperties: {}
     type: object
   handlers.PatchUserApplicationMetadataRequestDto:
     additionalProperties: {}
@@ -769,6 +812,105 @@ paths:
       summary: Virtual server health
       tags:
       - System
+  /api/virtual-servers/{virtualServerName}/password-policies/rules:
+    get:
+      description: Retrieve all password rules of a virtual server.
+      parameters:
+      - default: keyline
+        description: Virtual server name
+        in: path
+        name: virtualServerName
+        required: true
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        required: true
+        type: integer
+      - default: 10
+        description: Page size
+        in: query
+        name: pageSize
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.PagedPasswordRuleResponseDto'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+      summary: List password rules
+      tags:
+      - Password rules
+  /api/virtual-servers/{virtualServerName}/password-policies/rules/{ruleType}:
+    post:
+      consumes:
+      - application/json
+      description: Create a password rule for a virtual server.
+      parameters:
+      - default: keyline
+        description: Virtual server name
+        in: path
+        name: virtualServerName
+        required: true
+        type: string
+      - description: Password rule details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreatePasswordRuleRequestDto'
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "409":
+          description: Conflict
+          schema:
+            type: string
+      summary: Create password rule
+      tags:
+      - Password rules
+    put:
+      consumes:
+      - application/json
+      description: Update a password rule for a virtual server.
+      parameters:
+      - default: keyline
+        description: Virtual server name
+        in: path
+        name: virtualServerName
+        required: true
+        type: string
+      - description: Password rule details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.PatchPasswordRuleRequestDto'
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      summary: Update a password rule
+      tags:
+      - Password rules
   /api/virtual-servers/{virtualServerName}/public-info:
     get:
       parameters:
@@ -2229,7 +2371,7 @@ paths:
       tags:
       - OIDC
   /oidc/{virtualServerName}/userinfo:
-    get:
+    post:
       parameters:
       - default: keyline
         description: Virtual server name
