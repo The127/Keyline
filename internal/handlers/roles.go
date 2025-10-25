@@ -158,6 +158,7 @@ func ListRoles(w http.ResponseWriter, r *http.Request) {
 	))
 	if err != nil {
 		utils.HandleHttpError(w, err)
+		return
 	}
 }
 

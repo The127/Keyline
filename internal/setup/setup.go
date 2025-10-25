@@ -106,6 +106,8 @@ func Mediator(dc *ioc.DependencyCollection) {
 	mediator.RegisterHandler(m, queries.HandleGetVirtualServerQuery)
 	mediator.RegisterHandler(m, commands.HandleCreateVirtualServer)
 
+	mediator.RegisterHandler(m, queries.HandleListPasswordRules)
+
 	mediator.RegisterHandler(m, queries.HandleListTemplates)
 	mediator.RegisterHandler(m, queries.HandleGetTemplate)
 
