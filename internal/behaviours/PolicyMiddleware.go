@@ -150,8 +150,8 @@ func PolicyBehaviour(ctx context.Context, request Policy, next mediator.Next) (a
 
 	response, err := next()
 
-	// don't log if there was an error
-	if err == nil || !request.LogRequest() {
+	// don't log if there was an error and only log if the request says so
+	if err == nil && request.LogRequest() {
 		scope := middlewares.GetScope(ctx)
 		auditLogger := ioc.GetDependency[AuditLogger](scope)
 
