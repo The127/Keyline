@@ -93,9 +93,11 @@ Requires passwords to contain at least a specified number of uppercase letters (
 Requires passwords to contain at least a specified number of special characters.
 
 **Supported Special Characters:**
-- Punctuation: `! " # $ % & ' ( ) * + , - . /`
-- Symbols: `: ; < = > ? @`
-- Brackets: `[ \ ] ^ _ \``
+
+The following special characters are supported (based on ASCII ranges):
+- Punctuation: `! " # $ % & ' ( ) * + , - . /` (ASCII 33-47)
+- Symbols: `: ; < = > ? @` (ASCII 58-64)
+- Brackets and others: `[ \ ] ^ _` and backtick `` ` `` (ASCII 91-96)
 
 **Configuration:**
 ```json
@@ -235,4 +237,4 @@ When integrating with Keyline's API:
 
 - [Main README](../README.md) - Overview of Keyline and its features
 - [Security Section](../README.md#security) - Password hashing and other security features
-- [Configuration Guide](../internal/config/README.md) - Configuring Keyline settings
+- Configuration Guide - See `internal/config/README.md` in the repository for detailed configuration options
