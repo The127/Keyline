@@ -1,10 +1,7 @@
 -- +migrate Up
 
 ALTER table applications
-    ADD COLUMN access_token_header_type TEXT;
-UPDATE applications
-SET access_token_header_type = 'at+jwt'
-WHERE true;
+    ADD COLUMN access_token_header_type TEXT NOT NULL DEFAULT 'at+jwt';
 
 -- +migrate Down
 
