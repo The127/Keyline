@@ -197,7 +197,7 @@ type CreateAppRoleResponseDto struct {
 // @produce     application/json
 // @param       virtualServerName  path   string                             true  "Virtual server name"  default(keyline)
 // @Param 		appId 			   path   string 							 true  "Application ID (UUID)"
-// @param       body               body   handlers.CreateAppRoleResponseDto  true  "Role data"
+// @param       body               body   handlers.CreateAppRoleRequestDto  true  "Role data"
 // @security    BearerAuth
 // @success     201  {object}  handlers.CreateAppRoleResponseDto
 // @failure     400  {string}  string "Bad Request"
