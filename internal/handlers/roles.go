@@ -109,7 +109,7 @@ type GetAppRoleByIdResponseDto struct {
 }
 
 // GetAppRoleById
-// @summary     Get an applicationrole
+// @summary     Get an application role
 // @description Get a role by its ID within a virtual server.
 // @tags        Roles
 // @produce     application/json
