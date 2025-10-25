@@ -71,6 +71,17 @@ func (p *PasswordRule) Details() []byte {
 	return p.details
 }
 
+func (p *PasswordRule) SetDetails(details PasswordRuleDetails) error {
+	serialized, err := details.Serialize()
+	if err != nil {
+		return fmt.Errorf("failed to serialize details: %w", err)
+	}
+
+	p.details = serialized
+	p.TrackChange("details", serialized)
+	return nil
+}
+
 type PasswordRuleFilter struct {
 	virtualServerId *uuid.UUID
 	type_           *PasswordRuleType

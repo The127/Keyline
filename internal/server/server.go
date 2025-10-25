@@ -101,7 +101,7 @@ func Serve(dp *ioc.DependencyProvider, serverConfig config.ServerConfig) {
 
 	vsApiRouter.HandleFunc("/password-policies/rules", handlers.ListPasswordRules).Methods(http.MethodGet, http.MethodOptions)
 	vsApiRouter.HandleFunc("/password-policies/rules/{ruleType}", handlers.CreatePasswordRule).Methods(http.MethodPost, http.MethodOptions)
-	vsApiRouter.HandleFunc("/password-policies/rules/{ruleType}", handlers.PatchPasswordRule).Methods(http.MethodPatch, http.MethodOptions)
+	vsApiRouter.HandleFunc("/password-policies/rules/{ruleType}", handlers.UpdatePasswordRule).Methods(http.MethodPut, http.MethodOptions)
 
 	vsApiRouter.HandleFunc("/templates", handlers.ListTemplates).Methods(http.MethodGet, http.MethodOptions)
 	vsApiRouter.HandleFunc("/templates/{templateType}", handlers.GetTemplate).Methods(http.MethodGet, http.MethodOptions)

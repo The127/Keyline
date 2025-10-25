@@ -9,9 +9,11 @@ import (
 	"Keyline/mediator"
 	"Keyline/utils"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 )
 
 type PagedPasswordRuleResponseDto struct {
@@ -134,6 +136,55 @@ func CreatePasswordRule(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func PatchPasswordRule(w http.ResponseWriter, r *http.Request) {
+type PatchPasswordRuleRequestDto map[string]any
 
+// UpdatePasswordRule
+// @summary     Update a password rule
+// @description Update a password rule for a virtual server.
+// @tags        Password rules
+// @accept      application/json
+// @param       virtualServerName  path   string  true  "Virtual server name"  default(keyline)
+// @param       body  body   PatchPasswordRuleRequestDto  true  "Password rule details"
+// @success     204 "No Content"
+// @failure     400  {string}  string "Bad Request"
+// @failure     404  {string}  string "Not Found"
+// @router      /api/virtual-servers/{virtualServerName}/password-policies/rules/{ruleType} [put]
+func UpdatePasswordRule(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	vsName, err := middlewares.GetVirtualServerName(ctx)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	vars := mux.Vars(r)
+	ruleTypeString, ok := vars["ruleType"]
+	if !ok {
+		utils.HandleHttpError(w, fmt.Errorf("ruleType is required: %w", utils.ErrHttpBadRequest))
+		return
+	}
+
+	ruleType := repositories.PasswordRuleType(ruleTypeString)
+
+	var requestDto PatchPasswordRuleRequestDto
+	err = json.NewDecoder(r.Body).Decode(&requestDto)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+	}
+
+	scope := middlewares.GetScope(ctx)
+	m := ioc.GetDependency[mediator.Mediator](scope)
+
+	_, err = mediator.Send[*commands.UpdatePasswordRuleResponse](ctx, m, commands.UpdatePasswordRule{
+		VirtualServerName: vsName,
+		Type:              ruleType,
+		Details:           requestDto,
+	})
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
