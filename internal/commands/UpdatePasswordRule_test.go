@@ -69,7 +69,7 @@ func (s *UpdatePasswordRuleCommandSuite) TestVirtualServerError() {
 	resp, err := HandleUpdatePasswordRule(ctx, cmd)
 
 	// assert
-	s.Error(err)
+	s.Require().Error(err)
 	s.Nil(resp)
 }
 
@@ -133,7 +133,7 @@ func (s *UpdatePasswordRuleCommandSuite) TestUpdateError() {
 	resp, err := HandleUpdatePasswordRule(ctx, cmd)
 
 	// assert
-	s.Error(err)
+	s.Require().Error(err)
 	s.Nil(resp)
 }
 

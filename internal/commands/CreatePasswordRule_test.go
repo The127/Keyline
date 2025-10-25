@@ -85,7 +85,7 @@ func (s *CreatePasswordRuleCommandSuite) InsertError() {
 	resp, err := HandleCreatePasswordRule(ctx, cmd)
 
 	// assert
-	s.Error(err)
+	s.Require().Error(err)
 	s.Nil(resp)
 }
 
@@ -167,7 +167,7 @@ func (s *CreatePasswordRuleCommandSuite) TestAlreadyExists() {
 	resp, err := HandleCreatePasswordRule(ctx, cmd)
 
 	// assert
-	s.ErrorIs(err, utils.ErrHttpConflict)
+	s.Require().ErrorIs(err, utils.ErrHttpConflict)
 	s.Nil(resp)
 }
 
