@@ -370,6 +370,7 @@ func ListUsersInAppRole(w http.ResponseWriter, r *http.Request) {
 	appId, err := uuid.Parse(appIdString)
 	if err != nil {
 		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+		return
 	}
 
 	roleIdString := vars["roleId"]
