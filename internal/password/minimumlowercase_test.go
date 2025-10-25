@@ -71,7 +71,7 @@ func TestMinimumLowerCasePolicy_Validate(t *testing.T) {
 
 			// arrange
 			testee := minimumLowerCasePolicy{
-				minAmount: tt.minAmount,
+				MinAmount: tt.minAmount,
 			}
 
 			// act

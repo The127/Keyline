@@ -58,7 +58,7 @@ func TestLengthPolicy_Validate(t *testing.T) {
 
 			// arrange
 			testee := minLengthPolicy{
-				minLength: tt.minLength,
+				MinLength: tt.minLength,
 			}
 
 			// act

@@ -3,7 +3,7 @@ package password
 import "fmt"
 
 type minimumSpecialPolicy struct {
-	minAmount int
+	MinAmount int `json:"minAmount"`
 }
 
 func (p *minimumSpecialPolicy) Validate(password string) error {
@@ -15,8 +15,8 @@ func (p *minimumSpecialPolicy) Validate(password string) error {
 		}
 	}
 
-	if amount < p.minAmount {
-		return fmt.Errorf("password must contain at least %d special characters", p.minAmount)
+	if amount < p.MinAmount {
+		return fmt.Errorf("password must contain at least %d special characters", p.MinAmount)
 	}
 
 	return nil

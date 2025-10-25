@@ -77,7 +77,7 @@ func TestMinimumSpecialPolicy_Validate(t *testing.T) {
 
 			// arrange
 			testee := minimumSpecialPolicy{
-				minAmount: tt.minAmount,
+				MinAmount: tt.minAmount,
 			}
 
 			// act

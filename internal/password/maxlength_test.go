@@ -40,7 +40,7 @@ func TestMaxLengthPolicy_Validate(t *testing.T) {
 
 			// arrange
 			testee := maxLengthPolicy{
-				maxLength: tt.maxLength,
+				MaxLength: tt.maxLength,
 			}
 
 			// act

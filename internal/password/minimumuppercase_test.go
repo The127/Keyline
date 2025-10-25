@@ -71,7 +71,7 @@ func TestMinimumUpperCasePolicy_Validate(t *testing.T) {
 
 			// arrange
 			testee := minimumUpperCasePolicy{
-				minAmount: tt.minAmount,
+				MinAmount: tt.minAmount,
 			}
 
 			// act

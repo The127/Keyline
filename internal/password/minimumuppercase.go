@@ -3,7 +3,7 @@ package password
 import "fmt"
 
 type minimumUpperCasePolicy struct {
-	minAmount int
+	MinAmount int `json:"minAmount"`
 }
 
 func (p *minimumUpperCasePolicy) Validate(password string) error {
@@ -15,8 +15,8 @@ func (p *minimumUpperCasePolicy) Validate(password string) error {
 		}
 	}
 
-	if amount < p.minAmount {
-		return fmt.Errorf("password must contain at least %d uppercase characters", p.minAmount)
+	if amount < p.MinAmount {
+		return fmt.Errorf("password must contain at least %d uppercase characters", p.MinAmount)
 	}
 
 	return nil

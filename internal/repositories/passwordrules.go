@@ -22,6 +22,10 @@ type PasswordRuleType string
 const (
 	PasswordRuleTypeMinLength PasswordRuleType = "min_length"
 	PasswordRuleTypeMaxLength PasswordRuleType = "max_length"
+	PasswordRuleTypeLowerCase PasswordRuleType = "lower_case"
+	PasswordRuleTypeUpperCase PasswordRuleType = "upper_case"
+	PasswordRuleTypeDigits    PasswordRuleType = "digits"
+	PasswordRuleTypeSpecial   PasswordRuleType = "special"
 )
 
 type PasswordRuleDetails interface {

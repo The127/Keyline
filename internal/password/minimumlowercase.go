@@ -3,7 +3,7 @@ package password
 import "fmt"
 
 type minimumLowerCasePolicy struct {
-	minAmount int
+	MinAmount int `json:"minAmount"`
 }
 
 func (p *minimumLowerCasePolicy) Validate(password string) error {
@@ -14,8 +14,8 @@ func (p *minimumLowerCasePolicy) Validate(password string) error {
 		}
 	}
 
-	if amount < p.minAmount {
-		return fmt.Errorf("password must contain at least %d lowercase characters", p.minAmount)
+	if amount < p.MinAmount {
+		return fmt.Errorf("password must contain at least %d lowercase characters", p.MinAmount)
 	}
 
 	return nil
