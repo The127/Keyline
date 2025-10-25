@@ -10,6 +10,7 @@
 package mock
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "go.uber.org/mock/gomock"
@@ -40,15 +41,15 @@ func (m *MockValidator) EXPECT() *MockValidatorMockRecorder {
 }
 
 // Validate mocks base method.
-func (m *MockValidator) Validate(password string) error {
+func (m *MockValidator) Validate(ctx context.Context, password string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Validate", password)
+	ret := m.ctrl.Call(m, "Validate", ctx, password)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Validate indicates an expected call of Validate.
-func (mr *MockValidatorMockRecorder) Validate(password any) *gomock.Call {
+func (mr *MockValidatorMockRecorder) Validate(ctx, password any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Validate", reflect.TypeOf((*MockValidator)(nil).Validate), password)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Validate", reflect.TypeOf((*MockValidator)(nil).Validate), ctx, password)
 }
