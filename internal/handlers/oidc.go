@@ -1202,25 +1202,10 @@ func mapClaims(ctx context.Context, params AccessTokenGenerationParams) (jwt.Map
 	}
 
 	userRoleAssignmentRepository := ioc.GetDependency[repositories.UserRoleAssignmentRepository](scope)
-	globalUserRoleAssignmentFilter := repositories.NewUserRoleAssignmentFilter().
-		// TODO: add virtual server filter
-		UserId(params.UserId).
-		ApplicationId(nil).
-		IncludeRole()
-	globalUserRoleAssignments, _, err := userRoleAssignmentRepository.List(ctx, globalUserRoleAssignmentFilter)
-	if err != nil {
-		return nil, fmt.Errorf("getting user role assignments: %w", err)
-	}
-
-	globalRoles := make([]string, 0, len(globalUserRoleAssignments))
-	for _, userRoleAssignment := range globalUserRoleAssignments {
-		globalRoles = append(globalRoles, userRoleAssignment.RoleInfo().Name)
-	}
-
 	applicationUserRoleAssignmentFilter := repositories.NewUserRoleAssignmentFilter().
 		// TODO: add virtual server filter
 		UserId(params.UserId).
-		ApplicationId(&params.ApplicationId).
+		ApplicationId(params.ApplicationId).
 		IncludeRole()
 	applicationUserRoleAssignments, _, err := userRoleAssignmentRepository.List(ctx, applicationUserRoleAssignmentFilter)
 	applicationRoles := make([]string, 0, len(applicationUserRoleAssignments))
@@ -1259,10 +1244,9 @@ func mapClaims(ctx context.Context, params AccessTokenGenerationParams) (jwt.Map
 		ctx,
 		params.ApplicationId,
 		claimsMapping.Params{
-			Roles:            globalRoles,
-			ApplicationRoles: applicationRoles,
-			GlobalMetadata:   userMetadata,
-			AppMetadata:      appMetadata,
+			Roles:          applicationRoles,
+			GlobalMetadata: userMetadata,
+			AppMetadata:    appMetadata,
 		},
 	)
 

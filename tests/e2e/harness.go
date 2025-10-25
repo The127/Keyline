@@ -186,7 +186,7 @@ func initTest(dp *ioc.DependencyProvider) (err error) {
 		VirtualServerName: "test-vs",
 		UserId:            initialAdminUserInfo.Id,
 		RoleId:            createVirtualServerResponse.AdminRoleId,
-		ApplicationId:     &createVirtualServerResponse.AdminUiApplicationId,
+		ApplicationId:     createVirtualServerResponse.AdminUiApplicationId,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to assign admin role to initial admin user: %v", err)

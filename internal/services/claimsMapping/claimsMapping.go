@@ -13,10 +13,9 @@ import (
 )
 
 type Params struct {
-	Roles            []string
-	ApplicationRoles []string
-	GlobalMetadata   map[string]interface{}
-	AppMetadata      map[string]interface{}
+	Roles          []string
+	GlobalMetadata map[string]interface{}
+	AppMetadata    map[string]interface{}
 }
 
 //go:generate mockgen -destination=../mocks/claimsMapping.go -package=mocks Keyline/internal/services/claimsMapping ClaimsMapper
@@ -33,8 +32,7 @@ func NewClaimsMapper() ClaimsMapper {
 
 func defaultMapping(params Params) map[string]any {
 	return map[string]any{
-		"roles":             params.Roles,
-		"application_roles": params.ApplicationRoles,
+		"roles": params.Roles,
 	}
 }
 
@@ -75,11 +73,6 @@ func (c *claimsMapper) runCustomClaimsMappingScript(claimsMappingScript *string,
 	err := vm.Set("roles", params.Roles)
 	if err != nil {
 		return nil, fmt.Errorf("failed setting roles: %w", err)
-	}
-
-	err = vm.Set("applicationRoles", params.ApplicationRoles)
-	if err != nil {
-		return nil, fmt.Errorf("failed setting applicationRoles: %w", err)
 	}
 
 	err = vm.Set("globalMetadata", params.GlobalMetadata)

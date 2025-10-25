@@ -17,6 +17,7 @@ import (
 
 type CreateRole struct {
 	VirtualServerName string
+	ApplicationId     uuid.UUID
 	Name              string
 	Description       string
 	RequireMfa        bool
@@ -53,9 +54,17 @@ func HandleCreateRole(ctx context.Context, command CreateRole) (*CreateRoleRespo
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
+	applicationRepository := ioc.GetDependency[repositories.ApplicationRepository](scope)
+	applicationFilter := repositories.NewApplicationFilter().Id(command.ApplicationId).VirtualServerId(virtualServer.Id())
+	application, err := applicationRepository.Single(ctx, applicationFilter)
+	if err != nil {
+		return nil, fmt.Errorf("getting application: %w", err)
+	}
+
 	roleRepository := ioc.GetDependency[repositories.RoleRepository](scope)
-	role := repositories.NewVirtualServerRole(
+	role := repositories.NewApplicationRole(
 		virtualServer.Id(),
+		application.Id(),
 		command.Name,
 		command.Description,
 	)

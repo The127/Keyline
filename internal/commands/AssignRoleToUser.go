@@ -16,7 +16,7 @@ type AssignRoleToUser struct {
 	VirtualServerName string
 	UserId            uuid.UUID
 	RoleId            uuid.UUID
-	ApplicationId     *uuid.UUID
+	ApplicationId     uuid.UUID
 }
 
 func (a AssignRoleToUser) LogRequest() bool {
@@ -51,11 +51,8 @@ func HandleAssignRoleToUser(ctx context.Context, command AssignRoleToUser) (*Ass
 
 	roleFilter := repositories.NewRoleFilter().
 		Id(command.RoleId).
-		VirtualServerId(virtualServer.Id())
-
-	if command.ApplicationId != nil {
-		roleFilter = roleFilter.ApplicationId(*command.ApplicationId)
-	}
+		VirtualServerId(virtualServer.Id()).
+		ApplicationId(command.ApplicationId)
 
 	_, err = roleRepository.Single(ctx, roleFilter)
 	if err != nil {
