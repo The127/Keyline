@@ -15,7 +15,6 @@ import (
 
 type GetRoleQuery struct {
 	VirtualServerName string
-	ApplicationId     uuid.UUID
 	RoleId            uuid.UUID
 }
 
@@ -58,7 +57,6 @@ func HandleGetRole(ctx context.Context, query GetRoleQuery) (*GetRoleQueryResult
 	roleRepository := ioc.GetDependency[repositories.RoleRepository](scope)
 	roleFilter := repositories.NewRoleFilter().
 		VirtualServerId(virtualServer.Id()).
-		ApplicationId(query.ApplicationId).
 		Id(query.RoleId)
 	role, err := roleRepository.Single(ctx, roleFilter)
 	if err != nil {

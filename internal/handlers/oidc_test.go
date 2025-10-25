@@ -36,7 +36,7 @@ func newTestContext(t *testing.T) context.Context {
 	})
 
 	userRoleAssignmentRepository := repoMocks.NewMockUserRoleAssignmentRepository(ctrl)
-	userRoleAssignmentRepository.EXPECT().List(gomock.Any(), gomock.Any()).Return(nil, 0, nil).AnyTimes()
+	userRoleAssignmentRepository.EXPECT().List(gomock.Any(), gomock.Any()).Return(nil, 0, nil).Times(2)
 	ioc.RegisterTransient(dependencyCollection, func(dp *ioc.DependencyProvider) repositories.UserRoleAssignmentRepository {
 		return userRoleAssignmentRepository
 	})
@@ -46,14 +46,6 @@ func newTestContext(t *testing.T) context.Context {
 	applicationUserMetadataRepository.EXPECT().First(gomock.Any(), gomock.Any()).Return(applicationUserMetadata, nil).AnyTimes()
 	ioc.RegisterTransient(dependencyCollection, func(dp *ioc.DependencyProvider) repositories.ApplicationUserMetadataRepository {
 		return applicationUserMetadataRepository
-	})
-
-	application := repositories.NewApplication(uuid.New(), "application", "Application", repositories.ApplicationTypePublic, []string{})
-	application.Mock(time.Now())
-	applicationRepository := repoMocks.NewMockApplicationRepository(ctrl)
-	applicationRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(application, nil).AnyTimes()
-	ioc.RegisterTransient(dependencyCollection, func(dp *ioc.DependencyProvider) repositories.ApplicationRepository {
-		return applicationRepository
 	})
 
 	claimsMapper := serviceMocks.NewMockClaimsMapper(ctrl)

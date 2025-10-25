@@ -234,7 +234,7 @@ func initApplication(dp *ioc.DependencyProvider) {
 			VirtualServerName: config.C.InitialVirtualServer.Name,
 			UserId:            initialAdminUserInfo.Id,
 			RoleId:            createVirtualServerResponse.AdminRoleId,
-			ApplicationId:     createVirtualServerResponse.AdminUiApplicationId,
+			ApplicationId:     &createVirtualServerResponse.AdminUiApplicationId,
 		})
 		if err != nil {
 			logging.Logger.Fatalf("failed to assign admin role to initial admin user: %v", err)
@@ -288,7 +288,7 @@ func initApplication(dp *ioc.DependencyProvider) {
 					VirtualServerName: config.C.InitialVirtualServer.Name,
 					UserId:            serviceUserResponse.Id,
 					RoleId:            role.Id(),
-					ApplicationId:     application.Id(),
+					ApplicationId:     utils.Ptr(application.Id()),
 				})
 				if err != nil {
 					logging.Logger.Fatalf("failed to assign role to service user: %v", err)

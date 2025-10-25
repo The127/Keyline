@@ -13,7 +13,7 @@ type UserRoleAssignment struct {
 	userId        uuid.UUID
 	roleId        uuid.UUID
 	groupId       *uuid.UUID
-	applicationId uuid.UUID
+	applicationId *uuid.UUID
 
 	userInfo UserRoleAssignmentUserInfo
 	roleInfo UserRoleAssignmentRoleInfo
@@ -28,7 +28,7 @@ type UserRoleAssignmentRoleInfo struct {
 	Name string
 }
 
-func NewUserRoleAssignment(userId uuid.UUID, roleId uuid.UUID, groupId *uuid.UUID, applicationId uuid.UUID) *UserRoleAssignment {
+func NewUserRoleAssignment(userId uuid.UUID, roleId uuid.UUID, groupId *uuid.UUID, applicationId *uuid.UUID) *UserRoleAssignment {
 	return &UserRoleAssignment{
 		ModelBase:     NewModelBase(),
 		userId:        userId,
@@ -58,7 +58,7 @@ func (u *UserRoleAssignment) GroupId() *uuid.UUID {
 	return u.groupId
 }
 
-func (u *UserRoleAssignment) ApplicationId() uuid.UUID {
+func (u *UserRoleAssignment) ApplicationId() *uuid.UUID {
 	return u.applicationId
 }
 
@@ -90,11 +90,15 @@ func (u *UserRoleAssignment) GetScanPointers(filter UserRoleAssignmentFilter) []
 	return ptrs
 }
 
+type applicationIdFilter struct {
+	value *uuid.UUID
+}
+
 type UserRoleAssignmentFilter struct {
 	userId        *uuid.UUID
 	roleId        *uuid.UUID
 	groupId       *uuid.UUID
-	applicationId *uuid.UUID
+	applicationId *applicationIdFilter
 	includeUser   bool
 	includeRole   bool
 }
@@ -149,9 +153,11 @@ func (f UserRoleAssignmentFilter) GetGroupId() uuid.UUID {
 	return utils.ZeroIfNil(f.groupId)
 }
 
-func (f UserRoleAssignmentFilter) ApplicationId(applicationId uuid.UUID) UserRoleAssignmentFilter {
+func (f UserRoleAssignmentFilter) ApplicationId(applicationId *uuid.UUID) UserRoleAssignmentFilter {
 	filter := f.Clone()
-	filter.applicationId = &applicationId
+	filter.applicationId = &applicationIdFilter{
+		value: applicationId,
+	}
 	return filter
 }
 
@@ -160,7 +166,7 @@ func (f UserRoleAssignmentFilter) HasApplicationId() bool {
 }
 
 func (f UserRoleAssignmentFilter) GetApplicationId() *uuid.UUID {
-	return f.applicationId
+	return f.applicationId.value
 }
 
 func (f UserRoleAssignmentFilter) IncludeUser() UserRoleAssignmentFilter {
