@@ -10,6 +10,7 @@
 package mock
 
 import (
+	repositories "Keyline/internal/repositories"
 	reflect "reflect"
 
 	gomock "go.uber.org/mock/gomock"
@@ -37,6 +38,35 @@ func NewMockPolicy(ctrl *gomock.Controller) *MockPolicy {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockPolicy) EXPECT() *MockPolicyMockRecorder {
 	return m.recorder
+}
+
+// GetPasswordRuleType mocks base method.
+func (m *MockPolicy) GetPasswordRuleType() repositories.PasswordRuleType {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPasswordRuleType")
+	ret0, _ := ret[0].(repositories.PasswordRuleType)
+	return ret0
+}
+
+// GetPasswordRuleType indicates an expected call of GetPasswordRuleType.
+func (mr *MockPolicyMockRecorder) GetPasswordRuleType() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPasswordRuleType", reflect.TypeOf((*MockPolicy)(nil).GetPasswordRuleType))
+}
+
+// Serialize mocks base method.
+func (m *MockPolicy) Serialize() ([]byte, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Serialize")
+	ret0, _ := ret[0].([]byte)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Serialize indicates an expected call of Serialize.
+func (mr *MockPolicyMockRecorder) Serialize() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Serialize", reflect.TypeOf((*MockPolicy)(nil).Serialize))
 }
 
 // Validate mocks base method.

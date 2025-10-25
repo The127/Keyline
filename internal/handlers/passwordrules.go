@@ -86,6 +86,17 @@ type CreatePasswordRuleRequestDto struct {
 	Details map[string]interface{} `json:"details" validate:"required"`
 }
 
+// CreatePasswordRule
+// @summary     Create password rule
+// @description Create a password rule for a virtual server.
+// @tags        Password rules
+// @accept      application/json
+// @param       virtualServerName  path   string  true  "Virtual server name"  default(keyline)
+// @param       body  body   CreatePasswordRuleRequestDto  true  "Password rule details"
+// @success     204 "No Content"
+// @failure     400  {string}  string "Bad Request"
+// @failure     409  {string}  string "Conflict"
+// @router      /api/virtual-servers/{virtualServerName}/password-policies/rules/{ruleType} [post]
 func CreatePasswordRule(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -121,10 +132,6 @@ func CreatePasswordRule(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
-}
-
-func GetPasswordRule(w http.ResponseWriter, r *http.Request) {
-
 }
 
 func PatchPasswordRule(w http.ResponseWriter, r *http.Request) {

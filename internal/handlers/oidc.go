@@ -659,7 +659,7 @@ type OidcUserInfoResponseDto struct {
 // @Security     BearerAuth
 // @Success      200  {object}  handlers.OidcUserInfoResponseDto
 // @Failure      401  {string}  string
-// @Router       /oidc/{virtualServerName}/userinfo [get, post]
+// @Router       /oidc/{virtualServerName}/userinfo [post][get]
 func OidcUserinfo(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	scope := middlewares.GetScope(ctx)
