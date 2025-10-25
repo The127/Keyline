@@ -1262,7 +1262,7 @@ func mapClaims(ctx context.Context, params AccessTokenGenerationParams) (jwt.Map
 			Roles:            globalRoles,
 			ApplicationRoles: applicationRoles,
 			GlobalMetadata:   userMetadata,
-			AppMetadata:      applicationUserMetadata,
+			AppMetadata:      appMetadata,
 		},
 	)
 
