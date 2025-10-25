@@ -505,6 +505,52 @@ Keyline implements a comprehensive RBAC system:
 - **Service Users** - Non-interactive accounts for machine-to-machine authentication
 - **System Users** - Built-in accounts for internal operations
 
+### Custom Claims Mapping
+
+Keyline allows you to transform user roles and metadata into custom JWT claims using JavaScript. Each application can define its own claims mapping script that runs during token generation.
+
+**Available Variables in Mapping Scripts:**
+
+- `roles` - Array of global role names assigned to the user
+- `applicationRoles` - Array of application-specific role names assigned to the user
+- `globalMetadata` - Object containing user's global metadata (shared across all applications)
+- `appMetadata` - Object containing user's application-specific metadata
+
+**Example Mapping Script:**
+
+```javascript
+// Transform roles and metadata into custom claims
+({
+  "custom_roles": roles.concat(applicationRoles),
+  "department": globalMetadata.department || "unknown",
+  "app_settings": appMetadata.settings || {},
+  "is_admin": roles.includes("admin")
+})
+```
+
+**Default Behavior:**
+
+If no custom mapping script is defined, the default mapping returns:
+```javascript
+{
+  "roles": roles,
+  "application_roles": applicationRoles
+}
+```
+
+The mapping script is set per application and can be updated via the API.
+
+### User Metadata
+
+Keyline supports storing custom metadata for users at two levels:
+
+1. **Global Metadata** - User-level metadata shared across all applications (stored in `users.metadata`)
+2. **Application-Specific Metadata** - Per-user, per-application metadata (stored in `application_user_metadata`)
+
+Both metadata fields are JSON objects that can store arbitrary key-value pairs. They are accessible in claims mapping scripts as `globalMetadata` and `appMetadata` respectively.
+
+**Note:** Keyline does not provide a way to filter or query users by metadata values. Metadata is designed for storing user attributes that are included in JWT claims, not for user search or filtering purposes. If you need to filter users by specific attributes, consider using roles or dedicated user fields instead.
+
 ## IoC Container
 
 Keyline includes a custom IoC (Inversion of Control) container with support for:
