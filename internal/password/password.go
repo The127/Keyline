@@ -69,6 +69,7 @@ func (v *validator) Validate(ctx context.Context, password string) error {
 
 //go:generate mockgen -destination=./mock/mock_policy.go -package=mock . Policy
 type Policy interface {
+	repositories.PasswordRuleDetails
 	Validate(password string) error
 }
 
