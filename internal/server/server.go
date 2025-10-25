@@ -123,16 +123,18 @@ func Serve(dp *ioc.DependencyProvider, serverConfig config.ServerConfig) {
 
 	vsApiRouter.HandleFunc("/groups", handlers.ListGroups).Methods(http.MethodGet, http.MethodOptions)
 
+	vsApiRouter.HandleFunc("/roles", handlers.CreateRole).Methods(http.MethodPost, http.MethodOptions)
+	vsApiRouter.HandleFunc("/roles", handlers.ListRoles).Methods(http.MethodGet, http.MethodOptions)
+	vsApiRouter.HandleFunc("/roles/{roleId}", handlers.GetRoleById).Methods(http.MethodGet, http.MethodOptions)
+	vsApiRouter.HandleFunc("/roles/{roleId}/assign", handlers.AssignRole).Methods(http.MethodPost, http.MethodOptions)
+	vsApiRouter.HandleFunc("/roles/{roleId}/users", handlers.ListUsersInRole).Methods(http.MethodGet, http.MethodOptions)
+
 	vsApiRouter.HandleFunc("/applications", handlers.CreateApplication).Methods(http.MethodPost, http.MethodOptions)
 	vsApiRouter.HandleFunc("/applications", handlers.ListApplications).Methods(http.MethodGet, http.MethodOptions)
 	vsApiRouter.HandleFunc("/applications/{appId}", handlers.GetApplication).Methods(http.MethodGet, http.MethodOptions)
 	vsApiRouter.HandleFunc("/applications/{appId}", handlers.PatchApplication).Methods(http.MethodPatch, http.MethodOptions)
 	vsApiRouter.HandleFunc("/applications/{appId}", handlers.DeleteApplication).Methods(http.MethodDelete, http.MethodOptions)
 	vsApiRouter.HandleFunc("/applications/{appId}/roles", handlers.ListAppRoles).Methods(http.MethodGet, http.MethodOptions)
-	vsApiRouter.HandleFunc("/applications/{appId}/roles", handlers.CreateAppRole).Methods(http.MethodPost, http.MethodOptions)
-	vsApiRouter.HandleFunc("/applications/{appId}/roles/{roleId}", handlers.GetAppRoleById).Methods(http.MethodGet, http.MethodOptions)
-	vsApiRouter.HandleFunc("/applications/{appId}/roles/{roleId}/assign", handlers.AssignAppRole).Methods(http.MethodPost, http.MethodOptions)
-	vsApiRouter.HandleFunc("/applications/{appId}/roles/{roleId}/users", handlers.ListUsersInAppRole).Methods(http.MethodGet, http.MethodOptions)
 
 	vsApiRouter.HandleFunc("/audit", handlers.ListAuditLog).Methods(http.MethodGet, http.MethodOptions)
 

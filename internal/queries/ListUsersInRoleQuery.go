@@ -17,7 +17,6 @@ type ListUsersInRole struct {
 	PagedQuery
 	OrderedQuery
 	VirtualServerName string
-	ApplicationId     uuid.UUID
 	RoleId            uuid.UUID
 }
 
@@ -50,24 +49,16 @@ type ListUsersInRoleResponseItem struct {
 func HandleListUsersInRole(ctx context.Context, query ListUsersInRole) (*ListUsersInRoleResponse, error) {
 	scope := middlewares.GetScope(ctx)
 
-	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
-	virtualServerFilter := repositories.NewVirtualServerFilter().Name(query.VirtualServerName)
-	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
-	if err != nil {
-		return nil, fmt.Errorf("getting virtual server: %w", err)
-	}
-
-	applicationRepository := ioc.GetDependency[repositories.ApplicationRepository](scope)
-	applicationFilter := repositories.NewApplicationFilter().VirtualServerId(virtualServer.Id()).Id(query.ApplicationId)
-	application, err := applicationRepository.Single(ctx, applicationFilter)
-	if err != nil {
-		return nil, fmt.Errorf("getting application: %w", err)
-	}
+	// virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
+	// virtualServerFilter := repositories.NewVirtualServerFilter().Name(query.VirtualServerName)
+	// virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("getting virtual server: %w", err)
+	// }
 
 	userRoleAssignmentRepository := ioc.GetDependency[repositories.UserRoleAssignmentRepository](scope)
 	userRoleAssignmentFilter := repositories.NewUserRoleAssignmentFilter().
 		// TODO: Add virtual server filter
-		ApplicationId(application.Id()).
 		RoleId(query.RoleId).
 		IncludeUser()
 	userRoleAssignments, totalCount, err := userRoleAssignmentRepository.List(ctx, userRoleAssignmentFilter)

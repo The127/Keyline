@@ -12,7 +12,7 @@ type Role struct {
 	ModelBase
 
 	virtualServerId uuid.UUID
-	applicationId   uuid.UUID
+	applicationId   *uuid.UUID
 
 	name        string
 	description string
@@ -21,11 +21,20 @@ type Role struct {
 	maxTokenAge *time.Duration
 }
 
+func NewVirtualServerRole(virtualServerId uuid.UUID, name string, description string) *Role {
+	return &Role{
+		ModelBase:       NewModelBase(),
+		virtualServerId: virtualServerId,
+		name:            name,
+		description:     description,
+	}
+}
+
 func NewApplicationRole(virtualServerId uuid.UUID, applicationId uuid.UUID, name string, description string) *Role {
 	return &Role{
 		ModelBase:       NewModelBase(),
 		virtualServerId: virtualServerId,
-		applicationId:   applicationId,
+		applicationId:   &applicationId,
 		name:            name,
 		description:     description,
 	}
@@ -68,7 +77,7 @@ func (r *Role) VirtualServerId() uuid.UUID {
 	return r.virtualServerId
 }
 
-func (r *Role) ApplicationId() uuid.UUID {
+func (r *Role) ApplicationId() *uuid.UUID {
 	return r.applicationId
 }
 
