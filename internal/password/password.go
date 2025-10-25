@@ -15,9 +15,7 @@ type Validator interface {
 	Validate(ctx context.Context, password string) error
 }
 
-type validator struct {
-	rules []Policy
-}
+type validator struct{}
 
 func NewValidator() Validator {
 	return &validator{}
@@ -45,7 +43,7 @@ func (v *validator) Validate(ctx context.Context, password string) error {
 		return fmt.Errorf("failed to get password rules: %w", err)
 	}
 
-	rules := make([]Policy, len(passwordRules))
+	var rules []Policy
 	for _, passwordRule := range passwordRules {
 		switch passwordRule.Type() {
 		case repositories.PasswordRuleTypeMinLength:
@@ -99,14 +97,14 @@ func (v *validator) Validate(ctx context.Context, password string) error {
 		default:
 			return fmt.Errorf("unknown password rule type: %s", passwordRule.Type())
 		}
-
-		// always add common policy
-		rules = append(rules, &commonPolicy{})
 	}
+
+	// always add common policy
+	rules = append(rules, &commonPolicy{})
 
 	var aggregateErr []error
 
-	for _, rule := range v.rules {
+	for _, rule := range rules {
 		err := rule.Validate(password)
 		if err != nil {
 			aggregateErr = append(aggregateErr, err)
