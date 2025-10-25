@@ -8,6 +8,7 @@ import (
 	"Keyline/internal/database"
 	"Keyline/internal/events"
 	"Keyline/internal/middlewares"
+	"Keyline/internal/password"
 	"Keyline/internal/queries"
 	"Keyline/internal/repositories"
 	"Keyline/internal/repositories/postgres"
@@ -214,6 +215,9 @@ func Services(dc *ioc.DependencyCollection) {
 	})
 	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) behaviours.AuditLogger {
 		return audit.NewDbAuditLogger()
+	})
+	ioc.RegisterScoped(dc, func(_ *ioc.DependencyProvider) password.Validator {
+		return password.NewValidator()
 	})
 }
 
