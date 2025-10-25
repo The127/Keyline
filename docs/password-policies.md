@@ -12,81 +12,21 @@ Password policies in Keyline are enforced whenever a user creates or changes the
 
 Requires passwords to be at least a specified number of characters long.
 
-**Configuration:**
-```json
-{
-  "type": "minLength",
-  "details": {
-    "minLength": 8
-  }
-}
-```
-
-**Example:** If `minLength` is set to 8, passwords must be at least 8 characters long.
-
 ### 2. Maximum Length Policy
 
 Limits passwords to a maximum number of characters.
-
-**Configuration:**
-```json
-{
-  "type": "maxLength",
-  "details": {
-    "maxLength": 128
-  }
-}
-```
-
-**Example:** If `maxLength` is set to 128, passwords cannot exceed 128 characters.
 
 ### 3. Minimum Digits Policy
 
 Requires passwords to contain at least a specified number of numeric characters (0-9).
 
-**Configuration:**
-```json
-{
-  "type": "digits",
-  "details": {
-    "minAmount": 1
-  }
-}
-```
-
-**Example:** If `minAmount` is set to 1, passwords must contain at least 1 numeric character.
-
 ### 4. Minimum Lowercase Letters Policy
 
 Requires passwords to contain at least a specified number of lowercase letters (a-z).
 
-**Configuration:**
-```json
-{
-  "type": "lowerCase",
-  "details": {
-    "minAmount": 1
-  }
-}
-```
-
-**Example:** If `minAmount` is set to 1, passwords must contain at least 1 lowercase letter.
-
 ### 5. Minimum Uppercase Letters Policy
 
 Requires passwords to contain at least a specified number of uppercase letters (A-Z).
-
-**Configuration:**
-```json
-{
-  "type": "upperCase",
-  "details": {
-    "minAmount": 1
-  }
-}
-```
-
-**Example:** If `minAmount` is set to 1, passwords must contain at least 1 uppercase letter.
 
 ### 6. Minimum Special Characters Policy
 
@@ -98,18 +38,6 @@ The following special characters are supported (based on ASCII ranges):
 - Punctuation: `! " # $ % & ' ( ) * + , - . /` (ASCII 33-47)
 - Symbols: `: ; < = > ? @` (ASCII 58-64)
 - Brackets and others: `[ \ ] ^ _` and backtick `` ` `` (ASCII 91-96)
-
-**Configuration:**
-```json
-{
-  "type": "special",
-  "details": {
-    "minAmount": 1
-  }
-}
-```
-
-**Example:** If `minAmount` is set to 1, passwords must contain at least 1 special character from the supported set.
 
 ### 7. Common Password Check
 
@@ -144,59 +72,6 @@ Keyline includes a comprehensive list of approximately 100,000 of the most commo
    - "password must contain at least X uppercase characters"
    - "password must contain at least X special characters"
    - "password is a common password"
-
-## Best Practices
-
-### Recommended Policy Configuration
-
-For most use cases, we recommend the following password policy configuration:
-
-```json
-[
-  {
-    "type": "minLength",
-    "details": { "minLength": 12 }
-  },
-  {
-    "type": "maxLength",
-    "details": { "maxLength": 128 }
-  },
-  {
-    "type": "digits",
-    "details": { "minAmount": 1 }
-  },
-  {
-    "type": "lowerCase",
-    "details": { "minAmount": 1 }
-  },
-  {
-    "type": "upperCase",
-    "details": { "minAmount": 1 }
-  },
-  {
-    "type": "special",
-    "details": { "minAmount": 1 }
-  }
-]
-```
-
-This configuration ensures passwords:
-- Are at least 12 characters long (recommended minimum for strong passwords)
-- Are limited to 128 characters (practical maximum)
-- Contain a mix of character types (numbers, lowercase, uppercase, special)
-- Are not in the common password list (automatic)
-
-### Security Considerations
-
-1. **Balance Security and Usability**: Overly restrictive policies can lead to users writing down passwords or reusing them across services. Aim for a balance that enhances security without frustrating users.
-
-2. **Minimum Length vs. Complexity**: Modern password security emphasizes length over complexity. A longer password (12+ characters) is often more secure than a shorter complex one (8 characters with many character types).
-
-3. **Common Password Check**: The built-in common password check is one of the most effective policies, as it prevents the use of passwords that are frequently targeted in attacks.
-
-4. **User Guidance**: Provide clear guidance to users about password requirements during registration and password change processes. The error messages returned by Keyline's validation can be displayed to help users create compliant passwords.
-
-5. **Consider Passphrases**: Encourage users to use passphrases (multiple words combined) instead of complex passwords. They are often easier to remember and can be very secure.
 
 ## Password Storage
 
