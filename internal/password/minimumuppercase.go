@@ -17,7 +17,7 @@ func (p *minimumUpperCasePolicy) GetPasswordRuleType() repositories.PasswordRule
 func (p *minimumUpperCasePolicy) Serialize() ([]byte, error) {
 	jsonBytes, err := json.Marshal(p)
 	if err != nil {
-		return nil, fmt.Errorf("failed to serialize max length rule: %w", err)
+		return nil, fmt.Errorf("failed to serialize upper case rule: %w", err)
 	}
 	return jsonBytes, nil
 }

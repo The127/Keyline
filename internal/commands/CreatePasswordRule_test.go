@@ -111,7 +111,7 @@ func (s *CreatePasswordRuleCommandSuite) QueryingExistingError() {
 	resp, err := HandleCreatePasswordRule(ctx, cmd)
 
 	// assert
-	s.Error(err)
+	s.Require().Error(err)
 	s.Nil(resp)
 }
 
@@ -130,7 +130,7 @@ func (s *CreatePasswordRuleCommandSuite) VirtualServerError() {
 	resp, err := HandleCreatePasswordRule(ctx, cmd)
 
 	// assert
-	s.Error(err)
+	s.Require().Error(err)
 	s.Nil(resp)
 }
 

@@ -17,7 +17,7 @@ func (p *minLengthPolicy) GetPasswordRuleType() repositories.PasswordRuleType {
 func (p *minLengthPolicy) Serialize() ([]byte, error) {
 	jsonBytes, err := json.Marshal(p)
 	if err != nil {
-		return nil, fmt.Errorf("failed to serialize max length rule: %w", err)
+		return nil, fmt.Errorf("failed to serialize min length rule: %w", err)
 	}
 	return jsonBytes, nil
 }

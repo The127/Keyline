@@ -99,7 +99,7 @@ func (s *UpdatePasswordRuleCommandSuite) TestPasswordRuleError() {
 	resp, err := HandleUpdatePasswordRule(ctx, cmd)
 
 	// assert
-	s.Error(err)
+	s.Require().Error(err)
 	s.Nil(resp)
 }
 

@@ -171,6 +171,7 @@ func UpdatePasswordRule(w http.ResponseWriter, r *http.Request) {
 	err = json.NewDecoder(r.Body).Decode(&requestDto)
 	if err != nil {
 		utils.HandleHttpError(w, err)
+		return
 	}
 
 	scope := middlewares.GetScope(ctx)
