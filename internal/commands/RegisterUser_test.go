@@ -2,6 +2,8 @@ package commands
 
 import (
 	"Keyline/internal/middlewares"
+	"Keyline/internal/password"
+	"Keyline/internal/password/mock"
 	"Keyline/internal/repositories"
 	"Keyline/internal/repositories/mocks"
 	"Keyline/ioc"
@@ -43,6 +45,9 @@ func (s *RegisterUserCommandSuite) TestHandleRegisterUser() {
 	credentialRepository := mocks.NewMockCredentialRepository(ctrl)
 	credentialRepository.EXPECT().Insert(gomock.Any(), gomock.Any()).Return(nil)
 
+	passwordValidator := mock.NewMockValidator(ctrl)
+	passwordValidator.EXPECT().Validate(gomock.Any(), gomock.Any()).Return(nil)
+
 	m := mediator.NewMediator()
 
 	dc := ioc.NewDependencyCollection()
@@ -57,6 +62,9 @@ func (s *RegisterUserCommandSuite) TestHandleRegisterUser() {
 	})
 	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) mediator.Mediator {
 		return m
+	})
+	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) password.Validator {
+		return passwordValidator
 	})
 	scope := dc.BuildProvider()
 	ctx := middlewares.ContextWithScope(s.T().Context(), scope)

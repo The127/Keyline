@@ -3,6 +3,7 @@ package commands
 import (
 	"Keyline/internal/events"
 	"Keyline/internal/middlewares"
+	"Keyline/internal/password"
 	"Keyline/internal/repositories"
 	"Keyline/ioc"
 	"Keyline/mediator"
@@ -40,6 +41,12 @@ func HandleRegisterUser(ctx context.Context, command RegisterUser) (*RegisterUse
 
 	if !virtualServer.EnableRegistration() {
 		return nil, utils.ErrRegistrationNotEnabled
+	}
+
+	passwordValidator := ioc.GetDependency[password.Validator](scope)
+	err = passwordValidator.Validate(ctx, command.Password)
+	if err != nil {
+		return nil, fmt.Errorf("password validation: %w", err)
 	}
 
 	userRepository := ioc.GetDependency[repositories.UserRepository](scope)
