@@ -12,7 +12,3 @@ func (p *minLengthPolicy) Validate(password string) error {
 	}
 	return nil
 }
-
-type characterClassPolicy struct {
-	characterClasses []string
-}

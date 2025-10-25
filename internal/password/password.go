@@ -6,6 +6,7 @@ import (
 	"Keyline/ioc"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 )
 
@@ -105,7 +106,16 @@ func NewValidator(ctx context.Context) (Validator, error) {
 }
 
 func (v *validator) Validate(password string) error {
-	panic("implement me")
+	var aggregateErr []error
+
+	for _, rule := range v.rules {
+		err := rule.Validate(password)
+		if err != nil {
+			aggregateErr = append(aggregateErr, err)
+		}
+	}
+
+	return errors.Join(aggregateErr...)
 }
 
 //go:generate mockgen -destination=./mock/mock_policy.go -package=mock . Policy
