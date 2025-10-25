@@ -16,7 +16,7 @@ func (p *minimumNumbersPolicy) Validate(password string) error {
 	}
 
 	if amount < p.MinAmount {
-		return fmt.Errorf("password must contain at least %d special characters", p.MinAmount)
+		return fmt.Errorf("password must contain at least %d numeric characters", p.MinAmount)
 	}
 
 	return nil
