@@ -41,6 +41,7 @@ func NewSystemUser(username string) *User {
 		username:    username,
 		displayName: username,
 		serviceUser: true,
+		metadata:    "{}",
 	}
 }
 
