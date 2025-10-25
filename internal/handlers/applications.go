@@ -17,11 +17,12 @@ import (
 )
 
 type CreateApplicationRequestDto struct {
-	Name           string   `json:"name" validate:"required,min=1,max=255"`
-	DisplayName    string   `json:"displayName" validate:"required,min=1,max=255"`
-	RedirectUris   []string `json:"redirectUris" validate:"required,dive,url,min=1"`
-	PostLogoutUris []string `json:"postLogoutUris" validate:"dive,url"`
-	Type           string   `json:"type" validate:"required,oneof=public confidential"`
+	Name                  string   `json:"name" validate:"required,min=1,max=255"`
+	DisplayName           string   `json:"displayName" validate:"required,min=1,max=255"`
+	RedirectUris          []string `json:"redirectUris" validate:"required,dive,url,min=1"`
+	PostLogoutUris        []string `json:"postLogoutUris" validate:"dive,url"`
+	Type                  string   `json:"type" validate:"required,oneof=public confidential"`
+	AccessTokenHeaderType *string  `json:"accessTokenHeaderType" validate:"oneof=at+jwt,JWT"`
 }
 
 type CreateApplicationResponseDto struct {
@@ -66,6 +67,11 @@ func CreateApplication(w http.ResponseWriter, r *http.Request) {
 	scope := middlewares.GetScope(ctx)
 	m := ioc.GetDependency[mediator.Mediator](scope)
 
+	accessTokenHeaderType := "at+jwt"
+	if dto.AccessTokenHeaderType != nil {
+		accessTokenHeaderType = *dto.AccessTokenHeaderType
+	}
+
 	response, err := mediator.Send[*commands.CreateApplicationResponse](ctx, m, commands.CreateApplication{
 		VirtualServerName:      vsName,
 		Name:                   dto.Name,
@@ -73,6 +79,7 @@ func CreateApplication(w http.ResponseWriter, r *http.Request) {
 		Type:                   repositories.ApplicationType(dto.Type),
 		RedirectUris:           dto.RedirectUris,
 		PostLogoutRedirectUris: utils.EmptyIfNil(dto.PostLogoutUris),
+		AccessTokenHeaderType:  accessTokenHeaderType,
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)

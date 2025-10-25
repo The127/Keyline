@@ -70,6 +70,7 @@ func HandleCreateApplication(ctx context.Context, command CreateApplication) (*C
 	}
 
 	application.SetPostLogoutRedirectUris(command.PostLogoutRedirectUris)
+	application.SetAccessTokenHeaderType(command.AccessTokenHeaderType)
 
 	err = applicationRepository.Insert(ctx, application)
 	if err != nil {
