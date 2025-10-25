@@ -37,6 +37,10 @@ func (r *passwordRuleRepository) selectQuery(filter repositories.PasswordRuleFil
 		s.Where(s.Equal("virtual_server_id", filter.GetVirtualServerId()))
 	}
 
+	if filter.HasType() {
+		s.Where(s.Equal("type", filter.GetType()))
+	}
+
 	return s
 }
 

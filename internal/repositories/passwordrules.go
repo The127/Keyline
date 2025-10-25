@@ -73,6 +73,7 @@ func (p *PasswordRule) Details() []byte {
 
 type PasswordRuleFilter struct {
 	virtualServerId *uuid.UUID
+	type_           *PasswordRuleType
 }
 
 func NewPasswordRuleFilter() PasswordRuleFilter {
@@ -95,6 +96,20 @@ func (f PasswordRuleFilter) HasVirtualServerId() bool {
 
 func (f PasswordRuleFilter) GetVirtualServerId() uuid.UUID {
 	return utils.ZeroIfNil(f.virtualServerId)
+}
+
+func (f PasswordRuleFilter) Type(type_ PasswordRuleType) PasswordRuleFilter {
+	filter := f.Clone()
+	filter.type_ = &type_
+	return filter
+}
+
+func (f PasswordRuleFilter) HasType() bool {
+	return f.type_ != nil
+}
+
+func (f PasswordRuleFilter) GetType() PasswordRuleType {
+	return utils.ZeroIfNil(f.type_)
 }
 
 //go:generate mockgen -destination=./mocks/passwordrule_repository.go -package=mocks Keyline/internal/repositories PasswordRuleRepository
