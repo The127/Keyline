@@ -281,6 +281,52 @@ const docTemplate = `{
             }
         },
         "/api/virtual-servers/{virtualServerName}/password-policies/rules/{ruleType}": {
+            "put": {
+                "description": "Update a password rule for a virtual server.",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Password rules"
+                ],
+                "summary": "Update a password rule",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "keyline",
+                        "description": "Virtual server name",
+                        "name": "virtualServerName",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Password rule details",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.PatchPasswordRuleRequestDto"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
             "post": {
                 "description": "Create a password rule for a virtual server.",
                 "consumes": [
@@ -3359,6 +3405,10 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "handlers.PatchPasswordRuleRequestDto": {
+            "type": "object",
+            "additionalProperties": {}
         },
         "handlers.PatchUserApplicationMetadataRequestDto": {
             "type": "object",
