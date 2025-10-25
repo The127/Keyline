@@ -41,6 +41,13 @@ func newTestContext(t *testing.T) context.Context {
 		return userRoleAssignmentRepository
 	})
 
+	applicationUserMetadata := repositories.NewApplicationUserMetadata(uuid.New(), user.Id(), "{\"foo\": \"bar\"}")
+	applicationUserMetadataRepository := repoMocks.NewMockApplicationUserMetadataRepository(ctrl)
+	applicationUserMetadataRepository.EXPECT().First(gomock.Any(), gomock.Any()).Return(applicationUserMetadata, nil).AnyTimes()
+	ioc.RegisterTransient(dependencyCollection, func(dp *ioc.DependencyProvider) repositories.ApplicationUserMetadataRepository {
+		return applicationUserMetadataRepository
+	})
+
 	claimsMapper := serviceMocks.NewMockClaimsMapper(ctrl)
 	claimsMapper.EXPECT().MapClaims(gomock.Any(), gomock.Any(), gomock.Any()).Return(jwt.MapClaims{})
 	ioc.RegisterSingleton(dependencyCollection, func(dp *ioc.DependencyProvider) claimsMapping.ClaimsMapper {

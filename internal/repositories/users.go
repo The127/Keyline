@@ -31,6 +31,7 @@ func NewUser(username string, displayName string, primaryEmail string, virtualSe
 		displayName:     displayName,
 		primaryEmail:    primaryEmail,
 		serviceUser:     false,
+		metadata:        "{}",
 	}
 }
 

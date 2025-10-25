@@ -15,6 +15,8 @@ import (
 type Params struct {
 	Roles            []string
 	ApplicationRoles []string
+	GlobalMetadata   map[string]interface{}
+	AppMetadata      *repositories.ApplicationUserMetadata
 }
 
 //go:generate mockgen -destination=../mocks/claimsMapping.go -package=mocks Keyline/internal/services/claimsMapping ClaimsMapper
@@ -78,6 +80,16 @@ func (c *claimsMapper) runCustomClaimsMappingScript(claimsMappingScript *string,
 	err = vm.Set("applicationRoles", params.ApplicationRoles)
 	if err != nil {
 		return nil, fmt.Errorf("failed setting applicationRoles: %w", err)
+	}
+
+	err = vm.Set("globalMetadata", params.GlobalMetadata)
+	if err != nil {
+		return nil, fmt.Errorf("failed setting globalMetadata: %w", err)
+	}
+
+	err = vm.Set("appMetadata", params.AppMetadata)
+	if err != nil {
+		return nil, fmt.Errorf("failed setting appMetadata: %w", err)
 	}
 
 	p, err := goja.Compile("mappingScript.js", *claimsMappingScript, true)
