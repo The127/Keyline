@@ -92,6 +92,9 @@ func postgresRepositories(dc *ioc.DependencyCollection, pc config.PostgresConfig
 	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.AuditLogRepository {
 		return postgres.NewAuditLogRepository()
 	})
+	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) repositories.PasswordRuleRepository {
+		return postgres.NewPasswordRuleRepository()
+	})
 }
 
 func Mediator(dc *ioc.DependencyCollection) {

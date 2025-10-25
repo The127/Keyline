@@ -95,7 +95,7 @@ func (f PasswordRuleFilter) GetVirtualServerId() uuid.UUID {
 
 //go:generate mockgen -destination=./mocks/passwordrule_repository.go -package=mocks Keyline/internal/repositories PasswordRuleRepository
 type PasswordRuleRepository interface {
-	List(ctx context.Context, filter PasswordRuleFilter) ([]*PasswordRule, int, error)
+	List(ctx context.Context, filter PasswordRuleFilter) ([]*PasswordRule, error)
 	Single(ctx context.Context, filter PasswordRuleFilter) (*PasswordRule, error)
 	First(ctx context.Context, filter PasswordRuleFilter) (*PasswordRule, error)
 	Insert(ctx context.Context, passwordRule *PasswordRule) error

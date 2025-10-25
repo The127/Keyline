@@ -86,13 +86,12 @@ func (mr *MockPasswordRuleRepositoryMockRecorder) Insert(ctx, passwordRule any) 
 }
 
 // List mocks base method.
-func (m *MockPasswordRuleRepository) List(ctx context.Context, filter repositories.PasswordRuleFilter) ([]*repositories.PasswordRule, int, error) {
+func (m *MockPasswordRuleRepository) List(ctx context.Context, filter repositories.PasswordRuleFilter) ([]*repositories.PasswordRule, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "List", ctx, filter)
 	ret0, _ := ret[0].([]*repositories.PasswordRule)
-	ret1, _ := ret[1].(int)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // List indicates an expected call of List.
