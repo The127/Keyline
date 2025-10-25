@@ -29,6 +29,7 @@ func TestCreateRoleCommandSuite(t *testing.T) {
 
 func (s *CreateRoleCommandSuite) createContext(
 	vsr repositories.VirtualServerRepository,
+	ar repositories.ApplicationRepository,
 	rr repositories.RoleRepository,
 	m mediator.Mediator,
 ) context.Context {
@@ -37,6 +38,12 @@ func (s *CreateRoleCommandSuite) createContext(
 	if vsr != nil {
 		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.VirtualServerRepository {
 			return vsr
+		})
+	}
+
+	if ar != nil {
+		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.ApplicationRepository {
+			return ar
 		})
 	}
 
@@ -69,7 +76,31 @@ func (s *CreateRoleCommandSuite) TestVirtualServerError() {
 	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).
 		Return(nil, errors.New("error"))
 
-	ctx := s.createContext(virtualServerRepository, nil, nil)
+	ctx := s.createContext(virtualServerRepository, nil, nil, nil)
+	cmd := CreateRole{}
+
+	// act
+	_, err := HandleCreateRole(ctx, cmd)
+
+	// assert
+	s.Error(err)
+}
+
+func (s *CreateRoleCommandSuite) TestApplicationError() {
+	// arrange
+	ctrl := gomock.NewController(s.T())
+	defer ctrl.Finish()
+
+	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
+	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
+	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
+
+	application := repositories.NewApplication(virtualServer.Id(), "application", "Application", repositories.ApplicationTypePublic, []string{})
+	application.Mock(time.Now())
+	applicationRepository := mocks.NewMockApplicationRepository(ctrl)
+	applicationRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
+
+	ctx := s.createContext(virtualServerRepository, applicationRepository, nil, nil)
 	cmd := CreateRole{}
 
 	// act
@@ -88,11 +119,16 @@ func (s *CreateRoleCommandSuite) TestRoleError() {
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
 	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
 
+	application := repositories.NewApplication(virtualServer.Id(), "application", "Application", repositories.ApplicationTypePublic, []string{})
+	application.Mock(time.Now())
+	applicationRepository := mocks.NewMockApplicationRepository(ctrl)
+	applicationRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(application, nil)
+
 	roleRepository := mocks.NewMockRoleRepository(ctrl)
 	roleRepository.EXPECT().Insert(gomock.Any(), gomock.Any()).
 		Return(errors.New("error"))
 
-	ctx := s.createContext(virtualServerRepository, roleRepository, nil)
+	ctx := s.createContext(virtualServerRepository, applicationRepository, roleRepository, nil)
 	cmd := CreateRole{}
 
 	// act
@@ -113,6 +149,13 @@ func (s *CreateRoleCommandSuite) TestHappyPath() {
 		return x.GetName() == virtualServer.Name()
 	})).Return(virtualServer, nil)
 
+	application := repositories.NewApplication(virtualServer.Id(), "application", "Application", repositories.ApplicationTypePublic, []string{})
+	application.Mock(time.Now())
+	applicationRepository := mocks.NewMockApplicationRepository(ctrl)
+	applicationRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories.ApplicationFilter) bool {
+		return x.GetVirtualServerId() == virtualServer.Id() && x.GetId() == application.Id()
+	})).Return(application, nil)
+
 	roleRepository := mocks.NewMockRoleRepository(ctrl)
 	roleRepository.EXPECT().Insert(gomock.Any(), gomock.Cond(func(x *repositories.Role) bool {
 		return x.Name() == "role" &&
@@ -125,9 +168,10 @@ func (s *CreateRoleCommandSuite) TestHappyPath() {
 	m := mediatorMocks.NewMockMediator(ctrl)
 	m.EXPECT().SendEvent(gomock.Any(), gomock.AssignableToTypeOf(events.RoleCreatedEvent{}), gomock.Any())
 
-	ctx := s.createContext(virtualServerRepository, roleRepository, m)
+	ctx := s.createContext(virtualServerRepository, applicationRepository, roleRepository, m)
 	cmd := CreateRole{
 		VirtualServerName: virtualServer.Name(),
+		ApplicationId:     application.Id(),
 		Name:              "role",
 		Description:       "description",
 		RequireMfa:        true,

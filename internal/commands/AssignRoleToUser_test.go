@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -121,7 +122,7 @@ func (s *AssignRoleToUserCommandSuite) TestUserError() {
 	virtualServerRepository := repoMocks.NewMockVirtualServerRepository(ctrl)
 	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
 
-	role := repositories.NewVirtualServerRole(virtualServer.Id(), "role", "Role")
+	role := repositories.NewApplicationRole(virtualServer.Id(), uuid.New(), "role", "Role")
 	role.Mock(now)
 	roleRepository := repoMocks.NewMockRoleRepository(ctrl)
 	roleRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(role, nil)
@@ -157,7 +158,7 @@ func (s *AssignRoleToUserCommandSuite) TestUserRoleAssignmentError() {
 	userRepository := repoMocks.NewMockUserRepository(ctrl)
 	userRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(user, nil)
 
-	role := repositories.NewVirtualServerRole(virtualServer.Id(), "role", "Role")
+	role := repositories.NewApplicationRole(virtualServer.Id(), uuid.New(), "role", "Role")
 	role.Mock(now)
 	roleRepository := repoMocks.NewMockRoleRepository(ctrl)
 	roleRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(role, nil)
@@ -197,7 +198,9 @@ func (s *AssignRoleToUserCommandSuite) TestHappyPath() {
 		return x.GetId() == user.Id()
 	})).Return(user, nil)
 
-	role := repositories.NewVirtualServerRole(virtualServer.Id(), "role", "Role")
+	appId := uuid.New()
+
+	role := repositories.NewApplicationRole(virtualServer.Id(), appId, "role", "Role")
 	role.Mock(now)
 	roleRepository := repoMocks.NewMockRoleRepository(ctrl)
 	roleRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories.RoleFilter) bool {
@@ -212,6 +215,7 @@ func (s *AssignRoleToUserCommandSuite) TestHappyPath() {
 	ctx := s.createContext(virtualServerRepository, roleRepository, userRepository, userRoleAssignmentRepository)
 	cmd := AssignRoleToUser{
 		VirtualServerName: virtualServer.Name(),
+		ApplicationId:     appId,
 		UserId:            user.Id(),
 		RoleId:            role.Id(),
 	}
