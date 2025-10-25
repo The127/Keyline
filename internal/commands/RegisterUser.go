@@ -32,12 +32,6 @@ type RegisterUserResponse struct {
 func HandleRegisterUser(ctx context.Context, command RegisterUser) (*RegisterUserResponse, error) {
 	scope := middlewares.GetScope(ctx)
 
-	passwordValidator := ioc.GetDependency[password.Validator](scope)
-	err := passwordValidator.Validate(ctx, command.Password)
-	if err != nil {
-		return nil, fmt.Errorf("password validation: %w", err)
-	}
-
 	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(command.VirtualServerName)
 	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
@@ -47,6 +41,12 @@ func HandleRegisterUser(ctx context.Context, command RegisterUser) (*RegisterUse
 
 	if !virtualServer.EnableRegistration() {
 		return nil, utils.ErrRegistrationNotEnabled
+	}
+
+	passwordValidator := ioc.GetDependency[password.Validator](scope)
+	err = passwordValidator.Validate(ctx, command.Password)
+	if err != nil {
+		return nil, fmt.Errorf("password validation: %w", err)
 	}
 
 	userRepository := ioc.GetDependency[repositories.UserRepository](scope)
