@@ -962,21 +962,22 @@ func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 	tokenDuration := time.Hour // TODO: make this configurable per virtual server
 
 	params := TokenGenerationParams{
-		UserId:             codeInfo.UserId,
-		VirtualServerName:  codeInfo.VirtualServerName,
-		ClientId:           clientId,
-		ApplicationId:      application.Id(),
-		GrantedScopes:      codeInfo.GrantedScopes,
-		UserDisplayName:    user.DisplayName(),
-		UserPrimaryEmail:   user.PrimaryEmail(),
-		ExternalUrl:        config.C.Server.ExternalUrl,
-		KeyPair:            keyPair,
-		IssuedAt:           now,
-		AccessTokenExpiry:  tokenDuration,
-		IdTokenExpiry:      tokenDuration,
-		RefreshTokenExpiry: tokenDuration,
-		Nonce:              codeInfo.Nonce,
-		AuthenticatedAt:    codeInfo.AuthenticatedAt,
+		UserId:                codeInfo.UserId,
+		VirtualServerName:     codeInfo.VirtualServerName,
+		ClientId:              clientId,
+		ApplicationId:         application.Id(),
+		GrantedScopes:         codeInfo.GrantedScopes,
+		UserDisplayName:       user.DisplayName(),
+		UserPrimaryEmail:      user.PrimaryEmail(),
+		ExternalUrl:           config.C.Server.ExternalUrl,
+		KeyPair:               keyPair,
+		IssuedAt:              now,
+		AccessTokenExpiry:     tokenDuration,
+		IdTokenExpiry:         tokenDuration,
+		RefreshTokenExpiry:    tokenDuration,
+		Nonce:                 codeInfo.Nonce,
+		AuthenticatedAt:       codeInfo.AuthenticatedAt,
+		AccessTokenHeaderType: application.AccessTokenHeaderType(),
 	}
 
 	tokens, err := generateTokens(ctx, params, tokenService)
@@ -1033,21 +1034,22 @@ type RefreshTokenResponse struct {
 }
 
 type TokenGenerationParams struct {
-	UserId             uuid.UUID
-	VirtualServerName  string
-	ClientId           string
-	ApplicationId      uuid.UUID
-	GrantedScopes      []string
-	UserDisplayName    string
-	UserPrimaryEmail   string
-	ExternalUrl        string
-	KeyPair            services.KeyPair
-	IssuedAt           time.Time
-	AccessTokenExpiry  time.Duration
-	IdTokenExpiry      time.Duration
-	RefreshTokenExpiry time.Duration
-	Nonce              string
-	AuthenticatedAt    time.Time
+	UserId                uuid.UUID
+	VirtualServerName     string
+	ClientId              string
+	ApplicationId         uuid.UUID
+	GrantedScopes         []string
+	UserDisplayName       string
+	UserPrimaryEmail      string
+	ExternalUrl           string
+	KeyPair               services.KeyPair
+	IssuedAt              time.Time
+	AccessTokenExpiry     time.Duration
+	IdTokenExpiry         time.Duration
+	RefreshTokenExpiry    time.Duration
+	Nonce                 string
+	AuthenticatedAt       time.Time
+	AccessTokenHeaderType string
 }
 
 func (t *TokenGenerationParams) ToAccessTokenGenerationParams() AccessTokenGenerationParams {
@@ -1061,6 +1063,7 @@ func (t *TokenGenerationParams) ToAccessTokenGenerationParams() AccessTokenGener
 		Expiry:            t.AccessTokenExpiry,
 		UserId:            t.UserId,
 		KeyPair:           t.KeyPair,
+		HeaderType:        t.AccessTokenHeaderType,
 	}
 }
 
@@ -1106,6 +1109,7 @@ type AccessTokenGenerationParams struct {
 	Expiry            time.Duration
 	UserId            uuid.UUID
 	KeyPair           services.KeyPair
+	HeaderType        string
 }
 
 type IdTokenGenerationParams struct {
@@ -1184,7 +1188,7 @@ func generateAccessToken(ctx context.Context, params AccessTokenGenerationParams
 
 	accessToken := jwt.NewWithClaims(jwtSigningMethod, accessTokenClaims)
 	accessToken.Header["kid"] = kid
-	accessToken.Header["typ"] = "at+jwt" // RFC 9068
+	accessToken.Header["typ"] = params.HeaderType
 	return accessToken.SignedString(params.KeyPair.PrivateKey())
 }
 
@@ -1401,19 +1405,20 @@ func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 	tokenDuration := time.Hour // TODO: make this configurable per virtual server
 
 	params := TokenGenerationParams{
-		UserId:             refreshTokenInfo.UserId,
-		VirtualServerName:  refreshTokenInfo.VirtualServerName,
-		ClientId:           clientId,
-		ApplicationId:      application.Id(),
-		GrantedScopes:      refreshTokenInfo.GrantedScopes,
-		UserDisplayName:    user.DisplayName(),
-		UserPrimaryEmail:   user.PrimaryEmail(),
-		ExternalUrl:        config.C.Server.ExternalUrl,
-		KeyPair:            keyPair,
-		IssuedAt:           now,
-		AccessTokenExpiry:  tokenDuration,
-		IdTokenExpiry:      tokenDuration,
-		RefreshTokenExpiry: tokenDuration,
+		UserId:                refreshTokenInfo.UserId,
+		VirtualServerName:     refreshTokenInfo.VirtualServerName,
+		ClientId:              clientId,
+		ApplicationId:         application.Id(),
+		GrantedScopes:         refreshTokenInfo.GrantedScopes,
+		UserDisplayName:       user.DisplayName(),
+		UserPrimaryEmail:      user.PrimaryEmail(),
+		ExternalUrl:           config.C.Server.ExternalUrl,
+		KeyPair:               keyPair,
+		IssuedAt:              now,
+		AccessTokenExpiry:     tokenDuration,
+		IdTokenExpiry:         tokenDuration,
+		RefreshTokenExpiry:    tokenDuration,
+		AccessTokenHeaderType: application.AccessTokenHeaderType(),
 	}
 
 	tokens, err := generateTokens(ctx, params, tokenService)
@@ -1656,6 +1661,7 @@ func handleTokenExchange(w http.ResponseWriter, r *http.Request) {
 		KeyPair:           keyPair,
 		IssuedAt:          now,
 		Expiry:            time.Minute * 5, // TODO: make this configurable per virtual server
+		HeaderType:        application.AccessTokenHeaderType(),
 	})
 	if err != nil {
 		utils.HandleHttpError(w, fmt.Errorf("generating access token: %w", err))
