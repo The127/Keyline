@@ -70,18 +70,19 @@ func newDefaultParams(algorithm config.SigningAlgorithm) TokenGenerationParams {
 	}
 
 	return TokenGenerationParams{
-		UserId:            uuid.New(),
-		VirtualServerName: "test-server",
-		ClientId:          "test-client",
-		ApplicationId:     uuid.New(),
-		GrantedScopes:     []string{"openid", "email"},
-		UserDisplayName:   "Test User",
-		UserPrimaryEmail:  "test@example.com",
-		ExternalUrl:       "https://example.com",
-		KeyPair:           keyPair,
-		IssuedAt:          time.Now(),
-		IdTokenExpiry:     time.Hour,
-		AccessTokenExpiry: time.Hour,
+		UserId:                uuid.New(),
+		VirtualServerName:     "test-server",
+		ClientId:              "test-client",
+		ApplicationId:         uuid.New(),
+		GrantedScopes:         []string{"openid", "email"},
+		UserDisplayName:       "Test User",
+		UserPrimaryEmail:      "test@example.com",
+		ExternalUrl:           "https://example.com",
+		KeyPair:               keyPair,
+		IssuedAt:              time.Now(),
+		IdTokenExpiry:         time.Hour,
+		AccessTokenExpiry:     time.Hour,
+		AccessTokenHeaderType: "at+jwt",
 	}
 }
 
@@ -242,10 +243,11 @@ func TestGenerateRefreshTokenInfo_ReturnsExpectedJSON(t *testing.T) {
 	// Arrange
 	userId := uuid.New()
 	params := TokenGenerationParams{
-		UserId:            userId,
-		VirtualServerName: "test-server",
-		ClientId:          "test-client",
-		GrantedScopes:     []string{"openid", "email"},
+		UserId:                userId,
+		VirtualServerName:     "test-server",
+		ClientId:              "test-client",
+		GrantedScopes:         []string{"openid", "email"},
+		AccessTokenHeaderType: "at+jwt",
 	}
 
 	// Act

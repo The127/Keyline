@@ -21,7 +21,8 @@ type CreateApplication struct {
 	RedirectUris           []string
 	PostLogoutRedirectUris []string
 
-	HashedSecret *string
+	HashedSecret          *string
+	AccessTokenHeaderType string
 }
 
 func (c CreateApplication) LogRequest() bool {
@@ -56,13 +57,7 @@ func HandleCreateApplication(ctx context.Context, command CreateApplication) (*C
 	}
 
 	applicationRepository := ioc.GetDependency[repositories.ApplicationRepository](scope)
-	application := repositories.NewApplication(
-		virtualServer.Id(),
-		command.Name,
-		command.DisplayName,
-		command.Type,
-		command.RedirectUris,
-	)
+	application := repositories.NewApplication(virtualServer.Id(), command.Name, command.DisplayName, command.Type, command.RedirectUris)
 
 	var secret *string = nil
 	if command.Type == repositories.ApplicationTypeConfidential {

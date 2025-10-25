@@ -38,6 +38,7 @@ func (r *applicationRepository) selectQuery(filter repositories.ApplicationFilte
 		"post_logout_redirect_uris",
 		"system_application",
 		"claims_mapping_script",
+		"access_token_header_type",
 	).From("applications")
 
 	if filter.HasName() {
@@ -162,7 +163,7 @@ func (r *applicationRepository) Insert(ctx context.Context, application *reposit
 	}
 
 	s := sqlbuilder.InsertInto("applications").
-		Cols("virtual_server_id", "name", "display_name", "type", "hashed_secret", "redirect_uris", "post_logout_redirect_uris", "system_application", "claims_mapping_script").
+		Cols("virtual_server_id", "name", "display_name", "type", "hashed_secret", "redirect_uris", "post_logout_redirect_uris", "system_application", "claims_mapping_script", "access_token_header_type").
 		Values(
 			application.VirtualServerId(),
 			application.Name(),
@@ -173,6 +174,7 @@ func (r *applicationRepository) Insert(ctx context.Context, application *reposit
 			pq.Array(application.PostLogoutRedirectUris()),
 			application.SystemApplication(),
 			application.ClaimsMappingScript(),
+			application.AccessTokenHeaderType(),
 		).Returning("id", "audit_created_at", "audit_updated_at", "version")
 
 	query, args := s.Build()

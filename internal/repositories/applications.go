@@ -31,16 +31,11 @@ type Application struct {
 
 	systemApplication bool
 
-	claimsMappingScript *string
+	claimsMappingScript   *string
+	accessTokenHeaderType string
 }
 
-func NewApplication(
-	virtualServerId uuid.UUID,
-	name string,
-	displayName string,
-	type_ ApplicationType,
-	redirectUris []string,
-) *Application {
+func NewApplication(virtualServerId uuid.UUID, name string, displayName string, type_ ApplicationType, redirectUris []string) *Application {
 	return &Application{
 		ModelBase:              NewModelBase(),
 		virtualServerId:        virtualServerId,
@@ -49,6 +44,7 @@ func NewApplication(
 		type_:                  type_,
 		redirectUris:           redirectUris,
 		postLogoutRedirectUris: make([]string, 0),
+		accessTokenHeaderType:  "at+jwt",
 	}
 }
 
@@ -67,6 +63,7 @@ func (a *Application) GetScanPointers() []any {
 		pq.Array(&a.postLogoutRedirectUris),
 		&a.systemApplication,
 		&a.claimsMappingScript,
+		&a.accessTokenHeaderType,
 	}
 }
 
@@ -89,6 +86,15 @@ func (a *Application) ClaimsMappingScript() *string {
 func (a *Application) SetClaimsMappingScript(script *string) {
 	a.claimsMappingScript = script
 	a.TrackChange("claims_mapping_script", script)
+}
+
+func (a *Application) SetAccessTokenHeaderType(accessTokenHeaderType string) {
+	a.accessTokenHeaderType = accessTokenHeaderType
+	a.TrackChange("access_token_header_type", accessTokenHeaderType)
+}
+
+func (a *Application) AccessTokenHeaderType() string {
+	return a.accessTokenHeaderType
 }
 
 func (a *Application) Name() string {
