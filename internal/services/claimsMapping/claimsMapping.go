@@ -16,7 +16,7 @@ type Params struct {
 	Roles            []string
 	ApplicationRoles []string
 	GlobalMetadata   map[string]interface{}
-	AppMetadata      *repositories.ApplicationUserMetadata
+	AppMetadata      map[string]interface{}
 }
 
 //go:generate mockgen -destination=../mocks/claimsMapping.go -package=mocks Keyline/internal/services/claimsMapping ClaimsMapper
