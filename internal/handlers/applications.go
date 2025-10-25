@@ -22,7 +22,7 @@ type CreateApplicationRequestDto struct {
 	RedirectUris          []string `json:"redirectUris" validate:"required,dive,url,min=1"`
 	PostLogoutUris        []string `json:"postLogoutUris" validate:"dive,url"`
 	Type                  string   `json:"type" validate:"required,oneof=public confidential"`
-	AccessTokenHeaderType *string  `json:"accessTokenHeaderType" validate:"oneof=at+jwt,JWT"`
+	AccessTokenHeaderType *string  `json:"accessTokenHeaderType" validate:"omitempty,oneof=at+jwt JWT"`
 }
 
 type CreateApplicationResponseDto struct {

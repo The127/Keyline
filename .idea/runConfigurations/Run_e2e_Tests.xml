@@ -8,8 +8,8 @@
       <option name="DIRENV_TRUSTED" value="false" />
     </EXTENSION>
     <root_directory value="$PROJECT_DIR$" />
-    <kind value="DIRECTORY" />
-    <package value="Keyline/tests/integration" />
+    <kind value="PACKAGE" />
+    <package value="Keyline/tests/e2e" />
     <directory value="$PROJECT_DIR$/tests/e2e" />
     <filePath value="$PROJECT_DIR$" />
     <framework value="gotest" />
