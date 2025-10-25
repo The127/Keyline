@@ -109,6 +109,7 @@ func (m *User) GetScanPointers(filter UserFilter) []any {
 		&m.primaryEmail,
 		&m.emailVerified,
 		&m.serviceUser,
+		&m.metadata,
 	}
 
 	if filter.includeMetadata {
