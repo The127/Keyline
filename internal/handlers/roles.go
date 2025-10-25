@@ -377,6 +377,7 @@ func ListUsersInAppRole(w http.ResponseWriter, r *http.Request) {
 	roleId, err := uuid.Parse(roleIdString)
 	if err != nil {
 		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+		return
 	}
 
 	scope := middlewares.GetScope(ctx)
