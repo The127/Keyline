@@ -266,6 +266,12 @@ keyline-ui:
 - `KEYLINE_API_URL` - The URL where your Keyline API is accessible
 - `KEYLINE_HOST` - The public URL where the UI will be accessed
 
+## Integration Examples
+
+Keyline includes example applications demonstrating how to integrate with various frameworks:
+
+- **[Java Spring Example](docs/examples/java-spring/)** - A Spring Boot application demonstrating OAuth2 resource server integration with Keyline using JWT authentication. This example shows how to configure Spring Security to validate access tokens issued by Keyline.
+
 ## Configuration
 
 Keyline provides flexible configuration management through YAML files and environment variables. Configuration supports multiple database backends (PostgreSQL, SQLite work-in-progress), cache backends (in-memory or Redis) and key storage options (directory or OpenBao).
