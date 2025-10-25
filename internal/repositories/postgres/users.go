@@ -35,6 +35,7 @@ func (r *userRepository) selectQuery(filter repositories.UserFilter) *sqlbuilder
 		"primary_email",
 		"email_verified",
 		"service_user",
+		"metadata",
 	).From("users")
 
 	if filter.GetIncludeMetadata() {
@@ -206,6 +207,7 @@ func (r *userRepository) Insert(ctx context.Context, user *repositories.User) er
 		"primary_email",
 		"email_verified",
 		"service_user",
+		"metadata",
 	}
 	if user.VirtualServerId() != uuid.Nil {
 		cols = append(cols, "virtual_server_id")
@@ -222,6 +224,7 @@ func (r *userRepository) Insert(ctx context.Context, user *repositories.User) er
 		user.PrimaryEmail(),
 		user.EmailVerified(),
 		user.IsServiceUser(),
+		user.Metadata(),
 	}
 	if user.VirtualServerId() != uuid.Nil {
 		values = append(values, user.VirtualServerId())

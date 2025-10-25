@@ -31,6 +31,7 @@ func NewUser(username string, displayName string, primaryEmail string, virtualSe
 		displayName:     displayName,
 		primaryEmail:    primaryEmail,
 		serviceUser:     false,
+		metadata:        "{}",
 	}
 }
 
@@ -108,6 +109,7 @@ func (m *User) GetScanPointers(filter UserFilter) []any {
 		&m.primaryEmail,
 		&m.emailVerified,
 		&m.serviceUser,
+		&m.metadata,
 	}
 
 	if filter.includeMetadata {

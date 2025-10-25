@@ -117,7 +117,10 @@ func (r *applicationUserMetadataRepository) First(ctx context.Context, filter re
 	}
 
 	err = row.Scan(metadata.GetScanPointers()...)
-	if err != nil {
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return nil, nil
+	case err != nil:
 		return nil, fmt.Errorf("scanning row: %w", err)
 	}
 

@@ -1231,6 +1231,29 @@ func mapClaims(ctx context.Context, params AccessTokenGenerationParams) (jwt.Map
 		applicationRoles = append(applicationRoles, userRoleAssignment.RoleInfo().Name)
 	}
 
+	applicationUserMetadataRepository := ioc.GetDependency[repositories.ApplicationUserMetadataRepository](scope)
+	applicationUserMetadataFilter := repositories.NewApplicationUserMetadataFilter().
+		UserId(params.UserId).
+		ApplicationId(params.ApplicationId)
+	applicationUserMetadata, err := applicationUserMetadataRepository.First(ctx, applicationUserMetadataFilter)
+	if err != nil {
+		return nil, fmt.Errorf("getting application user metadata: %w", err)
+	}
+
+	appMetadata := make(map[string]interface{})
+	if applicationUserMetadata != nil {
+		err := json.Unmarshal([]byte(applicationUserMetadata.Metadata()), &appMetadata)
+		if err != nil {
+			return nil, fmt.Errorf("unmarshaling application user metadata: %w", err)
+		}
+	}
+
+	userMetadata := make(map[string]interface{})
+	err = json.Unmarshal([]byte(user.Metadata()), &userMetadata)
+	if err != nil {
+		return nil, fmt.Errorf("unmarshaling user metadata: %w", err)
+	}
+
 	claimsMapper := ioc.GetDependency[claimsMapping.ClaimsMapper](scope)
 	mappedClaims := claimsMapper.MapClaims(
 		ctx,
@@ -1238,6 +1261,8 @@ func mapClaims(ctx context.Context, params AccessTokenGenerationParams) (jwt.Map
 		claimsMapping.Params{
 			Roles:            globalRoles,
 			ApplicationRoles: applicationRoles,
+			GlobalMetadata:   userMetadata,
+			AppMetadata:      appMetadata,
 		},
 	)
 
