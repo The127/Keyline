@@ -525,6 +525,17 @@ See [mediator/README.md](mediator/README.md) for detailed documentation.
 
 ## Security
 
+### Password Policies
+
+Keyline enforces comprehensive password validation policies to ensure user passwords meet security requirements:
+
+- **Configurable Policies** - Minimum/maximum length, character type requirements (digits, uppercase, lowercase, special characters)
+- **Common Password Protection** - Built-in check against ~100,000 most commonly used passwords
+- **Per-Tenant Configuration** - Different password requirements per virtual server
+- **Clear Error Messages** - Helpful feedback to guide users in creating secure passwords
+
+For detailed information about password policies, configuration options, and best practices, see the [Password Policies Documentation](docs/password-policies.md).
+
 ### Password Hashing
 
 Keyline uses Argon2id for secure password hashing, which is resistant to:
@@ -692,6 +703,7 @@ Built with:
 - [Zap](https://github.com/uber-go/zap) - Structured logging
 - [jwt-go](https://github.com/golang-jwt/jwt) - JWT implementation
 - [Swagger](https://github.com/swaggo/swag) - API documentation
+- [SecLists](https://github.com/danielmiessler/SecLists) - Common password list for password validation
 
 ---
 
