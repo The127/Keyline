@@ -7,7 +7,7 @@ import (
 	gomega "github.com/onsi/gomega"
 )
 
-var _ = ginkgo.Describe("Unautorized", ginkgo.Ordered, func() {
+var _ = ginkgo.Describe("Unauthorized", ginkgo.Ordered, func() {
 	var h *harness
 
 	ginkgo.BeforeAll(func() {
