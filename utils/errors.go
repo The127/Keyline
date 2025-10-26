@@ -24,6 +24,7 @@ var ErrCredentialNotFound = fmt.Errorf("credential: %w", ErrHttpNotFound)
 var ErrUserApplicationMetadataNotFound = fmt.Errorf("user application metadata: %w", ErrHttpNotFound)
 var ErrPasswordRuleNotFound = fmt.Errorf("password rule: %w", ErrHttpNotFound)
 var ErrResourceServerNotFound = fmt.Errorf("resource server: %w", ErrHttpNotFound)
+var ErrResourceServerScopeNotFound = fmt.Errorf("resource server scope: %w", ErrHttpNotFound)
 
 var ErrHttpBadRequest = errors.New("bad request")
 var ErrRegistrationNotEnabled = fmt.Errorf("registration is not enabled: %w", ErrHttpBadRequest)
