@@ -170,8 +170,9 @@ func initApplication(dp *ioc.DependencyProvider) {
 	}
 
 	for _, applicationConfig := range config.C.InitialVirtualServer.InitialApplications {
-		appResponse, err := mediator.Send[*commands.CreateApplicationResponse](ctx, m, commands.CreateApplication{
+		_, err := mediator.Send[*commands.CreateApplicationResponse](ctx, m, commands.CreateApplication{
 			VirtualServerName:      config.C.InitialVirtualServer.Name,
+			ProjectSlug:            createVirtualServerResponse.SystemProjectSlug,
 			Name:                   applicationConfig.Name,
 			DisplayName:            applicationConfig.DisplayName,
 			Type:                   repositories.ApplicationType(applicationConfig.Type),
@@ -182,17 +183,18 @@ func initApplication(dp *ioc.DependencyProvider) {
 			logging.Logger.Fatalf("failed to create initial application: %v", err)
 		}
 
-		for _, role := range applicationConfig.Roles {
-			_, err = mediator.Send[*commands.CreateApplicationRoleResponse](ctx, m, commands.CreateApplicationRole{
-				VirtualServerName: config.C.InitialVirtualServer.Name,
-				ApplicationId:     appResponse.Id,
-				Name:              role.Name,
-				Description:       role.Description,
-			})
-			if err != nil {
-				logging.Logger.Fatalf("failed to create initial application role: %v", err)
-			}
-		}
+		// TODO: implement initial roles
+		// for _, role := range applicationConfig.Roles {
+		//	_, err = mediator.Send[*commands.CreateRoleResponse](ctx, m, commands.CreateRole{
+		//		VirtualServerName: config.C.InitialVirtualServer.Name,
+		//		ProjectSlug:     appResponse.Id,
+		//		Name:              role.Name,
+		//		Description:       role.Description,
+		//	})
+		//	if err != nil {
+		//		logging.Logger.Fatalf("failed to create initial application role: %v", err)
+		//	}
+		// }
 	}
 
 	for _, role := range config.C.InitialVirtualServer.InitialRoles {
@@ -232,9 +234,9 @@ func initApplication(dp *ioc.DependencyProvider) {
 
 		_, err = mediator.Send[*commands.AssignRoleToUserResponse](ctx, m, commands.AssignRoleToUser{
 			VirtualServerName: config.C.InitialVirtualServer.Name,
+			ProjectSlug:       createVirtualServerResponse.SystemProjectSlug,
 			UserId:            initialAdminUserInfo.Id,
 			RoleId:            createVirtualServerResponse.AdminRoleId,
-			ApplicationId:     &createVirtualServerResponse.AdminUiApplicationId,
 		})
 		if err != nil {
 			logging.Logger.Fatalf("failed to assign admin role to initial admin user: %v", err)
@@ -262,22 +264,20 @@ func initApplication(dp *ioc.DependencyProvider) {
 		for _, configuredRole := range serviceUserConfig.Roles {
 			if strings.Contains(configuredRole, " ") {
 				split := strings.Split(configuredRole, " ")
-				applicationName := split[0]
+				projectSlug := split[0]
 				roleName := split[1]
 
-				applicationRepository := ioc.GetDependency[repositories.ApplicationRepository](scope)
-				applicationFilter := repositories.NewApplicationFilter().
-					VirtualServerId(createVirtualServerResponse.Id).
-					Name(applicationName)
-				application, err := applicationRepository.Single(ctx, applicationFilter)
+				projectRepository := ioc.GetDependency[repositories.ProjectRepository](scope)
+				projectFilter := repositories.NewProjectFilter().VirtualServerId(createVirtualServerResponse.Id).Slug(projectSlug)
+				project, err := projectRepository.Single(ctx, projectFilter)
 				if err != nil {
-					logging.Logger.Fatalf("failed to get application: %v", err)
+					logging.Logger.Fatalf("failed to get project: %v", err)
 				}
 
 				roleRepository := ioc.GetDependency[repositories.RoleRepository](scope)
 				roleFilter := repositories.NewRoleFilter().
 					VirtualServerId(createVirtualServerResponse.Id).
-					ApplicationId(application.Id()).
+					ProjectId(project.Id()).
 					Name(roleName)
 				role, err := roleRepository.Single(ctx, roleFilter)
 				if err != nil {
@@ -286,9 +286,9 @@ func initApplication(dp *ioc.DependencyProvider) {
 
 				_, err = mediator.Send[*commands.AssignRoleToUserResponse](ctx, m, commands.AssignRoleToUser{
 					VirtualServerName: config.C.InitialVirtualServer.Name,
+					ProjectSlug:       createVirtualServerResponse.SystemProjectSlug,
 					UserId:            serviceUserResponse.Id,
 					RoleId:            role.Id(),
-					ApplicationId:     utils.Ptr(application.Id()),
 				})
 				if err != nil {
 					logging.Logger.Fatalf("failed to assign role to service user: %v", err)

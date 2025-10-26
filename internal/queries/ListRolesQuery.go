@@ -17,7 +17,7 @@ type ListRoles struct {
 	PagedQuery
 	OrderedQuery
 	VirtualServerName string
-	ApplicationId     *uuid.UUID
+	ProjectSlug       string
 	SearchText        string
 }
 
@@ -58,16 +58,22 @@ func HandleListRoles(ctx context.Context, query ListRoles) (*ListRolesResponse, 
 		return nil, fmt.Errorf("searching virtual servers: %w", err)
 	}
 
+	projectRepository := ioc.GetDependency[repositories.ProjectRepository](scope)
+	projectFilter := repositories.NewProjectFilter().
+		VirtualServerId(virtualServer.Id()).
+		Slug(query.ProjectSlug)
+	project, err := projectRepository.Single(ctx, projectFilter)
+	if err != nil {
+		return nil, fmt.Errorf("getting project: %w", err)
+	}
+
 	roleRepository := ioc.GetDependency[repositories.RoleRepository](scope)
 	roleFilter := repositories.NewRoleFilter().
 		VirtualServerId(virtualServer.Id()).
+		ProjectId(project.Id()).
 		Pagination(query.Page, query.PageSize).
 		Order(query.OrderBy, query.OrderDir).
 		Search(repositories.NewContainsSearchFilter(query.SearchText))
-
-	if query.ApplicationId != nil {
-		roleFilter = roleFilter.ApplicationId(*query.ApplicationId)
-	}
 
 	roles, total, err := roleRepository.List(ctx, roleFilter)
 	if err != nil {

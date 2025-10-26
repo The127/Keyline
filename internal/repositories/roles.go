@@ -3,7 +3,6 @@ package repositories
 import (
 	"Keyline/utils"
 	"context"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -12,29 +11,17 @@ type Role struct {
 	ModelBase
 
 	virtualServerId uuid.UUID
-	applicationId   *uuid.UUID
+	projectId       uuid.UUID
 
 	name        string
 	description string
-
-	requireMfa  bool
-	maxTokenAge *time.Duration
 }
 
-func NewVirtualServerRole(virtualServerId uuid.UUID, name string, description string) *Role {
+func NewRole(virtualServerId uuid.UUID, projectId uuid.UUID, name string, description string) *Role {
 	return &Role{
 		ModelBase:       NewModelBase(),
 		virtualServerId: virtualServerId,
-		name:            name,
-		description:     description,
-	}
-}
-
-func NewApplicationRole(virtualServerId uuid.UUID, applicationId uuid.UUID, name string, description string) *Role {
-	return &Role{
-		ModelBase:       NewModelBase(),
-		virtualServerId: virtualServerId,
-		applicationId:   &applicationId,
+		projectId:       projectId,
 		name:            name,
 		description:     description,
 	}
@@ -47,11 +34,9 @@ func (r *Role) GetScanPointers() []any {
 		&r.auditUpdatedAt,
 		&r.version,
 		&r.virtualServerId,
-		&r.applicationId,
+		&r.projectId,
 		&r.name,
 		&r.description,
-		&r.requireMfa,
-		&r.maxTokenAge,
 	}
 }
 
@@ -77,26 +62,8 @@ func (r *Role) VirtualServerId() uuid.UUID {
 	return r.virtualServerId
 }
 
-func (r *Role) ApplicationId() *uuid.UUID {
-	return r.applicationId
-}
-
-func (r *Role) RequireMfa() bool {
-	return r.requireMfa
-}
-
-func (r *Role) SetRequireMfa(requireMfa bool) {
-	r.TrackChange("require_mfa", requireMfa)
-	r.requireMfa = requireMfa
-}
-
-func (r *Role) MaxTokenAge() *time.Duration {
-	return r.maxTokenAge
-}
-
-func (r *Role) SetMaxTokenAge(maxTokenAge *time.Duration) {
-	r.TrackChange("max_token_age", maxTokenAge)
-	r.maxTokenAge = maxTokenAge
+func (r *Role) ProjectId() uuid.UUID {
+	return r.projectId
 }
 
 type RoleFilter struct {
@@ -105,7 +72,7 @@ type RoleFilter struct {
 	name            *string
 	id              *uuid.UUID
 	virtualServerId *uuid.UUID
-	applicationId   *uuid.UUID
+	projectId       *uuid.UUID
 	searchFilter    *SearchFilter
 }
 
@@ -145,18 +112,18 @@ func (f RoleFilter) GetId() uuid.UUID {
 	return utils.ZeroIfNil(f.id)
 }
 
-func (f RoleFilter) ApplicationId(applicationId uuid.UUID) RoleFilter {
+func (f RoleFilter) ProjectId(projectId uuid.UUID) RoleFilter {
 	filter := f.Clone()
-	filter.applicationId = &applicationId
+	filter.projectId = &projectId
 	return filter
 }
 
-func (f RoleFilter) HasApplicationId() bool {
-	return f.applicationId != nil
+func (f RoleFilter) HasProjectId() bool {
+	return f.projectId != nil
 }
 
-func (f RoleFilter) GetApplicationId() uuid.UUID {
-	return utils.ZeroIfNil(f.applicationId)
+func (f RoleFilter) GetProjectId() uuid.UUID {
+	return utils.ZeroIfNil(f.projectId)
 }
 
 func (f RoleFilter) Search(searchFilter SearchFilter) RoleFilter {

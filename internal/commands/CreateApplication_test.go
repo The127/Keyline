@@ -26,6 +26,7 @@ func TestCreateApplicationCommandSuite(t *testing.T) {
 
 func (s *CreateApplicationCommandSuite) createContext(
 	vsr repositories.VirtualServerRepository,
+	pr repositories.ProjectRepository,
 	ar repositories.ApplicationRepository,
 ) context.Context {
 	dc := ioc.NewDependencyCollection()
@@ -33,6 +34,12 @@ func (s *CreateApplicationCommandSuite) createContext(
 	if vsr != nil {
 		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.VirtualServerRepository {
 			return vsr
+		})
+	}
+
+	if pr != nil {
+		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.ProjectRepository {
+			return pr
 		})
 	}
 
@@ -60,7 +67,7 @@ func (s *CreateApplicationCommandSuite) TestVirtualServerError() {
 		EXPECT().Single(gomock.Any(), gomock.Any()).
 		Return(nil, errors.New("error"))
 
-	ctx := s.createContext(virtualServerRepository, nil)
+	ctx := s.createContext(virtualServerRepository, nil, nil)
 	cmd := CreateApplication{}
 
 	// act
@@ -84,12 +91,17 @@ func (s *CreateApplicationCommandSuite) TestApplicationError() {
 		EXPECT().Single(gomock.Any(), gomock.Any()).
 		Return(virtualServer, nil)
 
+	project := repositories.NewProject(virtualServer.Id(), "project", "Project", "Test Project")
+	project.Mock(now)
+	projectRepository := mocks.NewMockProjectRepository(ctrl)
+	projectRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(project, nil)
+
 	applicationRepository := mocks.NewMockApplicationRepository(ctrl)
 	applicationRepository.EXPECT().
 		Insert(gomock.Any(), gomock.Any()).
 		Return(errors.New("error"))
 
-	ctx := s.createContext(virtualServerRepository, applicationRepository)
+	ctx := s.createContext(virtualServerRepository, projectRepository, applicationRepository)
 	cmd := CreateApplication{}
 
 	// act
@@ -113,6 +125,13 @@ func (s *CreateApplicationCommandSuite) TestPublicApplicationHappyPath() {
 		return x.GetName() == virtualServer.Name()
 	})).Return(virtualServer, nil)
 
+	project := repositories.NewProject(virtualServer.Id(), "project", "Project", "Test Project")
+	project.Mock(now)
+	projectRepository := mocks.NewMockProjectRepository(ctrl)
+	projectRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories.ProjectFilter) bool {
+		return x.GetSlug() == "project"
+	})).Return(project, nil)
+
 	applicationRepository := mocks.NewMockApplicationRepository(ctrl)
 	applicationRepository.EXPECT().Insert(gomock.Any(), gomock.Cond(func(x *repositories.Application) bool {
 		return x.Name() == "applicationName" &&
@@ -123,9 +142,10 @@ func (s *CreateApplicationCommandSuite) TestPublicApplicationHappyPath() {
 			x.RedirectUris()[1] == "redirectUri2"
 	}))
 
-	ctx := s.createContext(virtualServerRepository, applicationRepository)
+	ctx := s.createContext(virtualServerRepository, projectRepository, applicationRepository)
 	cmd := CreateApplication{
 		VirtualServerName: virtualServer.Name(),
+		ProjectSlug:       "project",
 		Name:              "applicationName",
 		DisplayName:       "Display Name",
 		Type:              repositories.ApplicationTypePublic,
@@ -157,6 +177,13 @@ func (s *CreateApplicationCommandSuite) TestConfidentialApplicationHappyPath() {
 		return x.GetName() == virtualServer.Name()
 	})).Return(virtualServer, nil)
 
+	project := repositories.NewProject(virtualServer.Id(), "project", "Project", "Test Project")
+	project.Mock(now)
+	projectRepository := mocks.NewMockProjectRepository(ctrl)
+	projectRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories.ProjectFilter) bool {
+		return x.GetSlug() == "project"
+	})).Return(project, nil)
+
 	applicationRepository := mocks.NewMockApplicationRepository(ctrl)
 	applicationRepository.EXPECT().Insert(gomock.Any(), gomock.Cond(func(x *repositories.Application) bool {
 		return x.Name() == "applicationName" &&
@@ -167,9 +194,10 @@ func (s *CreateApplicationCommandSuite) TestConfidentialApplicationHappyPath() {
 			x.RedirectUris()[1] == "redirectUri2"
 	}))
 
-	ctx := s.createContext(virtualServerRepository, applicationRepository)
+	ctx := s.createContext(virtualServerRepository, projectRepository, applicationRepository)
 	cmd := CreateApplication{
 		VirtualServerName: virtualServer.Name(),
+		ProjectSlug:       "project",
 		Name:              "applicationName",
 		DisplayName:       "Display Name",
 		Type:              repositories.ApplicationTypeConfidential,

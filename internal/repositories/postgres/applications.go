@@ -30,6 +30,7 @@ func (r *applicationRepository) selectQuery(filter repositories.ApplicationFilte
 		"audit_updated_at",
 		"version",
 		"virtual_server_id",
+		"project_id",
 		"name",
 		"display_name",
 		"type",
@@ -55,6 +56,10 @@ func (r *applicationRepository) selectQuery(filter repositories.ApplicationFilte
 
 	if filter.HasVirtualServerId() {
 		s.Where(s.Equal("virtual_server_id", filter.GetVirtualServerId()))
+	}
+
+	if filter.HasProjectId() {
+		s.Where(s.Equal("project_id", filter.GetProjectId()))
 	}
 
 	if filter.HasSearch() {
@@ -163,9 +168,10 @@ func (r *applicationRepository) Insert(ctx context.Context, application *reposit
 	}
 
 	s := sqlbuilder.InsertInto("applications").
-		Cols("virtual_server_id", "name", "display_name", "type", "hashed_secret", "redirect_uris", "post_logout_redirect_uris", "system_application", "claims_mapping_script", "access_token_header_type").
+		Cols("virtual_server_id", "project_id", "name", "display_name", "type", "hashed_secret", "redirect_uris", "post_logout_redirect_uris", "system_application", "claims_mapping_script", "access_token_header_type").
 		Values(
 			application.VirtualServerId(),
+			application.ProjectId(),
 			application.Name(),
 			application.DisplayName(),
 			application.Type(),

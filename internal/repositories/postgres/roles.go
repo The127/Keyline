@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"Keyline/internal/database"
-	"Keyline/internal/database/helpers"
 	"Keyline/internal/logging"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
@@ -30,11 +29,9 @@ func (r *roleRepository) selectQuery(filter repositories.RoleFilter) *sqlbuilder
 		"audit_updated_at",
 		"version",
 		"virtual_server_id",
-		"application_id",
+		"project_id",
 		"name",
 		"description",
-		"require_mfa",
-		"max_token_age",
 	).From("roles")
 
 	if filter.HasName() {
@@ -49,10 +46,8 @@ func (r *roleRepository) selectQuery(filter repositories.RoleFilter) *sqlbuilder
 		s.Where(s.Equal("virtual_server_id", filter.GetVirtualServerId()))
 	}
 
-	if filter.HasApplicationId() {
-		s.Where(s.Equal("application_id", filter.GetApplicationId()))
-	} else {
-		s.Where(s.IsNull("application_id"))
+	if filter.HasProjectId() {
+		s.Where(s.Equal("project_id", filter.GetProjectId()))
 	}
 
 	if filter.HasSearch() {
@@ -165,19 +160,15 @@ func (r *roleRepository) Insert(ctx context.Context, role *repositories.Role) er
 	s := sqlbuilder.InsertInto("roles").
 		Cols(
 			"virtual_server_id",
-			"application_id",
+			"project_id",
 			"name",
 			"description",
-			"require_mfa",
-			"max_token_age",
 		).
 		Values(
 			role.VirtualServerId(),
-			role.ApplicationId(),
+			role.ProjectId(),
 			role.Name(),
 			role.Description(),
-			role.RequireMfa(),
-			helpers.PqIntervalPtr(role.MaxTokenAge()),
 		).Returning("id", "audit_created_at", "audit_updated_at", "version")
 
 	query, args := s.Build()

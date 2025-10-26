@@ -12,7 +12,6 @@ import (
 	"context"
 	"errors"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -29,6 +28,7 @@ func TestCreateRoleCommandSuite(t *testing.T) {
 
 func (s *CreateRoleCommandSuite) createContext(
 	vsr repositories.VirtualServerRepository,
+	pr repositories.ProjectRepository,
 	rr repositories.RoleRepository,
 	m mediator.Mediator,
 ) context.Context {
@@ -37,6 +37,12 @@ func (s *CreateRoleCommandSuite) createContext(
 	if vsr != nil {
 		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.VirtualServerRepository {
 			return vsr
+		})
+	}
+
+	if pr != nil {
+		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.ProjectRepository {
+			return pr
 		})
 	}
 
@@ -69,7 +75,30 @@ func (s *CreateRoleCommandSuite) TestVirtualServerError() {
 	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).
 		Return(nil, errors.New("error"))
 
-	ctx := s.createContext(virtualServerRepository, nil, nil)
+	ctx := s.createContext(virtualServerRepository, nil, nil, nil)
+	cmd := CreateRole{}
+
+	// act
+	_, err := HandleCreateRole(ctx, cmd)
+
+	// assert
+	s.Error(err)
+}
+
+func (s *CreateRoleCommandSuite) TestProjectError() {
+	// arrange
+	ctrl := gomock.NewController(s.T())
+	defer ctrl.Finish()
+
+	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
+	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
+	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
+
+	projectRepository := mocks.NewMockProjectRepository(ctrl)
+	projectRepository.EXPECT().Single(gomock.Any(), gomock.Any()).
+		Return(nil, errors.New("error"))
+
+	ctx := s.createContext(virtualServerRepository, projectRepository, nil, nil)
 	cmd := CreateRole{}
 
 	// act
@@ -88,11 +117,15 @@ func (s *CreateRoleCommandSuite) TestRoleError() {
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
 	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
 
+	project := repositories.NewProject(virtualServer.Id(), "project", "Project", "Test Project")
+	projectRepository := mocks.NewMockProjectRepository(ctrl)
+	projectRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(project, nil)
+
 	roleRepository := mocks.NewMockRoleRepository(ctrl)
 	roleRepository.EXPECT().Insert(gomock.Any(), gomock.Any()).
 		Return(errors.New("error"))
 
-	ctx := s.createContext(virtualServerRepository, roleRepository, nil)
+	ctx := s.createContext(virtualServerRepository, projectRepository, roleRepository, nil)
 	cmd := CreateRole{}
 
 	// act
@@ -113,25 +146,28 @@ func (s *CreateRoleCommandSuite) TestHappyPath() {
 		return x.GetName() == virtualServer.Name()
 	})).Return(virtualServer, nil)
 
+	project := repositories.NewProject(virtualServer.Id(), "project", "Project", "Test Project")
+	projectRepository := mocks.NewMockProjectRepository(ctrl)
+	projectRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories.ProjectFilter) bool {
+		return x.GetSlug() == "project"
+	})).Return(project, nil)
+
 	roleRepository := mocks.NewMockRoleRepository(ctrl)
 	roleRepository.EXPECT().Insert(gomock.Any(), gomock.Cond(func(x *repositories.Role) bool {
 		return x.Name() == "role" &&
 			x.Description() == "description" &&
-			x.VirtualServerId() == virtualServer.Id() &&
-			x.RequireMfa() == true &&
-			*x.MaxTokenAge() == time.Hour
+			x.VirtualServerId() == virtualServer.Id()
 	})).Return(nil)
 
 	m := mediatorMocks.NewMockMediator(ctrl)
 	m.EXPECT().SendEvent(gomock.Any(), gomock.AssignableToTypeOf(events.RoleCreatedEvent{}), gomock.Any())
 
-	ctx := s.createContext(virtualServerRepository, roleRepository, m)
+	ctx := s.createContext(virtualServerRepository, projectRepository, roleRepository, m)
 	cmd := CreateRole{
 		VirtualServerName: virtualServer.Name(),
+		ProjectSlug:       project.Slug(),
 		Name:              "role",
 		Description:       "description",
-		RequireMfa:        true,
-		MaxTokenAge:       time.Hour,
 	}
 
 	// act
