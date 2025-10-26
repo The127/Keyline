@@ -1862,6 +1862,68 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/virtual-servers/{vsName}/projects/{projectSlug}/resource-server/{resourceServerId}/scopes": {
+            "post": {
+                "description": "Create a new scope for a resource server",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Resource servers scopes"
+                ],
+                "summary": "Create resource server scope",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "keyline",
+                        "description": "Virtual server name",
+                        "name": "vsName",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Project slug",
+                        "name": "projectSlug",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Resource server ID (UUID)",
+                        "name": "resourceServerId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Application data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.CreateResourceServerScopeRequestDto"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.CreateResourceServerScopeResponseDto"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
         "/api/virtual-servers/{vsName}/projects/{projectSlug}/resource-servers": {
             "post": {
                 "description": "Create a new resource server",
@@ -2933,6 +2995,36 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.CreateResourceServerScopeRequestDto": {
+            "type": "object",
+            "required": [
+                "name",
+                "scope"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                },
+                "scope": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                }
+            }
+        },
+        "handlers.CreateResourceServerScopeResponseDto": {
+            "type": "object",
+            "properties": {
+                "id": {
                     "type": "string"
                 }
             }
