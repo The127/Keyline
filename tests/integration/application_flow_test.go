@@ -16,6 +16,7 @@ import (
 var _ = Describe("Application flow", Ordered, func() {
 	var h *harness
 
+	projectSlug := "test-project"
 	var applicationId uuid.UUID
 
 	BeforeAll(func() {
@@ -26,9 +27,21 @@ var _ = Describe("Application flow", Ordered, func() {
 		h.Close()
 	})
 
+	It("should create a project successfully", func() {
+		req := commands.CreateProject{
+			VirtualServerName: h.VirtualServer(),
+			Slug:              projectSlug,
+			Name:              "Name",
+			Description:       "Description",
+		}
+		_, err := mediator.Send[*commands.CreateProjectResponse](h.Ctx(), h.Mediator(), req)
+		Expect(err).ToNot(HaveOccurred())
+	})
+
 	It("should persist public application successfully", func() {
 		req := commands.CreateApplication{
 			VirtualServerName:      h.VirtualServer(),
+			ProjectSlug:            projectSlug,
 			Name:                   "test-app",
 			DisplayName:            "Test App",
 			Type:                   repositories.ApplicationTypePublic,
@@ -43,6 +56,7 @@ var _ = Describe("Application flow", Ordered, func() {
 	It("should list applications successfully", func() {
 		req := queries.ListApplications{
 			VirtualServerName: h.VirtualServer(),
+			ProjectSlug:       projectSlug,
 			SearchText:        "test-app",
 		}
 		response, err := mediator.Send[*queries.ListApplicationsResponse](h.Ctx(), h.Mediator(), req)
@@ -56,6 +70,7 @@ var _ = Describe("Application flow", Ordered, func() {
 	It("should edit application successfully", func() {
 		cmd := commands.PatchApplication{
 			VirtualServerName: h.VirtualServer(),
+			ProjectSlug:       projectSlug,
 			ApplicationId:     applicationId,
 			DisplayName:       utils.Ptr("Updated Test App"),
 		}
@@ -66,6 +81,7 @@ var _ = Describe("Application flow", Ordered, func() {
 	It("should reflect updated values", func() {
 		req := queries.GetApplication{
 			VirtualServerName: h.VirtualServer(),
+			ProjectSlug:       projectSlug,
 			ApplicationId:     applicationId,
 		}
 		app, err := mediator.Send[*queries.GetApplicationResult](h.Ctx(), h.Mediator(), req)
