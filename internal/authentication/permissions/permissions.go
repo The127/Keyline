@@ -36,4 +36,8 @@ const (
 	VirtualServerView   Permission = "virtual_server:view"
 
 	TemplateView Permission = "template:view"
+
+	ProjectCreate Permission = "project:create"
+
+	ResourceServerCreate Permission = "resource_server:create"
 )
