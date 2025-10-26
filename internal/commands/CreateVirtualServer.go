@@ -48,6 +48,8 @@ func (a CreateVirtualServer) GetRequestName() string {
 
 type CreateVirtualServerResponse struct {
 	Id                   uuid.UUID
+	SystemProjectId      uuid.UUID
+	SystemProjectSlug    string
 	AdminUiApplicationId uuid.UUID
 	AdminRoleId          uuid.UUID
 }
@@ -79,13 +81,23 @@ func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer)
 		return nil, fmt.Errorf("initializing default templates: %w", err)
 	}
 
-	initDefaultAppsResult, err := initializeDefaultApplications(ctx, virtualServer)
+	projectRepository := ioc.GetDependency[repositories.ProjectRepository](scope)
+
+	systemProject := repositories.NewProject(virtualServer.Id(), "system", "Keyline Internal", "Internal project for keyline management")
+	err = projectRepository.Insert(ctx, systemProject)
+	if err != nil {
+		return nil, fmt.Errorf("inserting project: %w", err)
+	}
+
+	initDefaultAppsResult, err := initializeDefaultApplications(ctx, virtualServer, systemProject)
 	if err != nil {
 		return nil, fmt.Errorf("initializing default applications: %w", err)
 	}
 
 	return &CreateVirtualServerResponse{
 		Id:                   virtualServer.Id(),
+		SystemProjectId:      systemProject.Id(),
+		SystemProjectSlug:    systemProject.Slug(),
 		AdminUiApplicationId: initDefaultAppsResult.adminUidApplicationId,
 		AdminRoleId:          initDefaultAppsResult.adminRoleId,
 	}, nil
@@ -96,16 +108,8 @@ type createDefaultApplicationResult struct {
 	adminRoleId           uuid.UUID
 }
 
-func initializeDefaultApplications(ctx context.Context, virtualServer *repositories.VirtualServer) (*createDefaultApplicationResult, error) {
+func initializeDefaultApplications(ctx context.Context, virtualServer *repositories.VirtualServer, systemProject *repositories.Project) (*createDefaultApplicationResult, error) {
 	scope := middlewares.GetScope(ctx)
-
-	projectRepository := ioc.GetDependency[repositories.ProjectRepository](scope)
-
-	systemProject := repositories.NewProject(virtualServer.Id(), "system", "Keyline Internal", "Internal project for keyline management")
-	err := projectRepository.Insert(ctx, systemProject)
-	if err != nil {
-		return nil, fmt.Errorf("inserting project: %w", err)
-	}
 
 	applicationRepository := ioc.GetDependency[repositories.ApplicationRepository](scope)
 
@@ -118,12 +122,12 @@ func initializeDefaultApplications(ctx context.Context, virtualServer *repositor
 	})
 	adminUiApplication.SetSystemApplication(true)
 
-	err = applicationRepository.Insert(ctx, adminUiApplication)
+	err := applicationRepository.Insert(ctx, adminUiApplication)
 	if err != nil {
 		return nil, fmt.Errorf("inserting application: %w", err)
 	}
 
-	createAdminUidRolesResult, err := initializeDefaultAdminUiRoles(ctx, virtualServer, adminUiApplication)
+	createAdminUidRolesResult, err := initializeDefaultAdminUiRoles(ctx, virtualServer, systemProject)
 	if err != nil {
 		return nil, fmt.Errorf("initializing default roles: %w", err)
 	}
@@ -138,19 +142,17 @@ type createDefaultAdminUiRolesResult struct {
 	adminRoleId uuid.UUID
 }
 
-func initializeDefaultAdminUiRoles(ctx context.Context, virtualServer *repositories.VirtualServer, application *repositories.Application) (*createDefaultAdminUiRolesResult, error) {
+func initializeDefaultAdminUiRoles(ctx context.Context, virtualServer *repositories.VirtualServer, project *repositories.Project) (*createDefaultAdminUiRolesResult, error) {
 	scope := middlewares.GetScope(ctx)
 
 	roleRepository := ioc.GetDependency[repositories.RoleRepository](scope)
 
-	adminRole := repositories.NewApplicationRole(
+	adminRole := repositories.NewRole(
 		virtualServer.Id(),
-		application.Id(),
+		project.Id(),
 		AdminRoleName,
 		"Administrator role",
 	)
-	adminRole.SetRequireMfa(true)
-	adminRole.SetMaxTokenAge(nil)
 
 	err := roleRepository.Insert(ctx, adminRole)
 	if err != nil {

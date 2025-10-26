@@ -15,6 +15,7 @@ import (
 
 type GetRoleQuery struct {
 	VirtualServerName string
+	ProjectSlug       string
 	RoleId            uuid.UUID
 }
 
@@ -38,8 +39,6 @@ type GetRoleQueryResult struct {
 	Id          uuid.UUID
 	Name        string
 	Description string
-	RequireMfa  bool
-	MaxTokenAge *time.Duration
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 }
@@ -54,9 +53,17 @@ func HandleGetRole(ctx context.Context, query GetRoleQuery) (*GetRoleQueryResult
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
+	projectRepository := ioc.GetDependency[repositories.ProjectRepository](scope)
+	projectFilter := repositories.NewProjectFilter().VirtualServerId(virtualServer.Id()).Slug(query.ProjectSlug)
+	project, err := projectRepository.Single(ctx, projectFilter)
+	if err != nil {
+		return nil, fmt.Errorf("getting project: %w", err)
+	}
+
 	roleRepository := ioc.GetDependency[repositories.RoleRepository](scope)
 	roleFilter := repositories.NewRoleFilter().
 		VirtualServerId(virtualServer.Id()).
+		ProjectId(project.Id()).
 		Id(query.RoleId)
 	role, err := roleRepository.Single(ctx, roleFilter)
 	if err != nil {
@@ -67,8 +74,6 @@ func HandleGetRole(ctx context.Context, query GetRoleQuery) (*GetRoleQueryResult
 		Id:          role.Id(),
 		Name:        role.Name(),
 		Description: role.Description(),
-		RequireMfa:  role.RequireMfa(),
-		MaxTokenAge: role.MaxTokenAge(),
 		CreatedAt:   role.AuditCreatedAt(),
 		UpdatedAt:   role.AuditUpdatedAt(),
 	}, nil

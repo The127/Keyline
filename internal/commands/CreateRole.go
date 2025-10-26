@@ -10,17 +10,15 @@ import (
 	"Keyline/mediator"
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/google/uuid"
 )
 
 type CreateRole struct {
 	VirtualServerName string
+	ProjectSlug       string
 	Name              string
 	Description       string
-	RequireMfa        bool
-	MaxTokenAge       time.Duration
 }
 
 func (a CreateRole) LogRequest() bool {
@@ -53,14 +51,20 @@ func HandleCreateRole(ctx context.Context, command CreateRole) (*CreateRoleRespo
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
+	projectRepository := ioc.GetDependency[repositories.ProjectRepository](scope)
+	projectFilter := repositories.NewProjectFilter().VirtualServerId(virtualServer.Id()).Slug(command.ProjectSlug)
+	project, err := projectRepository.Single(ctx, projectFilter)
+	if err != nil {
+		return nil, fmt.Errorf("getting project: %w", err)
+	}
+
 	roleRepository := ioc.GetDependency[repositories.RoleRepository](scope)
-	role := repositories.NewVirtualServerRole(
+	role := repositories.NewRole(
 		virtualServer.Id(),
+		project.Id(),
 		command.Name,
 		command.Description,
 	)
-	role.SetRequireMfa(command.RequireMfa)
-	role.SetMaxTokenAge(&command.MaxTokenAge)
 	err = roleRepository.Insert(ctx, role)
 	if err != nil {
 		return nil, fmt.Errorf("inserting role: %w", err)

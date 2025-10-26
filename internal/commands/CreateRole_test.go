@@ -12,7 +12,6 @@ import (
 	"context"
 	"errors"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -117,9 +116,7 @@ func (s *CreateRoleCommandSuite) TestHappyPath() {
 	roleRepository.EXPECT().Insert(gomock.Any(), gomock.Cond(func(x *repositories.Role) bool {
 		return x.Name() == "role" &&
 			x.Description() == "description" &&
-			x.VirtualServerId() == virtualServer.Id() &&
-			x.RequireMfa() == true &&
-			*x.MaxTokenAge() == time.Hour
+			x.VirtualServerId() == virtualServer.Id()
 	})).Return(nil)
 
 	m := mediatorMocks.NewMockMediator(ctrl)
@@ -130,8 +127,6 @@ func (s *CreateRoleCommandSuite) TestHappyPath() {
 		VirtualServerName: virtualServer.Name(),
 		Name:              "role",
 		Description:       "description",
-		RequireMfa:        true,
-		MaxTokenAge:       time.Hour,
 	}
 
 	// act

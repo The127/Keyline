@@ -40,5 +40,9 @@ alter table roles
     foreign key ("project_id")
     references "projects" ("id");
 
+alter table roles drop column "application_id";
+alter table roles drop column "require_mfa";
+alter table roles drop column "max_token_age";
+
 -- +migrate Down
 

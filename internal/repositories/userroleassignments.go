@@ -28,13 +28,12 @@ type UserRoleAssignmentRoleInfo struct {
 	Name string
 }
 
-func NewUserRoleAssignment(userId uuid.UUID, roleId uuid.UUID, groupId *uuid.UUID, applicationId *uuid.UUID) *UserRoleAssignment {
+func NewUserRoleAssignment(userId uuid.UUID, roleId uuid.UUID, groupId *uuid.UUID) *UserRoleAssignment {
 	return &UserRoleAssignment{
-		ModelBase:     NewModelBase(),
-		userId:        userId,
-		roleId:        roleId,
-		groupId:       groupId,
-		applicationId: applicationId,
+		ModelBase: NewModelBase(),
+		userId:    userId,
+		roleId:    roleId,
+		groupId:   groupId,
 	}
 }
 

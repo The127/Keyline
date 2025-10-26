@@ -14,9 +14,9 @@ import (
 
 type AssignRoleToUser struct {
 	VirtualServerName string
+	ProjectSlug       string
 	UserId            uuid.UUID
 	RoleId            uuid.UUID
-	ApplicationId     *uuid.UUID
 }
 
 func (a AssignRoleToUser) LogRequest() bool {
@@ -47,15 +47,19 @@ func HandleAssignRoleToUser(ctx context.Context, command AssignRoleToUser) (*Ass
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
+	projectRepository := ioc.GetDependency[repositories.ProjectRepository](scope)
+	projectFilter := repositories.NewProjectFilter().VirtualServerId(virtualServer.Id()).Slug(command.ProjectSlug)
+	project, err := projectRepository.Single(ctx, projectFilter)
+	if err != nil {
+		return nil, fmt.Errorf("getting project: %w", err)
+	}
+
 	roleRepository := ioc.GetDependency[repositories.RoleRepository](scope)
 
 	roleFilter := repositories.NewRoleFilter().
 		Id(command.RoleId).
-		VirtualServerId(virtualServer.Id())
-
-	if command.ApplicationId != nil {
-		roleFilter = roleFilter.ApplicationId(*command.ApplicationId)
-	}
+		VirtualServerId(virtualServer.Id()).
+		ProjectId(project.Id())
 
 	_, err = roleRepository.Single(ctx, roleFilter)
 	if err != nil {
@@ -69,12 +73,7 @@ func HandleAssignRoleToUser(ctx context.Context, command AssignRoleToUser) (*Ass
 	}
 
 	userRoleAssignmentRepository := ioc.GetDependency[repositories.UserRoleAssignmentRepository](scope)
-	userRoleAssignment := repositories.NewUserRoleAssignment(
-		command.UserId,
-		command.RoleId,
-		nil, // TODO: add group id to command once we need it
-		command.ApplicationId,
-	)
+	userRoleAssignment := repositories.NewUserRoleAssignment(command.UserId, command.RoleId, nil)
 	err = userRoleAssignmentRepository.Insert(ctx, userRoleAssignment)
 	if err != nil {
 		return nil, fmt.Errorf("inserting user role assignment: %w", err)
