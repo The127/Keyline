@@ -29,6 +29,7 @@ func (r *resourceServerRepository) selectQuery(filter repositories.ResourceServe
 		"audit_updated_at",
 		"version",
 		"virtual_server_id",
+		"project_id",
 		"name",
 		"description",
 	).From("resource_servers")
