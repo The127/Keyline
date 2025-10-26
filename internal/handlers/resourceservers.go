@@ -25,7 +25,7 @@ type CreateResourceServerRequestDto struct {
 // @Param vsName path string true "Virtual server name"  default(keyline)
 // @Param projectSlug path string true "Project slug"
 // @Param request body CreateResourceServerRequestDto true "Application data"
-// @Success 204 string "No Content"
+// @Success      204  {string} string "No Content"
 // @Failure 400
 // @Failure 500
 // @Router /api/virtual-servers/{vsName}/projects/{projectSlug}/resource-servers [post]

@@ -33,7 +33,7 @@ type CreateApplicationResponseDto struct {
 // CreateApplication creates a new application (OIDC client) in a project
 // @Summary Create application
 // @Description Create a new OIDC application/client with redirect URIs and type
-// @Tags applications
+// @Tags Applications
 // @Accept json
 // @Produce json
 // @Param vsName path string true "Virtual server name"  default(keyline)
@@ -46,7 +46,7 @@ type CreateApplicationResponseDto struct {
 func CreateApplication(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	vsName, err := middlewares.GetVirtualServerName(r.Context())
+	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
@@ -123,7 +123,7 @@ type GetApplicationResponseDto struct {
 // GetApplication retrieves details of a specific application by ID
 // @Summary Get application
 // @Description Get an application by ID from a virtual server
-// @Tags applications
+// @Tags Applications
 // @Accept json
 // @Produce json
 // @Param vsName path string true "Virtual server name"  default(keyline)
@@ -199,7 +199,7 @@ type PatchApplicationRequestDto struct {
 // PatchApplication updates fields of a specific application by ID
 // @Summary Patch application
 // @Description Update an application by ID from a virtual server
-// @Tags applications
+// @Tags Applications
 // @Accept json
 // @Produce json
 // @Param vsName path string true "Virtual server name"  default(keyline)
@@ -257,7 +257,7 @@ func PatchApplication(w http.ResponseWriter, r *http.Request) {
 // DeleteApplication deletes a specific application by ID
 // @Summary Delete application
 // @Description Delete an application by ID from a project
-// @Tags applications
+// @Tags Applications
 // @Accept json
 // @Produce json
 // @Param vsName path string true "Virtual server name"  default(keyline)
@@ -313,7 +313,7 @@ type ListApplicationsResponseDto struct {
 // ListApplications lists applications in a project
 // @Summary List applications
 // @Description Retrieve a paginated list of applications (OIDC clients)
-// @Tags applications
+// @Tags Applications
 // @Accept json
 // @Produce json
 // @Param vsName path string true "Virtual server name"  default(keyline)
@@ -371,7 +371,6 @@ func ListApplications(w http.ResponseWriter, r *http.Request) {
 	})
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
 
 	err = json.NewEncoder(w).Encode(NewPagedResponseDto(
 		items,
@@ -380,5 +379,6 @@ func ListApplications(w http.ResponseWriter, r *http.Request) {
 	))
 	if err != nil {
 		utils.HandleHttpError(w, err)
+		return
 	}
 }
