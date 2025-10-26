@@ -200,6 +200,8 @@ func GetProject(w http.ResponseWriter, r *http.Request) {
 		Slug:        resp.Slug,
 		Name:        resp.Name,
 		Description: resp.Description,
+		CreatedAt:   resp.CreatedAt,
+		UpdatedAt:   resp.UpdatedAt,
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)
