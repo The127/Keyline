@@ -81,7 +81,7 @@ type ListResourceServersResponseDto struct {
 }
 
 // ListResourceServers lists resource servers in a project
-// @Summary List applications
+// @Summary List resource servers
 // @Description Retrieve a paginated list of resource servers
 // @Tags Resource servers
 // @Accept json
