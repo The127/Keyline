@@ -184,9 +184,9 @@ func initTest(dp *ioc.DependencyProvider) (err error) {
 
 	_, err = mediator.Send[*commands.AssignRoleToUserResponse](ctx, m, commands.AssignRoleToUser{
 		VirtualServerName: "test-vs",
+		ProjectSlug:       createVirtualServerResponse.SystemProjectSlug,
 		UserId:            initialAdminUserInfo.Id,
 		RoleId:            createVirtualServerResponse.AdminRoleId,
-		ApplicationId:     &createVirtualServerResponse.AdminUiApplicationId,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to assign admin role to initial admin user: %v", err)
