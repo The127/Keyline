@@ -46,7 +46,7 @@ type CreateApplicationResponseDto struct {
 func CreateApplication(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	vsName, err := middlewares.GetVirtualServerName(r.Context())
+	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
