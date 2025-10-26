@@ -86,4 +86,10 @@ func postgresRepositories(dc *ioc.DependencyCollection, pc config.PostgresConfig
 	ioc.RegisterScoped(dc, func(_ *ioc.DependencyProvider) repositories.ProjectRepository {
 		return postgres.NewProjectRepository()
 	})
+	ioc.RegisterScoped(dc, func(_ *ioc.DependencyProvider) repositories.ResourceServerRepository {
+		return postgres.NewResourceServerRepository()
+	})
+	ioc.RegisterScoped(dc, func(_ *ioc.DependencyProvider) repositories.ResourceServerScopeRepository {
+		return postgres.NewResourceServerScopeRepository()
+	})
 }
