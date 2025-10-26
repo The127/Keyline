@@ -109,7 +109,7 @@ func initializeDefaultApplications(ctx context.Context, virtualServer *repositor
 
 	applicationRepository := ioc.GetDependency[repositories.ApplicationRepository](scope)
 
-	adminUiApplication := repositories.NewApplication(virtualServer.Id(), AdminApplicationName, "Admin Application", repositories.ApplicationTypePublic, []string{
+	adminUiApplication := repositories.NewApplication(virtualServer.Id(), systemProject.Id(), AdminApplicationName, "Admin Application", repositories.ApplicationTypePublic, []string{
 		fmt.Sprintf("%s/mgmt/%s/auth", config.C.Frontend.ExternalUrl, virtualServer.Name()),
 	})
 	adminUiApplication.GenerateSecret()

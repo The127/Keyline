@@ -20,6 +20,7 @@ type Application struct {
 	ModelBase
 
 	virtualServerId uuid.UUID
+	projectId       uuid.UUID
 
 	name        string
 	displayName string
@@ -35,10 +36,11 @@ type Application struct {
 	accessTokenHeaderType string
 }
 
-func NewApplication(virtualServerId uuid.UUID, name string, displayName string, type_ ApplicationType, redirectUris []string) *Application {
+func NewApplication(virtualServerId uuid.UUID, projectId uuid.UUID, name string, displayName string, type_ ApplicationType, redirectUris []string) *Application {
 	return &Application{
 		ModelBase:              NewModelBase(),
 		virtualServerId:        virtualServerId,
+		projectId:              projectId,
 		name:                   name,
 		displayName:            displayName,
 		type_:                  type_,
@@ -55,6 +57,7 @@ func (a *Application) GetScanPointers() []any {
 		&a.auditUpdatedAt,
 		&a.version,
 		&a.virtualServerId,
+		&a.projectId,
 		&a.name,
 		&a.displayName,
 		&a.type_,
@@ -77,6 +80,10 @@ func (a *Application) GenerateSecret() string {
 
 func (a *Application) VirtualServerId() uuid.UUID {
 	return a.virtualServerId
+}
+
+func (a *Application) ProjectId() uuid.UUID {
+	return a.projectId
 }
 
 func (a *Application) ClaimsMappingScript() *string {
@@ -157,6 +164,7 @@ type ApplicationFilter struct {
 	id              *uuid.UUID
 	ids             *[]uuid.UUID
 	virtualServerId *uuid.UUID
+	projectId       *uuid.UUID
 	searchFilter    *SearchFilter
 }
 
@@ -242,6 +250,20 @@ func (f ApplicationFilter) HasId() bool {
 
 func (f ApplicationFilter) GetId() uuid.UUID {
 	return utils.ZeroIfNil(f.id)
+}
+
+func (f ApplicationFilter) ProjectId(projectId uuid.UUID) ApplicationFilter {
+	filter := f.Clone()
+	filter.projectId = &projectId
+	return filter
+}
+
+func (f ApplicationFilter) HasProjectId() bool {
+	return f.projectId != nil
+}
+
+func (f ApplicationFilter) GetProjectId() uuid.UUID {
+	return utils.ZeroIfNil(f.projectId)
 }
 
 func (f ApplicationFilter) VirtualServerId(virtualServerId uuid.UUID) ApplicationFilter {

@@ -15,6 +15,7 @@ import (
 
 type CreateApplication struct {
 	VirtualServerName      string
+	ProjectSlug            string
 	Name                   string
 	DisplayName            string
 	Type                   repositories.ApplicationType
@@ -56,8 +57,15 @@ func HandleCreateApplication(ctx context.Context, command CreateApplication) (*C
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
+	projectRepository := ioc.GetDependency[repositories.ProjectRepository](scope)
+	projectFilter := repositories.NewProjectFilter().VirtualServerId(virtualServer.Id()).Slug(command.ProjectSlug)
+	project, err := projectRepository.Single(ctx, projectFilter)
+	if err != nil {
+		return nil, fmt.Errorf("getting project: %w", err)
+	}
+
 	applicationRepository := ioc.GetDependency[repositories.ApplicationRepository](scope)
-	application := repositories.NewApplication(virtualServer.Id(), command.Name, command.DisplayName, command.Type, command.RedirectUris)
+	application := repositories.NewApplication(virtualServer.Id(), project.Id(), command.Name, command.DisplayName, command.Type, command.RedirectUris)
 
 	var secret *string = nil
 	if command.Type == repositories.ApplicationTypeConfidential {

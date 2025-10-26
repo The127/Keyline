@@ -26,6 +26,7 @@ func TestDeleteApplicationCommandSuite(t *testing.T) {
 
 func (s *DeleteApplicationCommandSuite) createContext(
 	virtualServerRepository repositories.VirtualServerRepository,
+	projectRepository repositories.ProjectRepository,
 	applicationRepository repositories.ApplicationRepository,
 ) context.Context {
 	dc := ioc.NewDependencyCollection()
@@ -33,6 +34,12 @@ func (s *DeleteApplicationCommandSuite) createContext(
 	if virtualServerRepository != nil {
 		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.VirtualServerRepository {
 			return virtualServerRepository
+		})
+	}
+
+	if projectRepository != nil {
+		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.ProjectRepository {
+			return projectRepository
 		})
 	}
 
@@ -62,13 +69,18 @@ func (s *DeleteApplicationCommandSuite) TestTryingToDeleteSystemApplication() {
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
 	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
 
-	application := repositories.NewApplication(virtualServer.Id(), "application", "Application", repositories.ApplicationTypePublic, []string{})
+	project := repositories.NewProject(virtualServer.Id(), "project", "Project", "Test Project")
+	project.Mock(now)
+	projectRepository := mocks.NewMockProjectRepository(ctrl)
+	projectRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(project, nil)
+
+	application := repositories.NewApplication(virtualServer.Id(), project.Id(), "application", "Application", repositories.ApplicationTypePublic, []string{})
 	application.Mock(now)
 	application.SetSystemApplication(true)
 	applicationRepository := mocks.NewMockApplicationRepository(ctrl)
 	applicationRepository.EXPECT().First(gomock.Any(), gomock.Any()).Return(application, nil)
 
-	ctx := s.createContext(virtualServerRepository, applicationRepository)
+	ctx := s.createContext(virtualServerRepository, projectRepository, applicationRepository)
 	cmd := DeleteApplication{}
 
 	// act
@@ -78,7 +90,7 @@ func (s *DeleteApplicationCommandSuite) TestTryingToDeleteSystemApplication() {
 	s.Error(err)
 }
 
-func (s *DeleteApplicationCommandSuite) TesttApplicationError() {
+func (s *DeleteApplicationCommandSuite) TestProjectError() {
 	// arrange
 	ctrl := gomock.NewController(s.T())
 	defer ctrl.Finish()
@@ -90,11 +102,42 @@ func (s *DeleteApplicationCommandSuite) TesttApplicationError() {
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
 	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
 
+	projectRepository := mocks.NewMockProjectRepository(ctrl)
+	projectRepository.EXPECT().Single(gomock.Any(), gomock.Any()).
+		Return(nil, errors.New("error"))
+
+	ctx := s.createContext(virtualServerRepository, projectRepository, nil)
+	cmd := DeleteApplication{}
+
+	// act
+	_, err := HandleDeleteApplication(ctx, cmd)
+
+	// assert
+	s.Error(err)
+}
+
+func (s *DeleteApplicationCommandSuite) TestApplicationError() {
+	// arrange
+	ctrl := gomock.NewController(s.T())
+	defer ctrl.Finish()
+
+	now := time.Now()
+
+	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
+	virtualServer.Mock(now)
+	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
+	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
+
+	project := repositories.NewProject(virtualServer.Id(), "project", "Project", "Test Project")
+	project.Mock(now)
+	projectRepository := mocks.NewMockProjectRepository(ctrl)
+	projectRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(project, nil)
+
 	applicationRepository := mocks.NewMockApplicationRepository(ctrl)
 	applicationRepository.EXPECT().First(gomock.Any(), gomock.Any()).
 		Return(nil, errors.New("error"))
 
-	ctx := s.createContext(virtualServerRepository, applicationRepository)
+	ctx := s.createContext(virtualServerRepository, projectRepository, applicationRepository)
 	cmd := DeleteApplication{}
 
 	// act
@@ -113,7 +156,7 @@ func (s *DeleteApplicationCommandSuite) TestVirtualServerError() {
 	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).
 		Return(nil, errors.New("error"))
 
-	ctx := s.createContext(virtualServerRepository, nil)
+	ctx := s.createContext(virtualServerRepository, nil, nil)
 	cmd := DeleteApplication{}
 
 	// act
@@ -137,7 +180,14 @@ func (s *DeleteApplicationCommandSuite) TestHappyPath() {
 		return x.GetName() == "virtualServer"
 	})).Return(virtualServer, nil)
 
-	application := repositories.NewApplication(virtualServer.Id(), "application", "Application", repositories.ApplicationTypePublic, []string{})
+	project := repositories.NewProject(virtualServer.Id(), "project", "Project", "Test Project")
+	project.Mock(now)
+	projectRepository := mocks.NewMockProjectRepository(ctrl)
+	projectRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories.ProjectFilter) bool {
+		return x.GetSlug() == "project"
+	})).Return(project, nil)
+
+	application := repositories.NewApplication(virtualServer.Id(), project.Id(), "application", "Application", repositories.ApplicationTypePublic, []string{})
 	application.Mock(now)
 	applicationRepository := mocks.NewMockApplicationRepository(ctrl)
 	applicationRepository.EXPECT().First(gomock.Any(), gomock.Cond(func(x repositories.ApplicationFilter) bool {
@@ -145,9 +195,10 @@ func (s *DeleteApplicationCommandSuite) TestHappyPath() {
 	})).Return(application, nil)
 	applicationRepository.EXPECT().Delete(gomock.Any(), application.Id()).Return(nil)
 
-	ctx := s.createContext(virtualServerRepository, applicationRepository)
+	ctx := s.createContext(virtualServerRepository, projectRepository, applicationRepository)
 	cmd := DeleteApplication{
 		VirtualServerName: "virtualServer",
+		ProjectSlug:       "project",
 		ApplicationId:     application.Id(),
 	}
 
