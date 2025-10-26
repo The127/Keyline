@@ -29,6 +29,7 @@ func (r *projectRepository) selectQuery(filter repositories.ProjectFilter) *sqlb
 		"audit_updated_at",
 		"version",
 		"virtual_server_id",
+		"slug",
 		"name",
 		"description",
 	).From("projects")
@@ -113,6 +114,7 @@ func (r *projectRepository) First(ctx context.Context, filter repositories.Proje
 	}
 
 	s := r.selectQuery(filter)
+	s.Limit(1)
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
