@@ -70,6 +70,7 @@ type ProjectFilter struct {
 	PagingInfo
 	OrderInfo
 	virtualServerId *uuid.UUID
+	slug            *string
 	id              *uuid.UUID
 	searchFilter    *SearchFilter
 }
@@ -94,6 +95,20 @@ func (f ProjectFilter) HasVirtualServerId() bool {
 
 func (f ProjectFilter) GetVirtualServerId() uuid.UUID {
 	return utils.ZeroIfNil(f.virtualServerId)
+}
+
+func (f ProjectFilter) Slug(slug string) ProjectFilter {
+	filter := f.Clone()
+	filter.slug = &slug
+	return filter
+}
+
+func (f ProjectFilter) HasSlug() bool {
+	return f.slug != nil
+}
+
+func (f ProjectFilter) GetSlug() string {
+	return utils.ZeroIfNil(f.slug)
 }
 
 func (f ProjectFilter) Id(id uuid.UUID) ProjectFilter {

@@ -41,6 +41,10 @@ func (r *projectRepository) selectQuery(filter repositories.ProjectFilter) *sqlb
 		s.Where(s.Equal("virtual_server_id", filter.GetVirtualServerId()))
 	}
 
+	if filter.HasSlug() {
+		s.Where(s.Equal("slug", filter.GetSlug()))
+	}
+
 	if filter.HasSearch() {
 		term := filter.GetSearch().Term()
 		s.Where(s.Or(
