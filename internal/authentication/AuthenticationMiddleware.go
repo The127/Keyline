@@ -132,7 +132,7 @@ func extractUserFromBearerToken(ctx context.Context, authorizationHeader string,
 
 	currentUser := NewCurrentUser(userId)
 
-	roleClaims, ok := claims["application_roles"]
+	roleClaims, ok := claims["roles"]
 	if ok {
 		roleClaimsArray, ok := roleClaims.([]any)
 		if ok {

@@ -29,7 +29,6 @@ func (r *userRoleAssignmentRepository) selectQuery(filter repositories.UserRoleA
 		"ura.user_id",
 		"ura.role_id",
 		"ura.group_id",
-		"ura.application_id",
 	).From("user_role_assignments as ura")
 
 	if filter.HasUserId() {
@@ -42,10 +41,6 @@ func (r *userRoleAssignmentRepository) selectQuery(filter repositories.UserRoleA
 
 	if filter.HasGroupId() {
 		s.Where(s.Equal("ura.group_id", filter.GetGroupId()))
-	}
-
-	if filter.HasApplicationId() {
-		s.Where(s.Equal("ura.application_id", filter.GetApplicationId()))
 	}
 
 	if filter.GetIncludeUser() {
@@ -117,13 +112,11 @@ func (r *userRoleAssignmentRepository) Insert(ctx context.Context, userRoleAssig
 			"user_id",
 			"role_id",
 			"group_id",
-			"application_id",
 		).
 		Values(
 			userRoleAssignment.UserId(),
 			userRoleAssignment.RoleId(),
 			userRoleAssignment.GroupId(),
-			userRoleAssignment.ApplicationId(),
 		).Returning("id", "audit_created_at", "audit_updated_at", "version")
 
 	query, args := s.Build()
