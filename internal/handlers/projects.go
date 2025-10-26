@@ -9,8 +9,10 @@ import (
 	"Keyline/utils"
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 )
 
 type CreateProjectRequestDto struct {
@@ -151,6 +153,54 @@ func ListProjects(w http.ResponseWriter, r *http.Request) {
 		queryOps,
 		projects.TotalCount,
 	))
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+}
+
+type GetProjectResponseDto struct {
+	Id          uuid.UUID `json:"id"`
+	Slug        string    `json:"slug"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
+}
+
+func GetProject(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	vsName, err := middlewares.GetVirtualServerName(ctx)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	vars := mux.Vars(r)
+	projectSlug := vars["projectSlug"]
+
+	scope := middlewares.GetScope(ctx)
+	m := ioc.GetDependency[mediator.Mediator](scope)
+
+	resp, err := mediator.Send[*queries.GetProjectResponse](ctx, m, queries.GetProject{
+		VirtualServerName: vsName,
+		ProjectSlug:       projectSlug,
+	})
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	err = json.NewEncoder(w).Encode(GetProjectResponseDto{
+		Id:          resp.Id,
+		Slug:        resp.Slug,
+		Name:        resp.Name,
+		Description: resp.Description,
+	})
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
