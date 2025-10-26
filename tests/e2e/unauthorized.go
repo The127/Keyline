@@ -1,26 +1,26 @@
 package e2e
 
 import (
-	keylineClient "Keyline/client"
+	"Keyline/client"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	ginkgo "github.com/onsi/ginkgo/v2"
+	gomega "github.com/onsi/gomega"
 )
 
-var _ = Describe("Unautorized", Ordered, func() {
+var _ = ginkgo.Describe("Unautorized", ginkgo.Ordered, func() {
 	var h *harness
 
-	BeforeAll(func() {
+	ginkgo.BeforeAll(func() {
 		h = newE2eTestHarness()
 	})
 
-	AfterAll(func() {
+	ginkgo.AfterAll(func() {
 		h.Close()
 	})
 
-	It("rejects requests", func() {
-		_, err := h.Client().User().List(h.Ctx(), keylineClient.ListUserParams{})
-		Expect(err).To(HaveOccurred())
-		Expect(err).To(MatchError(ContainSubstring("401 Unauthorized")))
+	ginkgo.It("rejects requests", func() {
+		_, err := h.Client().User().List(h.Ctx(), client.ListUserParams{})
+		gomega.Expect(err).To(gomega.HaveOccurred())
+		gomega.Expect(err).To(gomega.MatchError(gomega.ContainSubstring("401 Unauthorized")))
 	})
 })
