@@ -42,6 +42,10 @@ func (r *resourceServerRepository) selectQuery(filter repositories.ResourceServe
 		s.Where(s.Equal("project_id", filter.GetProjectId()))
 	}
 
+	if filter.HasId() {
+		s.Where(s.Equal("id", filter.GetId()))
+	}
+
 	if filter.HasSearch() {
 		term := filter.GetSearch().Term()
 		s.Where(s.Or(

@@ -140,6 +140,8 @@ func Serve(dp *ioc.DependencyProvider, serverConfig config.ServerConfig) {
 
 	vsApiRouter.HandleFunc("/projects/{projectSlug}/resource-servers", handlers.CreateResourceServer).Methods(http.MethodPost, http.MethodOptions)
 
+	vsApiRouter.HandleFunc("/projects/{projectSlug}/resource-servers/{resourceServerId}/scopes", handlers.CreateResourceServerScope).Methods(http.MethodPost, http.MethodOptions)
+
 	vsApiRouter.HandleFunc("/audit", handlers.ListAuditLog).Methods(http.MethodGet, http.MethodOptions)
 
 	r.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)

@@ -71,6 +71,7 @@ type ResourceServerFilter struct {
 	OrderInfo
 	virtualServerId *uuid.UUID
 	projectId       *uuid.UUID
+	id              *uuid.UUID
 	searchFilter    *SearchFilter
 }
 
@@ -80,6 +81,20 @@ func NewResourceServerFilter() ResourceServerFilter {
 
 func (f ResourceServerFilter) Clone() ResourceServerFilter {
 	return f
+}
+
+func (f ResourceServerFilter) Id(id uuid.UUID) ResourceServerFilter {
+	filter := f.Clone()
+	filter.id = &id
+	return filter
+}
+
+func (f ResourceServerFilter) HasId() bool {
+	return f.id != nil
+}
+
+func (f ResourceServerFilter) GetId() uuid.UUID {
+	return utils.ZeroIfNil(f.id)
 }
 
 func (f ResourceServerFilter) VirtualServerId(virtualServerId uuid.UUID) ResourceServerFilter {
