@@ -30,18 +30,19 @@ type CreateApplicationResponseDto struct {
 	Secret *string   `json:"secret,omitempty"`
 }
 
-// CreateApplication creates a new application (OIDC client) in a virtual server
+// CreateApplication creates a new application (OIDC client) in a project
 // @Summary Create application
 // @Description Create a new OIDC application/client with redirect URIs and type
 // @Tags applications
 // @Accept json
 // @Produce json
 // @Param vsName path string true "Virtual server name"  default(keyline)
+// @Param projectSlug path string true "Project slug"
 // @Param request body CreateApplicationRequestDto true "Application data"
 // @Success 201 {object} CreateApplicationResponseDto
 // @Failure 400
 // @Failure 500
-// @Router /api/virtual-servers/{vsName}/applications [post]
+// @Router /api/virtual-servers/{vsName}/projects/{projectSlug}/applications [post]
 func CreateApplication(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -50,6 +51,9 @@ func CreateApplication(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, err)
 		return
 	}
+
+	vars := mux.Vars(r)
+	projectSlug := vars["projectSlug"]
 
 	var dto CreateApplicationRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
@@ -74,6 +78,7 @@ func CreateApplication(w http.ResponseWriter, r *http.Request) {
 
 	response, err := mediator.Send[*commands.CreateApplicationResponse](ctx, m, commands.CreateApplication{
 		VirtualServerName:      vsName,
+		ProjectSlug:            projectSlug,
 		Name:                   dto.Name,
 		DisplayName:            dto.DisplayName,
 		Type:                   repositories.ApplicationType(dto.Type),
@@ -122,12 +127,13 @@ type GetApplicationResponseDto struct {
 // @Accept json
 // @Produce json
 // @Param vsName path string true "Virtual server name"  default(keyline)
+// @Param projectSlug path string true "Project slug"
 // @Param appId path string true "Application ID (UUID)"
 // @Success 200 {object} GetApplicationResponseDto
 // @Failure 400
 // @Failure 404 "Application not found"
 // @Failure 500
-// @Router /api/virtual-servers/{vsName}/applications/{appId} [get]
+// @Router /api/virtual-servers/{vsName}/projects/{projectSlug}/applications/{appId} [get]
 func GetApplication(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -138,6 +144,8 @@ func GetApplication(w http.ResponseWriter, r *http.Request) {
 	}
 
 	vars := mux.Vars(r)
+	projectSlug := vars["projectSlug"]
+
 	appIdString := vars["appId"]
 	appId, err := uuid.Parse(appIdString)
 	if err != nil {
@@ -150,6 +158,7 @@ func GetApplication(w http.ResponseWriter, r *http.Request) {
 
 	application, err := mediator.Send[*queries.GetApplicationResult](ctx, m, queries.GetApplication{
 		VirtualServerName: vsName,
+		ProjectSlug:       projectSlug,
 		ApplicationId:     appId,
 	})
 	if err != nil {
@@ -194,13 +203,14 @@ type PatchApplicationRequestDto struct {
 // @Accept json
 // @Produce json
 // @Param vsName path string true "Virtual server name"  default(keyline)
+// @Param projectSlug path string true "Project slug"
 // @Param appId path string true "Application ID (UUID)"
 // @Param request body PatchApplicationRequestDto true "Application data"
 // @Success 204 {string} string "No Content"
 // @Failure 400
 // @Failure 404 "Application not found"
 // @Failure 500
-// @Router /api/virtual-servers/{vsName}/applications/{appId} [patch]
+// @Router /api/virtual-servers/{vsName}/projects/{projectSlug}/applications/{appId} [patch]
 func PatchApplication(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -211,6 +221,8 @@ func PatchApplication(w http.ResponseWriter, r *http.Request) {
 	}
 
 	vars := mux.Vars(r)
+	projectSlug := vars["projectSlug"]
+
 	appIdString := vars["appId"]
 	appId, err := uuid.Parse(appIdString)
 	if err != nil {
@@ -229,6 +241,7 @@ func PatchApplication(w http.ResponseWriter, r *http.Request) {
 
 	_, err = mediator.Send[*commands.PatchApplicationResponse](ctx, m, commands.PatchApplication{
 		VirtualServerName:   vsName,
+		ProjectSlug:         projectSlug,
 		ApplicationId:       appId,
 		DisplayName:         utils.TrimSpace(dto.DisplayName),
 		ClaimsMappingScript: dto.ClaimsMappingScript,
@@ -243,15 +256,16 @@ func PatchApplication(w http.ResponseWriter, r *http.Request) {
 
 // DeleteApplication deletes a specific application by ID
 // @Summary Delete application
-// @Description Delete an application by ID from a virtual server
+// @Description Delete an application by ID from a project
 // @Tags applications
 // @Accept json
 // @Produce json
 // @Param vsName path string true "Virtual server name"  default(keyline)
+// @Param projectSlug path string true "Project slug"
 // @Param appId path string true "Application ID (UUID)"
 // @Success 204 {string} string "No Content"
 // @Failure 400
-// @Router /api/virtual-servers/{vsName}/applications/{appId} [delete]
+// @Router /api/virtual-servers/{vsName}/projects/{projectSlug}/applications/{appId} [delete]
 func DeleteApplication(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -262,6 +276,8 @@ func DeleteApplication(w http.ResponseWriter, r *http.Request) {
 	}
 
 	vars := mux.Vars(r)
+	projectSlug := vars["projectSlug"]
+
 	appIdString := vars["appId"]
 	appId, err := uuid.Parse(appIdString)
 	if err != nil {
@@ -273,6 +289,7 @@ func DeleteApplication(w http.ResponseWriter, r *http.Request) {
 
 	_, err = mediator.Send[*commands.DeleteApplicationResponse](ctx, m, commands.DeleteApplication{
 		VirtualServerName: vsName,
+		ProjectSlug:       projectSlug,
 		ApplicationId:     appId,
 	})
 	if err != nil {
@@ -293,13 +310,14 @@ type ListApplicationsResponseDto struct {
 	SystemApplication bool      `json:"systemApplication"`
 }
 
-// ListApplications lists applications in a virtual server
+// ListApplications lists applications in a project
 // @Summary List applications
 // @Description Retrieve a paginated list of applications (OIDC clients)
 // @Tags applications
 // @Accept json
 // @Produce json
 // @Param vsName path string true "Virtual server name"  default(keyline)
+// @Param projectSlug path string true "Project slug"
 // @Param page query int false "Page number"
 // @Param pageSize query int false "Page size"
 // @Param orderBy query string false "Order by field"
@@ -308,7 +326,7 @@ type ListApplicationsResponseDto struct {
 // @Success 200 {object} PagedApplicationsResponseDto
 // @Failure 400
 // @Failure 500
-// @Router /api/virtual-servers/{vsName}/applications [get]
+// @Router /api/virtual-servers/{vsName}/projects/{projectSlug}/applications [get]
 func ListApplications(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -324,11 +342,15 @@ func ListApplications(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	vars := mux.Vars(r)
+	projectSlug := vars["projectSlug"]
+
 	scope := middlewares.GetScope(ctx)
 	m := ioc.GetDependency[mediator.Mediator](scope)
 
 	applications, err := mediator.Send[*queries.ListApplicationsResponse](ctx, m, queries.ListApplications{
 		VirtualServerName: vsName,
+		ProjectSlug:       projectSlug,
 		PagedQuery:        queryOps.ToPagedQuery(),
 		OrderedQuery:      queryOps.ToOrderedQuery(),
 		SearchText:        queryOps.Search,

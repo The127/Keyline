@@ -129,11 +129,11 @@ func Serve(dp *ioc.DependencyProvider, serverConfig config.ServerConfig) {
 	vsApiRouter.HandleFunc("/projects/{projectSlug/roles/{roleId}/assign", handlers.AssignRole).Methods(http.MethodPost, http.MethodOptions)
 	vsApiRouter.HandleFunc("/projects/{projectSlug/roles/{roleId}/users", handlers.ListUsersInRole).Methods(http.MethodGet, http.MethodOptions)
 
-	vsApiRouter.HandleFunc("/applications", handlers.CreateApplication).Methods(http.MethodPost, http.MethodOptions)
-	vsApiRouter.HandleFunc("/applications", handlers.ListApplications).Methods(http.MethodGet, http.MethodOptions)
-	vsApiRouter.HandleFunc("/applications/{appId}", handlers.GetApplication).Methods(http.MethodGet, http.MethodOptions)
-	vsApiRouter.HandleFunc("/applications/{appId}", handlers.PatchApplication).Methods(http.MethodPatch, http.MethodOptions)
-	vsApiRouter.HandleFunc("/applications/{appId}", handlers.DeleteApplication).Methods(http.MethodDelete, http.MethodOptions)
+	vsApiRouter.HandleFunc("/projects/{projectSlug}/applications", handlers.CreateApplication).Methods(http.MethodPost, http.MethodOptions)
+	vsApiRouter.HandleFunc("/projects/{projectSlug}/applications", handlers.ListApplications).Methods(http.MethodGet, http.MethodOptions)
+	vsApiRouter.HandleFunc("/projects/{projectSlug}/applications/{appId}", handlers.GetApplication).Methods(http.MethodGet, http.MethodOptions)
+	vsApiRouter.HandleFunc("/projects/{projectSlug}/applications/{appId}", handlers.PatchApplication).Methods(http.MethodPatch, http.MethodOptions)
+	vsApiRouter.HandleFunc("/projects/{projectSlug}/applications/{appId}", handlers.DeleteApplication).Methods(http.MethodDelete, http.MethodOptions)
 
 	vsApiRouter.HandleFunc("/audit", handlers.ListAuditLog).Methods(http.MethodGet, http.MethodOptions)
 

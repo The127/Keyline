@@ -15,6 +15,7 @@ import (
 
 type GetApplication struct {
 	VirtualServerName string
+	ProjectSlug       string
 	ApplicationId     uuid.UUID
 }
 
@@ -58,9 +59,19 @@ func HandleGetApplication(ctx context.Context, query GetApplication) (*GetApplic
 		return nil, fmt.Errorf("searching virtual servers: %w", err)
 	}
 
+	projectRepository := ioc.GetDependency[repositories.ProjectRepository](scope)
+	projectFilter := repositories.NewProjectFilter().
+		VirtualServerId(virtualServer.Id()).
+		Slug(query.ProjectSlug)
+	project, err := projectRepository.Single(ctx, projectFilter)
+	if err != nil {
+		return nil, fmt.Errorf("getting project: %w", err)
+	}
+
 	applicationRepository := ioc.GetDependency[repositories.ApplicationRepository](scope)
 	applicationFilter := repositories.NewApplicationFilter().
 		VirtualServerId(virtualServer.Id()).
+		ProjectId(project.Id()).
 		Id(query.ApplicationId)
 	application, err := applicationRepository.First(ctx, applicationFilter)
 	if err != nil {

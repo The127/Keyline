@@ -17,6 +17,7 @@ type ListApplications struct {
 	PagedQuery
 	OrderedQuery
 	VirtualServerName string
+	ProjectSlug       string
 	SearchText        string
 }
 
@@ -59,9 +60,19 @@ func HandleListApplications(ctx context.Context, query ListApplications) (*ListA
 		return nil, fmt.Errorf("searching virtual servers: %w", err)
 	}
 
+	projectRepository := ioc.GetDependency[repositories.ProjectRepository](scope)
+	projectFilter := repositories.NewProjectFilter().
+		VirtualServerId(virtualServer.Id()).
+		Slug(query.ProjectSlug)
+	project, err := projectRepository.Single(ctx, projectFilter)
+	if err != nil {
+		return nil, fmt.Errorf("getting project: %w", err)
+	}
+
 	applicationRepository := ioc.GetDependency[repositories.ApplicationRepository](scope)
 	applicationFilter := repositories.NewApplicationFilter().
 		VirtualServerId(virtualServer.Id()).
+		ProjectId(project.Id()).
 		Pagination(query.Page, query.PageSize).
 		Order(query.OrderBy, query.OrderDir).
 		Search(repositories.NewContainsSearchFilter(query.SearchText))
