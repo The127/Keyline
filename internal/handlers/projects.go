@@ -3,6 +3,7 @@ package handlers
 import (
 	"Keyline/internal/commands"
 	"Keyline/internal/middlewares"
+	"Keyline/internal/queries"
 	"Keyline/ioc"
 	"Keyline/mediator"
 	"Keyline/utils"
@@ -74,6 +75,79 @@ func CreateProject(w http.ResponseWriter, r *http.Request) {
 	err = json.NewEncoder(w).Encode(CreateProjectResponseDto{
 		Id: response.Id,
 	})
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+}
+
+type PagedProjectsResponseDto = PagedResponseDto[ListProjectsResponseDto]
+
+type ListProjectsResponseDto struct {
+	Id   uuid.UUID `json:"id"`
+	Slug string    `json:"slug"`
+	Name string    `json:"name"`
+}
+
+// ListProjects lists projects in a virtual server
+// @Summary List projects
+// @Description Retrieve a paginated list of projects
+// @Tags Projects
+// @Accept json
+// @Produce json
+// @Param vsName path string true "Virtual server name"  default(keyline)
+// @Param page query int false "Page number"
+// @Param pageSize query int false "Page size"
+// @Param orderBy query string false "Order by field"
+// @Param orderDir query string false "Order direction (asc|desc)"
+// @Param search query string false "Search term"
+// @Success 200 {object} PagedProjectsResponseDto
+// @Failure 400
+// @Failure 500
+// @Router /api/virtual-servers/{vsName}/projects [get]
+func ListProjects(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	queryOps, err := ParseQueryOps(r)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	vsName, err := middlewares.GetVirtualServerName(ctx)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	scope := middlewares.GetScope(ctx)
+	m := ioc.GetDependency[mediator.Mediator](scope)
+
+	projects, err := mediator.Send[*queries.ListProjectsResponse](ctx, m, queries.ListProjects{
+		VirtualServerName: vsName,
+		PagedQuery:        queryOps.ToPagedQuery(),
+		OrderedQuery:      queryOps.ToOrderedQuery(),
+		SearchText:        queryOps.Search,
+	})
+	if err != nil {
+		utils.HandleHttpError(w, err)
+	}
+
+	items := utils.MapSlice(projects.Items, func(x queries.ListProjectsResponseItem) ListProjectsResponseDto {
+		return ListProjectsResponseDto{
+			Id:   x.Id,
+			Slug: x.Slug,
+			Name: x.Name,
+		}
+	})
+
+	w.Header().Set("Content-Type", "application/json")
+
+	err = json.NewEncoder(w).Encode(NewPagedResponseDto(
+		items,
+		queryOps,
+		projects.TotalCount,
+	))
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
