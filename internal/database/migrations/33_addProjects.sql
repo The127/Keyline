@@ -28,5 +28,17 @@ create trigger "trg_set_audit_updated_at"
     for each row
     execute function update_audit_timestamp();
 
+alter table applications add column "project_id" uuid not null;
+alter table applications
+    add constraint "fk_applications_projects"
+    foreign key ("project_id")
+    references "projects" ("id");
+
+alter table roles add column "project_id" uuid not null;
+alter table roles
+    add constraint "fk_roles_projects"
+    foreign key ("project_id")
+    references "projects" ("id");
+
 -- +migrate Down
 
