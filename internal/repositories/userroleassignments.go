@@ -10,10 +10,9 @@ import (
 type UserRoleAssignment struct {
 	ModelBase
 
-	userId        uuid.UUID
-	roleId        uuid.UUID
-	groupId       *uuid.UUID
-	applicationId *uuid.UUID
+	userId  uuid.UUID
+	roleId  uuid.UUID
+	groupId *uuid.UUID
 
 	userInfo UserRoleAssignmentUserInfo
 	roleInfo UserRoleAssignmentRoleInfo
@@ -57,10 +56,6 @@ func (u *UserRoleAssignment) GroupId() *uuid.UUID {
 	return u.groupId
 }
 
-func (u *UserRoleAssignment) ApplicationId() *uuid.UUID {
-	return u.applicationId
-}
-
 func (u *UserRoleAssignment) GetScanPointers(filter UserRoleAssignmentFilter) []any {
 	ptrs := []any{
 		&u.id,
@@ -70,7 +65,6 @@ func (u *UserRoleAssignment) GetScanPointers(filter UserRoleAssignmentFilter) []
 		&u.userId,
 		&u.roleId,
 		&u.groupId,
-		&u.applicationId,
 	}
 
 	if filter.includeUser {
@@ -89,17 +83,12 @@ func (u *UserRoleAssignment) GetScanPointers(filter UserRoleAssignmentFilter) []
 	return ptrs
 }
 
-type applicationIdFilter struct {
-	value *uuid.UUID
-}
-
 type UserRoleAssignmentFilter struct {
-	userId        *uuid.UUID
-	roleId        *uuid.UUID
-	groupId       *uuid.UUID
-	applicationId *applicationIdFilter
-	includeUser   bool
-	includeRole   bool
+	userId      *uuid.UUID
+	roleId      *uuid.UUID
+	groupId     *uuid.UUID
+	includeUser bool
+	includeRole bool
 }
 
 func NewUserRoleAssignmentFilter() UserRoleAssignmentFilter {
@@ -150,22 +139,6 @@ func (f UserRoleAssignmentFilter) HasGroupId() bool {
 
 func (f UserRoleAssignmentFilter) GetGroupId() uuid.UUID {
 	return utils.ZeroIfNil(f.groupId)
-}
-
-func (f UserRoleAssignmentFilter) ApplicationId(applicationId *uuid.UUID) UserRoleAssignmentFilter {
-	filter := f.Clone()
-	filter.applicationId = &applicationIdFilter{
-		value: applicationId,
-	}
-	return filter
-}
-
-func (f UserRoleAssignmentFilter) HasApplicationId() bool {
-	return f.applicationId != nil
-}
-
-func (f UserRoleAssignmentFilter) GetApplicationId() *uuid.UUID {
-	return f.applicationId.value
 }
 
 func (f UserRoleAssignmentFilter) IncludeUser() UserRoleAssignmentFilter {

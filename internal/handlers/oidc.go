@@ -1209,7 +1209,6 @@ func mapClaims(ctx context.Context, params AccessTokenGenerationParams) (jwt.Map
 	globalUserRoleAssignmentFilter := repositories.NewUserRoleAssignmentFilter().
 		// TODO: add virtual server filter
 		UserId(params.UserId).
-		ApplicationId(nil).
 		IncludeRole()
 	globalUserRoleAssignments, _, err := userRoleAssignmentRepository.List(ctx, globalUserRoleAssignmentFilter)
 	if err != nil {
@@ -1224,7 +1223,6 @@ func mapClaims(ctx context.Context, params AccessTokenGenerationParams) (jwt.Map
 	applicationUserRoleAssignmentFilter := repositories.NewUserRoleAssignmentFilter().
 		// TODO: add virtual server filter
 		UserId(params.UserId).
-		ApplicationId(&params.ApplicationId).
 		IncludeRole()
 	applicationUserRoleAssignments, _, err := userRoleAssignmentRepository.List(ctx, applicationUserRoleAssignmentFilter)
 	applicationRoles := make([]string, 0, len(applicationUserRoleAssignments))
