@@ -29,7 +29,7 @@ func (a ListResourceServers) LogResponse() bool {
 }
 
 func (a ListResourceServers) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
-	return behaviours.PermissionBasedPolicy(ctx, permissions.ResourceServerCreate)
+	return behaviours.PermissionBasedPolicy(ctx, permissions.ResourceServerView)
 }
 
 func (a ListResourceServers) GetRequestName() string {
