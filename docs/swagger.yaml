@@ -36,6 +36,11 @@ definitions:
     type: object
   handlers.CreateApplicationRequestDto:
     properties:
+      accessTokenHeaderType:
+        enum:
+        - at+jwt
+        - JWT
+        type: string
       displayName:
         maxLength: 255
         minLength: 1
@@ -81,19 +86,45 @@ definitions:
     - details
     - type
     type: object
+  handlers.CreateProjectRequestDto:
+    properties:
+      description:
+        type: string
+      name:
+        maxLength: 255
+        minLength: 1
+        type: string
+      slug:
+        maxLength: 255
+        minLength: 1
+        type: string
+    required:
+    - name
+    - slug
+    type: object
+  handlers.CreateProjectResponseDto:
+    properties:
+      id:
+        type: string
+    type: object
+  handlers.CreateResourceServerRequestDto:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+    required:
+    - name
+    type: object
   handlers.CreateRoleRequestDto:
     properties:
       description:
         maxLength: 1024
         type: string
-      maxTokenAge:
-        $ref: '#/definitions/jsonTypes.Duration'
       name:
         maxLength: 255
         minLength: 1
         type: string
-      requireMfa:
-        type: boolean
     required:
     - name
     type: object
@@ -189,12 +220,8 @@ definitions:
         type: string
       id:
         type: string
-      maxTokenAge:
-        $ref: '#/definitions/jsonTypes.Duration'
       name:
         type: string
-      requireMfa:
-        type: boolean
       updatedAt:
         type: string
     type: object
@@ -281,13 +308,6 @@ definitions:
         items: {}
         type: array
     type: object
-  handlers.ListAppRolesResponseDto:
-    properties:
-      id:
-        type: string
-      name:
-        type: string
-    type: object
   handlers.ListApplicationsResponseDto:
     properties:
       displayName:
@@ -340,6 +360,15 @@ definitions:
       id:
         type: string
       type:
+        type: string
+    type: object
+  handlers.ListProjectsResponseDto:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      slug:
         type: string
     type: object
   handlers.ListRolesResponseDto:
@@ -461,21 +490,21 @@ definitions:
       pagination:
         $ref: '#/definitions/handlers.Pagination'
     type: object
-  handlers.PagedListAppRolesResponseDto:
-    properties:
-      items:
-        items:
-          $ref: '#/definitions/handlers.ListAppRolesResponseDto'
-        type: array
-      pagination:
-        $ref: '#/definitions/handlers.Pagination'
-    type: object
   handlers.PagedPasswordRuleResponseDto:
     properties:
       items:
         items:
           $ref: '#/definitions/handlers.ListPasswordRulesResponseDto'
         type: array
+    type: object
+  handlers.PagedProjectsResponseDto:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/handlers.ListProjectsResponseDto'
+        type: array
+      pagination:
+        $ref: '#/definitions/handlers.Pagination'
     type: object
   handlers.PagedRolesResponseDto:
     properties:
@@ -620,46 +649,6 @@ definitions:
     required:
     - password
     - username
-    type: object
-  jsonTypes.Duration:
-    properties:
-      time.Duration:
-        enum:
-        - -9223372036854775808
-        - 9223372036854775807
-        - 1
-        - 1000
-        - 1000000
-        - 1000000000
-        - 60000000000
-        - 3600000000000
-        - -9223372036854775808
-        - 9223372036854775807
-        - 1
-        - 1000
-        - 1000000
-        - 1000000000
-        - 60000000000
-        - 3600000000000
-        format: int64
-        type: integer
-        x-enum-varnames:
-        - minDuration
-        - maxDuration
-        - Nanosecond
-        - Microsecond
-        - Millisecond
-        - Second
-        - Minute
-        - Hour
-        - minDuration
-        - maxDuration
-        - Nanosecond
-        - Microsecond
-        - Millisecond
-        - Second
-        - Minute
-        - Hour
     type: object
   repositories.TemplateType:
     enum:
@@ -911,8 +900,9 @@ paths:
       summary: Update a password rule
       tags:
       - Password rules
-  /api/virtual-servers/{virtualServerName}/public-info:
+  /api/virtual-servers/{virtualServerName}/projects/{projectSlug}/roles:
     get:
+      description: Retrieve a paginated list of roles within a project.
       parameters:
       - default: keyline
         description: Virtual server name
@@ -920,28 +910,9 @@ paths:
         name: virtualServerName
         required: true
         type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/handlers.GetVirtualServerListResponseDto'
-        "404":
-          description: Not Found
-          schema:
-            type: string
-      summary: Get virtual server public info
-      tags:
-      - Admin
-  /api/virtual-servers/{virtualServerName}/roles:
-    get:
-      description: Retrieve a paginated list of roles within a virtual server.
-      parameters:
-      - default: keyline
-        description: Virtual server name
+      - description: Project slug
         in: path
-        name: virtualServerName
+        name: projectSlug
         required: true
         type: string
       - description: Page number
@@ -983,12 +954,17 @@ paths:
     post:
       consumes:
       - application/json
-      description: Create a new role within a virtual server.
+      description: Create a new role within a project.
       parameters:
       - default: keyline
         description: Virtual server name
         in: path
         name: virtualServerName
+        required: true
+        type: string
+      - description: Project slug
+        in: path
+        name: projectSlug
         required: true
         type: string
       - description: Role data
@@ -1013,14 +989,19 @@ paths:
       summary: Create role
       tags:
       - Roles
-  /api/virtual-servers/{virtualServerName}/roles/{roleId}:
+  /api/virtual-servers/{virtualServerName}/projects/{projectSlug}/roles/{roleId}:
     get:
-      description: Get a role by its ID within a virtual server.
+      description: Get a role by its ID within a project.
       parameters:
       - default: keyline
         description: Virtual server name
         in: path
         name: virtualServerName
+        required: true
+        type: string
+      - description: Project slug
+        in: path
+        name: projectSlug
         required: true
         type: string
       - description: Role ID (UUID)
@@ -1048,16 +1029,21 @@ paths:
       summary: Get role
       tags:
       - Roles
-  /api/virtual-servers/{virtualServerName}/roles/{roleId}/assign:
+  /api/virtual-servers/{virtualServerName}/projects/{projectSlug}/roles/{roleId}/assign:
     post:
       consumes:
       - application/json
-      description: Assign an existing role to a user within a virtual server.
+      description: Assign an existing role to a user within a project.
       parameters:
       - default: keyline
         description: Virtual server name
         in: path
         name: virtualServerName
+        required: true
+        type: string
+      - description: Project slug
+        in: path
+        name: projectSlug
         required: true
         type: string
       - description: Role ID (UUID)
@@ -1089,6 +1075,29 @@ paths:
       summary: Assign role to user
       tags:
       - Roles
+  /api/virtual-servers/{virtualServerName}/public-info:
+    get:
+      parameters:
+      - default: keyline
+        description: Virtual server name
+        in: path
+        name: virtualServerName
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.GetVirtualServerListResponseDto'
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      summary: Get virtual server public info
+      tags:
+      - Admin
   /api/virtual-servers/{virtualServerName}/templates:
     get:
       parameters:
@@ -1561,233 +1570,6 @@ paths:
       summary: Verify email
       tags:
       - Users
-  /api/virtual-servers/{vsName}/applications:
-    get:
-      consumes:
-      - application/json
-      description: Retrieve a paginated list of applications (OIDC clients)
-      parameters:
-      - default: keyline
-        description: Virtual server name
-        in: path
-        name: vsName
-        required: true
-        type: string
-      - description: Page number
-        in: query
-        name: page
-        type: integer
-      - description: Page size
-        in: query
-        name: pageSize
-        type: integer
-      - description: Order by field
-        in: query
-        name: orderBy
-        type: string
-      - description: Order direction (asc|desc)
-        in: query
-        name: orderDir
-        type: string
-      - description: Search term
-        in: query
-        name: search
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/handlers.PagedApplicationsResponseDto'
-        "400":
-          description: Bad Request
-        "500":
-          description: Internal Server Error
-      summary: List applications
-      tags:
-      - applications
-    post:
-      consumes:
-      - application/json
-      description: Create a new OIDC application/client with redirect URIs and type
-      parameters:
-      - default: keyline
-        description: Virtual server name
-        in: path
-        name: vsName
-        required: true
-        type: string
-      - description: Application data
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/handlers.CreateApplicationRequestDto'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/handlers.CreateApplicationResponseDto'
-        "400":
-          description: Bad Request
-        "500":
-          description: Internal Server Error
-      summary: Create application
-      tags:
-      - applications
-  /api/virtual-servers/{vsName}/applications/{appId}:
-    delete:
-      consumes:
-      - application/json
-      description: Delete an application by ID from a virtual server
-      parameters:
-      - default: keyline
-        description: Virtual server name
-        in: path
-        name: vsName
-        required: true
-        type: string
-      - description: Application ID (UUID)
-        in: path
-        name: appId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "204":
-          description: No Content
-          schema:
-            type: string
-        "400":
-          description: Bad Request
-      summary: Delete application
-      tags:
-      - applications
-    get:
-      consumes:
-      - application/json
-      description: Get an application by ID from a virtual server
-      parameters:
-      - default: keyline
-        description: Virtual server name
-        in: path
-        name: vsName
-        required: true
-        type: string
-      - description: Application ID (UUID)
-        in: path
-        name: appId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/handlers.GetApplicationResponseDto'
-        "400":
-          description: Bad Request
-        "404":
-          description: Application not found
-        "500":
-          description: Internal Server Error
-      summary: Get application
-      tags:
-      - applications
-    patch:
-      consumes:
-      - application/json
-      description: Update an application by ID from a virtual server
-      parameters:
-      - default: keyline
-        description: Virtual server name
-        in: path
-        name: vsName
-        required: true
-        type: string
-      - description: Application ID (UUID)
-        in: path
-        name: appId
-        required: true
-        type: string
-      - description: Application data
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/handlers.PatchApplicationRequestDto'
-      produces:
-      - application/json
-      responses:
-        "204":
-          description: No Content
-          schema:
-            type: string
-        "400":
-          description: Bad Request
-        "404":
-          description: Application not found
-        "500":
-          description: Internal Server Error
-      summary: Patch application
-      tags:
-      - applications
-  /api/virtual-servers/{vsName}/applications/{appId}/roles:
-    get:
-      consumes:
-      - application/json
-      description: Retrieve a paginated list of roles in an application
-      parameters:
-      - default: keyline
-        description: Virtual server name
-        in: path
-        name: vsName
-        required: true
-        type: string
-      - description: Application ID (UUID)
-        in: path
-        name: appId
-        required: true
-        type: string
-      - description: Page number
-        in: query
-        name: page
-        type: integer
-      - description: Page size
-        in: query
-        name: pageSize
-        type: integer
-      - description: Order by field
-        in: query
-        name: orderBy
-        type: string
-      - description: Order direction (asc|desc)
-        in: query
-        name: orderDir
-        type: string
-      - description: Search term
-        in: query
-        name: search
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/handlers.PagedListAppRolesResponseDto'
-        "400":
-          description: Bad Request
-        "500":
-          description: Internal Server Error
-      summary: List roles of application
-      tags:
-      - applications
   /api/virtual-servers/{vsName}/groups:
     get:
       consumes:
@@ -1834,7 +1616,320 @@ paths:
       summary: List groups
       tags:
       - Groups
-  /api/virtual-servers/{vsName}/roles/{roleId}/users:
+  /api/virtual-servers/{vsName}/projects:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a paginated list of projects
+      parameters:
+      - default: keyline
+        description: Virtual server name
+        in: path
+        name: vsName
+        required: true
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: pageSize
+        type: integer
+      - description: Order by field
+        in: query
+        name: orderBy
+        type: string
+      - description: Order direction (asc|desc)
+        in: query
+        name: orderDir
+        type: string
+      - description: Search term
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.PagedProjectsResponseDto'
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      summary: List projects
+      tags:
+      - Projects
+    post:
+      consumes:
+      - application/json
+      description: Create a new project
+      parameters:
+      - default: keyline
+        description: Virtual server name
+        in: path
+        name: vsName
+        required: true
+        type: string
+      - description: Application data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateProjectRequestDto'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/handlers.CreateProjectResponseDto'
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      summary: Create project
+      tags:
+      - Projects
+  /api/virtual-servers/{vsName}/projects/{projectSlug}/applications:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a paginated list of applications (OIDC clients)
+      parameters:
+      - default: keyline
+        description: Virtual server name
+        in: path
+        name: vsName
+        required: true
+        type: string
+      - description: Project slug
+        in: path
+        name: projectSlug
+        required: true
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: pageSize
+        type: integer
+      - description: Order by field
+        in: query
+        name: orderBy
+        type: string
+      - description: Order direction (asc|desc)
+        in: query
+        name: orderDir
+        type: string
+      - description: Search term
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.PagedApplicationsResponseDto'
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      summary: List applications
+      tags:
+      - Applications
+    post:
+      consumes:
+      - application/json
+      description: Create a new OIDC application/client with redirect URIs and type
+      parameters:
+      - default: keyline
+        description: Virtual server name
+        in: path
+        name: vsName
+        required: true
+        type: string
+      - description: Project slug
+        in: path
+        name: projectSlug
+        required: true
+        type: string
+      - description: Application data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateApplicationRequestDto'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/handlers.CreateApplicationResponseDto'
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      summary: Create application
+      tags:
+      - Applications
+  /api/virtual-servers/{vsName}/projects/{projectSlug}/applications/{appId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an application by ID from a project
+      parameters:
+      - default: keyline
+        description: Virtual server name
+        in: path
+        name: vsName
+        required: true
+        type: string
+      - description: Project slug
+        in: path
+        name: projectSlug
+        required: true
+        type: string
+      - description: Application ID (UUID)
+        in: path
+        name: appId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+      summary: Delete application
+      tags:
+      - Applications
+    get:
+      consumes:
+      - application/json
+      description: Get an application by ID from a virtual server
+      parameters:
+      - default: keyline
+        description: Virtual server name
+        in: path
+        name: vsName
+        required: true
+        type: string
+      - description: Project slug
+        in: path
+        name: projectSlug
+        required: true
+        type: string
+      - description: Application ID (UUID)
+        in: path
+        name: appId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.GetApplicationResponseDto'
+        "400":
+          description: Bad Request
+        "404":
+          description: Application not found
+        "500":
+          description: Internal Server Error
+      summary: Get application
+      tags:
+      - Applications
+    patch:
+      consumes:
+      - application/json
+      description: Update an application by ID from a virtual server
+      parameters:
+      - default: keyline
+        description: Virtual server name
+        in: path
+        name: vsName
+        required: true
+        type: string
+      - description: Project slug
+        in: path
+        name: projectSlug
+        required: true
+        type: string
+      - description: Application ID (UUID)
+        in: path
+        name: appId
+        required: true
+        type: string
+      - description: Application data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.PatchApplicationRequestDto'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+        "404":
+          description: Application not found
+        "500":
+          description: Internal Server Error
+      summary: Patch application
+      tags:
+      - Applications
+  /api/virtual-servers/{vsName}/projects/{projectSlug}/resource-servers:
+    post:
+      consumes:
+      - application/json
+      description: Create a new resource server
+      parameters:
+      - default: keyline
+        description: Virtual server name
+        in: path
+        name: vsName
+        required: true
+        type: string
+      - description: Project slug
+        in: path
+        name: projectSlug
+        required: true
+        type: string
+      - description: Application data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateResourceServerRequestDto'
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      summary: Create resource server
+      tags:
+      - Resource servers
+  /api/virtual-servers/{vsName}/projects/{projectSlug}/roles/{roleId}/users:
     get:
       consumes:
       - application/json
@@ -1844,6 +1939,11 @@ paths:
         description: Virtual server name
         in: path
         name: vsName
+        required: true
+        type: string
+      - description: Project slug
+        in: path
+        name: projectSlug
         required: true
         type: string
       - description: Role ID (UUID)
