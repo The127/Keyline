@@ -33,6 +33,7 @@ func (s *CreateVirtualServerCommandSuite) createContext(
 	roleRepository repositories.RoleRepository,
 	keyService services.KeyService,
 	applicationRepository repositories.ApplicationRepository,
+	projectRepository repositories.ProjectRepository,
 ) context.Context {
 	dc := ioc.NewDependencyCollection()
 
@@ -69,6 +70,12 @@ func (s *CreateVirtualServerCommandSuite) createContext(
 	if applicationRepository != nil {
 		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.ApplicationRepository {
 			return applicationRepository
+		})
+	}
+
+	if projectRepository != nil {
+		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.ProjectRepository {
+			return projectRepository
 		})
 	}
 
@@ -118,12 +125,18 @@ func (s *CreateVirtualServerCommandSuite) TestApplicationError() {
 		Generate(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(services.KeyPair{}, nil)
 
+	projectRepository := mocks.NewMockProjectRepository(ctrl)
+	projectRepository.EXPECT().
+		Insert(gomock.Any(), gomock.Any()).
+		Return(nil).
+		AnyTimes()
+
 	applicationRepository := mocks.NewMockApplicationRepository(ctrl)
 	applicationRepository.EXPECT().
 		Insert(gomock.Any(), gomock.Any()).
 		Return(errors.New("error"))
 
-	ctx := s.createContext(virtualServerRepository, templateRepository, fileRepository, roleRepository, keyService, applicationRepository)
+	ctx := s.createContext(virtualServerRepository, templateRepository, fileRepository, roleRepository, keyService, applicationRepository, projectRepository)
 	cmd := CreateVirtualServer{}
 
 	// act
@@ -172,7 +185,13 @@ func (s *CreateVirtualServerCommandSuite) TestHappyPath() {
 		Return(nil).
 		AnyTimes()
 
-	ctx := s.createContext(virtualServerRepository, templateRepository, fileRepository, roleRepository, keyService, applicationRepository)
+	projectRepository := mocks.NewMockProjectRepository(ctrl)
+	projectRepository.EXPECT().
+		Insert(gomock.Any(), gomock.Any()).
+		Return(nil).
+		AnyTimes()
+
+	ctx := s.createContext(virtualServerRepository, templateRepository, fileRepository, roleRepository, keyService, applicationRepository, projectRepository)
 	cmd := CreateVirtualServer{
 		Name:               "virtualServer",
 		DisplayName:        "Virtual Server",

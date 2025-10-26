@@ -99,6 +99,14 @@ type createDefaultApplicationResult struct {
 func initializeDefaultApplications(ctx context.Context, virtualServer *repositories.VirtualServer) (*createDefaultApplicationResult, error) {
 	scope := middlewares.GetScope(ctx)
 
+	projectRepository := ioc.GetDependency[repositories.ProjectRepository](scope)
+
+	systemProject := repositories.NewProject(virtualServer.Id(), "system", "Keyline Internal", "Internal project for keyline management")
+	err := projectRepository.Insert(ctx, systemProject)
+	if err != nil {
+		return nil, fmt.Errorf("inserting project: %w", err)
+	}
+
 	applicationRepository := ioc.GetDependency[repositories.ApplicationRepository](scope)
 
 	adminUiApplication := repositories.NewApplication(virtualServer.Id(), AdminApplicationName, "Admin Application", repositories.ApplicationTypePublic, []string{
@@ -110,7 +118,7 @@ func initializeDefaultApplications(ctx context.Context, virtualServer *repositor
 	})
 	adminUiApplication.SetSystemApplication(true)
 
-	err := applicationRepository.Insert(ctx, adminUiApplication)
+	err = applicationRepository.Insert(ctx, adminUiApplication)
 	if err != nil {
 		return nil, fmt.Errorf("inserting application: %w", err)
 	}
