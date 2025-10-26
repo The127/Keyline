@@ -3,12 +3,14 @@ package handlers
 import (
 	"Keyline/internal/commands"
 	"Keyline/internal/middlewares"
+	"Keyline/internal/queries"
 	"Keyline/ioc"
 	"Keyline/mediator"
 	"Keyline/utils"
 	"encoding/json"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
 
@@ -69,4 +71,78 @@ func CreateResourceServer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+type PagedResourceServersResponseDto = PagedResponseDto[ListResourceServersResponseDto]
+
+type ListResourceServersResponseDto struct {
+	Id   uuid.UUID `json:"id"`
+	Name string    `json:"name"`
+}
+
+// ListResourceServers lists resource servers in a project
+// @Summary List applications
+// @Description Retrieve a paginated list of resource servers
+// @Tags Resource servers
+// @Accept json
+// @Produce json
+// @Param vsName path string true "Virtual server name"  default(keyline)
+// @Param projectSlug path string true "Project slug"
+// @Param page query int false "Page number"
+// @Param pageSize query int false "Page size"
+// @Param orderBy query string false "Order by field"
+// @Param orderDir query string false "Order direction (asc|desc)"
+// @Param search query string false "Search term"
+// @Success 200 {object} PagedResourceServersResponseDto
+// @Failure 400
+// @Failure 500
+// @Router /api/virtual-servers/{vsName}/projects/{projectSlug}/resource-servers [get]
+func ListResourceServers(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	queryOps, err := ParseQueryOps(r)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	vsName, err := middlewares.GetVirtualServerName(ctx)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	vars := mux.Vars(r)
+	projectSlug := vars["projectSlug"]
+
+	scope := middlewares.GetScope(ctx)
+	m := ioc.GetDependency[mediator.Mediator](scope)
+
+	resourceServers, err := mediator.Send[*queries.ListResourceServersResponse](ctx, m, queries.ListResourceServers{
+		VirtualServerName: vsName,
+		ProjectSlug:       projectSlug,
+	})
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	items := utils.MapSlice(resourceServers.Items, func(x queries.ListResourceServersResponseItem) ListResourceServersResponseDto {
+		return ListResourceServersResponseDto{
+			Id:   x.Id,
+			Name: x.Name,
+		}
+	})
+
+	w.Header().Set("Content-Type", "application/json")
+
+	err = json.NewEncoder(w).Encode(NewPagedResponseDto(
+		items,
+		queryOps,
+		resourceServers.TotalCount,
+	))
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
 }
