@@ -25,6 +25,8 @@ var AdminPermissions = []permissions.Permission{
 
 	permissions.ResourceServerCreate,
 
+	permissions.ResourceServerScopeCreate,
+
 	permissions.AuditView,
 
 	permissions.ApplicationCreate,

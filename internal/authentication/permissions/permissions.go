@@ -42,4 +42,6 @@ const (
 	ProjectView   Permission = "project:view"
 
 	ResourceServerCreate Permission = "resource_server:create"
+
+	ResourceServerScopeCreate Permission = "resource_server_scope:create"
 )
