@@ -73,6 +73,6 @@ func HandleCreateResourceServerScope(ctx context.Context, command CreateResource
 	}
 
 	return &CreateResourceServerScopeResponse{
-		Id: resourceServer.Id(),
+		Id: resourceServerScope.Id(),
 	}, nil
 }
