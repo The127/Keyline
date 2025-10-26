@@ -132,6 +132,7 @@ func ListProjects(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)
+		return
 	}
 
 	items := utils.MapSlice(projects.Items, func(x queries.ListProjectsResponseItem) ListProjectsResponseDto {
