@@ -19,6 +19,8 @@ var AdminPermissions = []permissions.Permission{
 	permissions.VirtualServerUpdate,
 	permissions.VirtualServerView,
 
+	permissions.ProjectCreate,
+
 	permissions.AuditView,
 
 	permissions.ApplicationCreate,

@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"Keyline/internal/authentication/permissions"
+	"Keyline/internal/behaviours"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/ioc"
@@ -15,6 +17,22 @@ type CreateProject struct {
 	Slug              string
 	Name              string
 	Description       string
+}
+
+func (a CreateProject) LogRequest() bool {
+	return true
+}
+
+func (a CreateProject) LogResponse() bool {
+	return true
+}
+
+func (a CreateProject) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
+	return behaviours.PermissionBasedPolicy(ctx, permissions.ProjectCreate)
+}
+
+func (a CreateProject) GetRequestName() string {
+	return "CreateProject"
 }
 
 type CreateProjectResponse struct {
