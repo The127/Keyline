@@ -48,6 +48,7 @@ func CreateProject(w http.ResponseWriter, r *http.Request) {
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
 		utils.HandleHttpError(w, err)
+		return
 	}
 
 	err = utils.ValidateDto(dto)
