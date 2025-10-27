@@ -144,15 +144,12 @@ initialVirtualServer:
     displayName: Admin
     primaryEmail: admin@example.com
     passwordHash: "$argon2id$v=19$m=16,t=2,p=1$..."
-  # Optional: Pre-configure applications with roles
+  # Optional: Pre-configure applications (created in the system project)
   initialApplications:
     - name: "my-app"
       type: "public"
       redirectUris: ["http://localhost:3000/callback"]
-      roles:
-        - name: "user"
-          description: "Regular user"
-  # Optional: Define global roles
+  # Optional: Define project-level roles
   initialRoles:
     - name: "viewer"
       description: "Can view resources"
@@ -160,10 +157,12 @@ initialVirtualServer:
   initialServiceUsers:
     - username: "api-service"
       publicKey: "-----BEGIN PUBLIC KEY-----\n..."
-      roles: ["viewer", "my-app user"]
+      roles: ["viewer"]  # Format: "role-name" or "project-slug role-name"
 ```
 
-For detailed configuration options including service users, application roles, and global roles, see the [Configuration Package Documentation](internal/config/README.md).
+**Note:** When a virtual server is created, a system project is automatically created. Initial applications are created within this system project. Roles are now defined at the project level, not the application level.
+
+For detailed configuration options, see the [Configuration Package Documentation](internal/config/README.md).
 
 #### Cache Configuration
 ```yaml
@@ -486,13 +485,22 @@ docker run -p 8080:8080 \
 
 Virtual servers enable multi-tenancy, allowing you to host multiple isolated identity providers within a single Keyline instance. Each virtual server has its own:
 - Users
-- Applications
-- Roles and permissions
+- Projects
+- Groups
 - Configuration settings
+
+### Projects
+
+Projects are organizational units within a virtual server that group related applications, roles, and resource servers together. Each project contains:
+- **Applications** - OAuth2/OIDC clients
+- **Roles** - Access control definitions
+- **Resource Servers** - Protected resources with scopes
+
+Projects help organize and manage related components within your virtual server.
 
 ### Applications
 
-Applications represent OAuth2/OIDC clients that integrate with Keyline. Supported application types:
+Applications represent OAuth2/OIDC clients that integrate with Keyline. Applications belong to a project. Supported application types:
 - **Public** - For client-side applications (SPAs, mobile apps)
 - **Confidential** - For server-side applications with client secrets
 - **System** - For internal system operations
@@ -500,10 +508,18 @@ Applications represent OAuth2/OIDC clients that integrate with Keyline. Supporte
 ### Roles and Permissions
 
 Keyline implements a comprehensive RBAC system:
-- **Roles** - Named collections of permissions
-- **Groups** - User collections for bulk role assignment
+- **Roles** - Named collections of permissions defined at the project level
+- **Groups** - User collections for bulk role assignment, defined at the virtual server level
 - **Permissions** - Fine-grained access control for specific operations
-- **Role Assignments** - Link users to roles (optionally scoped to applications)
+- **Role Assignments** - Link users to roles within projects
+
+### Resource Servers and Scopes
+
+Resource servers represent protected APIs or services within a project. Each resource server can define:
+- **Scopes** - Fine-grained permissions that can be requested by applications to access specific resources
+- **Name and Description** - Human-readable information about the resource server
+
+Resource servers and their scopes enable OAuth2 scope-based authorization for your protected resources.
 
 ### User Types
 
@@ -517,8 +533,7 @@ Keyline allows you to transform user roles and metadata into custom JWT claims u
 
 **Available Variables in Mapping Scripts:**
 
-- `roles` - Array of global role names assigned to the user
-- `applicationRoles` - Array of application-specific role names assigned to the user
+- `roles` - Array of role names assigned to the user across all projects
 - `globalMetadata` - Object containing user's global metadata (shared across all applications)
 - `appMetadata` - Object containing user's application-specific metadata
 
@@ -527,7 +542,7 @@ Keyline allows you to transform user roles and metadata into custom JWT claims u
 ```javascript
 // Transform roles and metadata into custom claims
 ({
-  "custom_roles": roles.concat(applicationRoles),
+  "custom_roles": roles,
   "department": globalMetadata.department || "unknown",
   "app_settings": appMetadata.settings || {},
   "is_admin": roles.includes("admin")
@@ -539,8 +554,7 @@ Keyline allows you to transform user roles and metadata into custom JWT claims u
 If no custom mapping script is defined, the default mapping returns:
 ```javascript
 {
-  "roles": roles,
-  "application_roles": applicationRoles
+  "roles": roles
 }
 ```
 
