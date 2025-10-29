@@ -174,7 +174,7 @@ func initTest(dp *ioc.DependencyProvider) (err error) {
 
 	credentialRepository := ioc.GetDependency[repositories.CredentialRepository](scope)
 	initialAdminCredential := repositories.NewCredential(initialAdminUserInfo.Id, &repositories.CredentialPasswordDetails{
-		HashedPassword: config.C.InitialVirtualServer.InitialAdmin.PasswordHash,
+		HashedPassword: config.C.InitialVirtualServer.Admin.PasswordHash,
 		Temporary:      false,
 	})
 	err = credentialRepository.Insert(ctx, initialAdminCredential)

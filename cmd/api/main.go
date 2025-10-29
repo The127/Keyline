@@ -169,53 +169,66 @@ func initApplication(dp *ioc.DependencyProvider) {
 		logging.Logger.Fatalf("failed to create initial virtual server: %v", err)
 	}
 
-	for _, applicationConfig := range config.C.InitialVirtualServer.InitialApplications {
-		_, err := mediator.Send[*commands.CreateApplicationResponse](ctx, m, commands.CreateApplication{
-			VirtualServerName:      config.C.InitialVirtualServer.Name,
-			ProjectSlug:            createVirtualServerResponse.SystemProjectSlug,
-			Name:                   applicationConfig.Name,
-			DisplayName:            applicationConfig.DisplayName,
-			Type:                   repositories.ApplicationType(applicationConfig.Type),
-			RedirectUris:           applicationConfig.RedirectUris,
-			PostLogoutRedirectUris: applicationConfig.PostLogoutRedirectUris,
-		})
-		if err != nil {
-			logging.Logger.Fatalf("failed to create initial application: %v", err)
-		}
-
-		// TODO: implement initial roles
-		// for _, role := range applicationConfig.Roles {
-		//	_, err = mediator.Send[*commands.CreateRoleResponse](ctx, m, commands.CreateRole{
-		//		VirtualServerName: config.C.InitialVirtualServer.Name,
-		//		ProjectSlug:     appResponse.Id,
-		//		Name:              role.Name,
-		//		Description:       role.Description,
-		//	})
-		//	if err != nil {
-		//		logging.Logger.Fatalf("failed to create initial application role: %v", err)
-		//	}
-		// }
-	}
-
-	for _, role := range config.C.InitialVirtualServer.InitialRoles {
-		_, err := mediator.Send[*commands.CreateRoleResponse](ctx, m, commands.CreateRole{
+	for _, projectConfig := range config.C.InitialVirtualServer.Projects {
+		_, err := mediator.Send[*commands.CreateProjectResponse](ctx, m, commands.CreateProject{
 			VirtualServerName: config.C.InitialVirtualServer.Name,
-			Name:              role.Name,
-			Description:       role.Description,
+			Slug:              projectConfig.Slug,
+			Name:              projectConfig.Name,
+			Description:       projectConfig.Description,
 		})
 		if err != nil {
-			logging.Logger.Fatalf("failed to create initial role: %v", err)
+			logging.Logger.Fatalf("failed to create initial project: %v", err)
+		}
+
+		for _, applicationConfig := range projectConfig.Applications {
+			_, err := mediator.Send[*commands.CreateApplicationResponse](ctx, m, commands.CreateApplication{
+				VirtualServerName:      config.C.InitialVirtualServer.Name,
+				ProjectSlug:            projectConfig.Slug,
+				Name:                   applicationConfig.Name,
+				DisplayName:            applicationConfig.DisplayName,
+				Type:                   repositories.ApplicationType(applicationConfig.Type),
+				RedirectUris:           applicationConfig.RedirectUris,
+				PostLogoutRedirectUris: applicationConfig.PostLogoutRedirectUris,
+				HashedSecret:           applicationConfig.HashedSecret,
+			})
+			if err != nil {
+				logging.Logger.Fatalf("failed to create initial application: %v", err)
+			}
+		}
+
+		for _, roleConfig := range projectConfig.Roles {
+			_, err := mediator.Send[*commands.CreateRoleResponse](ctx, m, commands.CreateRole{
+				VirtualServerName: config.C.InitialVirtualServer.Name,
+				ProjectSlug:       projectConfig.Slug,
+				Name:              roleConfig.Name,
+				Description:       roleConfig.Description,
+			})
+			if err != nil {
+				logging.Logger.Fatalf("failed to create initial role: %v", err)
+			}
+		}
+
+		for _, resourceServerConfig := range projectConfig.ResourceServers {
+			_, err := mediator.Send[*commands.CreateResourceServerResponse](ctx, m, commands.CreateResourceServer{
+				VirtualServerName: config.C.InitialVirtualServer.Name,
+				ProjectSlug:       projectConfig.Slug,
+				Name:              resourceServerConfig.Name,
+				Description:       resourceServerConfig.Description,
+			})
+			if err != nil {
+				logging.Logger.Fatalf("failed to create initial resource server: %v", err)
+			}
 		}
 	}
 
-	if config.C.InitialVirtualServer.CreateInitialAdmin {
+	if config.C.InitialVirtualServer.CreateAdmin {
 		logging.Logger.Infof("Creating initial admin user")
 
 		initialAdminUserInfo, err := mediator.Send[*commands.CreateUserResponse](ctx, m, commands.CreateUser{
 			VirtualServerName: config.C.InitialVirtualServer.Name,
-			DisplayName:       config.C.InitialVirtualServer.InitialAdmin.DisplayName,
-			Username:          config.C.InitialVirtualServer.InitialAdmin.Username,
-			Email:             config.C.InitialVirtualServer.InitialAdmin.PrimaryEmail,
+			DisplayName:       config.C.InitialVirtualServer.Admin.DisplayName,
+			Username:          config.C.InitialVirtualServer.Admin.Username,
+			Email:             config.C.InitialVirtualServer.Admin.PrimaryEmail,
 			EmailVerified:     true,
 		})
 		if err != nil {
@@ -224,7 +237,7 @@ func initApplication(dp *ioc.DependencyProvider) {
 
 		credentialRepository := ioc.GetDependency[repositories.CredentialRepository](scope)
 		initialAdminCredential := repositories.NewCredential(initialAdminUserInfo.Id, &repositories.CredentialPasswordDetails{
-			HashedPassword: config.C.InitialVirtualServer.InitialAdmin.PasswordHash,
+			HashedPassword: config.C.InitialVirtualServer.Admin.PasswordHash,
 			Temporary:      false,
 		})
 		err = credentialRepository.Insert(ctx, initialAdminCredential)
@@ -243,7 +256,7 @@ func initApplication(dp *ioc.DependencyProvider) {
 		}
 	}
 
-	for _, serviceUserConfig := range config.C.InitialVirtualServer.InitialServiceUsers {
+	for _, serviceUserConfig := range config.C.InitialVirtualServer.ServiceUsers {
 		serviceUserResponse, err := mediator.Send[*commands.CreateServiceUserResponse](ctx, m, commands.CreateServiceUser{
 			VirtualServerName: config.C.InitialVirtualServer.Name,
 			Username:          serviceUserConfig.Username,

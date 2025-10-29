@@ -14,21 +14,31 @@ database:
     sslMode: "disable"
 initialVirtualServer:
   enableRegistration: true
-  createInitialAdmin: true
+  createAdmin: true
   signingAlgorithm: "RS256"
-  initialAdmin:
+  admin:
     username: admin
     displayName: Admin
     primaryEmail: foo@bar.com
     passwordHash: "$argon2id$v=19$m=16,t=2,p=1$MTIzNDU2Nzg$QWu7e+sjG5knAdNLoKdLDg"
-  initialApplications:
-    - name: "test-application"
-      displayName: "Test Application"
-      type: "public"
-      redirectUris:
-        - "http://localhost:1234/login-callback"
-      postLogoutRedirectUris:
-        - "http://localhost:1234/logout-callback"
+  projects:
+    - slug: "default"
+      name: "Default"
+      description: "Default project"
+      applications:
+        - name: "test-application"
+          displayName: "Test Application"
+          type: "public"
+          redirectUris:
+            - "http://localhost:1234/login-callback"
+          postLogoutRedirectUris:
+            - "http://localhost:1234/logout-callback"
+      roles:
+        - name: "admin"
+          description: "Admin role"
+      resourceServers:
+        - name: "test-resource-server"
+          description: "Test resource server"
   mail:
     host: "localhost"
     port: 1025
