@@ -9,6 +9,7 @@ import (
 	"Keyline/utils"
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
@@ -141,6 +142,60 @@ func ListResourceServers(w http.ResponseWriter, r *http.Request) {
 		queryOps,
 		resourceServers.TotalCount,
 	))
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+}
+
+type GetResourceServerResponseDto struct {
+	Id          uuid.UUID `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	CreatedAt   time.Time `json:"createdAt"`
+	UpdatedAt   time.Time `json:"updatedAt"`
+}
+
+func GetResourceServer(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	vsName, err := middlewares.GetVirtualServerName(ctx)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	vars := mux.Vars(r)
+	projectSlug := vars["projectSlug"]
+
+	resourceServerIdString := vars["resourceServerId"]
+	resourceServerId, err := uuid.Parse(resourceServerIdString)
+	if err != nil {
+		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+	}
+
+	scope := middlewares.GetScope(ctx)
+	m := ioc.GetDependency[mediator.Mediator](scope)
+
+	resourceServer, err := mediator.Send[*queries.GetResourceServerResponse](ctx, m, queries.GetResourceServer{
+		VirtualServerName: vsName,
+		ProjectSlug:       projectSlug,
+		ResourceServerId:  resourceServerId,
+	})
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	err = json.NewEncoder(w).Encode(GetResourceServerResponseDto{
+		Id:          resourceServer.Id,
+		Name:        resourceServer.Name,
+		Description: resourceServer.Description,
+		CreatedAt:   resourceServer.CreatedAt,
+		UpdatedAt:   resourceServer.UpdatedAt,
+	})
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
