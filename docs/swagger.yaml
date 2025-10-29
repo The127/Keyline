@@ -233,6 +233,19 @@ definitions:
       virtualServerName:
         type: string
     type: object
+  handlers.GetResourceServerResponseDto:
+    properties:
+      createdAt:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      updatedAt:
+        type: string
+    type: object
   handlers.GetRoleByIdResponseDto:
     properties:
       createdAt:
@@ -392,6 +405,13 @@ definitions:
       slug:
         type: string
     type: object
+  handlers.ListResourceServersResponseDto:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+    type: object
   handlers.ListRolesResponseDto:
     properties:
       id:
@@ -523,6 +543,15 @@ definitions:
       items:
         items:
           $ref: '#/definitions/handlers.ListProjectsResponseDto'
+        type: array
+      pagination:
+        $ref: '#/definitions/handlers.Pagination'
+    type: object
+  handlers.PagedResourceServersResponseDto:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/handlers.ListResourceServersResponseDto'
         type: array
       pagination:
         $ref: '#/definitions/handlers.Pagination'
@@ -1838,7 +1867,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get an application by ID from a virtual server
+      description: Get an application by ID from a project
       parameters:
       - default: keyline
         description: Virtual server name
@@ -1958,6 +1987,56 @@ paths:
       tags:
       - Resource servers scopes
   /api/virtual-servers/{vsName}/projects/{projectSlug}/resource-servers:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a paginated list of resource servers
+      parameters:
+      - default: keyline
+        description: Virtual server name
+        in: path
+        name: vsName
+        required: true
+        type: string
+      - description: Project slug
+        in: path
+        name: projectSlug
+        required: true
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: pageSize
+        type: integer
+      - description: Order by field
+        in: query
+        name: orderBy
+        type: string
+      - description: Order direction (asc|desc)
+        in: query
+        name: orderDir
+        type: string
+      - description: Search term
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.PagedResourceServersResponseDto'
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      summary: List resource servers
+      tags:
+      - Resource servers
     post:
       consumes:
       - application/json
@@ -1990,6 +2069,44 @@ paths:
         "500":
           description: Internal Server Error
       summary: Create resource server
+      tags:
+      - Resource servers
+  /api/virtual-servers/{vsName}/projects/{projectSlug}/resource-servers/{resourceServerId}:
+    get:
+      consumes:
+      - application/json
+      description: Get a resource server by ID from a project
+      parameters:
+      - default: keyline
+        description: Virtual server name
+        in: path
+        name: vsName
+        required: true
+        type: string
+      - description: Project slug
+        in: path
+        name: projectSlug
+        required: true
+        type: string
+      - description: Resource server ID (UUID)
+        in: path
+        name: resourceServerId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.GetResourceServerResponseDto'
+        "400":
+          description: Bad Request
+        "404":
+          description: Resource server not found
+        "500":
+          description: Internal Server Error
+      summary: Get resource server
       tags:
       - Resource servers
   /api/virtual-servers/{vsName}/projects/{projectSlug}/roles/{roleId}/users:

@@ -122,7 +122,7 @@ type GetApplicationResponseDto struct {
 
 // GetApplication retrieves details of a specific application by ID
 // @Summary Get application
-// @Description Get an application by ID from a virtual server
+// @Description Get an application by ID from a project
 // @Tags Applications
 // @Accept json
 // @Produce json

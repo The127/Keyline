@@ -41,6 +41,7 @@ func Mediator(dc *ioc.DependencyCollection) {
 
 	mediator.RegisterHandler(m, commands.HandleCreateResourceServer)
 	mediator.RegisterHandler(m, queries.HandleListResourceServers)
+	mediator.RegisterHandler(m, queries.HandleGetResourceServer)
 
 	mediator.RegisterHandler(m, commands.HandleCreateApplication)
 	mediator.RegisterHandler(m, queries.HandleListApplications)
