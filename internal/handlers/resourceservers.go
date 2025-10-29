@@ -172,6 +172,7 @@ func GetResourceServer(w http.ResponseWriter, r *http.Request) {
 	resourceServerId, err := uuid.Parse(resourceServerIdString)
 	if err != nil {
 		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+		return
 	}
 
 	scope := middlewares.GetScope(ctx)
