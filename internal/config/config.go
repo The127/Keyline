@@ -75,35 +75,20 @@ type Config struct {
 		DisplayName        string
 		EnableRegistration bool
 		SigningAlgorithm   SigningAlgorithm
-		CreateInitialAdmin bool
-		InitialAdmin       struct {
+		CreateAdmin        bool
+		Admin              struct {
 			Username     string
 			DisplayName  string
 			PrimaryEmail string
 			PasswordHash string
 		}
-		InitialServiceUsers []struct {
+		ServiceUsers []struct {
 			Username  string
 			Roles     []string
 			PublicKey string
 		}
-		InitialApplications []struct {
-			Name                   string
-			DisplayName            string
-			Type                   string
-			HashedSecret           *string
-			RedirectUris           []string
-			PostLogoutRedirectUris []string
-			Roles                  []struct {
-				Name        string
-				Description string
-			}
-		}
-		InitialRoles []struct {
-			Name        string
-			Description string
-		}
-		Mail struct {
+		Projects []InitialProjectConfig
+		Mail     struct {
 			Host     string
 			Port     int
 			Username string
@@ -138,6 +123,28 @@ const (
 	LeaderElectionModeNone LeaderElectionMode = "none"
 	LeaderElectionModeRaft LeaderElectionMode = "raft"
 )
+
+type InitialProjectConfig struct {
+	Slug        string
+	Name        string
+	Description string
+	Roles       []struct {
+		Name        string
+		Description string
+	}
+	Applications []struct {
+		Name                   string
+		DisplayName            string
+		Type                   string
+		HashedSecret           *string
+		RedirectUris           []string
+		PostLogoutRedirectUris []string
+	}
+	ResourceServers []struct {
+		Name        string
+		Description string
+	}
+}
 
 type LeaderElectionConfig struct {
 	Mode LeaderElectionMode
@@ -357,12 +364,12 @@ func setInitialVirtualServerDefaultsOrPanic() {
 	}
 
 	setInitialAdminDefaultsOrPanic()
-	setInitialApplicationsDefaultsOrPanic()
 	setInitialServiceUserDefaultsOrPanic()
+	setInitialProjectsDefaultsOrPanic()
 }
 
 func setInitialServiceUserDefaultsOrPanic() {
-	for _, serviceUser := range C.InitialVirtualServer.InitialServiceUsers {
+	for _, serviceUser := range C.InitialVirtualServer.ServiceUsers {
 		if serviceUser.Username == "" {
 			panic("missing service user username")
 		}
@@ -374,9 +381,50 @@ func setInitialServiceUserDefaultsOrPanic() {
 	}
 }
 
-func setInitialApplicationsDefaultsOrPanic() {
-	for i := range C.InitialVirtualServer.InitialApplications {
-		application := &C.InitialVirtualServer.InitialApplications[i]
+func setInitialProjectsDefaultsOrPanic() {
+	for i := range C.InitialVirtualServer.Projects {
+		project := &C.InitialVirtualServer.Projects[i]
+
+		if project.Slug == "" {
+			panic("missing project slug")
+		}
+
+		if project.Name == "" {
+			project.Name = project.Slug
+		}
+
+		setInitialApplicationsDefaultsOrPanic(project)
+		setInitialRolesDefaultsOrPanic(project)
+		setInitialResourceServersDefaultsOrPanic(project)
+	}
+}
+
+func setInitialResourceServersDefaultsOrPanic(project *InitialProjectConfig) {
+	for i := range project.ResourceServers {
+		resourceServer := &project.ResourceServers[i]
+
+		if resourceServer.Name == "" {
+			panic("missing resource server name")
+		}
+		if resourceServer.Description == "" {
+			resourceServer.Description = resourceServer.Name
+		}
+	}
+}
+
+func setInitialRolesDefaultsOrPanic(project *InitialProjectConfig) {
+	for i := range project.Roles {
+		role := &project.Roles[i]
+
+		if role.Name == "" {
+			panic("missing role name")
+		}
+	}
+}
+
+func setInitialApplicationsDefaultsOrPanic(project *InitialProjectConfig) {
+	for i := range project.Applications {
+		application := &project.Applications[i]
 
 		if application.Name == "" {
 			panic("missing application name")
@@ -403,33 +451,27 @@ func setInitialApplicationsDefaultsOrPanic() {
 				panic("application secret is empty")
 			}
 		}
-
-		for _, role := range application.Roles {
-			if role.Name == "" {
-				panic("missing role name")
-			}
-		}
 	}
 }
 
 func setInitialAdminDefaultsOrPanic() {
-	if !C.InitialVirtualServer.CreateInitialAdmin {
+	if !C.InitialVirtualServer.CreateAdmin {
 		return
 	}
 
-	if C.InitialVirtualServer.InitialAdmin.Username == "" {
-		C.InitialVirtualServer.InitialAdmin.Username = "admin"
+	if C.InitialVirtualServer.Admin.Username == "" {
+		C.InitialVirtualServer.Admin.Username = "admin"
 	}
 
-	if C.InitialVirtualServer.InitialAdmin.DisplayName == "" {
-		C.InitialVirtualServer.InitialAdmin.DisplayName = "Administrator"
+	if C.InitialVirtualServer.Admin.DisplayName == "" {
+		C.InitialVirtualServer.Admin.DisplayName = "Administrator"
 	}
 
-	if C.InitialVirtualServer.InitialAdmin.PrimaryEmail == "" {
+	if C.InitialVirtualServer.Admin.PrimaryEmail == "" {
 		panic("missing initial admin primary email")
 	}
 
-	if C.InitialVirtualServer.InitialAdmin.PasswordHash == "" {
+	if C.InitialVirtualServer.Admin.PasswordHash == "" {
 		panic("missing initial admin password hash")
 	}
 }
