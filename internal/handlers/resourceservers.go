@@ -156,6 +156,20 @@ type GetResourceServerResponseDto struct {
 	UpdatedAt   time.Time `json:"updatedAt"`
 }
 
+// GetResourceServer retrieves details of a specific resource server by ID
+// @Summary Get resource server
+// @Description Get a resource server by ID from a project
+// @Tags Resource servers
+// @Accept json
+// @Produce json
+// @Param vsName path string true "Virtual server name"  default(keyline)
+// @Param projectSlug path string true "Project slug"
+// @Param resourceServerId path string true "Resource server ID (UUID)"
+// @Success 200 {object} GetResourceServerResponseDto
+// @Failure 400
+// @Failure 404 "Resource server not found"
+// @Failure 500
+// @Router /api/virtual-servers/{vsName}/projects/{projectSlug}/resource-servers/{resourceServerId} [get]
 func GetResourceServer(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
