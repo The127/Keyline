@@ -365,7 +365,11 @@ func FinishLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: delete login in redis
+	err = tokenService.DeleteToken(ctx, services.LoginSessionTokenType, loginToken)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
 
 	http.Redirect(w, r, loginInfo.OriginalUrl, http.StatusFound)
 }
