@@ -12,6 +12,8 @@ const (
 	LoginStepPasswordVerification LoginStep = "passwordVerification"
 	LoginStepTemporaryPassword    LoginStep = "temporaryPassword"
 	LoginStepEmailVerification    LoginStep = "emailVerification"
+	LoginStepOnboardTotp          LoginStep = "onboardTotp"
+	LoginStepVerifyTotp           LoginStep = "verifyTotp"
 	LoginStepFinish               LoginStep = "finish"
 )
 
@@ -24,6 +26,7 @@ type LoginInfo struct {
 	RegistrationEnabled      bool      `json:"registrationEnabled"`
 	UserId                   uuid.UUID `json:"userId"`
 	OriginalUrl              string    `json:"originalUrl"`
+	TotpSecret               string    `json:"totpSecret"`
 }
 
 func NewLoginInfo(virtualServer *repositories.VirtualServer, application *repositories.Application, originalUrl string) LoginInfo {
