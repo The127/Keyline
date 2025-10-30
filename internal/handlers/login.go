@@ -118,13 +118,11 @@ func DetermineNextLoginStep(
 		fallthrough
 
 	case jsonTypes.LoginStepEmailVerification:
-		if virtualServer.Require2fa() {
-			if len(totpCredentials) == 0 {
-				return jsonTypes.LoginStepOnboardTotp, nil
-			}
-		}
 		if len(totpCredentials) > 0 {
 			return jsonTypes.LoginStepVerifyTotp, nil
+		}
+		if virtualServer.Require2fa() {
+			return jsonTypes.LoginStepOnboardTotp, nil
 		}
 		return jsonTypes.LoginStepFinish, nil
 
@@ -310,7 +308,6 @@ func VerifyEmailToken(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if !user.EmailVerified() {
-			w.WriteHeader(http.StatusUnauthorized)
 			return utils.ErrHttpUnauthorized
 		}
 
@@ -421,8 +418,6 @@ func ResetTemporaryPassword(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			return err
 		}
-
-		// TODO: Figure out next step to be done, prepare it if needed
 
 		return nil
 	})
