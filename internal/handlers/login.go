@@ -12,6 +12,7 @@ import (
 	"Keyline/mediator"
 	"Keyline/templates"
 	"Keyline/utils"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -20,6 +21,44 @@ import (
 
 	"github.com/gorilla/mux"
 )
+
+func updateLoginStep(
+	ctx context.Context,
+	loginToken string,
+	mutate func(info *jsonTypes.LoginInfo) error,
+) error {
+	scope := middlewares.GetScope(ctx)
+	tokenService := ioc.GetDependency[services.TokenService](scope)
+
+	redisValueString, err := tokenService.GetToken(ctx, services.LoginSessionTokenType, loginToken)
+	if err != nil {
+		return fmt.Errorf("getting token: %w", err)
+	}
+
+	var loginInfo jsonTypes.LoginInfo
+	if err := json.Unmarshal([]byte(redisValueString), &loginInfo); err != nil {
+		return fmt.Errorf("unmarshal login info: %w", err)
+	}
+
+	if mutate == nil {
+		return fmt.Errorf("mutate function is nil")
+	}
+
+	if err := mutate(&loginInfo); err != nil {
+		return fmt.Errorf("mutate login info: %w", err)
+	}
+
+	updated, err := json.Marshal(loginInfo)
+	if err != nil {
+		return fmt.Errorf("marshal login info: %w", err)
+	}
+
+	if err := tokenService.UpdateToken(ctx, services.LoginSessionTokenType, loginToken, string(updated), 15*time.Minute); err != nil {
+		return fmt.Errorf("update token: %w", err)
+	}
+
+	return nil
+}
 
 type GetLoginStateResponseDto struct {
 	// Step is one of: password_verification | temporary_password | email_verification | finish
@@ -106,27 +145,8 @@ func VerifyPassword(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	loginToken := vars["loginToken"]
 
-	tokenService := ioc.GetDependency[services.TokenService](scope)
-	redisValueString, err := tokenService.GetToken(ctx, services.LoginSessionTokenType, loginToken)
-	if err != nil {
-		http.Error(w, "invalid login token", http.StatusBadRequest)
-		return
-	}
-
-	var loginInfo jsonTypes.LoginInfo
-	err = json.Unmarshal([]byte(redisValueString), &loginInfo)
-	if err != nil {
-		utils.HandleHttpError(w, err)
-		return
-	}
-
-	if loginInfo.Step != jsonTypes.LoginStepPasswordVerification {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-
 	var dto VerifyPasswordRequestDto
-	err = json.NewDecoder(r.Body).Decode(&dto)
+	err := json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
@@ -138,70 +158,64 @@ func VerifyPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userRepository := ioc.GetDependency[repositories.UserRepository](scope)
-	userFilter := repositories.NewUserFilter().Username(dto.Username)
-	user, err := userRepository.First(ctx, userFilter)
-	if err != nil {
-		utils.HandleHttpError(w, err)
-		return
-	}
-	if user == nil {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
+	err = updateLoginStep(ctx, loginToken, func(loginInfo *jsonTypes.LoginInfo) error {
+		if loginInfo.Step != jsonTypes.LoginStepPasswordVerification {
+			return utils.ErrHttpUnauthorized
+		}
 
-	credentialRepository := ioc.GetDependency[repositories.CredentialRepository](scope)
-	credentialFilter := repositories.NewCredentialFilter().
-		UserId(user.Id()).
-		Type(repositories.CredentialTypePassword)
-	credential, err := credentialRepository.Single(ctx, credentialFilter)
-	if err != nil {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
+		userRepository := ioc.GetDependency[repositories.UserRepository](scope)
+		userFilter := repositories.NewUserFilter().Username(dto.Username)
+		user, err := userRepository.First(ctx, userFilter)
+		if err != nil {
+			return err
+		}
+		if user == nil {
+			return utils.ErrHttpUnauthorized
+		}
 
-	passwordDetails, err := credential.PasswordDetails()
-	if err != nil {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
+		credentialRepository := ioc.GetDependency[repositories.CredentialRepository](scope)
+		credentialFilter := repositories.NewCredentialFilter().
+			UserId(user.Id()).
+			Type(repositories.CredentialTypePassword)
+		credential, err := credentialRepository.Single(ctx, credentialFilter)
+		if err != nil {
+			return utils.ErrHttpUnauthorized
+		}
 
-	if !utils.CompareHash(dto.Password, passwordDetails.HashedPassword) {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
+		passwordDetails, err := credential.PasswordDetails()
+		if err != nil {
+			return utils.ErrHttpUnauthorized
+		}
 
-	loginInfo.UserId = user.Id()
+		if !utils.CompareHash(dto.Password, passwordDetails.HashedPassword) {
+			return utils.ErrHttpUnauthorized
+		}
 
-	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
-	virtualServerFilter := repositories.NewVirtualServerFilter().Id(user.VirtualServerId())
-	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
-	if err != nil {
-		utils.HandleHttpError(w, err)
-		return
-	}
+		loginInfo.UserId = user.Id()
 
-	switch {
-	case passwordDetails.Temporary:
-		loginInfo.Step = jsonTypes.LoginStepTemporaryPassword
+		virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
+		virtualServerFilter := repositories.NewVirtualServerFilter().Id(user.VirtualServerId())
+		virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
+		if err != nil {
+			return err
+		}
 
-	case !user.EmailVerified() && virtualServer.RequireEmailVerification():
-		loginInfo.Step = jsonTypes.LoginStepEmailVerification
+		switch {
+		case passwordDetails.Temporary:
+			loginInfo.Step = jsonTypes.LoginStepTemporaryPassword
 
-	// TODO: check if totp onboarding is needed
-	// TODO: check if totp verification is needed
+		case !user.EmailVerified() && virtualServer.RequireEmailVerification():
+			loginInfo.Step = jsonTypes.LoginStepEmailVerification
 
-	default:
-		loginInfo.Step = jsonTypes.LoginStepFinish
-	}
+		// TODO: check if totp onboarding is needed
+		// TODO: check if totp verification is needed
 
-	loginInfoString, err := json.Marshal(loginInfo)
-	if err != nil {
-		utils.HandleHttpError(w, err)
-		return
-	}
+		default:
+			loginInfo.Step = jsonTypes.LoginStepFinish
+		}
 
-	err = tokenService.UpdateToken(ctx, services.LoginSessionTokenType, loginToken, string(loginInfoString), time.Minute*15)
+		return nil
+	})
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
@@ -226,46 +240,26 @@ func VerifyEmailToken(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	loginToken := vars["loginToken"]
 
-	tokenService := ioc.GetDependency[services.TokenService](scope)
-	redisValueString, err := tokenService.GetToken(ctx, services.LoginSessionTokenType, loginToken)
-	if err != nil {
-		http.Error(w, "invalid login token", http.StatusBadRequest)
-		return
-	}
+	err := updateLoginStep(ctx, loginToken, func(loginInfo *jsonTypes.LoginInfo) error {
+		if loginInfo.Step != jsonTypes.LoginStepEmailVerification {
+			return utils.ErrHttpUnauthorized
+		}
 
-	var loginInfo jsonTypes.LoginInfo
-	err = json.Unmarshal([]byte(redisValueString), &loginInfo)
-	if err != nil {
-		utils.HandleHttpError(w, err)
-		return
-	}
+		userRepository := ioc.GetDependency[repositories.UserRepository](scope)
+		userFilter := repositories.NewUserFilter().Id(loginInfo.UserId)
+		user, err := userRepository.Single(ctx, userFilter)
+		if err != nil {
+			return err
+		}
 
-	if loginInfo.Step != jsonTypes.LoginStepEmailVerification {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
+		if !user.EmailVerified() {
+			w.WriteHeader(http.StatusUnauthorized)
+			return utils.ErrHttpUnauthorized
+		}
 
-	userRepository := ioc.GetDependency[repositories.UserRepository](scope)
-	userFilter := repositories.NewUserFilter().Id(loginInfo.UserId)
-	user, err := userRepository.Single(ctx, userFilter)
-	if err != nil {
-		utils.HandleHttpError(w, err)
-		return
-	}
-
-	if !user.EmailVerified() {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-
-	loginInfo.Step = jsonTypes.LoginStepFinish
-	loginInfoString, err := json.Marshal(loginInfo)
-	if err != nil {
-		utils.HandleHttpError(w, err)
-		return
-	}
-
-	err = tokenService.UpdateToken(ctx, services.LoginSessionTokenType, loginToken, string(loginInfoString), time.Minute*15)
+		loginInfo.Step = jsonTypes.LoginStepFinish
+		return nil
+	})
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
@@ -342,60 +336,37 @@ func ResetTemporaryPassword(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	loginToken := vars["loginToken"]
 
-	tokenService := ioc.GetDependency[services.TokenService](scope)
-	redisValueString, err := tokenService.GetToken(ctx, services.LoginSessionTokenType, loginToken)
-	if err != nil {
-		http.Error(w, "invalid login token", http.StatusBadRequest)
-		return
-	}
+	err := updateLoginStep(ctx, loginToken, func(loginInfo *jsonTypes.LoginInfo) error {
+		if loginInfo.Step != jsonTypes.LoginStepTemporaryPassword {
+			return utils.ErrHttpUnauthorized
+		}
 
-	var loginInfo jsonTypes.LoginInfo
-	err = json.Unmarshal([]byte(redisValueString), &loginInfo)
-	if err != nil {
-		utils.HandleHttpError(w, err)
-		return
-	}
+		var dto ResetTemporaryPasswordRequestDto
+		err := json.NewDecoder(r.Body).Decode(&dto)
+		if err != nil {
+			return err
+		}
 
-	if loginInfo.Step != jsonTypes.LoginStepTemporaryPassword {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
+		err = utils.ValidateDto(dto)
+		if err != nil {
+			return err
+		}
 
-	var dto ResetTemporaryPasswordRequestDto
-	err = json.NewDecoder(r.Body).Decode(&dto)
-	if err != nil {
-		utils.HandleHttpError(w, err)
-		return
-	}
+		m := ioc.GetDependency[mediator.Mediator](scope)
+		_, err = mediator.Send[*commands.ResetPasswordResponse](ctx, m, commands.ResetPassword{
+			UserId:      loginInfo.UserId,
+			NewPassword: dto.NewPassword,
+			Temporary:   false,
+		})
+		if err != nil {
+			return err
+		}
 
-	err = utils.ValidateDto(dto)
-	if err != nil {
-		utils.HandleHttpError(w, err)
-		return
-	}
+		// TODO: Figure out next step to be done, prepare it if needed
 
-	m := ioc.GetDependency[mediator.Mediator](scope)
-	_, err = mediator.Send[*commands.ResetPasswordResponse](ctx, m, commands.ResetPassword{
-		UserId:      loginInfo.UserId,
-		NewPassword: dto.NewPassword,
-		Temporary:   false,
+		loginInfo.Step = jsonTypes.LoginStepFinish
+		return nil
 	})
-	if err != nil {
-		utils.HandleHttpError(w, err)
-		return
-	}
-
-	// TODO: Figure out next step to be done, prepare it if needed
-
-	loginInfo.Step = jsonTypes.LoginStepFinish
-
-	loginInfoString, err := json.Marshal(loginInfo)
-	if err != nil {
-		utils.HandleHttpError(w, err)
-		return
-	}
-
-	err = tokenService.UpdateToken(ctx, services.LoginSessionTokenType, loginToken, string(loginInfoString), time.Minute*15)
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
