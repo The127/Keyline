@@ -53,11 +53,90 @@ func updateLoginStep(
 		return fmt.Errorf("marshal login info: %w", err)
 	}
 
+	loginInfo.Step, err = DetermineNextLoginStep(ctx, loginInfo)
+	if err != nil {
+		return fmt.Errorf("determine next login step: %w", err)
+	}
+
 	if err := tokenService.UpdateToken(ctx, services.LoginSessionTokenType, loginToken, string(updated), 15*time.Minute); err != nil {
 		return fmt.Errorf("update token: %w", err)
 	}
 
 	return nil
+}
+
+// DetermineNextLoginStep decides what the next login step should be
+// based on the current step, user state, and server configuration.
+func DetermineNextLoginStep(
+	ctx context.Context,
+	loginInfo jsonTypes.LoginInfo,
+) (jsonTypes.LoginStep, error) {
+	scope := middlewares.GetScope(ctx)
+
+	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
+	virtualServerFilter := repositories.NewVirtualServerFilter().Id(loginInfo.VirtualServerId)
+	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
+	if err != nil {
+		return "", err
+	}
+
+	userRepository := ioc.GetDependency[repositories.UserRepository](scope)
+	userFilter := repositories.NewUserFilter().VirtualServerId(loginInfo.VirtualServerId).Id(loginInfo.UserId)
+	user, err := userRepository.Single(ctx, userFilter)
+	if err != nil {
+		return "", err
+	}
+
+	credentialRepository := ioc.GetDependency[repositories.CredentialRepository](scope)
+	passwordFilter := repositories.NewCredentialFilter().UserId(user.Id()).Type(repositories.CredentialTypePassword)
+	passwordCredential, err := credentialRepository.Single(ctx, passwordFilter)
+	if err != nil {
+		return "", err
+	}
+	passwordDetails, err := passwordCredential.PasswordDetails()
+	if err != nil {
+		return "", err
+	}
+
+	totpFilter := repositories.NewCredentialFilter().UserId(user.Id()).Type(repositories.CredentialTypeTotp)
+	totpCredentials, err := credentialRepository.List(ctx, totpFilter)
+	if err != nil {
+		return "", err
+	}
+
+	switch loginInfo.Step {
+	case jsonTypes.LoginStepPasswordVerification:
+		if passwordDetails.Temporary {
+			return jsonTypes.LoginStepTemporaryPassword, nil
+		}
+		fallthrough
+
+	case jsonTypes.LoginStepTemporaryPassword:
+		if !user.EmailVerified() && virtualServer.RequireEmailVerification() {
+			return jsonTypes.LoginStepEmailVerification, nil
+		}
+		fallthrough
+
+	case jsonTypes.LoginStepEmailVerification:
+		if virtualServer.Require2fa() {
+			if len(totpCredentials) == 0 {
+				return jsonTypes.LoginStepOnboardTotp, nil
+			}
+		}
+		if len(totpCredentials) > 0 {
+			return jsonTypes.LoginStepVerifyTotp, nil
+		}
+		return jsonTypes.LoginStepFinish, nil
+
+	case jsonTypes.LoginStepOnboardTotp:
+		fallthrough
+
+	case jsonTypes.LoginStepVerifyTotp:
+		return jsonTypes.LoginStepFinish, nil
+
+	default:
+		return "", errors.New("invalid login step")
+	}
 }
 
 type GetLoginStateResponseDto struct {
@@ -192,28 +271,6 @@ func VerifyPassword(w http.ResponseWriter, r *http.Request) {
 		}
 
 		loginInfo.UserId = user.Id()
-
-		virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
-		virtualServerFilter := repositories.NewVirtualServerFilter().Id(user.VirtualServerId())
-		virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
-		if err != nil {
-			return err
-		}
-
-		switch {
-		case passwordDetails.Temporary:
-			loginInfo.Step = jsonTypes.LoginStepTemporaryPassword
-
-		case !user.EmailVerified() && virtualServer.RequireEmailVerification():
-			loginInfo.Step = jsonTypes.LoginStepEmailVerification
-
-		// TODO: check if totp onboarding is needed
-		// TODO: check if totp verification is needed
-
-		default:
-			loginInfo.Step = jsonTypes.LoginStepFinish
-		}
-
 		return nil
 	})
 	if err != nil {
@@ -257,7 +314,6 @@ func VerifyEmailToken(w http.ResponseWriter, r *http.Request) {
 			return utils.ErrHttpUnauthorized
 		}
 
-		loginInfo.Step = jsonTypes.LoginStepFinish
 		return nil
 	})
 	if err != nil {
@@ -364,7 +420,6 @@ func ResetTemporaryPassword(w http.ResponseWriter, r *http.Request) {
 
 		// TODO: Figure out next step to be done, prepare it if needed
 
-		loginInfo.Step = jsonTypes.LoginStepFinish
 		return nil
 	})
 	if err != nil {
