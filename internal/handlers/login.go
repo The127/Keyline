@@ -165,7 +165,7 @@ func GetLoginState(w http.ResponseWriter, r *http.Request) {
 	loginToken := vars["loginToken"]
 
 	tokenService := ioc.GetDependency[services.TokenService](scope)
-	redisValueString, err := tokenService.GetToken(ctx, services.LoginSessionTokenType, loginToken)
+	rawTokenData, err := tokenService.GetToken(ctx, services.LoginSessionTokenType, loginToken)
 	switch {
 	case errors.Is(err, services.ErrTokenNotFound):
 		http.Error(w, "unknown token", http.StatusUnauthorized)
@@ -177,7 +177,7 @@ func GetLoginState(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var loginInfo jsonTypes.LoginInfo
-	err = json.Unmarshal([]byte(redisValueString), &loginInfo)
+	err = json.Unmarshal([]byte(rawTokenData), &loginInfo)
 	if err != nil {
 		http.Error(w, "invalid login token", http.StatusBadRequest)
 		return
@@ -341,14 +341,14 @@ func FinishLogin(w http.ResponseWriter, r *http.Request) {
 	loginToken := vars["loginToken"]
 
 	tokenService := ioc.GetDependency[services.TokenService](scope)
-	redisValueString, err := tokenService.GetToken(ctx, services.LoginSessionTokenType, loginToken)
+	rawTokenData, err := tokenService.GetToken(ctx, services.LoginSessionTokenType, loginToken)
 	if err != nil {
 		http.Error(w, "invalid login token", http.StatusBadRequest)
 		return
 	}
 
 	var loginInfo jsonTypes.LoginInfo
-	err = json.Unmarshal([]byte(redisValueString), &loginInfo)
+	err = json.Unmarshal([]byte(rawTokenData), &loginInfo)
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
@@ -449,14 +449,14 @@ func ResendEmailVerification(w http.ResponseWriter, r *http.Request) {
 	loginToken := vars["loginToken"]
 
 	tokenService := ioc.GetDependency[services.TokenService](scope)
-	redisValueString, err := tokenService.GetToken(ctx, services.LoginSessionTokenType, loginToken)
+	rawTokenData, err := tokenService.GetToken(ctx, services.LoginSessionTokenType, loginToken)
 	if err != nil {
 		http.Error(w, "invalid login token", http.StatusBadRequest)
 		return
 	}
 
 	var loginInfo jsonTypes.LoginInfo
-	err = json.Unmarshal([]byte(redisValueString), &loginInfo)
+	err = json.Unmarshal([]byte(rawTokenData), &loginInfo)
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
