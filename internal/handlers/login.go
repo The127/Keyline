@@ -48,14 +48,14 @@ func updateLoginStep(
 		return fmt.Errorf("mutate login info: %w", err)
 	}
 
-	updated, err := json.Marshal(loginInfo)
-	if err != nil {
-		return fmt.Errorf("marshal login info: %w", err)
-	}
-
 	loginInfo.Step, err = DetermineNextLoginStep(ctx, loginInfo)
 	if err != nil {
 		return fmt.Errorf("determine next login step: %w", err)
+	}
+
+	updated, err := json.Marshal(loginInfo)
+	if err != nil {
+		return fmt.Errorf("marshal login info: %w", err)
 	}
 
 	if err := tokenService.UpdateToken(ctx, services.LoginSessionTokenType, loginToken, string(updated), 15*time.Minute); err != nil {
