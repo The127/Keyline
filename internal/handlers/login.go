@@ -447,7 +447,7 @@ func VerifyTotp(w http.ResponseWriter, r *http.Request) {
 		clockService := ioc.GetDependency[clock.Service](scope)
 		now := clockService.Now()
 
-		var isValid bool = false
+		var isValid = false
 		for _, credential := range totpCredentials {
 			details, err := credential.TotpDetails()
 			if err != nil {
