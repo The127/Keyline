@@ -137,6 +137,7 @@ initialVirtualServer:
   name: "default"
   displayName: "Default Server"
   enableRegistration: true
+  require2fa: false  # Set to true to enforce TOTP 2FA for all users
   signingAlgorithm: "RS256"  # or "EdDSA"
   createInitialAdmin: true
   initialAdmin:
@@ -619,7 +620,11 @@ Keys are automatically generated and rotated as needed.
 
 ### Multi-Factor Authentication
 
-TOTP-based 2FA using standard authenticator apps (Google Authenticator, Authy, etc.).
+TOTP-based 2FA is supported during login flows:
+- Onboard TOTP during registration or first login (when required)
+- Verify TOTP code for subsequent logins
+- Per-virtual-server `require2fa` configuration option
+- Compatible with standard authenticator apps (Google Authenticator, Authy, etc.)
 
 ## Deployment
 

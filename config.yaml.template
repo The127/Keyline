@@ -14,6 +14,7 @@ database:
     sslMode: "disable"
 initialVirtualServer:
   enableRegistration: true
+  require2fa: false  # Set to true to enforce TOTP 2FA for all users
   createAdmin: true
   signingAlgorithm: "RS256"
   admin:

@@ -398,6 +398,7 @@ initialVirtualServer:
   name: "default"                      # Internal name (URL-safe)
   displayName: "Default Server"        # Display name
   enableRegistration: true             # Allow user self-registration
+  require2fa: false                    # Require TOTP 2FA for all users (default: false)
   signingAlgorithm: "EdDSA"           # JWT signing: "EdDSA" or "RS256"
   createInitialAdmin: true             # Create initial admin user
   initialAdmin:
@@ -447,6 +448,8 @@ initialVirtualServer:
 **Defaults:**
 - **name**: `keyline`
 - **displayName**: `Keyline`
+- **enableRegistration**: `true`
+- **require2fa**: `false`
 - **signingAlgorithm**: `EdDSA`
 - **initialAdmin.username**: `admin`
 - **initialAdmin.displayName**: `Administrator`
@@ -576,6 +579,7 @@ initialVirtualServer:
   name: "production"
   displayName: "Production Server"
   enableRegistration: false
+  require2fa: true  # Enforce TOTP 2FA for enhanced security
   signingAlgorithm: "EdDSA"
   createInitialAdmin: true
   initialAdmin:
@@ -656,6 +660,7 @@ keyStore:
 
 initialVirtualServer:
   enableRegistration: true
+  require2fa: false  # Optional, disable 2FA requirement for development
   createInitialAdmin: true
   initialAdmin:
     primaryEmail: "admin@localhost"
@@ -754,6 +759,7 @@ initialVirtualServer:
   name: "company"
   displayName: "Company SSO"
   enableRegistration: false
+  require2fa: true  # Enforce 2FA for security compliance
   signingAlgorithm: "EdDSA"
   createInitialAdmin: true
   initialAdmin:
@@ -852,6 +858,7 @@ initialVirtualServer:
   name: "microservices"
   displayName: "Microservices Platform"
   enableRegistration: false
+  require2fa: false  # Service accounts don't use TOTP
   signingAlgorithm: "EdDSA"
   createInitialAdmin: true
   initialAdmin:
@@ -921,6 +928,7 @@ initialVirtualServer:
   name: "dev"
   displayName: "Development"
   enableRegistration: true
+  require2fa: false  # Disable 2FA requirement for easier testing
   signingAlgorithm: "EdDSA"
   createInitialAdmin: true
   initialAdmin:
