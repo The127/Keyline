@@ -9,7 +9,6 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/pquerna/otp"
 )
 
 var (
@@ -195,13 +194,9 @@ func (d *CredentialPasswordDetails) Scan(value any) error {
 }
 
 type CredentialTotpDetails struct {
-	Issuer      string        `json:"issuer"`
-	AccountName string        `json:"accountName"`
-	Period      uint          `json:"period"`
-	SecretSize  uint          `json:"secretSize"`
-	Secret      []byte        `json:"secret"`
-	Digits      otp.Digits    `json:"digits"`
-	Algorithm   otp.Algorithm `json:"algorithm"`
+	Secret    string `json:"secret"`
+	Digits    int    `json:"digits"`
+	Algorithm int    `json:"algorithm"`
 }
 
 func (d *CredentialTotpDetails) CredentialDetailType() CredentialType {
