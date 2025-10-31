@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"Keyline/internal/clock"
 	"Keyline/internal/commands"
 	"Keyline/internal/config"
 	"Keyline/internal/jsonTypes"
@@ -13,6 +14,7 @@ import (
 	"Keyline/templates"
 	"Keyline/utils"
 	"context"
+	"encoding/base32"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -20,6 +22,8 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/pquerna/otp"
+	"github.com/pquerna/otp/totp"
 )
 
 func updateLoginStep(
@@ -48,7 +52,7 @@ func updateLoginStep(
 		return fmt.Errorf("mutate login info: %w", err)
 	}
 
-	loginInfo.Step, err = DetermineNextLoginStep(ctx, loginInfo)
+	loginInfo.Step, err = DetermineNextLoginStep(ctx, &loginInfo)
 	if err != nil {
 		return fmt.Errorf("determine next login step: %w", err)
 	}
@@ -69,7 +73,7 @@ func updateLoginStep(
 // based on the current step, user state, and server configuration.
 func DetermineNextLoginStep(
 	ctx context.Context,
-	loginInfo jsonTypes.LoginInfo,
+	loginInfo *jsonTypes.LoginInfo,
 ) (jsonTypes.LoginStep, error) {
 	scope := middlewares.GetScope(ctx)
 
@@ -122,6 +126,7 @@ func DetermineNextLoginStep(
 			return jsonTypes.LoginStepVerifyTotp, nil
 		}
 		if virtualServer.Require2fa() {
+			loginInfo.TotpSecret = base32.StdEncoding.EncodeToString(utils.GetSecureRandomBytes(32))
 			return jsonTypes.LoginStepOnboardTotp, nil
 		}
 		return jsonTypes.LoginStepFinish, nil
@@ -144,6 +149,7 @@ type GetLoginStateResponseDto struct {
 	VirtualServerDisplayName string `json:"virtualServerDisplayName"`
 	VirtualServerName        string `json:"virtualServerName"`
 	SignupEnabled            bool   `json:"signupEnabled"`
+	TotpSecret               string `json:"totpSecret"`
 }
 
 // GetLoginState returns the current step of the login session.
@@ -187,6 +193,7 @@ func GetLoginState(w http.ResponseWriter, r *http.Request) {
 		VirtualServerDisplayName: loginInfo.VirtualServerDisplayName,
 		VirtualServerName:        loginInfo.VirtualServerName,
 		SignupEnabled:            loginInfo.RegistrationEnabled,
+		TotpSecret:               loginInfo.TotpSecret,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -309,6 +316,160 @@ func VerifyEmailToken(w http.ResponseWriter, r *http.Request) {
 
 		if !user.EmailVerified() {
 			return utils.ErrHttpUnauthorized
+		}
+
+		return nil
+	})
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+type OnboardTotpRequestDto struct {
+	TotpCode string `json:"totpCode" validate:"required"`
+}
+
+// OnboardTotp advances the login after the user has onboarded TOTP.
+// @Summary      Onboard TOTP (advance state)
+// @Tags         Logins
+// @Accept       json
+// @Produce      plain
+// @Param        loginToken  path   string true  "Login session token"
+// @Param        body        body   handlers.OnboardTotpRequestDto true "TOTP code"
+// @Success      204         {string} string "No Content"
+// @Failure      400         {string} string "Bad Request"
+// @Failure      401         {string} string "Unauthorized or wrong step"
+// @Router       /logins/{loginToken}/onboard-totp [post]
+func OnboardTotp(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	scope := middlewares.GetScope(ctx)
+
+	vars := mux.Vars(r)
+	loginToken := vars["loginToken"]
+
+	var dto OnboardTotpRequestDto
+	err := json.NewDecoder(r.Body).Decode(&dto)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	err = utils.ValidateDto(dto)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	err = updateLoginStep(ctx, loginToken, func(loginInfo *jsonTypes.LoginInfo) error {
+		if loginInfo.Step != jsonTypes.LoginStepOnboardTotp {
+			return utils.ErrHttpUnauthorized
+		}
+
+		isValid := totp.Validate(dto.TotpCode, loginInfo.TotpSecret)
+		if !isValid {
+			return fmt.Errorf("invalid totp code: %w", utils.ErrHttpBadRequest)
+		}
+
+		totpCredential := repositories.NewCredential(loginInfo.UserId, &repositories.CredentialTotpDetails{
+			Secret:    loginInfo.TotpSecret,
+			Digits:    int(otp.DigitsSix),
+			Algorithm: int(otp.AlgorithmSHA1),
+		})
+		credentialRepository := ioc.GetDependency[repositories.CredentialRepository](scope)
+		err := credentialRepository.Insert(ctx, totpCredential)
+		if err != nil {
+			return err
+		}
+
+		loginInfo.TotpSecret = ""
+
+		return nil
+	})
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+type VerifyTotpRequestDto struct {
+	TotpCode string `json:"totpCode" validate:"required"`
+}
+
+// VerifyTotp advances the login after the user has verified TOTP.
+// @Summary      Verify TOTP (advance state)
+// @Tags         Logins
+// @Produce      plain
+// @Param        loginToken  path   string true  "Login session token"
+// @Param        body        body   handlers.VerifyTotpRequestDto true "TOTP code"
+// @Success      204         {string} string "No Content"
+// @Failure      400         {string} string "Bad Request"
+// @Failure      401         {string} string "Unauthorized or wrong step"
+// @Router       /logins/{loginToken}/verify-totp [post]
+func VerifyTotp(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	scope := middlewares.GetScope(ctx)
+
+	vars := mux.Vars(r)
+	loginToken := vars["loginToken"]
+
+	var dto VerifyTotpRequestDto
+	err := json.NewDecoder(r.Body).Decode(&dto)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	err = utils.ValidateDto(dto)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	err = updateLoginStep(ctx, loginToken, func(loginInfo *jsonTypes.LoginInfo) error {
+		if loginInfo.Step != jsonTypes.LoginStepVerifyTotp {
+			return utils.ErrHttpUnauthorized
+		}
+
+		credentialRepository := ioc.GetDependency[repositories.CredentialRepository](scope)
+		totpCredentialFilter := repositories.NewCredentialFilter().
+			UserId(loginInfo.UserId).
+			Type(repositories.CredentialTypeTotp)
+		totpCredentials, err := credentialRepository.List(ctx, totpCredentialFilter)
+		if err != nil {
+			return fmt.Errorf("failed to get totp credentials: %w", err)
+		}
+
+		clockService := ioc.GetDependency[clock.Service](scope)
+		now := clockService.Now()
+
+		var isValid = false
+		for _, credential := range totpCredentials {
+			details, err := credential.TotpDetails()
+			if err != nil {
+				return fmt.Errorf("failed to get totp details: %w", err)
+			}
+			opts := totp.ValidateOpts{
+				Period:    30,
+				Skew:      1,
+				Digits:    otp.Digits(details.Digits),
+				Algorithm: otp.Algorithm(details.Algorithm),
+			}
+			valid, err := totp.ValidateCustom(dto.TotpCode, details.Secret, now, opts)
+			if err != nil {
+				return fmt.Errorf("failed to validate totp code: %w", err)
+			}
+			if valid {
+				isValid = true
+				break
+			}
+		}
+		if !isValid {
+			return fmt.Errorf("invalid totp code: %w", utils.ErrHttpBadRequest)
 		}
 
 		return nil

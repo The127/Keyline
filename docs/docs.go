@@ -2333,6 +2333,58 @@ const docTemplate = `{
                 }
             }
         },
+        "/logins/{loginToken}/onboard-totp": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Logins"
+                ],
+                "summary": "Onboard TOTP (advance state)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Login session token",
+                        "name": "loginToken",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "TOTP code",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.OnboardTotpRequestDto"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized or wrong step",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/logins/{loginToken}/resend-email-verification": {
             "post": {
                 "produces": [
@@ -2492,6 +2544,55 @@ const docTemplate = `{
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/handlers.VerifyPasswordRequestDto"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized or wrong step",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/logins/{loginToken}/verify-totp": {
+            "post": {
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Logins"
+                ],
+                "summary": "Verify TOTP (advance state)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Login session token",
+                        "name": "loginToken",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "TOTP code",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.VerifyTotpRequestDto"
                         }
                     }
                 ],
@@ -3291,6 +3392,9 @@ const docTemplate = `{
                     "description": "Step is one of: password_verification | temporary_password | email_verification | finish",
                     "type": "string"
                 },
+                "totpSecret": {
+                    "type": "string"
+                },
                 "virtualServerDisplayName": {
                     "type": "string"
                 },
@@ -3639,6 +3743,17 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "sub": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.OnboardTotpRequestDto": {
+            "type": "object",
+            "required": [
+                "totpCode"
+            ],
+            "properties": {
+                "totpCode": {
                     "type": "string"
                 }
             }
@@ -4004,6 +4119,17 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.VerifyTotpRequestDto": {
+            "type": "object",
+            "required": [
+                "totpCode"
+            ],
+            "properties": {
+                "totpCode": {
                     "type": "string"
                 }
             }

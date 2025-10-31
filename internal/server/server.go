@@ -76,6 +76,8 @@ func Serve(dp *ioc.DependencyProvider, serverConfig config.ServerConfig) {
 	loginRouter.HandleFunc("/{loginToken}/reset-temporary-password", handlers.ResetTemporaryPassword).Methods(http.MethodPost, http.MethodOptions)
 	loginRouter.HandleFunc("/{loginToken}/resend-email-verification", handlers.ResendEmailVerification).Methods(http.MethodPost, http.MethodOptions)
 	loginRouter.HandleFunc("/{loginToken}/verify-email", handlers.VerifyEmailToken).Methods(http.MethodPost, http.MethodOptions)
+	loginRouter.HandleFunc("/{loginToken}/onboard-totp", handlers.OnboardTotp).Methods(http.MethodPost, http.MethodOptions)
+	loginRouter.HandleFunc("/{loginToken}/verify-totp", handlers.VerifyTotp).Methods(http.MethodPost, http.MethodOptions)
 	loginRouter.HandleFunc("/{loginToken}/finish-login", handlers.FinishLogin).Methods(http.MethodPost, http.MethodOptions)
 
 	apiRouter := r.PathPrefix("/api").Subrouter()
