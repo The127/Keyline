@@ -228,6 +228,8 @@ definitions:
         description: 'Step is one of: password_verification | temporary_password |
           email_verification | finish'
         type: string
+      totpSecret:
+        type: string
       virtualServerDisplayName:
         type: string
       virtualServerName:
@@ -458,6 +460,13 @@ definitions:
         type: string
       sub:
         type: string
+    type: object
+  handlers.OnboardTotpRequestDto:
+    properties:
+      totpCode:
+        type: string
+    required:
+    - totpCode
     type: object
   handlers.OpenIdConfigurationResponseDto:
     properties:
@@ -699,6 +708,13 @@ definitions:
     required:
     - password
     - username
+    type: object
+  handlers.VerifyTotpRequestDto:
+    properties:
+      totpCode:
+        type: string
+    required:
+    - totpCode
     type: object
   repositories.TemplateType:
     enum:
@@ -2258,6 +2274,40 @@ paths:
       summary: Finish login
       tags:
       - Logins
+  /logins/{loginToken}/onboard-totp:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Login session token
+        in: path
+        name: loginToken
+        required: true
+        type: string
+      - description: TOTP code
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.OnboardTotpRequestDto'
+      produces:
+      - text/plain
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized or wrong step
+          schema:
+            type: string
+      summary: Onboard TOTP (advance state)
+      tags:
+      - Logins
   /logins/{loginToken}/resend-email-verification:
     post:
       parameters:
@@ -2376,6 +2426,38 @@ paths:
           schema:
             type: string
       summary: Verify password
+      tags:
+      - Logins
+  /logins/{loginToken}/verify-totp:
+    post:
+      parameters:
+      - description: Login session token
+        in: path
+        name: loginToken
+        required: true
+        type: string
+      - description: TOTP code
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.VerifyTotpRequestDto'
+      produces:
+      - text/plain
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized or wrong step
+          schema:
+            type: string
+      summary: Verify TOTP (advance state)
       tags:
       - Logins
   /metrics:
