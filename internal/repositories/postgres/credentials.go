@@ -45,6 +45,10 @@ func (r *credentialRepository) selectQuery(filter repositories.CredentialFilter)
 		s.Where(s.Equal("type", filter.GetType()))
 	}
 
+	if filter.HasDetailsId() {
+		s.Where(s.Equal("details->>'credentialId'", filter.GetDetailsId()))
+	}
+
 	return s
 }
 

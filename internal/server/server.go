@@ -79,6 +79,8 @@ func Serve(dp *ioc.DependencyProvider, serverConfig config.ServerConfig) {
 	loginRouter.HandleFunc("/{loginToken}/onboard-totp", handlers.OnboardTotp).Methods(http.MethodPost, http.MethodOptions)
 	loginRouter.HandleFunc("/{loginToken}/verify-totp", handlers.VerifyTotp).Methods(http.MethodPost, http.MethodOptions)
 	loginRouter.HandleFunc("/{loginToken}/finish-login", handlers.FinishLogin).Methods(http.MethodPost, http.MethodOptions)
+	loginRouter.HandleFunc("/{loginToken}/passkey/start", handlers.StartPasskeyLogin).Methods(http.MethodPost, http.MethodOptions)
+	loginRouter.HandleFunc("/{loginToken}/passkey/finish", handlers.FinishPasskeyLogin).Methods(http.MethodPost, http.MethodOptions)
 
 	apiRouter := r.PathPrefix("/api").Subrouter()
 
@@ -122,6 +124,9 @@ func Serve(dp *ioc.DependencyProvider, serverConfig config.ServerConfig) {
 	vsApiRouter.HandleFunc("/users/{userId}", handlers.PatchUser).Methods(http.MethodPatch, http.MethodOptions)
 	vsApiRouter.HandleFunc("/users/service-users", handlers.CreateServiceUser).Methods(http.MethodPost, http.MethodOptions)
 	vsApiRouter.HandleFunc("/users/service-users/{serviceUserId}/keys", handlers.AssociateServiceUserPublicKey).Methods(http.MethodPost, http.MethodOptions)
+	vsApiRouter.HandleFunc("/users/{userId}/passkeys/register/start", handlers.PasskeyCreateChallenge).Methods(http.MethodPost, http.MethodOptions)
+	vsApiRouter.HandleFunc("/users/{userId}/passkeys/register/finish", handlers.PasskeyValidateCreateChallengeResponse).Methods(http.MethodPost, http.MethodOptions)
+	vsApiRouter.HandleFunc("/users/{userId}/passkeys", handlers.ListPasskeys).Methods(http.MethodGet, http.MethodOptions)
 
 	vsApiRouter.HandleFunc("/groups", handlers.ListGroups).Methods(http.MethodGet, http.MethodOptions)
 

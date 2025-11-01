@@ -38,6 +38,7 @@ func Mediator(dc *ioc.DependencyCollection) {
 	mediator.RegisterHandler(m, commands.HandleUpdateUserAppMetadata)
 	mediator.RegisterHandler(m, commands.HandlePatchUserMetadata)
 	mediator.RegisterHandler(m, commands.HandlePatchUserAppMetadata)
+	mediator.RegisterHandler(m, queries.HandleListPasskeys)
 
 	mediator.RegisterHandler(m, commands.HandleCreateResourceServer)
 	mediator.RegisterHandler(m, queries.HandleListResourceServers)

@@ -1,18 +1,29 @@
 package handlers
 
 import (
+	"Keyline/internal/authentication"
 	"Keyline/internal/commands"
 	"Keyline/internal/config"
+	"Keyline/internal/jsonTypes"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/queries"
+	"Keyline/internal/repositories"
+	"Keyline/internal/services/keyValue"
 	"Keyline/ioc"
 	"Keyline/mediator"
 	"Keyline/utils"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/x509"
+	"encoding/base64"
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"net/http"
 	"time"
 
+	"github.com/fxamacker/cbor/v2"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
@@ -179,7 +190,6 @@ func ListUsers(w http.ResponseWriter, r *http.Request) {
 	})
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
 
 	err = json.NewEncoder(w).Encode(NewPagedResponseDto(
 		items,
@@ -857,6 +867,277 @@ func AssociateServiceUserPublicKey(w http.ResponseWriter, r *http.Request) {
 
 	err = json.NewEncoder(w).Encode(AssociateServiceUserPublicKeyResponseDto{
 		Id: response.Id,
+	})
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+}
+
+type PasskeyCreateChallengeResponseDto struct {
+	Id          uuid.UUID `json:"id"`
+	Challenge   string    `json:"challenge" validate:"required"`
+	UserId      uuid.UUID `json:"userId"`
+	Username    string    `json:"username"`
+	DisplayName string    `json:"displayName"`
+}
+
+func PasskeyCreateChallenge(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	scope := middlewares.GetScope(ctx)
+
+	vars := mux.Vars(r)
+	userId, err := uuid.Parse(vars["userId"])
+	if err != nil {
+		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+		return
+	}
+
+	currentUser := authentication.GetCurrentUser(ctx)
+	if currentUser.UserId != userId {
+		utils.HandleHttpError(w, fmt.Errorf("not allowed to create a challenge for another user: %w", utils.ErrHttpUnauthorized))
+		return
+	}
+
+	userRepository := ioc.GetDependency[repositories.UserRepository](scope)
+	userFilter := repositories.NewUserFilter().Id(userId)
+	user, err := userRepository.Single(ctx, userFilter)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	challengeBytes := utils.GetSecureRandomBytes(64)
+
+	challenge := jsonTypes.PasskeyCreateChallenge{
+		Id:        uuid.New(),
+		UserId:    userId,
+		Challenge: base64.StdEncoding.EncodeToString(challengeBytes),
+	}
+
+	challengeJson, err := json.Marshal(challenge)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	kvStore := ioc.GetDependency[keyValue.Store](scope)
+	err = kvStore.Set(ctx, "passkey_challenge:"+challenge.Id.String(), string(challengeJson), keyValue.WithExpiration(time.Minute*5))
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	err = json.NewEncoder(w).Encode(PasskeyCreateChallengeResponseDto{
+		Id:          challenge.Id,
+		Challenge:   challenge.Challenge,
+		UserId:      userId,
+		Username:    user.Username(),
+		DisplayName: user.DisplayName(),
+	})
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+}
+
+type PasskeyValidateChallengeRequestDto struct {
+	Id       uuid.UUID `json:"id" validate:"required"`
+	RawId    string    `json:"rawId" validate:"required"`
+	Type     string    `json:"type" validate:"required"`
+	Response struct {
+		AttestationObject string `json:"attestationObject" validate:"required"`
+		ClientDataJSON    string `json:"clientDataJSON" validate:"required"`
+	} `json:"response" validate:"required"`
+}
+
+type attestationObject struct {
+	Fmt      string                 `cbor:"fmt"`
+	AuthData []byte                 `cbor:"authData"`
+	AttStmt  map[string]interface{} `cbor:"attStmt"`
+}
+
+func PasskeyValidateCreateChallengeResponse(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	scope := middlewares.GetScope(ctx)
+
+	vars := mux.Vars(r)
+	userId, err := uuid.Parse(vars["userId"])
+	if err != nil {
+		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+		return
+	}
+
+	currentUser := authentication.GetCurrentUser(ctx)
+
+	if currentUser.UserId != userId {
+		utils.HandleHttpError(w, fmt.Errorf("not allowed to validate a challenge for another user: %w", utils.ErrHttpUnauthorized))
+		return
+	}
+
+	var dto PasskeyValidateChallengeRequestDto
+	err = json.NewDecoder(r.Body).Decode(&dto)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	err = utils.ValidateDto(dto)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	// decode and verify client data
+	clientDataBytes, err := base64.StdEncoding.DecodeString(dto.Response.ClientDataJSON)
+	if err != nil {
+		http.Error(w, "invalid clientDataJSON", http.StatusBadRequest)
+		return
+	}
+
+	var clientData struct {
+		Type      string `json:"type"`
+		Challenge string `json:"challenge"`
+		Origin    string `json:"origin"`
+	}
+	if err := json.Unmarshal(clientDataBytes, &clientData); err != nil {
+		http.Error(w, "invalid clientData", http.StatusBadRequest)
+		return
+	}
+
+	if clientData.Type != "webauthn.create" {
+		http.Error(w, "invalid clientData type", http.StatusBadRequest)
+		return
+	}
+
+	// get challenge from kv store
+	kvStore := ioc.GetDependency[keyValue.Store](scope)
+	challengeJson, err := kvStore.Get(ctx, "passkey_challenge:"+dto.Id.String())
+	if err != nil {
+		http.Error(w, "challenge not found", http.StatusBadRequest)
+		return
+	}
+
+	var challenge jsonTypes.PasskeyCreateChallenge
+	err = json.Unmarshal([]byte(challengeJson), &challenge)
+	if err != nil {
+		http.Error(w, "invalid challenge", http.StatusBadRequest)
+		return
+	}
+
+	// decode and verify attestation object
+	attestationBytes, err := base64.StdEncoding.DecodeString(dto.Response.AttestationObject)
+	if err != nil {
+		http.Error(w, "invalid attestationObject", http.StatusBadRequest)
+		return
+	}
+
+	var att attestationObject
+	if err := cbor.Unmarshal(attestationBytes, &att); err != nil {
+		http.Error(w, "invalid CBOR", http.StatusBadRequest)
+		return
+	}
+
+	authData := att.AuthData
+
+	// Parse out credential ID and public key
+	credentialIDLen := int(binary.BigEndian.Uint16(authData[53:55]))
+	credentialID := authData[55 : 55+credentialIDLen]
+	pubKeyCBOR := authData[55+credentialIDLen:]
+
+	pubKeyDER, err := parseCOSEKey(pubKeyCBOR)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	// TODO: verify the signature
+
+	// store the credential in the db
+	credentialRepository := ioc.GetDependency[repositories.CredentialRepository](scope)
+	credential := repositories.NewCredential(userId, &repositories.CredentialWebauthnDetails{
+		CredentialId: base64.StdEncoding.EncodeToString(credentialID),
+		PublicKey:    pubKeyDER,
+	})
+	err = credentialRepository.Insert(ctx, credential)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	_ = kvStore.Delete(ctx, "passkey_challenge:"+dto.Id.String())
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// parseCOSEKey extracts a DER-encoded public key from COSE_Key bytes
+func parseCOSEKey(cose []byte) ([]byte, error) {
+	var m map[int]interface{}
+	if err := cbor.Unmarshal(cose, &m); err != nil {
+		return nil, err
+	}
+
+	// ES256 (alg -7)
+	x := m[-2].([]byte)
+	y := m[-3].([]byte)
+
+	pubKey := &ecdsa.PublicKey{
+		Curve: elliptic.P256(),
+		X:     new(big.Int).SetBytes(x),
+		Y:     new(big.Int).SetBytes(y),
+	}
+	return x509.MarshalPKIXPublicKey(pubKey)
+}
+
+type ListPasskeyResponseDto struct {
+	Id uuid.UUID `json:"id"`
+}
+
+type PagedListPasskeyResponseDto struct {
+	Items []ListPasskeyResponseDto `json:"items"`
+}
+
+func ListPasskeys(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	scope := middlewares.GetScope(ctx)
+
+	vsName, err := middlewares.GetVirtualServerName(ctx)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	vars := mux.Vars(r)
+	userIdString := vars["userId"]
+	userId, err := uuid.Parse(userIdString)
+	if err != nil {
+		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+		return
+	}
+
+	m := ioc.GetDependency[mediator.Mediator](scope)
+
+	passkeys, err := mediator.Send[*queries.ListPasskeysResponse](ctx, m, queries.ListPasskeys{
+		VirtualServerName: vsName,
+		UserId:            userId,
+	})
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	items := utils.MapSlice(passkeys.Items, func(x queries.ListPasskeysResponseItem) ListPasskeyResponseDto {
+		return ListPasskeyResponseDto{
+			Id: x.Id,
+		}
+	})
+
+	w.Header().Set("Content-Type", "application/json")
+
+	err = json.NewEncoder(w).Encode(PagedListPasskeyResponseDto{
+		Items: items,
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)
