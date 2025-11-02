@@ -1080,8 +1080,23 @@ func parseCOSEKey(cose []byte) ([]byte, error) {
 	}
 
 	// ES256 (alg -7)
-	x := m[-2].([]byte)
-	y := m[-3].([]byte)
+	xVal, ok := m[-2]
+	if !ok {
+		return nil, fmt.Errorf("COSE key missing x coordinate (-2)")
+	}
+	x, ok := xVal.([]byte)
+	if !ok {
+		return nil, fmt.Errorf("COSE key x coordinate (-2) is not []byte")
+	}
+
+	yVal, ok := m[-3]
+	if !ok {
+		return nil, fmt.Errorf("COSE key missing y coordinate (-3)")
+	}
+	y, ok := yVal.([]byte)
+	if !ok {
+		return nil, fmt.Errorf("COSE key y coordinate (-3) is not []byte")
+	}
 
 	pubKey := &ecdsa.PublicKey{
 		Curve: elliptic.P256(),

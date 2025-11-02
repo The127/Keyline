@@ -851,17 +851,29 @@ func FinishPasskeyLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	clientHash := sha256.Sum256(clientDataBytes)
-	authData = append(authData, clientHash[:]...)
+	signedData := make([]byte, len(authData)+len(clientHash))
+	copy(signedData, authData)
+	copy(signedData[len(authData):], clientHash[:])
 
-	sigBytes, _ := base64.StdEncoding.DecodeString(dto.Response.Signature)
+	sigBytes, err := base64.StdEncoding.DecodeString(dto.Response.Signature)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("invalid signature encoding: %w", err))
+		return
+	}
+
 	pubKey, err := x509.ParsePKIXPublicKey(credentialDetails.PublicKey)
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
 	}
 
-	ecdsaKey := pubKey.(*ecdsa.PublicKey)
-	hash := sha256.Sum256(authData)
+	ecdsaKey, ok := pubKey.(*ecdsa.PublicKey)
+	if !ok {
+		utils.HandleHttpError(w, fmt.Errorf("public key is not an ECDSA key"))
+		return
+	}
+
+	hash := sha256.Sum256(signedData)
 
 	if !ecdsa.VerifyASN1(ecdsaKey, hash[:], sigBytes) {
 		utils.HandleHttpError(w, fmt.Errorf("signature verification failed"))
