@@ -627,11 +627,8 @@ TOTP-based 2FA using standard authenticator apps (Google Authenticator, Authy, e
 Keyline supports passwordless authentication using passkeys (WebAuthn/FIDO2):
 
 - **Passwordless Login** - Users can authenticate without passwords using biometrics, security keys, or device authentication
-- **Multiple Passkeys** - Users can register multiple passkeys per account for redundancy
-- **Platform and Cross-Platform Authenticators** - Support for both device-bound (platform) and portable (roaming) authenticators
 - **Phishing Resistant** - Built-in protection against phishing attacks through origin validation
 - **Registration API** - Endpoints for passkey registration: `/users/{userId}/passkeys/register/start` and `/users/{userId}/passkeys/register/finish`
-- **Authentication API** - Login flow endpoints: `/logins/{loginToken}/passkey/start` and `/logins/{loginToken}/passkey/finish`
 - **Management API** - List and manage registered passkeys: `/users/{userId}/passkeys`
 
 Passkeys provide a more secure and user-friendly alternative to traditional passwords while maintaining compatibility with the OIDC authentication flow.
