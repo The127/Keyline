@@ -8,7 +8,13 @@
 
 The goal is to create an open-source, self-hostable, lightweight, fast, secure, feature rich (but in a good opinionated way), easily configurable and developer friendly OIDC server.
 
-Keyline is still under active development and not ready for production use. Consider it a very feature-rich late alpha release.
+Keyline is still under active development and not ready for production use. 
+Consider it a beta release where parts of the software is somewhat stable but might change until the first stable release.
+We consider it good enough for development and testing purposes, but not for production use.
+
+Any feedback is welcome, especially if you have any suggestions for improvements.
+We are currently working on stabilizing keyline and optimizing it for production use.
+
 Keyline does pass the basic OIDC basic server conformance tests (oidcc-basic-certification-test-plan) for features we support (no address or phone scope and no requested claims) on a local dev machine, but it is not yet production ready.
 For future major releases, we will be including a link to the conformance test results in this README.
 
