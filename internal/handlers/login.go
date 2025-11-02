@@ -828,7 +828,7 @@ func FinishPasskeyLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	actualChallenge, err := base64.RawURLEncoding.DecodeString(challenge.Challenge)
+	actualChallenge, err := base64.StdEncoding.DecodeString(challenge.Challenge)
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
