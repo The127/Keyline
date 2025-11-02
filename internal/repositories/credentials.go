@@ -219,8 +219,9 @@ func (d *CredentialPasswordDetails) Scan(value any) error {
 }
 
 type CredentialWebauthnDetails struct {
-	CredentialId string `json:"credentialId"`
-	PublicKey    []byte `json:"publicKey"`
+	CredentialId       string `json:"credentialId"`
+	PublicKeyAlgorithm int    `json:"publicKeyAlgorithm"`
+	PublicKey          []byte `json:"publicKey"`
 }
 
 func (d *CredentialWebauthnDetails) CredentialDetailType() CredentialType {

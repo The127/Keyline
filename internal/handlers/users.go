@@ -16,7 +16,6 @@ import (
 	"crypto/elliptic"
 	"crypto/x509"
 	"encoding/base64"
-	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"math/big"
@@ -944,13 +943,21 @@ func PasskeyCreateChallenge(w http.ResponseWriter, r *http.Request) {
 }
 
 type PasskeyValidateChallengeRequestDto struct {
-	Id       uuid.UUID `json:"id" validate:"required"`
-	RawId    string    `json:"rawId" validate:"required"`
-	Type     string    `json:"type" validate:"required"`
-	Response struct {
-		AttestationObject string `json:"attestationObject" validate:"required"`
-		ClientDataJSON    string `json:"clientDataJSON" validate:"required"`
-	} `json:"response" validate:"required"`
+	Id               uuid.UUID `json:"id" validate:"required"`
+	WebauthnResponse struct {
+		Id       string `json:"id"`
+		RawId    string `json:"rawId"`
+		Response struct {
+			ClientDataJSON     string   `json:"clientDataJSON"`
+			AuthenticatorData  string   `json:"authenticatorData"`
+			Transports         []string `json:"transports"`
+			PublicKey          string   `json:"publicKey"`
+			PublicKeyAlgorithm int      `json:"publicKeyAlgorithm"`
+			AttestationObject  string   `json:"attestationObject"`
+		} `json:"response"`
+		AuthenticatorAttachment string `json:"authenticatorAttachment"`
+		Type                    string `json:"type"`
+	} `json:"webauthnResponse" validate:"required"`
 }
 
 type attestationObject struct {
@@ -990,85 +997,21 @@ func PasskeyValidateCreateChallengeResponse(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	// decode and verify client data
-	clientDataBytes, err := base64.StdEncoding.DecodeString(dto.Response.ClientDataJSON)
-	if err != nil {
-		http.Error(w, "invalid clientDataJSON", http.StatusBadRequest)
-		return
-	}
-
-	var clientData struct {
-		Type      string `json:"type"`
-		Challenge string `json:"challenge"`
-		Origin    string `json:"origin"`
-	}
-	if err := json.Unmarshal(clientDataBytes, &clientData); err != nil {
-		http.Error(w, "invalid clientData", http.StatusBadRequest)
-		return
-	}
-
-	if clientData.Type != "webauthn.create" {
-		http.Error(w, "invalid clientData type", http.StatusBadRequest)
-		return
-	}
-
 	// get challenge from kv store
 	kvStore := ioc.GetDependency[keyValue.Store](scope)
-	challengeJson, err := kvStore.Get(ctx, "passkey_challenge:"+dto.Id.String())
-	if err != nil {
-		http.Error(w, "challenge not found", http.StatusBadRequest)
-		return
-	}
 
-	var challenge jsonTypes.PasskeyCreateChallenge
-	err = json.Unmarshal([]byte(challengeJson), &challenge)
-	if err != nil {
-		http.Error(w, "invalid challenge", http.StatusBadRequest)
-		return
-	}
-
-	// decode and verify attestation object
-	attestationBytes, err := base64.StdEncoding.DecodeString(dto.Response.AttestationObject)
-	if err != nil {
-		http.Error(w, "invalid attestationObject", http.StatusBadRequest)
-		return
-	}
-
-	var att attestationObject
-	if err := cbor.Unmarshal(attestationBytes, &att); err != nil {
-		http.Error(w, "invalid CBOR", http.StatusBadRequest)
-		return
-	}
-
-	authData := att.AuthData
-
-	// Parse out credential ID and public key
-	if len(authData) < 55 {
-		http.Error(w, "invalid authData: too short", http.StatusBadRequest)
-		return
-	}
-	credentialIDLen := int(binary.BigEndian.Uint16(authData[53:55]))
-	if len(authData) < 55+credentialIDLen {
-		http.Error(w, "invalid authData: credential ID out of bounds", http.StatusBadRequest)
-		return
-	}
-	credentialID := authData[55 : 55+credentialIDLen]
-
-	pubKeyCBOR := authData[55+credentialIDLen:]
-
-	pubKeyDER, err := parseCOSEKey(pubKeyCBOR)
+	pubKey, err := base64.RawURLEncoding.DecodeString(dto.WebauthnResponse.Response.PublicKey)
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
 	}
 
-	// TODO: verify the signature
-
 	// store the credential in the db
 	credentialRepository := ioc.GetDependency[repositories.CredentialRepository](scope)
 	credential := repositories.NewCredential(userId, &repositories.CredentialWebauthnDetails{
-		CredentialId: base64.StdEncoding.EncodeToString(credentialID),
-		PublicKey:    pubKeyDER,
+		CredentialId:       dto.WebauthnResponse.RawId,
+		PublicKeyAlgorithm: dto.WebauthnResponse.Response.PublicKeyAlgorithm,
+		PublicKey:          pubKey,
 	})
 	err = credentialRepository.Insert(ctx, credential)
 	if err != nil {
