@@ -1043,8 +1043,17 @@ func PasskeyValidateCreateChallengeResponse(w http.ResponseWriter, r *http.Reque
 	authData := att.AuthData
 
 	// Parse out credential ID and public key
+	if len(authData) < 55 {
+		http.Error(w, "invalid authData: too short", http.StatusBadRequest)
+		return
+	}
 	credentialIDLen := int(binary.BigEndian.Uint16(authData[53:55]))
+	if len(authData) < 55+credentialIDLen {
+		http.Error(w, "invalid authData: credential ID out of bounds", http.StatusBadRequest)
+		return
+	}
 	credentialID := authData[55 : 55+credentialIDLen]
+
 	pubKeyCBOR := authData[55+credentialIDLen:]
 
 	pubKeyDER, err := parseCOSEKey(pubKeyCBOR)
