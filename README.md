@@ -21,6 +21,7 @@ For future major releases, we will be including a link to the conformance test r
 - 🎨 **Custom Claims Mapping** - Transform roles into custom JWT claims using JavaScript
 - 📧 **Email Integration** - Built-in email verification and notification system (work-in-progress)
 - 🔒 **Multi-Factor Authentication (MFA)** - TOTP-based 2FA support
+- 🔑 **Passkey Support** - WebAuthn/FIDO2 passwordless authentication with passkeys
 - 🏢 **Virtual Servers** - Multi-tenancy support via virtual servers
 - 📝 **Template System** - Customizable email templates
 - 📊 **Audit Logging** - Comprehensive audit trail for security and compliance
@@ -620,6 +621,21 @@ Keys are automatically generated and rotated as needed.
 ### Multi-Factor Authentication
 
 TOTP-based 2FA using standard authenticator apps (Google Authenticator, Authy, etc.).
+
+### Passkey Support
+
+Keyline supports passwordless authentication using passkeys (WebAuthn/FIDO2):
+
+- **Passwordless Login** - Users can authenticate without passwords using biometrics, security keys, or device authentication
+- **WebAuthn Standard** - Full WebAuthn implementation following W3C specifications
+- **Multiple Passkeys** - Users can register multiple passkeys per account for redundancy
+- **Platform and Cross-Platform Authenticators** - Support for both device-bound (platform) and portable (roaming) authenticators
+- **Phishing Resistant** - Built-in protection against phishing attacks through origin validation
+- **Registration API** - Endpoints for passkey registration: `/users/{userId}/passkeys/register/start` and `/finish`
+- **Authentication API** - Login flow endpoints: `/logins/{loginToken}/passkey/start` and `/finish`
+- **Management API** - List and manage registered passkeys: `/users/{userId}/passkeys`
+
+Passkeys provide a more secure and user-friendly alternative to traditional passwords while maintaining compatibility with the OIDC authentication flow.
 
 ## Deployment
 
