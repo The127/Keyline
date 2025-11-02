@@ -14,6 +14,7 @@ const (
 	LoginStepEmailVerification    LoginStep = "emailVerification"
 	LoginStepOnboardTotp          LoginStep = "onboardTotp"
 	LoginStepVerifyTotp           LoginStep = "verifyTotp"
+	LoginStepPasskey              LoginStep = "passkey"
 	LoginStepFinish               LoginStep = "finish"
 )
 

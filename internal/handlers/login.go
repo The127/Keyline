@@ -9,18 +9,28 @@ import (
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/internal/services"
+	"Keyline/internal/services/keyValue"
 	"Keyline/ioc"
 	"Keyline/mediator"
 	"Keyline/templates"
 	"Keyline/utils"
+	"bytes"
 	"context"
+	"crypto"
+	"crypto/ecdsa"
+	"crypto/ed25519"
+	"crypto/rsa"
+	"crypto/sha256"
+	"crypto/x509"
 	"encoding/base32"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/pquerna/otp"
 	"github.com/pquerna/otp/totp"
@@ -75,6 +85,10 @@ func DetermineNextLoginStep(
 	ctx context.Context,
 	loginInfo *jsonTypes.LoginInfo,
 ) (jsonTypes.LoginStep, error) {
+	if loginInfo.Step == jsonTypes.LoginStepPasskey {
+		return jsonTypes.LoginStepFinish, nil
+	}
+
 	scope := middlewares.GetScope(ctx)
 
 	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
@@ -682,4 +696,260 @@ func ResendEmailVerification(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+type StartPasskeyLoginResponseDto struct {
+	Id        uuid.UUID `json:"id"`
+	Challenge string    `json:"challenge"`
+}
+
+func StartPasskeyLogin(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	scope := middlewares.GetScope(ctx)
+
+	vars := mux.Vars(r)
+	loginToken := vars["loginToken"]
+
+	challengeBytes := utils.GetSecureRandomBytes(64)
+
+	challenge := jsonTypes.PasskeyLoginChallenge{
+		Id:                uuid.New(),
+		Challenge:         base64.StdEncoding.EncodeToString(challengeBytes),
+		LoginSessionToken: loginToken,
+	}
+
+	challengeJson, err := json.Marshal(challenge)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	kvStore := ioc.GetDependency[keyValue.Store](scope)
+	err = kvStore.Set(ctx, "passkey_login:"+challenge.Id.String(), string(challengeJson), keyValue.WithExpiration(time.Minute*5))
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	err = json.NewEncoder(w).Encode(StartPasskeyLoginResponseDto{
+		Id:        challenge.Id,
+		Challenge: challenge.Challenge,
+	})
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+}
+
+type FinishPasskeyLoginRequestDto struct {
+	Id               uuid.UUID `json:"id" validate:"required"`
+	WebauthnResponse struct {
+		Id       string `json:"id"`
+		RawId    string `json:"rawId"`
+		Response struct {
+			ClientDataJSON    string `json:"clientDataJSON"`
+			AuthenticatorData string `json:"authenticatorData"`
+			Signature         string `json:"signature"`
+			UserHandle        string `json:"userHandle"`
+		} `json:"response"`
+		AuthenticatorAttachment string `json:"authenticatorAttachment"`
+		Type                    string `json:"type"`
+	} `json:"webauthnResponse" validate:"required"`
+}
+
+func FinishPasskeyLogin(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	scope := middlewares.GetScope(ctx)
+
+	vars := mux.Vars(r)
+	loginToken := vars["loginToken"]
+
+	// decode request
+	var dto FinishPasskeyLoginRequestDto
+	err := json.NewDecoder(r.Body).Decode(&dto)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	err = utils.ValidateDto(dto)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	// get from kv store
+	kvStore := ioc.GetDependency[keyValue.Store](scope)
+	challengeKey := "passkey_login:" + dto.Id.String()
+	challengeJson, err := kvStore.Get(ctx, challengeKey)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("challenge expired or missing"))
+		return
+	}
+
+	var challenge jsonTypes.PasskeyLoginChallenge
+	if err := json.Unmarshal([]byte(challengeJson), &challenge); err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	// validate challenge
+	if challenge.LoginSessionToken != loginToken {
+		utils.HandleHttpError(w, fmt.Errorf("challenge mismatch"))
+		return
+	}
+
+	clientDataBytes, err := base64.StdEncoding.DecodeString(dto.WebauthnResponse.Response.ClientDataJSON)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	var clientData struct {
+		Type      string `json:"type"`
+		Challenge string `json:"challenge"`
+		Origin    string `json:"origin"`
+	}
+	if err := json.Unmarshal(clientDataBytes, &clientData); err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	if clientData.Type != "webauthn.get" {
+		utils.HandleHttpError(w, fmt.Errorf("invalid clientData type"))
+		return
+	}
+
+	challengeFromClient, err := base64.RawURLEncoding.DecodeString(clientData.Challenge)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	actualChallenge, err := base64.RawURLEncoding.DecodeString(challenge.Challenge)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	if !bytes.Equal(challengeFromClient, actualChallenge) {
+		utils.HandleHttpError(w, fmt.Errorf("challenge mismatch: %w", utils.ErrHttpUnauthorized))
+		return
+	}
+
+	authData, err := base64.RawURLEncoding.DecodeString(dto.WebauthnResponse.Response.AuthenticatorData)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	// get credential from database
+	credentialRepository := ioc.GetDependency[repositories.CredentialRepository](scope)
+	credentialFilter := repositories.NewCredentialFilter().
+		DetailsId(dto.WebauthnResponse.RawId).
+		Type(repositories.CredentialTypeWebauthn)
+	credential, err := credentialRepository.Single(ctx, credentialFilter)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	credentialDetails, err := credential.WebauthnDetails()
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	clientHash := sha256.Sum256(clientDataBytes)
+	signedData := make([]byte, len(authData)+len(clientHash))
+	copy(signedData, authData)
+	copy(signedData[len(authData):], clientHash[:])
+
+	sigBytes, err := base64.RawURLEncoding.DecodeString(dto.WebauthnResponse.Response.Signature)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("invalid signature encoding: %w", err))
+		return
+	}
+
+	pubKey, err := x509.ParsePKIXPublicKey(credentialDetails.PublicKey)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	err = validateSignature(pubKey, credentialDetails.PublicKeyAlgorithm, signedData, sigBytes)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	err = updateLoginStep(ctx, loginToken, func(loginInfo *jsonTypes.LoginInfo) error {
+		loginInfo.UserId = credential.UserId()
+		loginInfo.Step = jsonTypes.LoginStepPasskey
+		return nil
+	})
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+var ErrSignatureInvalid = fmt.Errorf("signature verification failed: %w", utils.ErrHttpUnauthorized)
+var ErrSignatureInvalidAlgorithm = errors.New("invalid public key algorithm")
+
+const (
+	CoseAlgorithmES256   = -7
+	CoseAlgorithmEd25519 = -8 // COSE calls this EdDSA and marks it as deprecated, but implementations seem to use it for Ed25519 instead of -19 (which is what COSE uses for Ed25519)
+	CoseAlgorithmPS256   = -37
+	CoseAlgorithmRS256   = -257
+)
+
+func validateSignature(pubKey any, pubKeyAlgorithm int, message, sigBytes []byte) error {
+	switch k := pubKey.(type) {
+	case *rsa.PublicKey:
+		switch pubKeyAlgorithm {
+		case CoseAlgorithmRS256:
+			err := rsa.VerifyPKCS1v15(k, crypto.SHA256, message, sigBytes)
+			if err != nil {
+				return ErrSignatureInvalid
+			}
+
+		case CoseAlgorithmPS256:
+			err := rsa.VerifyPSS(k, crypto.SHA256, message, sigBytes, nil)
+			if err != nil {
+				return ErrSignatureInvalid
+			}
+
+		default:
+			return ErrSignatureInvalidAlgorithm
+		}
+	case *ecdsa.PublicKey:
+		if pubKeyAlgorithm != CoseAlgorithmES256 {
+			return ErrSignatureInvalidAlgorithm
+		}
+
+		hash := sha256.Sum256(message)
+
+		if !ecdsa.VerifyASN1(k, hash[:], sigBytes) {
+			return ErrSignatureInvalid
+		}
+
+	case ed25519.PublicKey:
+		if pubKeyAlgorithm != CoseAlgorithmEd25519 {
+			return ErrSignatureInvalidAlgorithm
+		}
+
+		if !ed25519.Verify(k, message, sigBytes) {
+			return ErrSignatureInvalid
+		}
+
+	default:
+		return ErrSignatureInvalidAlgorithm
+	}
+
+	return nil
 }
