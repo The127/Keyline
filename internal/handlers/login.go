@@ -917,14 +917,13 @@ func validateSignature(pubKey any, pubKeyAlgorithm int, message, sigBytes []byte
 			if err != nil {
 				return ErrSignatureInvalid
 			}
-			break
 
 		case CoseAlgorithmPS256:
 			err := rsa.VerifyPSS(k, crypto.SHA256, message, sigBytes, nil)
 			if err != nil {
 				return ErrSignatureInvalid
 			}
-			break
+
 		default:
 			return ErrSignatureInvalidAlgorithm
 		}
@@ -938,6 +937,7 @@ func validateSignature(pubKey any, pubKeyAlgorithm int, message, sigBytes []byte
 		if !ecdsa.VerifyASN1(k, hash[:], sigBytes) {
 			return ErrSignatureInvalid
 		}
+
 	case ed25519.PublicKey:
 		if pubKeyAlgorithm != CoseAlgorithmEd25519 {
 			return ErrSignatureInvalidAlgorithm
@@ -946,6 +946,7 @@ func validateSignature(pubKey any, pubKeyAlgorithm int, message, sigBytes []byte
 		if !ed25519.Verify(k, message, sigBytes) {
 			return ErrSignatureInvalid
 		}
+
 	default:
 		return ErrSignatureInvalidAlgorithm
 	}

@@ -12,17 +12,12 @@ import (
 	"Keyline/ioc"
 	"Keyline/mediator"
 	"Keyline/utils"
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"math/big"
 	"net/http"
 	"time"
 
-	"github.com/fxamacker/cbor/v2"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
@@ -960,12 +955,6 @@ type PasskeyValidateChallengeRequestDto struct {
 	} `json:"webauthnResponse" validate:"required"`
 }
 
-type attestationObject struct {
-	Fmt      string                 `cbor:"fmt"`
-	AuthData []byte                 `cbor:"authData"`
-	AttStmt  map[string]interface{} `cbor:"attStmt"`
-}
-
 func PasskeyValidateCreateChallengeResponse(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	scope := middlewares.GetScope(ctx)
@@ -1022,40 +1011,6 @@ func PasskeyValidateCreateChallengeResponse(w http.ResponseWriter, r *http.Reque
 	_ = kvStore.Delete(ctx, "passkey_challenge:"+dto.Id.String())
 
 	w.WriteHeader(http.StatusNoContent)
-}
-
-// parseCOSEKey extracts a DER-encoded public key from COSE_Key bytes
-func parseCOSEKey(cose []byte) ([]byte, error) {
-	var m map[int]interface{}
-	if err := cbor.Unmarshal(cose, &m); err != nil {
-		return nil, err
-	}
-
-	// ES256 (alg -7)
-	xVal, ok := m[-2]
-	if !ok {
-		return nil, fmt.Errorf("COSE key missing x coordinate (-2)")
-	}
-	x, ok := xVal.([]byte)
-	if !ok {
-		return nil, fmt.Errorf("COSE key x coordinate (-2) is not []byte")
-	}
-
-	yVal, ok := m[-3]
-	if !ok {
-		return nil, fmt.Errorf("COSE key missing y coordinate (-3)")
-	}
-	y, ok := yVal.([]byte)
-	if !ok {
-		return nil, fmt.Errorf("COSE key y coordinate (-3) is not []byte")
-	}
-
-	pubKey := &ecdsa.PublicKey{
-		Curve: elliptic.P256(),
-		X:     new(big.Int).SetBytes(x),
-		Y:     new(big.Int).SetBytes(y),
-	}
-	return x509.MarshalPKIXPublicKey(pubKey)
 }
 
 type ListPasskeyResponseDto struct {
