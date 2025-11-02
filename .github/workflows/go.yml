@@ -197,3 +197,4 @@ jobs:
           keep-n-tagged: 10
           exclude-tags: latest,v*
           older-than: 7 days
+          skip-errors: true
