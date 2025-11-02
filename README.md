@@ -627,7 +627,6 @@ TOTP-based 2FA using standard authenticator apps (Google Authenticator, Authy, e
 Keyline supports passwordless authentication using passkeys (WebAuthn/FIDO2):
 
 - **Passwordless Login** - Users can authenticate without passwords using biometrics, security keys, or device authentication
-- **WebAuthn Standard** - Full WebAuthn implementation following W3C specifications
 - **Multiple Passkeys** - Users can register multiple passkeys per account for redundancy
 - **Platform and Cross-Platform Authenticators** - Support for both device-bound (platform) and portable (roaming) authenticators
 - **Phishing Resistant** - Built-in protection against phishing attacks through origin validation
