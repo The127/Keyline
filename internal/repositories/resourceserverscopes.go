@@ -84,6 +84,7 @@ type ResourceServerScopeFilter struct {
 	virtualServerId  *uuid.UUID
 	projectId        *uuid.UUID
 	resourceServerId *uuid.UUID
+	id               *uuid.UUID
 	searchFilter     *SearchFilter
 }
 
@@ -135,6 +136,20 @@ func (f ResourceServerScopeFilter) HasResourceServerId() bool {
 
 func (f ResourceServerScopeFilter) GetResourceServerId() uuid.UUID {
 	return utils.ZeroIfNil(f.resourceServerId)
+}
+
+func (f ResourceServerScopeFilter) Id(id uuid.UUID) ResourceServerScopeFilter {
+	filter := f.Clone()
+	filter.id = &id
+	return filter
+}
+
+func (f ResourceServerScopeFilter) HasId() bool {
+	return f.id != nil
+}
+
+func (f ResourceServerScopeFilter) GetId() uuid.UUID {
+	return utils.ZeroIfNil(f.id)
 }
 
 func (f ResourceServerScopeFilter) Search(searchFilter SearchFilter) ResourceServerScopeFilter {

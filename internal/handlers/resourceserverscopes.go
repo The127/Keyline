@@ -9,6 +9,7 @@ import (
 	"Keyline/utils"
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
@@ -179,6 +180,85 @@ func ListResourceServerScopes(w http.ResponseWriter, r *http.Request) {
 		queryOps,
 		scopes.TotalCount,
 	))
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+}
+
+type GetResourceServerScopeResponseDto struct {
+	Id          uuid.UUID `json:"id"`
+	Scope       string    `json:"scope"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	CreatedAt   time.Time `json:"createdAt"`
+	UpdatedAt   time.Time `json:"updatedAt"`
+}
+
+// GetResourceServerScope retrieves details of a specific resource server scope by ID
+// @Summary Get resource server scope
+// @Description Get a resource server scope by ID from a project
+// @Tags Resource server scopes
+// @Accept json
+// @Produce json
+// @Param vsName path string true "Virtual server name"  default(keyline)
+// @Param projectSlug path string true "Project slug"
+// @Param resourceServerId path string true "Resource server ID (UUID)"
+// @Param scopeId path string true "Scope ID (UUID)"
+// @Success 200 {object} GetResourceServerScopeResponseDto
+// @Failure 400
+// @Failure 404 "Resource server scope not found"
+// @Failure 500
+// @Router /api/virtual-servers/{vsName}/projects/{projectSlug}/resource-server/{resourceServerId}/scopes/{scopeId} [get]
+func GetResourceServerScope(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	vsName, err := middlewares.GetVirtualServerName(ctx)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	vars := mux.Vars(r)
+	projectSlug := vars["projectSlug"]
+
+	resourceServerIdString := vars["resourceServerId"]
+	resourceServerId, err := uuid.Parse(resourceServerIdString)
+	if err != nil {
+		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+		return
+	}
+
+	scopeIdString := vars["scopeId"]
+	scopeId, err := uuid.Parse(scopeIdString)
+	if err != nil {
+		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+		return
+	}
+
+	scope := middlewares.GetScope(ctx)
+	m := ioc.GetDependency[mediator.Mediator](scope)
+
+	scopeResponse, err := mediator.Send[*queries.GetResourceServerScopeResponse](ctx, m, queries.GetResourceServerScope{
+		VirtualServerName: vsName,
+		ProjectSlug:       projectSlug,
+		ResourceServerId:  resourceServerId,
+		ScopeId:           scopeId,
+	})
+	if err != nil {
+		utils.HandleHttpError(w, err)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	err = json.NewEncoder(w).Encode(GetResourceServerScopeResponseDto{
+		Id:          scopeResponse.Id,
+		Scope:       scopeResponse.Scope,
+		Name:        scopeResponse.Name,
+		Description: scopeResponse.Description,
+		CreatedAt:   scopeResponse.CreatedAt,
+		UpdatedAt:   scopeResponse.UpdatedAt,
+	})
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return

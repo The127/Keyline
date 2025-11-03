@@ -48,6 +48,10 @@ func (r *resourceServerScopeRepository) selectQuery(filter repositories.Resource
 		s.Where(s.Equal("resource_server_id", filter.GetResourceServerId()))
 	}
 
+	if filter.HasId() {
+		s.Where(s.Equal("id", filter.GetId()))
+	}
+
 	if filter.HasSearch() {
 		term := filter.GetSearch().Term()
 		s.Where(s.Or(
