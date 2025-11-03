@@ -27,7 +27,7 @@ func (r *resourceServerScopeRepository) selectQuery(filter repositories.Resource
 		"id",
 		"audit_created_at",
 		"audit_updated_at",
-		"audit_version",
+		"version",
 		"virtual_server_id",
 		"project_id",
 		"resource_server_id",
