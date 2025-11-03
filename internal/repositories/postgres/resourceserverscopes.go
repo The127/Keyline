@@ -27,7 +27,7 @@ func (r *resourceServerScopeRepository) selectQuery(filter repositories.Resource
 		"id",
 		"audit_created_at",
 		"audit_updated_at",
-		"audit_version",
+		"version",
 		"virtual_server_id",
 		"project_id",
 		"resource_server_id",
@@ -46,6 +46,10 @@ func (r *resourceServerScopeRepository) selectQuery(filter repositories.Resource
 
 	if filter.HasResourceServerId() {
 		s.Where(s.Equal("resource_server_id", filter.GetResourceServerId()))
+	}
+
+	if filter.HasId() {
+		s.Where(s.Equal("id", filter.GetId()))
 	}
 
 	if filter.HasSearch() {
