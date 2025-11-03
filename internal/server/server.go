@@ -151,6 +151,7 @@ func Serve(dp *ioc.DependencyProvider, serverConfig config.ServerConfig) {
 	vsApiRouter.HandleFunc("/projects/{projectSlug}/resource-servers/{resourceServerId}", handlers.GetResourceServer).Methods(http.MethodGet, http.MethodOptions)
 
 	vsApiRouter.HandleFunc("/projects/{projectSlug}/resource-servers/{resourceServerId}/scopes", handlers.CreateResourceServerScope).Methods(http.MethodPost, http.MethodOptions)
+	vsApiRouter.HandleFunc("/projects/{projectSlug}/resource-servers/{resourceServerId}/scopes", handlers.ListResourceServerScopes).Methods(http.MethodGet, http.MethodOptions)
 
 	vsApiRouter.HandleFunc("/audit", handlers.ListAuditLog).Methods(http.MethodGet, http.MethodOptions)
 
