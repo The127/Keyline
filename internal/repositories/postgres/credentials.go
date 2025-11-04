@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/huandu/go-sqlbuilder"
 )
 
@@ -47,6 +48,10 @@ func (r *credentialRepository) selectQuery(filter repositories.CredentialFilter)
 
 	if filter.HasDetailsId() {
 		s.Where(s.Equal("details->>'credentialId'", filter.GetDetailsId()))
+	}
+
+	if filter.HasDetailPublicKey() {
+		s.Where(s.Equal("details->>'publicKey'", filter.GetDetailPublicKey()))
 	}
 
 	return s
@@ -187,5 +192,27 @@ func (r *credentialRepository) Update(ctx context.Context, credential *repositor
 	}
 
 	credential.ClearChanges()
+	return nil
+}
+
+func (r *credentialRepository) Delete(ctx context.Context, id uuid.UUID) error {
+	scope := middlewares.GetScope(ctx)
+	dbService := ioc.GetDependency[database.DbService](scope)
+
+	tx, err := dbService.GetTx()
+	if err != nil {
+		return fmt.Errorf("failed to open tx: %w", err)
+	}
+
+	s := sqlbuilder.DeleteFrom("credentials")
+	s.Where(s.Equal("id", id))
+
+	query, args := s.Build()
+	logging.Logger.Debug("executing sql: ", query)
+	_, err = tx.ExecContext(ctx, query, args...)
+	if err != nil {
+		return fmt.Errorf("executing sql: %w", err)
+	}
+
 	return nil
 }

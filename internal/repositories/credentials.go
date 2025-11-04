@@ -265,10 +265,11 @@ func (d *CredentialTotpDetails) Scan(value any) error {
 }
 
 type CredentialFilter struct {
-	id       *uuid.UUID
-	userId   *uuid.UUID
-	_type    *CredentialType
-	detailId *string
+	id              *uuid.UUID
+	userId          *uuid.UUID
+	_type           *CredentialType
+	detailId        *string
+	detailPublicKey *string
 }
 
 func NewCredentialFilter() CredentialFilter {
@@ -307,6 +308,20 @@ func (f CredentialFilter) GetUserId() uuid.UUID {
 	return utils.ZeroIfNil(f.userId)
 }
 
+func (f CredentialFilter) DetailPublicKey(publicKey string) CredentialFilter {
+	filter := f.Clone()
+	filter.detailPublicKey = &publicKey
+	return filter
+}
+
+func (f CredentialFilter) HasDetailPublicKey() bool {
+	return f.detailPublicKey != nil
+}
+
+func (f CredentialFilter) GetDetailPublicKey() string {
+	return utils.ZeroIfNil(f.detailPublicKey)
+}
+
 func (f CredentialFilter) Type(credentialType CredentialType) CredentialFilter {
 	filter := f.Clone()
 	filter._type = &credentialType
@@ -342,4 +357,5 @@ type CredentialRepository interface {
 	List(ctx context.Context, filter CredentialFilter) ([]*Credential, error)
 	Insert(ctx context.Context, credential *Credential) error
 	Update(ctx context.Context, credential *Credential) error
+	Delete(ctx context.Context, id uuid.UUID) error
 }
