@@ -31,6 +31,7 @@ const (
 
 	ServiceUserCreate       Permission = "service_user:create"
 	ServiceUserAssociateKey Permission = "service_user:associate_key"
+	ServiceUserRemoveKey    Permission = "service_user:remove_key"
 
 	VirtualServerCreate Permission = "virtual_server:create"
 	VirtualServerUpdate Permission = "virtual_server:update"

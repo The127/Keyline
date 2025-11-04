@@ -57,6 +57,7 @@ var AdminPermissions = []permissions.Permission{
 
 	permissions.ServiceUserCreate,
 	permissions.ServiceUserAssociateKey,
+	permissions.ServiceUserRemoveKey,
 
 	permissions.TemplateView,
 }
