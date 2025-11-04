@@ -29,7 +29,7 @@ var _ = Describe("ServiceUser flow", Ordered, func() {
 	It("should create a service user successfully", func() {
 		req := commands.CreateServiceUser{
 			VirtualServerName: h.VirtualServer(),
-			Username:          "srvice-user",
+			Username:          "service-user",
 		}
 		response, err := mediator.Send[*commands.CreateServiceUserResponse](h.Ctx(), h.Mediator(), req)
 		Expect(err).ToNot(HaveOccurred())
