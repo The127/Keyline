@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/huandu/go-sqlbuilder"
 )
 
@@ -181,5 +182,59 @@ func (r *roleRepository) Insert(ctx context.Context, role *repositories.Role) er
 	}
 
 	role.ClearChanges()
+	return nil
+}
+
+func (r *roleRepository) Update(ctx context.Context, role *repositories.Role) error {
+	scope := middlewares.GetScope(ctx)
+	dbService := ioc.GetDependency[database.DbService](scope)
+
+	tx, err := dbService.GetTx()
+	if err != nil {
+		return fmt.Errorf("failed to open tx: %w", err)
+	}
+
+	s := sqlbuilder.Update("roles")
+	for fieldName, value := range role.Changes() {
+		s.SetMore(s.Assign(fieldName, value))
+	}
+	s.SetMore(s.Assign("version", role.Version()+1))
+
+	s.Where(s.Equal("id", role.Id()))
+	s.Where(s.Equal("version", role.Version()))
+	s.Returning("audit_updated_at", "version")
+
+	query, args := s.Build()
+	logging.Logger.Debug("executing sql: ", query)
+	row := tx.QueryRowContext(ctx, query, args...)
+
+	err = row.Scan(role.UpdatePointers()...)
+	if err != nil {
+		return fmt.Errorf("scanning row: %w", err)
+	}
+
+	role.ClearChanges()
+	return nil
+}
+
+func (r *roleRepository) Delete(ctx context.Context, id uuid.UUID) error {
+	scope := middlewares.GetScope(ctx)
+	dbService := ioc.GetDependency[database.DbService](scope)
+
+	tx, err := dbService.GetTx()
+	if err != nil {
+		return fmt.Errorf("failed to open tx: %w", err)
+	}
+
+	s := sqlbuilder.DeleteFrom("roles")
+	s.Where(s.Equal("id", id))
+
+	query, args := s.Build()
+	logging.Logger.Debug("executing sql: ", query)
+	_, err = tx.ExecContext(ctx, query, args...)
+	if err != nil {
+		return fmt.Errorf("executing sql: %w", err)
+	}
+
 	return nil
 }
