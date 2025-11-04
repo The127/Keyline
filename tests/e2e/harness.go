@@ -26,12 +26,20 @@ import (
 	"golang.org/x/oauth2"
 )
 
+const (
+	serviceUserPublicKey  = "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEA3M7NYNpucIwsMNDHPswe1yvLtMzIau2ddMB2FX40few=\n-----END PUBLIC KEY-----\n"
+	serviceUserPrivateKey = "-----BEGIN PRIVATE KEY-----\nMFECAQEwBQYDK2VwBCIEIDlOHCg/gH43TB4S1n/2g33iti99sEkEFYwVdAkyKoqw\ngSEA3M7NYNpucIwsMNDHPswe1yvLtMzIau2ddMB2FX40few=\n-----END PRIVATE KEY-----\n"
+)
+
 type harness struct {
-	c       client.Client
-	ctx     context.Context
-	setTime clock.TimeSetterFn
-	dbName  string
-	scope   *ioc.DependencyProvider
+	c              client.Client
+	ctx            context.Context
+	setTime        clock.TimeSetterFn
+	dbName         string
+	scope          *ioc.DependencyProvider
+	serverUrl      string
+	serviceUserId  uuid.UUID
+	serviceUserKid string
 }
 
 func (h *harness) SetTime(t time.Time) {
@@ -48,6 +56,14 @@ func (h *harness) Ctx() context.Context {
 
 func (h *harness) Client() client.Client {
 	return h.c
+}
+
+func (h *harness) ServiceUserId() uuid.UUID {
+	return h.serviceUserId
+}
+
+func (h *harness) ServiceUserKid() string {
+	return h.serviceUserKid
 }
 
 func (h *harness) Close() {
@@ -72,6 +88,10 @@ func (h *harness) Close() {
 	}
 
 	utils.PanicOnError(db.Close, "closing initial db connection in test")
+}
+
+func (h *harness) ApiUrl() string {
+	return h.serverUrl
 }
 
 func newE2eTestHarness(tokenSourceGenerator func(ctx context.Context, url string) oauth2.TokenSource) *harness {
@@ -136,21 +156,29 @@ func newE2eTestHarness(tokenSourceGenerator func(ctx context.Context, url string
 
 	c := client.NewClient(serverConfig.ExternalUrl, "test-vs", opts...)
 
-	err = initTest(scope)
+	res, err := initTest(scope)
 	if err != nil {
 		panic(fmt.Errorf("failed to initialize test: %w", err))
 	}
 
 	return &harness{
-		c:       c,
-		scope:   scope,
-		ctx:     ctx,
-		setTime: timeSetter,
-		dbName:  dbName,
+		c:              c,
+		scope:          scope,
+		ctx:            ctx,
+		setTime:        timeSetter,
+		dbName:         dbName,
+		serverUrl:      serverConfig.ExternalUrl,
+		serviceUserKid: res.kid,
+		serviceUserId:  res.serviceUserId,
 	}
 }
 
-func initTest(dp *ioc.DependencyProvider) (err error) {
+type initResult struct {
+	serviceUserId uuid.UUID
+	kid           string
+}
+
+func initTest(dp *ioc.DependencyProvider) (*initResult, error) {
 	scope := dp.NewScope()
 
 	ctx := middlewares.ContextWithScope(context.Background(), scope)
@@ -164,7 +192,7 @@ func initTest(dp *ioc.DependencyProvider) (err error) {
 		SigningAlgorithm:   config.SigningAlgorithmEdDSA,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to create initial virtual server: %v", err)
+		return nil, fmt.Errorf("failed to create initial virtual server: %v", err)
 	}
 
 	initialAdminUserInfo, err := mediator.Send[*commands.CreateUserResponse](ctx, m, commands.CreateUser{
@@ -175,7 +203,7 @@ func initTest(dp *ioc.DependencyProvider) (err error) {
 		EmailVerified:     true,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to create initial admin user: %v", err)
+		return nil, fmt.Errorf("failed to create initial admin user: %v", err)
 	}
 
 	credentialRepository := ioc.GetDependency[repositories.CredentialRepository](scope)
@@ -185,7 +213,7 @@ func initTest(dp *ioc.DependencyProvider) (err error) {
 	})
 	err = credentialRepository.Insert(ctx, initialAdminCredential)
 	if err != nil {
-		return fmt.Errorf("failed to create initial admin credential: %v", err)
+		return nil, fmt.Errorf("failed to create initial admin credential: %v", err)
 	}
 
 	_, err = mediator.Send[*commands.AssignRoleToUserResponse](ctx, m, commands.AssignRoleToUser{
@@ -195,10 +223,40 @@ func initTest(dp *ioc.DependencyProvider) (err error) {
 		RoleId:            createVirtualServerResponse.AdminRoleId,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to assign admin role to initial admin user: %v", err)
+		return nil, fmt.Errorf("failed to assign admin role to initial admin user: %v", err)
 	}
 
-	return scope.Close()
+	serviceUserResponse, err := mediator.Send[*commands.CreateServiceUserResponse](ctx, m, commands.CreateServiceUser{
+		VirtualServerName: "test-vs",
+		Username:          "service-user",
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create initial service user: %v", err)
+	}
+
+	_, err = mediator.Send[*commands.AssignRoleToUserResponse](ctx, m, commands.AssignRoleToUser{
+		VirtualServerName: "test-vs",
+		ProjectSlug:       createVirtualServerResponse.SystemProjectSlug,
+		UserId:            serviceUserResponse.Id,
+		RoleId:            createVirtualServerResponse.AdminRoleId,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to assign admin role to service user: %v", err)
+	}
+
+	keyResponse, err := mediator.Send[*commands.AssociateServiceUserPublicKeyResponse](ctx, m, commands.AssociateServiceUserPublicKey{
+		VirtualServerName: "test-vs",
+		ServiceUserId:     serviceUserResponse.Id,
+		PublicKey:         serviceUserPublicKey,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to associate service user public key: %v", err)
+	}
+
+	return &initResult{
+		serviceUserId: serviceUserResponse.Id,
+		kid:           keyResponse.Id.String(),
+	}, scope.Close()
 }
 
 var nextPort = 25000
