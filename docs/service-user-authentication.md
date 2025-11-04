@@ -11,7 +11,7 @@ Service user authentication in Keyline uses the following flow:
 3. **Create and sign a JWT** - The service application creates a JWT signed with its private key
 4. **Exchange for access token** - The signed JWT is exchanged for an access token via the token endpoint
 
-This approach is based on the [OAuth 2.0 Token Exchange (RFC 8863)](https://datatracker.ietf.org/doc/html/rfc8693) specification and is ideal for:
+This approach is based on the [OAuth 2.0 Token Exchange (RFC 8693)](https://datatracker.ietf.org/doc/html/rfc8693) specification and is ideal for:
 
 - Service-to-service authentication
 - CI/CD pipelines
