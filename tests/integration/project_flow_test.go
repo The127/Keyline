@@ -62,7 +62,7 @@ var _ = Describe("Project flow", Ordered, func() {
 		Expect(err).ToNot(HaveOccurred())
 	})
 
-	It("should refelct the updated values", func() {
+	It("should reflect the updated values", func() {
 		req := queries.GetProject{
 			VirtualServerName: h.VirtualServer(),
 			ProjectSlug:       projectSlug,
