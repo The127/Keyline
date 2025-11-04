@@ -15,16 +15,16 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-type PatchProjectComamndSuite struct {
+type PatchProjectCommandSuite struct {
 	suite.Suite
 }
 
 func TestPatchProjectCommandSuite(t *testing.T) {
 	t.Parallel()
-	suite.Run(t, new(PatchProjectComamndSuite))
+	suite.Run(t, new(PatchProjectCommandSuite))
 }
 
-func (s *PatchProjectComamndSuite) createContext(
+func (s *PatchProjectCommandSuite) createContext(
 	virtualServerRepository repositories.VirtualServerRepository,
 	projectRepository repositories.ProjectRepository,
 ) context.Context {
@@ -50,7 +50,7 @@ func (s *PatchProjectComamndSuite) createContext(
 	return middlewares.ContextWithScope(s.T().Context(), scope)
 }
 
-func (s *PatchProjectComamndSuite) TestHappyPath() {
+func (s *PatchProjectCommandSuite) TestHappyPath() {
 	// arrange
 	ctrl := gomock.NewController(s.T())
 	defer ctrl.Finish()
@@ -90,7 +90,7 @@ func (s *PatchProjectComamndSuite) TestHappyPath() {
 	s.NotNil(resp)
 }
 
-func (s *PatchProjectComamndSuite) TestUpdateError() {
+func (s *PatchProjectCommandSuite) TestUpdateError() {
 	// arrange
 	ctrl := gomock.NewController(s.T())
 	defer ctrl.Finish()
@@ -115,7 +115,7 @@ func (s *PatchProjectComamndSuite) TestUpdateError() {
 	s.Nil(resp)
 }
 
-func (s *PatchProjectComamndSuite) TestProjectError() {
+func (s *PatchProjectCommandSuite) TestProjectError() {
 	// arrange
 	ctrl := gomock.NewController(s.T())
 	defer ctrl.Finish()
@@ -138,7 +138,7 @@ func (s *PatchProjectComamndSuite) TestProjectError() {
 	s.Nil(resp)
 }
 
-func (s *PatchProjectComamndSuite) TestVirtualServerError() {
+func (s *PatchProjectCommandSuite) TestVirtualServerError() {
 	// arrange
 	ctrl := gomock.NewController(s.T())
 	defer ctrl.Finish()
