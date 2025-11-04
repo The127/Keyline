@@ -86,4 +86,25 @@ var _ = Describe("Application flow", Ordered, func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(app.DisplayName).To(Equal("Updated Test App"))
 	})
+
+	It("should delete application successfully", func() {
+		cmd := commands.DeleteApplication{
+			VirtualServerName: h.VirtualServer(),
+			ProjectSlug:       projectSlug,
+			ApplicationId:     applicationId,
+		}
+		_, err := mediator.Send[*commands.DeleteApplicationResponse](h.Ctx(), h.Mediator(), cmd)
+		Expect(err).ToNot(HaveOccurred())
+	})
+
+	It("should not list deleted application", func() {
+		req := queries.ListApplications{
+			VirtualServerName: h.VirtualServer(),
+			ProjectSlug:       projectSlug,
+			SearchText:        "test-app",
+		}
+		response, err := mediator.Send[*queries.ListApplicationsResponse](h.Ctx(), h.Mediator(), req)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(response.Items).To(BeEmpty())
+	})
 })
