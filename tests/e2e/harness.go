@@ -23,6 +23,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/huandu/go-sqlbuilder"
+	"golang.org/x/oauth2"
 )
 
 type harness struct {
@@ -73,7 +74,7 @@ func (h *harness) Close() {
 	utils.PanicOnError(db.Close, "closing initial db connection in test")
 }
 
-func newE2eTestHarness() *harness {
+func newE2eTestHarness(tokenSourceGenerator func(ctx context.Context, url string) oauth2.TokenSource) *harness {
 	ctx := context.Background()
 	dc := ioc.NewDependencyCollection()
 	clockService, timeSetter := clock.NewMockServiceNow()
@@ -128,7 +129,12 @@ func newE2eTestHarness() *harness {
 	}
 	server.Serve(scope, serverConfig)
 
-	c := client.NewClient(serverConfig.ExternalUrl, "test-vs")
+	var opts []client.TransportOptions
+	if tokenSourceGenerator != nil {
+		opts = append(opts, client.WithOidc(tokenSourceGenerator(ctx, serverConfig.ExternalUrl)))
+	}
+
+	c := client.NewClient(serverConfig.ExternalUrl, "test-vs", opts...)
 
 	err = initTest(scope)
 	if err != nil {
