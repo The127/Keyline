@@ -71,7 +71,7 @@ func (s *PatchProjectCommandSuite) TestHappyPath() {
 		return x.GetSlug() == "project" && x.GetVirtualServerId() == virtualServer.Id()
 	})).Return(project, nil)
 	projectRepository.EXPECT().Update(gomock.Any(), gomock.Cond(func(x *repositories.Project) bool {
-		return project.Name() == "New Name" && project.Description() == "New Description"
+		return x.Name() == "New Name" && x.Description() == "New Description"
 	})).Return(nil)
 
 	ctx := s.createContext(virtualServerRepository, projectRepository)
