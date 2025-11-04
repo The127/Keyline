@@ -6,6 +6,8 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+
+	"golang.org/x/oauth2"
 )
 
 type ApiError struct {
@@ -29,6 +31,12 @@ func WithBaseURL(baseURL string) TransportOptions {
 	return func(t *Transport) {
 		t.baseURL = baseURL
 	}
+}
+
+func WithOidc(tokenSource oauth2.TokenSource) TransportOptions {
+	return WithRoundTripper(func(next http.RoundTripper) http.RoundTripper {
+		return NewOIDCRoundTripper(next, tokenSource)
+	})
 }
 
 func WithRoundTripper(roundTripperFactory func(next http.RoundTripper) http.RoundTripper) TransportOptions {
