@@ -21,13 +21,7 @@ var _ = Describe("Application flow", Ordered, func() {
 
 	BeforeAll(func() {
 		h = newIntegrationTestHarness()
-	})
 
-	AfterAll(func() {
-		h.Close()
-	})
-
-	It("should create a project successfully", func() {
 		req := commands.CreateProject{
 			VirtualServerName: h.VirtualServer(),
 			Slug:              projectSlug,
@@ -36,6 +30,10 @@ var _ = Describe("Application flow", Ordered, func() {
 		}
 		_, err := mediator.Send[*commands.CreateProjectResponse](h.Ctx(), h.Mediator(), req)
 		Expect(err).ToNot(HaveOccurred())
+	})
+
+	AfterAll(func() {
+		h.Close()
 	})
 
 	It("should persist public application successfully", func() {
