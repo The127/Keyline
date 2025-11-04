@@ -14,6 +14,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	uuid "github.com/google/uuid"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -39,6 +40,20 @@ func NewMockRoleRepository(ctrl *gomock.Controller) *MockRoleRepository {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockRoleRepository) EXPECT() *MockRoleRepositoryMockRecorder {
 	return m.recorder
+}
+
+// Delete mocks base method.
+func (m *MockRoleRepository) Delete(ctx context.Context, id uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Delete", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Delete indicates an expected call of Delete.
+func (mr *MockRoleRepositoryMockRecorder) Delete(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockRoleRepository)(nil).Delete), ctx, id)
 }
 
 // First mocks base method.
@@ -99,4 +114,18 @@ func (m *MockRoleRepository) Single(ctx context.Context, filter repositories.Rol
 func (mr *MockRoleRepositoryMockRecorder) Single(ctx, filter any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Single", reflect.TypeOf((*MockRoleRepository)(nil).Single), ctx, filter)
+}
+
+// Update mocks base method.
+func (m *MockRoleRepository) Update(ctx context.Context, role *repositories.Role) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Update", ctx, role)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Update indicates an expected call of Update.
+func (mr *MockRoleRepositoryMockRecorder) Update(ctx, role any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockRoleRepository)(nil).Update), ctx, role)
 }
