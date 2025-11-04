@@ -12,9 +12,11 @@ import (
 	"Keyline/utils"
 	"context"
 	"crypto/rsa"
+	"crypto/x509"
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -1592,7 +1594,18 @@ func handleTokenExchange(w http.ResponseWriter, r *http.Request) {
 			return nil, fmt.Errorf("getting service user key details: %w", err)
 		}
 
-		return serviceUserKeyDetails.PublicKey, nil
+		block, _ := pem.Decode([]byte(serviceUserKeyDetails.PublicKey))
+		if block == nil {
+			return nil, fmt.Errorf("failed to decode PEM block")
+		}
+
+		// Parse PKIX
+		pubKey, err := x509.ParsePKIXPublicKey(block.Bytes)
+		if err != nil {
+			return nil, fmt.Errorf("parse public key: %w", err)
+		}
+
+		return pubKey, nil
 	})
 	if err != nil {
 		utils.HandleHttpError(w, fmt.Errorf("parsing subject token: %w", err))
