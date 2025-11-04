@@ -90,7 +90,7 @@ func (h *harness) Close() {
 	utils.PanicOnError(db.Close, "closing initial db connection in test")
 }
 
-func (h *harness) ApiUrl() any {
+func (h *harness) ApiUrl() string {
 	return h.serverUrl
 }
 
