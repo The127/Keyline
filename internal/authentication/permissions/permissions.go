@@ -15,6 +15,7 @@ const (
 	GroupView Permission = "group:view"
 
 	RoleCreate Permission = "role:create"
+	RoleUpdate Permission = "role:update"
 	RoleAssign Permission = "role:assign"
 	RoleView   Permission = "role:view"
 

@@ -194,4 +194,6 @@ type RoleRepository interface {
 	Single(ctx context.Context, filter RoleFilter) (*Role, error)
 	First(ctx context.Context, filter RoleFilter) (*Role, error)
 	Insert(ctx context.Context, role *Role) error
+	Update(ctx context.Context, role *Role) error
+	Delete(ctx context.Context, id uuid.UUID) error
 }

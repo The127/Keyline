@@ -41,6 +41,7 @@ func Mediator(dc *ioc.DependencyCollection) {
 	mediator.RegisterHandler(m, queries.HandleListPasskeys)
 
 	mediator.RegisterHandler(m, commands.HandleCreateResourceServer)
+	mediator.RegisterHandler(m, commands.HandlePatchResourceServer)
 	mediator.RegisterHandler(m, queries.HandleListResourceServers)
 	mediator.RegisterHandler(m, queries.HandleGetResourceServer)
 
@@ -57,10 +58,12 @@ func Mediator(dc *ioc.DependencyCollection) {
 	mediator.RegisterHandler(m, commands.HandleCreateProject)
 	mediator.RegisterHandler(m, queries.HandleListProjects)
 	mediator.RegisterHandler(m, queries.HandleGetProject)
+	mediator.RegisterHandler(m, commands.HandlePatchProject)
 
 	mediator.RegisterHandler(m, queries.HandleListRoles)
 	mediator.RegisterHandler(m, queries.HandleGetRole)
 	mediator.RegisterHandler(m, commands.HandleCreateRole)
+	mediator.RegisterHandler(m, commands.HandlePatchRole)
 	mediator.RegisterHandler(m, commands.HandleAssignRoleToUser)
 	mediator.RegisterHandler(m, queries.HandleListUsersInRole)
 
