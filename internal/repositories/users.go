@@ -52,6 +52,7 @@ func NewServiceUser(username string, virtualServerId uuid.UUID) *User {
 		username:        username,
 		displayName:     username,
 		serviceUser:     true,
+		metadata:        "{}",
 	}
 }
 
