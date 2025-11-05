@@ -1863,6 +1863,87 @@ const docTemplate = `{
             }
         },
         "/api/virtual-servers/{vsName}/projects/{projectSlug}/resource-server/{resourceServerId}/scopes": {
+            "get": {
+                "description": "Retrieve a paginated list of resource server scopes",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Resource server scopes"
+                ],
+                "summary": "List resource server scopes",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "keyline",
+                        "description": "Virtual server name",
+                        "name": "vsName",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Project slug",
+                        "name": "projectSlug",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Resource server ID (UUID)",
+                        "name": "resourceServerId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size",
+                        "name": "pageSize",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order by field",
+                        "name": "orderBy",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order direction (asc|desc)",
+                        "name": "orderDir",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search term",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.PagedResourceServerScopeResponseDto"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            },
             "post": {
                 "description": "Create a new scope for a resource server",
                 "consumes": [
@@ -1872,7 +1953,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Resource servers scopes"
+                    "Resource server scopes"
                 ],
                 "summary": "Create resource server scope",
                 "parameters": [
@@ -1917,6 +1998,69 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/virtual-servers/{vsName}/projects/{projectSlug}/resource-server/{resourceServerId}/scopes/{scopeId}": {
+            "get": {
+                "description": "Get a resource server scope by ID from a project",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Resource server scopes"
+                ],
+                "summary": "Get resource server scope",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "keyline",
+                        "description": "Virtual server name",
+                        "name": "vsName",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Project slug",
+                        "name": "projectSlug",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Resource server ID (UUID)",
+                        "name": "resourceServerId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Scope ID (UUID)",
+                        "name": "scopeId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.GetResourceServerScopeResponseDto"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "404": {
+                        "description": "Resource server scope not found"
                     },
                     "500": {
                         "description": "Internal Server Error"
@@ -3219,7 +3363,8 @@ const docTemplate = `{
         "handlers.CreateResourceServerRequestDto": {
             "type": "object",
             "required": [
-                "name"
+                "name",
+                "slug"
             ],
             "properties": {
                 "description": {
@@ -3227,6 +3372,11 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
+                },
+                "slug": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
                 }
             }
         },
@@ -3416,6 +3566,32 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "name": {
+                    "type": "string"
+                },
+                "slug": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.GetResourceServerScopeResponseDto": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "scope": {
                     "type": "string"
                 },
                 "updatedAt": {
@@ -3663,6 +3839,20 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.ListResourceServerScopesResponseDto": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "scope": {
+                    "type": "string"
+                }
+            }
+        },
         "handlers.ListResourceServersResponseDto": {
             "type": "object",
             "properties": {
@@ -3670,6 +3860,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "name": {
+                    "type": "string"
+                },
+                "slug": {
                     "type": "string"
                 }
             }
@@ -3886,6 +4079,20 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/handlers.ListProjectsResponseDto"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/handlers.Pagination"
+                }
+            }
+        },
+        "handlers.PagedResourceServerScopeResponseDto": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.ListResourceServerScopesResponseDto"
                     }
                 },
                 "pagination": {

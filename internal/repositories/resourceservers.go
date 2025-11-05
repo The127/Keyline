@@ -13,15 +13,17 @@ type ResourceServer struct {
 	virtualServerId uuid.UUID
 	projectId       uuid.UUID
 
+	slug        string
 	name        string
 	description string
 }
 
-func NewResourceServer(virtualServerId uuid.UUID, projectId uuid.UUID, name string, description string) *ResourceServer {
+func NewResourceServer(virtualServerId uuid.UUID, projectId uuid.UUID, slug string, name string, description string) *ResourceServer {
 	return &ResourceServer{
 		ModelBase:       NewModelBase(),
 		virtualServerId: virtualServerId,
 		projectId:       projectId,
+		slug:            slug,
 		name:            name,
 		description:     description,
 	}
@@ -35,9 +37,14 @@ func (r *ResourceServer) GetScanPointers() []any {
 		&r.version,
 		&r.virtualServerId,
 		&r.projectId,
+		&r.slug,
 		&r.name,
 		&r.description,
 	}
+}
+
+func (r *ResourceServer) Slug() string {
+	return r.slug
 }
 
 func (r *ResourceServer) Name() string {
@@ -72,6 +79,7 @@ type ResourceServerFilter struct {
 	virtualServerId *uuid.UUID
 	projectId       *uuid.UUID
 	id              *uuid.UUID
+	slug            *string
 	searchFilter    *SearchFilter
 }
 
@@ -95,6 +103,20 @@ func (f ResourceServerFilter) HasId() bool {
 
 func (f ResourceServerFilter) GetId() uuid.UUID {
 	return utils.ZeroIfNil(f.id)
+}
+
+func (f ResourceServerFilter) Slug(slug string) ResourceServerFilter {
+	filter := f.Clone()
+	filter.slug = &slug
+	return filter
+}
+
+func (f ResourceServerFilter) HasSlug() bool {
+	return f.slug != nil
+}
+
+func (f ResourceServerFilter) GetSlug() string {
+	return utils.ZeroIfNil(f.slug)
 }
 
 func (f ResourceServerFilter) VirtualServerId(virtualServerId uuid.UUID) ResourceServerFilter {

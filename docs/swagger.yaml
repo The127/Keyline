@@ -113,8 +113,13 @@ definitions:
         type: string
       name:
         type: string
+      slug:
+        maxLength: 255
+        minLength: 1
+        type: string
     required:
     - name
+    - slug
     type: object
   handlers.CreateResourceServerScopeRequestDto:
     properties:
@@ -244,6 +249,23 @@ definitions:
       id:
         type: string
       name:
+        type: string
+      slug:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  handlers.GetResourceServerScopeResponseDto:
+    properties:
+      createdAt:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      scope:
         type: string
       updatedAt:
         type: string
@@ -407,11 +429,22 @@ definitions:
       slug:
         type: string
     type: object
+  handlers.ListResourceServerScopesResponseDto:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      scope:
+        type: string
+    type: object
   handlers.ListResourceServersResponseDto:
     properties:
       id:
         type: string
       name:
+        type: string
+      slug:
         type: string
     type: object
   handlers.ListRolesResponseDto:
@@ -552,6 +585,15 @@ definitions:
       items:
         items:
           $ref: '#/definitions/handlers.ListProjectsResponseDto'
+        type: array
+      pagination:
+        $ref: '#/definitions/handlers.Pagination'
+    type: object
+  handlers.PagedResourceServerScopeResponseDto:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/handlers.ListResourceServerScopesResponseDto'
         type: array
       pagination:
         $ref: '#/definitions/handlers.Pagination'
@@ -1961,6 +2003,61 @@ paths:
       tags:
       - Applications
   /api/virtual-servers/{vsName}/projects/{projectSlug}/resource-server/{resourceServerId}/scopes:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a paginated list of resource server scopes
+      parameters:
+      - default: keyline
+        description: Virtual server name
+        in: path
+        name: vsName
+        required: true
+        type: string
+      - description: Project slug
+        in: path
+        name: projectSlug
+        required: true
+        type: string
+      - description: Resource server ID (UUID)
+        in: path
+        name: resourceServerId
+        required: true
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: pageSize
+        type: integer
+      - description: Order by field
+        in: query
+        name: orderBy
+        type: string
+      - description: Order direction (asc|desc)
+        in: query
+        name: orderDir
+        type: string
+      - description: Search term
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.PagedResourceServerScopeResponseDto'
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      summary: List resource server scopes
+      tags:
+      - Resource server scopes
     post:
       consumes:
       - application/json
@@ -2001,7 +2098,50 @@ paths:
           description: Internal Server Error
       summary: Create resource server scope
       tags:
-      - Resource servers scopes
+      - Resource server scopes
+  /api/virtual-servers/{vsName}/projects/{projectSlug}/resource-server/{resourceServerId}/scopes/{scopeId}:
+    get:
+      consumes:
+      - application/json
+      description: Get a resource server scope by ID from a project
+      parameters:
+      - default: keyline
+        description: Virtual server name
+        in: path
+        name: vsName
+        required: true
+        type: string
+      - description: Project slug
+        in: path
+        name: projectSlug
+        required: true
+        type: string
+      - description: Resource server ID (UUID)
+        in: path
+        name: resourceServerId
+        required: true
+        type: string
+      - description: Scope ID (UUID)
+        in: path
+        name: scopeId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.GetResourceServerScopeResponseDto'
+        "400":
+          description: Bad Request
+        "404":
+          description: Resource server scope not found
+        "500":
+          description: Internal Server Error
+      summary: Get resource server scope
+      tags:
+      - Resource server scopes
   /api/virtual-servers/{vsName}/projects/{projectSlug}/resource-servers:
     get:
       consumes:

@@ -85,6 +85,7 @@ func (s *CreateResourceServerCommandSuite) TestHappyPath() {
 	cmd := CreateResourceServer{
 		VirtualServerName: virtualServer.Name(),
 		ProjectSlug:       project.Slug(),
+		Slug:              "slug",
 		Name:              "Name",
 		Description:       "Description",
 	}

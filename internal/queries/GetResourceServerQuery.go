@@ -37,6 +37,7 @@ func (a GetResourceServer) GetRequestName() string {
 
 type GetResourceServerResponse struct {
 	Id          uuid.UUID
+	Slug        string
 	Name        string
 	Description string
 	CreatedAt   time.Time
@@ -72,6 +73,7 @@ func HandleGetResourceServer(ctx context.Context, query GetResourceServer) (*Get
 
 	return &GetResourceServerResponse{
 		Id:          resourceServer.Id(),
+		Slug:        resourceServer.Slug(),
 		Name:        resourceServer.Name(),
 		Description: resourceServer.Description(),
 		CreatedAt:   resourceServer.AuditCreatedAt(),

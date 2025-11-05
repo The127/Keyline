@@ -30,6 +30,7 @@ func (r *resourceServerRepository) selectQuery(filter repositories.ResourceServe
 		"version",
 		"virtual_server_id",
 		"project_id",
+		"slug",
 		"name",
 		"description",
 	).From("resource_servers")
@@ -152,12 +153,14 @@ func (r *resourceServerRepository) Insert(ctx context.Context, resourceServer *r
 		Cols(
 			"virtual_server_id",
 			"project_id",
+			"slug",
 			"name",
 			"description",
 		).
 		Values(
 			resourceServer.VirtualServerId(),
 			resourceServer.ProjectId(),
+			resourceServer.Slug(),
 			resourceServer.Name(),
 			resourceServer.Description(),
 		).Returning("id", "audit_created_at", "audit_updated_at", "version")

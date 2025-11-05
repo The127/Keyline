@@ -39,7 +39,8 @@ var _ = Describe("ResourceServer flow", Ordered, func() {
 		req := commands.CreateResourceServer{
 			VirtualServerName: h.VirtualServer(),
 			ProjectSlug:       projectSlug,
-			Name:              "test-resource-server",
+			Slug:              "test-resource-server",
+			Name:              "Test Resource Server",
 			Description:       "Description",
 		}
 		response, err := mediator.Send[*commands.CreateResourceServerResponse](h.Ctx(), h.Mediator(), req)
@@ -57,7 +58,8 @@ var _ = Describe("ResourceServer flow", Ordered, func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(resp.Items).To(ContainElement(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
 			"Id":   Equal(resourceServerId),
-			"Name": Equal("test-resource-server"),
+			"Slug": Equal("test-resource-server"),
+			"Name": Equal("Test Resource Server"),
 		})))
 	})
 

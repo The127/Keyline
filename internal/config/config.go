@@ -141,6 +141,7 @@ type InitialProjectConfig struct {
 		PostLogoutRedirectUris []string
 	}
 	ResourceServers []struct {
+		Slug        string
 		Name        string
 		Description string
 	}
@@ -403,8 +404,11 @@ func setInitialResourceServersDefaultsOrPanic(project *InitialProjectConfig) {
 	for i := range project.ResourceServers {
 		resourceServer := &project.ResourceServers[i]
 
+		if resourceServer.Slug == "" {
+			panic("missing resource server slug")
+		}
 		if resourceServer.Name == "" {
-			panic("missing resource server name")
+			resourceServer.Name = resourceServer.Slug
 		}
 		if resourceServer.Description == "" {
 			resourceServer.Description = resourceServer.Name

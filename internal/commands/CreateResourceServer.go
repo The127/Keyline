@@ -15,6 +15,7 @@ import (
 type CreateResourceServer struct {
 	VirtualServerName string
 	ProjectSlug       string
+	Slug              string
 	Name              string
 	Description       string
 }
@@ -57,7 +58,7 @@ func HandleCreateResourceServer(ctx context.Context, command CreateResourceServe
 	}
 
 	resourceServerRepository := ioc.GetDependency[repositories.ResourceServerRepository](scope)
-	resourceServer := repositories.NewResourceServer(virtualServer.Id(), project.Id(), command.Name, command.Description)
+	resourceServer := repositories.NewResourceServer(virtualServer.Id(), project.Id(), command.Slug, command.Name, command.Description)
 	err = resourceServerRepository.Insert(ctx, resourceServer)
 	if err != nil {
 		return nil, fmt.Errorf("inserting resource server: %w", err)
