@@ -80,6 +80,7 @@ type PagedResourceServersResponseDto = PagedResponseDto[ListResourceServersRespo
 
 type ListResourceServersResponseDto struct {
 	Id   uuid.UUID `json:"id"`
+	Slug string    `json:"slug"`
 	Name string    `json:"name"`
 }
 
@@ -133,6 +134,7 @@ func ListResourceServers(w http.ResponseWriter, r *http.Request) {
 	items := utils.MapSlice(resourceServers.Items, func(x queries.ListResourceServersResponseItem) ListResourceServersResponseDto {
 		return ListResourceServersResponseDto{
 			Id:   x.Id,
+			Slug: x.Slug,
 			Name: x.Name,
 		}
 	})
@@ -152,6 +154,7 @@ func ListResourceServers(w http.ResponseWriter, r *http.Request) {
 
 type GetResourceServerResponseDto struct {
 	Id          uuid.UUID `json:"id"`
+	Slug        string    `json:"slug"`
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
 	CreatedAt   time.Time `json:"createdAt"`
@@ -208,6 +211,7 @@ func GetResourceServer(w http.ResponseWriter, r *http.Request) {
 
 	err = json.NewEncoder(w).Encode(GetResourceServerResponseDto{
 		Id:          resourceServer.Id,
+		Slug:        resourceServer.Slug,
 		Name:        resourceServer.Name,
 		Description: resourceServer.Description,
 		CreatedAt:   resourceServer.CreatedAt,

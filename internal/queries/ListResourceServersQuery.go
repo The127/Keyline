@@ -42,6 +42,7 @@ type ListResourceServersResponse struct {
 
 type ListResourceServersResponseItem struct {
 	Id   uuid.UUID
+	Slug string
 	Name string
 }
 
@@ -75,6 +76,7 @@ func HandleListResourceServers(ctx context.Context, query ListResourceServers) (
 	items := utils.MapSlice(resourceServers, func(x *repositories.ResourceServer) ListResourceServersResponseItem {
 		return ListResourceServersResponseItem{
 			Id:   x.Id(),
+			Slug: x.Slug(),
 			Name: x.Name(),
 		}
 	})
