@@ -101,6 +101,7 @@ Components communicate through the mediator, not directly. This makes the system
 - [Configuration Documentation](../../internal/config/README.md) - Configuration management
 - [E2E Testing Documentation](../../tests/e2e/README.md) - End-to-end testing guide
 - [API Client Documentation](../../client/README.md) - Using the API client
+- [Service User Authentication](../service-user-authentication.md) - Machine-to-machine authentication guide
 
 ### External Resources
 - [Clean Architecture by Robert Martin](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)

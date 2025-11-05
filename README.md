@@ -414,6 +414,7 @@ go test -tags=e2e ./tests/e2e/...
 For detailed information about testing:
 - [E2E Tests Documentation](tests/e2e/README.md) - Complete guide to end-to-end testing
 - [API Client Documentation](client/README.md) - Learn how to use the Keyline API client
+- [Service User Authentication](docs/service-user-authentication.md) - Guide for machine-to-machine authentication
 
 ### Linting
 
