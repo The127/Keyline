@@ -78,7 +78,7 @@ func (s *PatchResourceServerCommandSuite) TestHappyPath() {
 		return x.GetSlug() == "project" && x.GetVirtualServerId() == virtualServer.Id()
 	})).Return(project, nil)
 
-	resourceServer := repositories.NewResourceServer(virtualServer.Id(), project.Id(), "resourceServer", "Resource Server")
+	resourceServer := repositories.NewResourceServer(virtualServer.Id(), project.Id(), "slug", "resourceServer", "Resource Server")
 	resourceServer.Mock(now)
 	resourceServerRepository := mocks.NewMockResourceServerRepository(ctrl)
 	resourceServerRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories.ResourceServerFilter) bool {
@@ -120,7 +120,7 @@ func (s *PatchResourceServerCommandSuite) TestUpdateError() {
 	projectRepository := mocks.NewMockProjectRepository(ctrl)
 	projectRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(project, nil)
 
-	resourceServer := repositories.NewResourceServer(virtualServer.Id(), project.Id(), "resourceServer", "Resource Server")
+	resourceServer := repositories.NewResourceServer(virtualServer.Id(), project.Id(), "slug", "resourceServer", "Resource Server")
 	resourceServerRepository := mocks.NewMockResourceServerRepository(ctrl)
 	resourceServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(resourceServer, nil)
 	resourceServerRepository.EXPECT().Update(gomock.Any(), gomock.Any()).Return(errors.New("error"))
