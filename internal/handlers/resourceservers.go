@@ -16,6 +16,7 @@ import (
 )
 
 type CreateResourceServerRequestDto struct {
+	Slug        string `json:"slug" validate:"required,min=1,max=255"`
 	Name        string `json:"name" validate:"required"`
 	Description string `json:"description"`
 }
@@ -63,6 +64,7 @@ func CreateResourceServer(w http.ResponseWriter, r *http.Request) {
 	_, err = mediator.Send[*commands.CreateResourceServerResponse](ctx, m, commands.CreateResourceServer{
 		VirtualServerName: vsName,
 		ProjectSlug:       projectSlug,
+		Slug:              requestDto.Slug,
 		Name:              requestDto.Name,
 		Description:       requestDto.Description,
 	})

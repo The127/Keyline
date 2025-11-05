@@ -39,7 +39,8 @@ var _ = Describe("ResourceServer flow", Ordered, func() {
 		req := commands.CreateResourceServer{
 			VirtualServerName: h.VirtualServer(),
 			ProjectSlug:       projectSlug,
-			Name:              "test-resource-server",
+			Slug:              "test-resource-server",
+			Name:              "Test Resource Server",
 			Description:       "Description",
 		}
 		response, err := mediator.Send[*commands.CreateResourceServerResponse](h.Ctx(), h.Mediator(), req)

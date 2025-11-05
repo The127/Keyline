@@ -212,6 +212,7 @@ func initApplication(dp *ioc.DependencyProvider) {
 			_, err := mediator.Send[*commands.CreateResourceServerResponse](ctx, m, commands.CreateResourceServer{
 				VirtualServerName: config.C.InitialVirtualServer.Name,
 				ProjectSlug:       projectConfig.Slug,
+				Slug:              resourceServerConfig.Slug,
 				Name:              resourceServerConfig.Name,
 				Description:       resourceServerConfig.Description,
 			})
