@@ -3,10 +3,10 @@ package services
 import (
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
-	"Keyline/ioc"
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/The127/ioc"
 	"html/template"
 
 	"github.com/google/uuid"

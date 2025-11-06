@@ -16,9 +16,9 @@ This guide walks you through the day-to-day development workflow for contributin
 
 ### Prerequisites
 
-1. **Go 1.24 or higher**
+1. **Go 1.25 or higher**
    ```bash
-   go version  # Should be >= 1.24
+   go version  # Should be >= 1.25
    ```
 
 2. **Just** (command runner)
@@ -179,8 +179,8 @@ import (
     "Keyline/internal/middlewares"
     "Keyline/internal/repositories"
     "Keyline/internal/events"
-    "Keyline/ioc"
-    "Keyline/mediator"
+    "github.com/The127/ioc"
+    "github.com/The127/mediatr"
     "github.com/google/uuid"
 )
 
@@ -225,7 +225,7 @@ func HandleDeactivateUser(
     // Get scope and dependencies
     scope := middlewares.GetScope(ctx)
     userRepo := ioc.GetDependency[repositories.UserRepository](scope)
-    m := ioc.GetDependency[mediator.Mediator](scope)
+    m := ioc.GetDependency[mediatr.Mediator](scope)
     
     // Get user
     filter := repositories.NewUserFilter().Id(cmd.UserID)
@@ -242,7 +242,7 @@ func HandleDeactivateUser(
     }
     
     // Emit event for audit logging
-    _ = mediator.SendEvent(ctx, m, events.UserDeactivatedEvent{
+    _ = mediatr.SendEvent(ctx, m, events.UserDeactivatedEvent{
         UserID: cmd.UserID,
         Reason: cmd.Reason,
     })
@@ -271,11 +271,11 @@ type UserDeactivatedEvent struct {
 Add to `internal/setup/setup.go`:
 
 ```go
-func setupHandlers(m mediator.Mediator) {
+func setupHandlers(m mediatr.Mediator) {
     // ... existing commands ...
     
     // DeactivateUser command
-    mediator.RegisterHandler(m, commands.HandleDeactivateUser)
+    mediatr.RegisterHandler(m, commands.HandleDeactivateUser)
 }
 ```
 
@@ -293,9 +293,9 @@ import (
     "Keyline/internal/middlewares"
     "Keyline/internal/repositories"
     "Keyline/internal/repositories/mocks"
-    "Keyline/ioc"
-    "Keyline/mediator"
-    mediatormocks "Keyline/mediator/mocks"
+    "github.com/The127/ioc"
+    "github.com/The127/mediatr"
+    mediatormocks "github.com/The127/mediatr/mocks"
     "github.com/google/uuid"
     "github.com/stretchr/testify/suite"
     "go.uber.org/mock/gomock"
@@ -312,7 +312,7 @@ func TestDeactivateUserCommandSuite(t *testing.T) {
 
 func (s *DeactivateUserCommandSuite) createContext(
     userRepo repositories.UserRepository,
-    m mediator.Mediator,
+    m mediatr.Mediator,
 ) context.Context {
     dc := ioc.NewDependencyCollection()
     
@@ -323,7 +323,7 @@ func (s *DeactivateUserCommandSuite) createContext(
     }
     
     if m != nil {
-        ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) mediator.Mediator {
+        ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) mediatr.Mediator {
             return m
         })
     }
@@ -412,7 +412,7 @@ func (h *UserHandlers) DeactivateUser(w http.ResponseWriter, r *http.Request) {
     }
     json.NewDecoder(r.Body).Decode(&dto)
     
-    result, err := mediator.Send[commands.DeactivateUserResult](
+    result, err := mediatr.Send[commands.DeactivateUserResult](
         r.Context(),
         h.mediator,
         commands.DeactivateUserCommand{

@@ -3,8 +3,8 @@ package integration
 import (
 	"Keyline/internal/commands"
 	"Keyline/internal/queries"
-	"Keyline/mediator"
 	"Keyline/utils"
+	"github.com/The127/mediatr"
 
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
@@ -27,7 +27,7 @@ var _ = Describe("Role flow", Ordered, func() {
 			Name:              "Name",
 			Description:       "Description",
 		}
-		_, err := mediator.Send[*commands.CreateProjectResponse](h.Ctx(), h.Mediator(), req)
+		_, err := mediatr.Send[*commands.CreateProjectResponse](h.Ctx(), h.Mediator(), req)
 		Expect(err).ToNot(HaveOccurred())
 	})
 
@@ -42,7 +42,7 @@ var _ = Describe("Role flow", Ordered, func() {
 			Name:              "test-role",
 			Description:       "Description",
 		}
-		response, err := mediator.Send[*commands.CreateRoleResponse](h.Ctx(), h.Mediator(), req)
+		response, err := mediatr.Send[*commands.CreateRoleResponse](h.Ctx(), h.Mediator(), req)
 		Expect(err).ToNot(HaveOccurred())
 		roleId = response.Id
 	})
@@ -53,7 +53,7 @@ var _ = Describe("Role flow", Ordered, func() {
 			ProjectSlug:       projectSlug,
 			SearchText:        "test-role",
 		}
-		response, err := mediator.Send[*queries.ListRolesResponse](h.Ctx(), h.Mediator(), req)
+		response, err := mediatr.Send[*queries.ListRolesResponse](h.Ctx(), h.Mediator(), req)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(response.Items).To(ContainElement(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
 			"Id":   Equal(roleId),
@@ -69,7 +69,7 @@ var _ = Describe("Role flow", Ordered, func() {
 			Name:              utils.Ptr("Updated Name"),
 			Description:       utils.Ptr("Updated Description"),
 		}
-		_, err := mediator.Send[*commands.PatchRoleResponse](h.Ctx(), h.Mediator(), cmd)
+		_, err := mediatr.Send[*commands.PatchRoleResponse](h.Ctx(), h.Mediator(), cmd)
 		Expect(err).ToNot(HaveOccurred())
 	})
 
@@ -79,7 +79,7 @@ var _ = Describe("Role flow", Ordered, func() {
 			ProjectSlug:       projectSlug,
 			RoleId:            roleId,
 		}
-		resp, err := mediator.Send[*queries.GetRoleQueryResult](h.Ctx(), h.Mediator(), req)
+		resp, err := mediatr.Send[*queries.GetRoleQueryResult](h.Ctx(), h.Mediator(), req)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(resp.Name).To(Equal("Updated Name"))
 		Expect(resp.Description).To(Equal("Updated Description"))

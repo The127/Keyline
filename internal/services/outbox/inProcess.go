@@ -3,9 +3,9 @@ package outbox
 import (
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
-	"Keyline/ioc"
 	"context"
 	"fmt"
+	"github.com/The127/ioc"
 )
 
 type inProcessDeliveryService struct{}

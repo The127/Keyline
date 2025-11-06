@@ -2,11 +2,11 @@ package middlewares
 
 import (
 	"Keyline/internal/config"
-	"Keyline/ioc"
 	"Keyline/utils"
 	"context"
 	"errors"
 	"fmt"
+	"github.com/The127/ioc"
 	"net/http"
 	"time"
 

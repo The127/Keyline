@@ -96,7 +96,7 @@ HTTP Request
      ↓
 Handler (thin)
      ↓
-Mediator.Send(Command/Query)
+mediatr.Send(Command/Query)
      ↓
 Behavior Pipeline (validation, auth, logging)
      ↓
@@ -139,7 +139,7 @@ func HandleCreateUser(
     
     // Resolve dependencies
     userRepo := ioc.GetDependency[repositories.UserRepository](scope)
-    m := ioc.GetDependency[mediator.Mediator](scope)
+    m := ioc.GetDependency[mediatr.Mediator](scope)
     
     // Validate business rules
     if cmd.Username == "" {
@@ -160,7 +160,7 @@ func HandleCreateUser(
     }
     
     // Emit domain event (fire and forget)
-    _ = mediator.SendEvent(ctx, m, events.UserCreatedEvent{
+    _ = mediatr.SendEvent(ctx, m, events.UserCreatedEvent{
         UserID: user.Id(),
     })
     
@@ -176,11 +176,11 @@ func HandleCreateUser(
 Commands are registered during application startup in `internal/setup/setup.go`:
 
 ```go
-func Commands(m mediator.Mediator) {
+func Commands(m mediatr.Mediator) {
     // Register handler function directly with mediator
-    mediator.RegisterHandler(m, commands.HandleCreateUser)
-    mediator.RegisterHandler(m, commands.HandleUpdateUser)
-    mediator.RegisterHandler(m, commands.HandleDeleteUser)
+    mediatr.RegisterHandler(m, commands.HandleCreateUser)
+    mediatr.RegisterHandler(m, commands.HandleUpdateUser)
+    mediatr.RegisterHandler(m, commands.HandleDeleteUser)
     // ... more commands
 }
 ```
@@ -285,7 +285,7 @@ type PolicyMiddleware struct {
 func (p *PolicyMiddleware) Handle(
     ctx context.Context,
     request any,
-    next mediator.Next,
+    next mediatr.Next,
 ) (any, error) {
     // Before handler executes
     
@@ -316,7 +316,7 @@ func (p *PolicyMiddleware) Handle(
 ```go
 func Behaviours(dc *ioc.DependencyCollection) {
     ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) any {
-        m := ioc.GetDependency[mediator.Mediator](dp)
+        m := ioc.GetDependency[mediatr.Mediator](dp)
         userRepo := ioc.GetDependency[repositories.UserRepository](dp)
         
         behavior := &behaviours.PolicyMiddleware{
@@ -324,7 +324,7 @@ func Behaviours(dc *ioc.DependencyCollection) {
         }
         
         // Register behavior - it applies to all requests
-        mediator.RegisterBehaviour(m, behavior.Handle)
+        mediatr.RegisterBehaviour(m, behavior.Handle)
         return behavior
     })
 }
@@ -403,7 +403,7 @@ func HandleCreateUser(
     
     // Get dependencies
     userRepo := ioc.GetDependency[repositories.UserRepository](scope)
-    m := ioc.GetDependency[mediator.Mediator](scope)
+    m := ioc.GetDependency[mediatr.Mediator](scope)
     
     // Create user...
     user := repositories.NewUser(cmd.Username, cmd.DisplayName, cmd.Email, vsID)
@@ -413,7 +413,7 @@ func HandleCreateUser(
     }
     
     // Emit event (fire and forget - errors are logged but don't fail the command)
-    _ = mediator.SendEvent(ctx, m, UserCreatedEvent{
+    _ = mediatr.SendEvent(ctx, m, UserCreatedEvent{
         UserID: user.Id(),
     })
     
@@ -440,10 +440,10 @@ func (h *UserHandlers) RegisterUser(w http.ResponseWriter, r *http.Request) {
     json.NewDecoder(r.Body).Decode(&dto)
     
     scope := middlewares.GetScope(r.Context())
-    m := ioc.GetDependency[mediator.Mediator](scope)
+    m := ioc.GetDependency[mediatr.Mediator](scope)
     
     // Send command via mediator
-    result, err := mediator.Send[*commands.RegisterUserResponse](
+    result, err := mediatr.Send[*commands.RegisterUserResponse](
         r.Context(),
         m,
         commands.RegisterUser{
@@ -471,7 +471,7 @@ func HandleRegisterUser(
     
     vsRepo := ioc.GetDependency[repositories.VirtualServerRepository](scope)
     userRepo := ioc.GetDependency[repositories.UserRepository](scope)
-    m := ioc.GetDependency[mediator.Mediator](scope)
+    m := ioc.GetDependency[mediatr.Mediator](scope)
     
     // 1. Check if registration is enabled
     vs, err := vsRepo.First(ctx, repositories.NewVirtualServerFilter().Name(cmd.VirtualServerName))
@@ -500,7 +500,7 @@ func HandleRegisterUser(
     }
     
     // 4. Emit events
-    _ = mediator.SendEvent(ctx, m, events.UserCreatedEvent{
+    _ = mediatr.SendEvent(ctx, m, events.UserCreatedEvent{
         UserID: user.Id(),
     })
     
@@ -605,7 +605,7 @@ func HandleAssignRole(
     db := ioc.GetDependency[*sql.DB](scope)
     roleRepo := ioc.GetDependency[repositories.RoleRepository](scope)
     assignmentRepo := ioc.GetDependency[repositories.RoleAssignmentRepository](scope)
-    m := ioc.GetDependency[mediator.Mediator](scope)
+    m := ioc.GetDependency[mediatr.Mediator](scope)
     
     // Start transaction
     tx, err := db.BeginTx(ctx, nil)
@@ -636,7 +636,7 @@ func HandleAssignRole(
     }
     
     // 4. Emit event (after commit)
-    _ = mediator.SendEvent(ctx, m, events.RoleAssignedEvent{
+    _ = mediatr.SendEvent(ctx, m, events.RoleAssignedEvent{
         UserID: cmd.UserID,
         RoleID: cmd.RoleID,
     })
@@ -698,6 +698,5 @@ Now that you understand CQRS and the Mediator pattern:
 
 ## Additional Resources
 
-- [Mediator Package Documentation](../../mediator/README.md) - Deep dive into the mediator
 - [CQRS by Martin Fowler](https://martinfowler.com/bliki/CQRS.html)
 - [Mediator Pattern](https://refactoring.guru/design-patterns/mediator)

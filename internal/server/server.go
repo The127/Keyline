@@ -6,8 +6,8 @@ import (
 	"Keyline/internal/handlers"
 	"Keyline/internal/logging"
 	"Keyline/internal/middlewares"
-	"Keyline/ioc"
 	"fmt"
+	"github.com/The127/ioc"
 	"net/http"
 
 	gh "github.com/gorilla/handlers"

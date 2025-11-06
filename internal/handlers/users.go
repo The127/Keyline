@@ -9,12 +9,12 @@ import (
 	"Keyline/internal/queries"
 	"Keyline/internal/repositories"
 	"Keyline/internal/services/keyValue"
-	"Keyline/ioc"
-	"Keyline/mediator"
 	"Keyline/utils"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/The127/ioc"
+	"github.com/The127/mediatr"
 	"net/http"
 	"time"
 
@@ -49,9 +49,9 @@ func VerifyEmail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(r.Context())
-	m := ioc.GetDependency[mediator.Mediator](scope)
+	m := ioc.GetDependency[mediatr.Mediator](scope)
 
-	_, err = mediator.Send[*commands.VerifyEmailResponse](r.Context(), m, commands.VerifyEmail{
+	_, err = mediatr.Send[*commands.VerifyEmailResponse](r.Context(), m, commands.VerifyEmail{
 		VirtualServerName: vsName,
 		Token:             token,
 	})
@@ -103,9 +103,9 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[mediator.Mediator](scope)
+	m := ioc.GetDependency[mediatr.Mediator](scope)
 
-	_, err = mediator.Send[*commands.RegisterUserResponse](ctx, m, commands.RegisterUser{
+	_, err = mediatr.Send[*commands.RegisterUserResponse](ctx, m, commands.RegisterUser{
 		VirtualServerName: vsName,
 		Username:          dto.Username,
 		DisplayName:       dto.DisplayName,
@@ -160,9 +160,9 @@ func ListUsers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[mediator.Mediator](scope)
+	m := ioc.GetDependency[mediatr.Mediator](scope)
 
-	users, err := mediator.Send[*queries.ListUsersResponse](ctx, m, queries.ListUsers{
+	users, err := mediatr.Send[*queries.ListUsersResponse](ctx, m, queries.ListUsers{
 		VirtualServerName: vsName,
 		PagedQuery:        queryOps.ToPagedQuery(),
 		OrderedQuery:      queryOps.ToOrderedQuery(),
@@ -235,12 +235,12 @@ func GetUserById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m := ioc.GetDependency[mediator.Mediator](scope)
+	m := ioc.GetDependency[mediatr.Mediator](scope)
 	query := queries.GetUserQuery{
 		UserId:            userId,
 		VirtualServerName: vsName,
 	}
-	queryResult, err := mediator.Send[*queries.GetUserQueryResult](ctx, m, query)
+	queryResult, err := mediatr.Send[*queries.GetUserQueryResult](ctx, m, query)
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
@@ -301,13 +301,13 @@ func GetUserApplicationMetadata(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m := ioc.GetDependency[mediator.Mediator](scope)
+	m := ioc.GetDependency[mediatr.Mediator](scope)
 	query := queries.GetUserMetadata{
 		VirtualServerName: vsName,
 		UserId:            userId,
 		ApplicationIds:    utils.Ptr([]uuid.UUID{appId}),
 	}
-	response, err := mediator.Send[*queries.GetUserMetadataResult](ctx, m, query)
+	response, err := mediatr.Send[*queries.GetUserMetadataResult](ctx, m, query)
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
@@ -360,13 +360,13 @@ func GetUserGlobalMetadata(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m := ioc.GetDependency[mediator.Mediator](scope)
+	m := ioc.GetDependency[mediatr.Mediator](scope)
 	query := queries.GetUserMetadata{
 		VirtualServerName:     vsName,
 		UserId:                userId,
 		IncludeGlobalMetadata: true,
 	}
-	response, err := mediator.Send[*queries.GetUserMetadataResult](ctx, m, query)
+	response, err := mediatr.Send[*queries.GetUserMetadataResult](ctx, m, query)
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
@@ -421,14 +421,14 @@ func GetUserMetadata(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m := ioc.GetDependency[mediator.Mediator](scope)
+	m := ioc.GetDependency[mediatr.Mediator](scope)
 	query := queries.GetUserMetadata{
 		VirtualServerName:             vsName,
 		UserId:                        userId,
 		IncludeGlobalMetadata:         true,
 		IncludeAllApplicationMetadata: true,
 	}
-	response, err := mediator.Send[*queries.GetUserMetadataResult](ctx, m, query)
+	response, err := mediatr.Send[*queries.GetUserMetadataResult](ctx, m, query)
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
@@ -501,8 +501,8 @@ func UpdateUserGlobalMetadata(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m := ioc.GetDependency[mediator.Mediator](scope)
-	_, err = mediator.Send[*commands.UpdateUserMetadataResponse](ctx, m, commands.UpdateUserMetadata{
+	m := ioc.GetDependency[mediatr.Mediator](scope)
+	_, err = mediatr.Send[*commands.UpdateUserMetadataResponse](ctx, m, commands.UpdateUserMetadata{
 		VirtualServerName: vsName,
 		UserId:            userId,
 		Metadata:          dto,
@@ -553,8 +553,8 @@ func PatchUserGlobalMetadata(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m := ioc.GetDependency[mediator.Mediator](scope)
-	_, err = mediator.Send[*commands.PatchUserMetadataResponse](ctx, m, commands.PatchUserMetadata{
+	m := ioc.GetDependency[mediatr.Mediator](scope)
+	_, err = mediatr.Send[*commands.PatchUserMetadataResponse](ctx, m, commands.PatchUserMetadata{
 		VirtualServerName: vsName,
 		UserId:            userId,
 		Metadata:          dto,
@@ -610,8 +610,8 @@ func UpdateUserApplicationMetadata(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m := ioc.GetDependency[mediator.Mediator](scope)
-	_, err = mediator.Send[*commands.UpdateUserAppMetadataResponse](ctx, m, commands.UpdateUserAppMetadata{
+	m := ioc.GetDependency[mediatr.Mediator](scope)
+	_, err = mediatr.Send[*commands.UpdateUserAppMetadataResponse](ctx, m, commands.UpdateUserAppMetadata{
 		VirtualServerName: vsName,
 		UserId:            userId,
 		ApplicationId:     appId,
@@ -669,8 +669,8 @@ func PatchUserApplicationMetadata(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, err)
 	}
 
-	m := ioc.GetDependency[mediator.Mediator](scope)
-	_, err = mediator.Send[*commands.PatchUserAppMetadataResponse](ctx, m, commands.PatchUserAppMetadata{
+	m := ioc.GetDependency[mediatr.Mediator](scope)
+	_, err = mediatr.Send[*commands.PatchUserAppMetadataResponse](ctx, m, commands.PatchUserAppMetadata{
 		VirtualServerName: vsName,
 		UserId:            userId,
 		ApplicationId:     appId,
@@ -724,13 +724,13 @@ func PatchUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m := ioc.GetDependency[mediator.Mediator](scope)
+	m := ioc.GetDependency[mediatr.Mediator](scope)
 	command := commands.PatchUser{
 		UserId:            userId,
 		VirtualServerName: vsName,
 		DisplayName:       utils.TrimSpace(dto.DisplayName),
 	}
-	_, err = mediator.Send[*commands.PatchUserResponse](ctx, m, command)
+	_, err = mediatr.Send[*commands.PatchUserResponse](ctx, m, command)
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
@@ -779,9 +779,9 @@ func CreateServiceUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[mediator.Mediator](scope)
+	m := ioc.GetDependency[mediatr.Mediator](scope)
 
-	response, err := mediator.Send[*commands.CreateServiceUserResponse](ctx, m, commands.CreateServiceUser{
+	response, err := mediatr.Send[*commands.CreateServiceUserResponse](ctx, m, commands.CreateServiceUser{
 		VirtualServerName: vsName,
 		Username:          dto.Username,
 	})
@@ -846,9 +846,9 @@ func AssociateServiceUserPublicKey(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[mediator.Mediator](scope)
+	m := ioc.GetDependency[mediatr.Mediator](scope)
 
-	response, err := mediator.Send[*commands.AssociateServiceUserPublicKeyResponse](ctx, m, commands.AssociateServiceUserPublicKey{
+	response, err := mediatr.Send[*commands.AssociateServiceUserPublicKeyResponse](ctx, m, commands.AssociateServiceUserPublicKey{
 		VirtualServerName: vsName,
 		ServiceUserId:     serviceUserId,
 		PublicKey:         dto.PublicKey,
@@ -1039,9 +1039,9 @@ func ListPasskeys(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m := ioc.GetDependency[mediator.Mediator](scope)
+	m := ioc.GetDependency[mediatr.Mediator](scope)
 
-	passkeys, err := mediator.Send[*queries.ListPasskeysResponse](ctx, m, queries.ListPasskeys{
+	passkeys, err := mediatr.Send[*queries.ListPasskeysResponse](ctx, m, queries.ListPasskeys{
 		VirtualServerName: vsName,
 		UserId:            userId,
 	})

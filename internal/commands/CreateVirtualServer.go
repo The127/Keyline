@@ -8,10 +8,10 @@ import (
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/internal/services"
-	"Keyline/ioc"
 	"Keyline/templates"
 	"context"
 	"fmt"
+	"github.com/The127/ioc"
 
 	"github.com/google/uuid"
 )

@@ -109,14 +109,6 @@ Keyline/
 │   │
 │   └── ...                      # Other infrastructure
 │
-├── mediator/                    # Mediator pattern implementation
-│   ├── mediator.go              # Core mediator logic
-│   └── README.md                # Mediator documentation
-│
-├── ioc/                         # IoC container implementation
-│   ├── container.go             # Core IoC logic
-│   └── Readme.md                # IoC documentation
-│
 ├── client/                      # API client library
 │   └── client.go                # HTTP client for Keyline API
 │
@@ -153,7 +145,7 @@ func (h *UserHandlers) CreateUser(w http.ResponseWriter, r *http.Request) {
     json.NewDecoder(r.Body).Decode(&dto)
     
     // 2. Delegate to command via mediator
-    result, err := mediator.Send[CreateUserResult](r.Context(), h.mediator, 
+    result, err := mediatr.Send[CreateUserResult](r.Context(), h.mediator, 
         CreateUserCommand{...})
     
     // 3. Return HTTP response
@@ -169,8 +161,6 @@ func (h *UserHandlers) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 ### 2. Mediator Layer
 
-**Location**: `mediator/`
-
 **Responsibilities**:
 - Route requests to appropriate handlers
 - Execute behavior pipeline (validation, logging, auth)
@@ -179,7 +169,7 @@ func (h *UserHandlers) CreateUser(w http.ResponseWriter, r *http.Request) {
 **Key Points**:
 - Central hub for all commands, queries, and events
 - Enables cross-cutting concerns via behaviors
-- See [CQRS and Mediator Pattern](02-cqrs-and-mediator.md) for details
+- See [CQRS and Mediator Pattern](02-cqrs-and-mediatr.md) for details
 
 ### 3. Command Layer (Write Operations)
 
@@ -214,7 +204,7 @@ func (h *CreateUserHandler) Handle(ctx context.Context, cmd CreateUserCommand) (
     user := h.userRepo.Create(ctx, ...)
     
     // 3. Emit domain event
-    mediator.SendEvent(ctx, h.mediator, UserCreatedEvent{...})
+    mediatr.SendEvent(ctx, h.mediator, UserCreatedEvent{...})
     
     // 4. Return result
     return CreateUserResult{UserID: user.ID}, nil
@@ -354,14 +344,14 @@ POST /api/v1/users
 ↓
 UsersHandler.CreateUser()
 ↓
-mediator.Send(CreateUserCommand{...})
+mediatr.Send(CreateUserCommand{...})
 ↓
 [PolicyMiddleware validates permissions]
 ↓
 CreateUserHandler.Handle()
 ├─→ userRepo.Create() - Saves user to database
 ├─→ tokenService.Generate() - Creates verification token
-├─→ mediator.SendEvent(UserCreatedEvent{...})
+├─→ mediatr.SendEvent(UserCreatedEvent{...})
 │   └─→ EmailHandler sends welcome email (async)
 └─→ Returns CreateUserResult{UserID: ...}
 ↓
@@ -471,7 +461,7 @@ Handler returns HTTP 201 with user details
 
 Now that you understand the overall architecture:
 
-1. **Dive deeper into CQRS** → [CQRS and Mediator Pattern](02-cqrs-and-mediator.md)
+1. **Dive deeper into CQRS** → [CQRS and Mediator Pattern](02-cqrs-and-mediatr.md)
 2. **Learn about dependency injection** → [Dependency Injection with IoC](03-dependency-injection.md)
 3. **Start coding** → [Development Workflow](04-development-workflow.md)
 

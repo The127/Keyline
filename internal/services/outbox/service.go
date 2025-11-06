@@ -6,10 +6,10 @@ import (
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/internal/services"
-	"Keyline/ioc"
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/The127/ioc"
 
 	gomail "gopkg.in/mail.v2"
 )

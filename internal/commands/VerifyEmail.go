@@ -4,9 +4,9 @@ import (
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/internal/services"
-	"Keyline/ioc"
 	"context"
 	"fmt"
+	"github.com/The127/ioc"
 
 	"github.com/google/uuid"
 )

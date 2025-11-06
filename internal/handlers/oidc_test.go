@@ -9,9 +9,9 @@ import (
 	"Keyline/internal/services"
 	"Keyline/internal/services/claimsMapping"
 	serviceMocks "Keyline/internal/services/mocks"
-	"Keyline/ioc"
 	"Keyline/utils"
 	"context"
+	"github.com/The127/ioc"
 	"testing"
 	"time"
 

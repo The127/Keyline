@@ -3,8 +3,8 @@ package integration
 import (
 	"Keyline/internal/commands"
 	"Keyline/internal/queries"
-	"Keyline/mediator"
 	"Keyline/utils"
+	"github.com/The127/mediatr"
 
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
@@ -27,7 +27,7 @@ var _ = Describe("ResourceServer flow", Ordered, func() {
 			Name:              "Name",
 			Description:       "Description",
 		}
-		_, err := mediator.Send[*commands.CreateProjectResponse](h.Ctx(), h.Mediator(), req)
+		_, err := mediatr.Send[*commands.CreateProjectResponse](h.Ctx(), h.Mediator(), req)
 		Expect(err).ToNot(HaveOccurred())
 	})
 
@@ -43,7 +43,7 @@ var _ = Describe("ResourceServer flow", Ordered, func() {
 			Name:              "Test Resource Server",
 			Description:       "Description",
 		}
-		response, err := mediator.Send[*commands.CreateResourceServerResponse](h.Ctx(), h.Mediator(), req)
+		response, err := mediatr.Send[*commands.CreateResourceServerResponse](h.Ctx(), h.Mediator(), req)
 		Expect(err).ToNot(HaveOccurred())
 		resourceServerId = response.Id
 	})
@@ -54,7 +54,7 @@ var _ = Describe("ResourceServer flow", Ordered, func() {
 			ProjectSlug:       projectSlug,
 			SearchText:        "test-resource-server",
 		}
-		resp, err := mediator.Send[*queries.ListResourceServersResponse](h.Ctx(), h.Mediator(), req)
+		resp, err := mediatr.Send[*queries.ListResourceServersResponse](h.Ctx(), h.Mediator(), req)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(resp.Items).To(ContainElement(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
 			"Id":   Equal(resourceServerId),
@@ -70,7 +70,7 @@ var _ = Describe("ResourceServer flow", Ordered, func() {
 			ResourceServerId:  resourceServerId,
 			Name:              utils.Ptr("Updated Test Resource Server"),
 		}
-		_, err := mediator.Send[*commands.PatchResourceServerResponse](h.Ctx(), h.Mediator(), req)
+		_, err := mediatr.Send[*commands.PatchResourceServerResponse](h.Ctx(), h.Mediator(), req)
 		Expect(err).ToNot(HaveOccurred())
 	})
 
@@ -80,7 +80,7 @@ var _ = Describe("ResourceServer flow", Ordered, func() {
 			ProjectSlug:       projectSlug,
 			ResourceServerId:  resourceServerId,
 		}
-		resp, err := mediator.Send[*queries.GetResourceServerResponse](h.Ctx(), h.Mediator(), req)
+		resp, err := mediatr.Send[*queries.GetResourceServerResponse](h.Ctx(), h.Mediator(), req)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(resp.Name).To(Equal("Updated Test Resource Server"))
 	})

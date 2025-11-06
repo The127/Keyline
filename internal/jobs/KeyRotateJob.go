@@ -7,10 +7,10 @@ import (
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/internal/services"
-	"Keyline/ioc"
 	"Keyline/utils"
 	"context"
 	"fmt"
+	"github.com/The127/ioc"
 	"time"
 )
 

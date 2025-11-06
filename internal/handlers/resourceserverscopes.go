@@ -4,10 +4,10 @@ import (
 	"Keyline/internal/commands"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/queries"
-	"Keyline/ioc"
-	"Keyline/mediator"
 	"Keyline/utils"
 	"encoding/json"
+	"github.com/The127/ioc"
+	"github.com/The127/mediatr"
 	"net/http"
 	"time"
 
@@ -72,9 +72,9 @@ func CreateResourceServerScope(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[mediator.Mediator](scope)
+	m := ioc.GetDependency[mediatr.Mediator](scope)
 
-	response, err := mediator.Send[*commands.CreateResourceServerScopeResponse](ctx, m, commands.CreateResourceServerScope{
+	response, err := mediatr.Send[*commands.CreateResourceServerScopeResponse](ctx, m, commands.CreateResourceServerScope{
 		VirtualServerName: vsName,
 		ProjectSlug:       projectSlug,
 		ResourceServerId:  resourceServerId,
@@ -150,9 +150,9 @@ func ListResourceServerScopes(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[mediator.Mediator](scope)
+	m := ioc.GetDependency[mediatr.Mediator](scope)
 
-	scopes, err := mediator.Send[*queries.ListResourceServerScopesResponse](ctx, m, queries.ListRessouceServerScopes{
+	scopes, err := mediatr.Send[*queries.ListResourceServerScopesResponse](ctx, m, queries.ListRessouceServerScopes{
 		VirtualServerName: vsName,
 		ProjectSlug:       projectSlug,
 		ResourceServerId:  resourceServerId,
@@ -237,9 +237,9 @@ func GetResourceServerScope(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[mediator.Mediator](scope)
+	m := ioc.GetDependency[mediatr.Mediator](scope)
 
-	scopeResponse, err := mediator.Send[*queries.GetResourceServerScopeResponse](ctx, m, queries.GetResourceServerScope{
+	scopeResponse, err := mediatr.Send[*queries.GetResourceServerScopeResponse](ctx, m, queries.GetResourceServerScope{
 		VirtualServerName: vsName,
 		ProjectSlug:       projectSlug,
 		ResourceServerId:  resourceServerId,

@@ -6,11 +6,12 @@ import (
 	"Keyline/internal/authentication/roles"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
-	"Keyline/ioc"
-	"Keyline/mediator"
 	"Keyline/utils"
 	"context"
 	"fmt"
+	"github.com/The127/ioc"
+
+	"github.com/The127/mediatr"
 
 	"github.com/google/uuid"
 )
@@ -138,7 +139,7 @@ type Policy interface {
 	LogRequest() bool
 }
 
-func PolicyBehaviour(ctx context.Context, request Policy, next mediator.Next) (any, error) {
+func PolicyBehaviour(ctx context.Context, request Policy, next mediatr.Next) (any, error) {
 	policyResult, err := evaluatePolicy(ctx, request)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check if request is allowed: %w", err)

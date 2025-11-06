@@ -5,9 +5,9 @@ import (
 	"Keyline/internal/behaviours"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
-	"Keyline/ioc"
 	"context"
 	"fmt"
+	"github.com/The127/ioc"
 )
 
 type PatchProject struct {

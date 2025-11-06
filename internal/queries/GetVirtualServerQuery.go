@@ -6,8 +6,8 @@ import (
 	"Keyline/internal/config"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
-	"Keyline/ioc"
 	"context"
+	"github.com/The127/ioc"
 	"time"
 
 	"github.com/google/uuid"

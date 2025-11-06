@@ -7,10 +7,10 @@ import (
 	"Keyline/internal/repositories/mocks"
 	"Keyline/internal/services"
 	serviceMocks "Keyline/internal/services/mocks"
-	"Keyline/ioc"
 	"Keyline/utils"
 	"context"
 	"errors"
+	"github.com/The127/ioc"
 	"testing"
 
 	"github.com/stretchr/testify/suite"

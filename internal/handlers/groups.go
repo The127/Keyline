@@ -3,10 +3,10 @@ package handlers
 import (
 	"Keyline/internal/middlewares"
 	"Keyline/internal/queries"
-	"Keyline/ioc"
-	"Keyline/mediator"
 	"Keyline/utils"
 	"encoding/json"
+	"github.com/The127/ioc"
+	"github.com/The127/mediatr"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -51,9 +51,9 @@ func ListGroups(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[mediator.Mediator](scope)
+	m := ioc.GetDependency[mediatr.Mediator](scope)
 
-	groups, err := mediator.Send[*queries.ListGroupsResponse](ctx, m, queries.ListGroups{
+	groups, err := mediatr.Send[*queries.ListGroupsResponse](ctx, m, queries.ListGroups{
 		VirtualServerName: vsName,
 		PagedQuery:        queryOps.ToPagedQuery(),
 		OrderedQuery:      queryOps.ToOrderedQuery(),

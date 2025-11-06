@@ -5,7 +5,7 @@ Welcome to Keyline! This comprehensive onboarding guide will help you understand
 ## 📚 Table of Contents
 
 1. **[Architecture Overview](01-architecture-overview.md)** - Understand the big picture
-2. **[CQRS and Mediator Pattern](02-cqrs-and-mediator.md)** - Learn the core communication patterns
+2. **[CQRS and Mediator Pattern](02-cqrs-and-mediatr.md)** - Learn the core communication patterns
 3. **[Dependency Injection with IoC](03-dependency-injection.md)** - Understand how components are wired together
 4. **[Development Workflow](04-development-workflow.md)** - Get started with development
 5. **[Testing Guide](06-testing-guide.md)** - Write effective tests
@@ -19,7 +19,7 @@ Welcome to Keyline! This comprehensive onboarding guide will help you understand
    - Learn the folder structure
    - See how components interact
 
-2. Deep dive into [CQRS and Mediator](02-cqrs-and-mediator.md)
+2. Deep dive into [CQRS and Mediator](02-cqrs-and-mediatr.md)
    - Understand commands vs queries
    - Learn the mediator pattern
    - See how requests flow through the system
@@ -82,7 +82,7 @@ Keyline follows **Clean Architecture** with **CQRS** (Command Query Responsibili
 ## 🔑 Key Principles
 
 ### 1. **Separation of Concerns**
-Each layer has a clear responsibility. Handlers don't access databases directly; they use commands and queries through the mediator.
+Each layer has a clear responsibility. Handlers don't access databases directly; they use commands and queries through the mediatr.
 
 ### 2. **Dependency Inversion**
 High-level modules don't depend on low-level modules. Both depend on abstractions (interfaces).
@@ -96,8 +96,8 @@ Components communicate through the mediator, not directly. This makes the system
 ## 🎓 Learning Resources
 
 ### Internal Documentation
-- [IoC Container Documentation](../../ioc/Readme.md) - Deep dive into dependency injection
-- [Mediator Pattern Documentation](../../mediator/README.md) - Deep dive into the mediator
+- [IoC Container Documentation](https://github.com/The127/ioc) - Deep dive into dependency injection
+- [Mediator Pattern Documentation](https://github.com/The127/mediatr#readme) - Deep dive into the mediator
 - [Configuration Documentation](../../internal/config/README.md) - Configuration management
 - [E2E Testing Documentation](../../tests/e2e/README.md) - End-to-end testing guide
 - [API Client Documentation](../../client/README.md) - Using the API client

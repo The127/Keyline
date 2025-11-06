@@ -6,10 +6,10 @@ import (
 	"Keyline/internal/config"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/services"
-	"Keyline/ioc"
 	"Keyline/utils"
 	"context"
 	"fmt"
+	"github.com/The127/ioc"
 	"net/http"
 	"strings"
 

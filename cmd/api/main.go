@@ -24,11 +24,11 @@ import (
 	"Keyline/internal/repositories"
 	"Keyline/internal/server"
 	"Keyline/internal/setup"
-	"Keyline/ioc"
-	"Keyline/mediator"
 	"Keyline/utils"
 	"context"
 	"fmt"
+	"github.com/The127/ioc"
+	"github.com/The127/mediatr"
 	"net/url"
 	"os"
 	"os/signal"
@@ -137,10 +137,10 @@ func initApplication(dp *ioc.DependencyProvider) {
 
 	ctx := middlewares.ContextWithScope(context.Background(), scope)
 	ctx = authentication.ContextWithCurrentUser(ctx, authentication.SystemUser())
-	m := ioc.GetDependency[mediator.Mediator](scope)
+	m := ioc.GetDependency[mediatr.Mediator](scope)
 
 	// check if there are no virtual servers
-	existsResult, err := mediator.Send[*queries.AnyVirtualServerExistsResult](ctx, m, queries.AnyVirtualServerExists{})
+	existsResult, err := mediatr.Send[*queries.AnyVirtualServerExistsResult](ctx, m, queries.AnyVirtualServerExists{})
 	if err != nil {
 		logging.Logger.Fatalf("failed to query if any virtual servers exist: %v", err)
 	}
@@ -159,7 +159,7 @@ func initApplication(dp *ioc.DependencyProvider) {
 
 	logging.Logger.Infof("Creating initial virtual server")
 
-	createVirtualServerResponse, err := mediator.Send[*commands.CreateVirtualServerResponse](ctx, m, commands.CreateVirtualServer{
+	createVirtualServerResponse, err := mediatr.Send[*commands.CreateVirtualServerResponse](ctx, m, commands.CreateVirtualServer{
 		Name:               config.C.InitialVirtualServer.Name,
 		DisplayName:        config.C.InitialVirtualServer.DisplayName,
 		EnableRegistration: config.C.InitialVirtualServer.EnableRegistration,
@@ -170,7 +170,7 @@ func initApplication(dp *ioc.DependencyProvider) {
 	}
 
 	for _, projectConfig := range config.C.InitialVirtualServer.Projects {
-		_, err := mediator.Send[*commands.CreateProjectResponse](ctx, m, commands.CreateProject{
+		_, err := mediatr.Send[*commands.CreateProjectResponse](ctx, m, commands.CreateProject{
 			VirtualServerName: config.C.InitialVirtualServer.Name,
 			Slug:              projectConfig.Slug,
 			Name:              projectConfig.Name,
@@ -181,7 +181,7 @@ func initApplication(dp *ioc.DependencyProvider) {
 		}
 
 		for _, applicationConfig := range projectConfig.Applications {
-			_, err := mediator.Send[*commands.CreateApplicationResponse](ctx, m, commands.CreateApplication{
+			_, err := mediatr.Send[*commands.CreateApplicationResponse](ctx, m, commands.CreateApplication{
 				VirtualServerName:      config.C.InitialVirtualServer.Name,
 				ProjectSlug:            projectConfig.Slug,
 				Name:                   applicationConfig.Name,
@@ -197,7 +197,7 @@ func initApplication(dp *ioc.DependencyProvider) {
 		}
 
 		for _, roleConfig := range projectConfig.Roles {
-			_, err := mediator.Send[*commands.CreateRoleResponse](ctx, m, commands.CreateRole{
+			_, err := mediatr.Send[*commands.CreateRoleResponse](ctx, m, commands.CreateRole{
 				VirtualServerName: config.C.InitialVirtualServer.Name,
 				ProjectSlug:       projectConfig.Slug,
 				Name:              roleConfig.Name,
@@ -209,7 +209,7 @@ func initApplication(dp *ioc.DependencyProvider) {
 		}
 
 		for _, resourceServerConfig := range projectConfig.ResourceServers {
-			_, err := mediator.Send[*commands.CreateResourceServerResponse](ctx, m, commands.CreateResourceServer{
+			_, err := mediatr.Send[*commands.CreateResourceServerResponse](ctx, m, commands.CreateResourceServer{
 				VirtualServerName: config.C.InitialVirtualServer.Name,
 				ProjectSlug:       projectConfig.Slug,
 				Slug:              resourceServerConfig.Slug,
@@ -225,7 +225,7 @@ func initApplication(dp *ioc.DependencyProvider) {
 	if config.C.InitialVirtualServer.CreateAdmin {
 		logging.Logger.Infof("Creating initial admin user")
 
-		initialAdminUserInfo, err := mediator.Send[*commands.CreateUserResponse](ctx, m, commands.CreateUser{
+		initialAdminUserInfo, err := mediatr.Send[*commands.CreateUserResponse](ctx, m, commands.CreateUser{
 			VirtualServerName: config.C.InitialVirtualServer.Name,
 			DisplayName:       config.C.InitialVirtualServer.Admin.DisplayName,
 			Username:          config.C.InitialVirtualServer.Admin.Username,
@@ -246,7 +246,7 @@ func initApplication(dp *ioc.DependencyProvider) {
 			logging.Logger.Fatalf("failed to create initial admin credential: %v", err)
 		}
 
-		_, err = mediator.Send[*commands.AssignRoleToUserResponse](ctx, m, commands.AssignRoleToUser{
+		_, err = mediatr.Send[*commands.AssignRoleToUserResponse](ctx, m, commands.AssignRoleToUser{
 			VirtualServerName: config.C.InitialVirtualServer.Name,
 			ProjectSlug:       createVirtualServerResponse.SystemProjectSlug,
 			UserId:            initialAdminUserInfo.Id,
@@ -258,7 +258,7 @@ func initApplication(dp *ioc.DependencyProvider) {
 	}
 
 	for _, serviceUserConfig := range config.C.InitialVirtualServer.ServiceUsers {
-		serviceUserResponse, err := mediator.Send[*commands.CreateServiceUserResponse](ctx, m, commands.CreateServiceUser{
+		serviceUserResponse, err := mediatr.Send[*commands.CreateServiceUserResponse](ctx, m, commands.CreateServiceUser{
 			VirtualServerName: config.C.InitialVirtualServer.Name,
 			Username:          serviceUserConfig.Username,
 		})
@@ -266,7 +266,7 @@ func initApplication(dp *ioc.DependencyProvider) {
 			logging.Logger.Fatalf("failed to create initial service user: %v", err)
 		}
 
-		_, err = mediator.Send[*commands.AssociateServiceUserPublicKeyResponse](ctx, m, commands.AssociateServiceUserPublicKey{
+		_, err = mediatr.Send[*commands.AssociateServiceUserPublicKeyResponse](ctx, m, commands.AssociateServiceUserPublicKey{
 			VirtualServerName: config.C.InitialVirtualServer.Name,
 			ServiceUserId:     serviceUserResponse.Id,
 			PublicKey:         serviceUserConfig.PublicKey,
@@ -298,7 +298,7 @@ func initApplication(dp *ioc.DependencyProvider) {
 					logging.Logger.Fatalf("failed to get role: %v", err)
 				}
 
-				_, err = mediator.Send[*commands.AssignRoleToUserResponse](ctx, m, commands.AssignRoleToUser{
+				_, err = mediatr.Send[*commands.AssignRoleToUserResponse](ctx, m, commands.AssignRoleToUser{
 					VirtualServerName: config.C.InitialVirtualServer.Name,
 					ProjectSlug:       createVirtualServerResponse.SystemProjectSlug,
 					UserId:            serviceUserResponse.Id,
@@ -317,7 +317,7 @@ func initApplication(dp *ioc.DependencyProvider) {
 					logging.Logger.Fatalf("failed to get role: %v", err)
 				}
 
-				_, err = mediator.Send[*commands.AssignRoleToUserResponse](ctx, m, commands.AssignRoleToUser{
+				_, err = mediatr.Send[*commands.AssignRoleToUserResponse](ctx, m, commands.AssignRoleToUser{
 					VirtualServerName: config.C.InitialVirtualServer.Name,
 					UserId:            serviceUserResponse.Id,
 					RoleId:            role.Id(),

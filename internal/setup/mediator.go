@@ -5,78 +5,78 @@ import (
 	"Keyline/internal/commands"
 	"Keyline/internal/events"
 	"Keyline/internal/queries"
-	"Keyline/ioc"
-	"Keyline/mediator"
+	"github.com/The127/ioc"
+	"github.com/The127/mediatr"
 )
 
 func Mediator(dc *ioc.DependencyCollection) {
-	m := mediator.NewMediator()
+	m := mediatr.NewMediator()
 
-	mediator.RegisterHandler(m, queries.HandleAnyVirtualServerExists)
-	mediator.RegisterHandler(m, queries.HandleGetVirtualServerPublicInfo)
-	mediator.RegisterHandler(m, queries.HandleGetVirtualServerQuery)
-	mediator.RegisterHandler(m, commands.HandleCreateVirtualServer)
+	mediatr.RegisterHandler(m, queries.HandleAnyVirtualServerExists)
+	mediatr.RegisterHandler(m, queries.HandleGetVirtualServerPublicInfo)
+	mediatr.RegisterHandler(m, queries.HandleGetVirtualServerQuery)
+	mediatr.RegisterHandler(m, commands.HandleCreateVirtualServer)
 
-	mediator.RegisterHandler(m, queries.HandleListPasswordRules)
-	mediator.RegisterHandler(m, commands.HandleCreatePasswordRule)
-	mediator.RegisterHandler(m, commands.HandleUpdatePasswordRule)
+	mediatr.RegisterHandler(m, queries.HandleListPasswordRules)
+	mediatr.RegisterHandler(m, commands.HandleCreatePasswordRule)
+	mediatr.RegisterHandler(m, commands.HandleUpdatePasswordRule)
 
-	mediator.RegisterHandler(m, queries.HandleListTemplates)
-	mediator.RegisterHandler(m, queries.HandleGetTemplate)
+	mediatr.RegisterHandler(m, queries.HandleListTemplates)
+	mediatr.RegisterHandler(m, queries.HandleGetTemplate)
 
-	mediator.RegisterHandler(m, commands.HandleRegisterUser)
-	mediator.RegisterHandler(m, commands.HandleCreateUser)
-	mediator.RegisterHandler(m, commands.HandleVerifyEmail)
-	mediator.RegisterHandler(m, commands.HandleResetPassword)
-	mediator.RegisterHandler(m, queries.HandleGetUserQuery)
-	mediator.RegisterHandler(m, commands.HandlePatchUser)
-	mediator.RegisterHandler(m, queries.HandleListUsers)
-	mediator.RegisterHandler(m, commands.HandleCreateServiceUser)
-	mediator.RegisterHandler(m, commands.HandleAssociateServiceUserPublicKey)
-	mediator.RegisterHandler(m, commands.HandleRemoveServiceUserPublicKey)
-	mediator.RegisterHandler(m, queries.HandleGetUserMetadata)
-	mediator.RegisterHandler(m, commands.HandleUpdateUserMetadata)
-	mediator.RegisterHandler(m, commands.HandleUpdateUserAppMetadata)
-	mediator.RegisterHandler(m, commands.HandlePatchUserMetadata)
-	mediator.RegisterHandler(m, commands.HandlePatchUserAppMetadata)
-	mediator.RegisterHandler(m, queries.HandleListPasskeys)
+	mediatr.RegisterHandler(m, commands.HandleRegisterUser)
+	mediatr.RegisterHandler(m, commands.HandleCreateUser)
+	mediatr.RegisterHandler(m, commands.HandleVerifyEmail)
+	mediatr.RegisterHandler(m, commands.HandleResetPassword)
+	mediatr.RegisterHandler(m, queries.HandleGetUserQuery)
+	mediatr.RegisterHandler(m, commands.HandlePatchUser)
+	mediatr.RegisterHandler(m, queries.HandleListUsers)
+	mediatr.RegisterHandler(m, commands.HandleCreateServiceUser)
+	mediatr.RegisterHandler(m, commands.HandleAssociateServiceUserPublicKey)
+	mediatr.RegisterHandler(m, commands.HandleRemoveServiceUserPublicKey)
+	mediatr.RegisterHandler(m, queries.HandleGetUserMetadata)
+	mediatr.RegisterHandler(m, commands.HandleUpdateUserMetadata)
+	mediatr.RegisterHandler(m, commands.HandleUpdateUserAppMetadata)
+	mediatr.RegisterHandler(m, commands.HandlePatchUserMetadata)
+	mediatr.RegisterHandler(m, commands.HandlePatchUserAppMetadata)
+	mediatr.RegisterHandler(m, queries.HandleListPasskeys)
 
-	mediator.RegisterHandler(m, commands.HandleCreateResourceServer)
-	mediator.RegisterHandler(m, commands.HandlePatchResourceServer)
-	mediator.RegisterHandler(m, queries.HandleListResourceServers)
-	mediator.RegisterHandler(m, queries.HandleGetResourceServer)
+	mediatr.RegisterHandler(m, commands.HandleCreateResourceServer)
+	mediatr.RegisterHandler(m, commands.HandlePatchResourceServer)
+	mediatr.RegisterHandler(m, queries.HandleListResourceServers)
+	mediatr.RegisterHandler(m, queries.HandleGetResourceServer)
 
-	mediator.RegisterHandler(m, commands.HandleCreateResourceServerScope)
-	mediator.RegisterHandler(m, queries.HandleListResourceServerScopes)
-	mediator.RegisterHandler(m, queries.HandleGetResourceServerScope)
+	mediatr.RegisterHandler(m, commands.HandleCreateResourceServerScope)
+	mediatr.RegisterHandler(m, queries.HandleListResourceServerScopes)
+	mediatr.RegisterHandler(m, queries.HandleGetResourceServerScope)
 
-	mediator.RegisterHandler(m, commands.HandleCreateApplication)
-	mediator.RegisterHandler(m, queries.HandleListApplications)
-	mediator.RegisterHandler(m, queries.HandleGetApplication)
-	mediator.RegisterHandler(m, commands.HandlePatchApplication)
-	mediator.RegisterHandler(m, commands.HandleDeleteApplication)
+	mediatr.RegisterHandler(m, commands.HandleCreateApplication)
+	mediatr.RegisterHandler(m, queries.HandleListApplications)
+	mediatr.RegisterHandler(m, queries.HandleGetApplication)
+	mediatr.RegisterHandler(m, commands.HandlePatchApplication)
+	mediatr.RegisterHandler(m, commands.HandleDeleteApplication)
 
-	mediator.RegisterHandler(m, commands.HandleCreateProject)
-	mediator.RegisterHandler(m, queries.HandleListProjects)
-	mediator.RegisterHandler(m, queries.HandleGetProject)
-	mediator.RegisterHandler(m, commands.HandlePatchProject)
+	mediatr.RegisterHandler(m, commands.HandleCreateProject)
+	mediatr.RegisterHandler(m, queries.HandleListProjects)
+	mediatr.RegisterHandler(m, queries.HandleGetProject)
+	mediatr.RegisterHandler(m, commands.HandlePatchProject)
 
-	mediator.RegisterHandler(m, queries.HandleListRoles)
-	mediator.RegisterHandler(m, queries.HandleGetRole)
-	mediator.RegisterHandler(m, commands.HandleCreateRole)
-	mediator.RegisterHandler(m, commands.HandlePatchRole)
-	mediator.RegisterHandler(m, commands.HandleAssignRoleToUser)
-	mediator.RegisterHandler(m, queries.HandleListUsersInRole)
+	mediatr.RegisterHandler(m, queries.HandleListRoles)
+	mediatr.RegisterHandler(m, queries.HandleGetRole)
+	mediatr.RegisterHandler(m, commands.HandleCreateRole)
+	mediatr.RegisterHandler(m, commands.HandlePatchRole)
+	mediatr.RegisterHandler(m, commands.HandleAssignRoleToUser)
+	mediatr.RegisterHandler(m, queries.HandleListUsersInRole)
 
-	mediator.RegisterHandler(m, queries.HandleListGroups)
+	mediatr.RegisterHandler(m, queries.HandleListGroups)
 
-	mediator.RegisterHandler(m, queries.HandleListAuditEntries)
+	mediatr.RegisterHandler(m, queries.HandleListAuditEntries)
 
-	mediator.RegisterEventHandler(m, events.QueueEmailVerificationJobOnUserCreatedEvent)
+	mediatr.RegisterEventHandler(m, events.QueueEmailVerificationJobOnUserCreatedEvent)
 
-	mediator.RegisterBehaviour(m, behaviours.PolicyBehaviour)
+	mediatr.RegisterBehaviour(m, behaviours.PolicyBehaviour)
 
-	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) mediator.Mediator {
+	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) mediatr.Mediator {
 		return m
 	})
 }

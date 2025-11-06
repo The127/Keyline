@@ -2,7 +2,7 @@ package integration
 
 import (
 	"Keyline/internal/commands"
-	"Keyline/mediator"
+	"github.com/The127/mediatr"
 
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
@@ -31,7 +31,7 @@ var _ = Describe("ServiceUser flow", Ordered, func() {
 			VirtualServerName: h.VirtualServer(),
 			Username:          "service-user",
 		}
-		response, err := mediator.Send[*commands.CreateServiceUserResponse](h.Ctx(), h.Mediator(), req)
+		response, err := mediatr.Send[*commands.CreateServiceUserResponse](h.Ctx(), h.Mediator(), req)
 		Expect(err).ToNot(HaveOccurred())
 		serviceUserId = response.Id
 	})
@@ -42,7 +42,7 @@ var _ = Describe("ServiceUser flow", Ordered, func() {
 			ServiceUserId:     serviceUserId,
 			PublicKey:         ed25519PublicKey,
 		}
-		_, err := mediator.Send[*commands.AssociateServiceUserPublicKeyResponse](h.Ctx(), h.Mediator(), req)
+		_, err := mediatr.Send[*commands.AssociateServiceUserPublicKeyResponse](h.Ctx(), h.Mediator(), req)
 		Expect(err).ToNot(HaveOccurred())
 	})
 
@@ -52,7 +52,7 @@ var _ = Describe("ServiceUser flow", Ordered, func() {
 			ServiceUserId:     serviceUserId,
 			PublicKey:         ed25519PublicKey,
 		}
-		_, err := mediator.Send[*commands.RemoveServiceUserPublicKeyResponse](h.Ctx(), h.Mediator(), req)
+		_, err := mediatr.Send[*commands.RemoveServiceUserPublicKeyResponse](h.Ctx(), h.Mediator(), req)
 		Expect(err).ToNot(HaveOccurred())
 	})
 })

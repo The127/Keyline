@@ -10,7 +10,7 @@ import (
 	"Keyline/internal/services/audit"
 	"Keyline/internal/services/claimsMapping"
 	"Keyline/internal/services/keyValue"
-	"Keyline/ioc"
+	"github.com/The127/ioc"
 )
 
 func KeyServices(dc *ioc.DependencyCollection, keyStoreMode config.KeyStoreMode) {

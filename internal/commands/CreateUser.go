@@ -6,10 +6,10 @@ import (
 	"Keyline/internal/events"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
-	"Keyline/ioc"
-	"Keyline/mediator"
 	"context"
 	"fmt"
+	"github.com/The127/ioc"
+	"github.com/The127/mediatr"
 
 	"github.com/google/uuid"
 )
@@ -65,8 +65,8 @@ func HandleCreateUser(ctx context.Context, command CreateUser) (*CreateUserRespo
 		return nil, fmt.Errorf("inserting user: %w", err)
 	}
 
-	m := ioc.GetDependency[mediator.Mediator](scope)
-	err = mediator.SendEvent(ctx, m, events.UserCreatedEvent{
+	m := ioc.GetDependency[mediatr.Mediator](scope)
+	err = mediatr.SendEvent(ctx, m, events.UserCreatedEvent{
 		UserId: user.Id(),
 	})
 	if err != nil {

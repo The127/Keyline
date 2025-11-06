@@ -1,10 +1,10 @@
 package database
 
 import (
-	"Keyline/ioc"
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/The127/ioc"
 )
 
 type DbService interface {

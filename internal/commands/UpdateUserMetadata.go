@@ -5,10 +5,10 @@ import (
 	"Keyline/internal/behaviours"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
-	"Keyline/ioc"
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/The127/ioc"
 
 	"github.com/google/uuid"
 )

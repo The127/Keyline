@@ -6,7 +6,7 @@ Keyline is an open-source OpenID Connect (OIDC) / Identity Provider (IDP) server
 
 ## Tech Stack
 
-- **Language**: Go 1.24+
+- **Language**: Go 1.25+
 - **Database**: PostgreSQL
 - **Cache/Session**: Redis (Valkey)
 - **Message Queue**: RabbitMQ
@@ -27,8 +27,8 @@ Keyline follows clean architecture principles with clear separation of concerns:
 - **Queries** (`internal/queries/`): Read operations in CQRS pattern
 - **Repositories** (`internal/repositories/`): Data access layer
 - **Services** (`internal/services/`): Core business services
-- **Mediator** (`mediator/`): Request/event mediator pattern for decoupled communication
-- **IoC Container** (`ioc/`): Custom dependency injection container
+- **Mediator**: Request/event mediator pattern for decoupled communication (separate repo)
+- **IoC Container**: Custom dependency injection container (separate repo)
 
 ### CQRS Pattern
 Commands and queries are separated:
@@ -41,14 +41,12 @@ The mediator pattern is used to implement CQRS:
 - All commands and queries go through the mediator
 - Handlers are registered with the mediator
 - Behaviors can be added for cross-cutting concerns (validation, logging, etc.)
-- See `mediator/README.md` for detailed documentation
 
 ### IoC Container
 Custom dependency injection with three lifetime types:
 - **Transient**: New instance per resolution
 - **Scoped**: Single instance per scope (e.g., per HTTP request)
 - **Singleton**: Single instance for application lifetime
-- See `ioc/Readme.md` for detailed documentation
 
 ## Code Style and Conventions
 
@@ -216,7 +214,7 @@ import (
     "github.com/gorilla/mux"
     
     "Keyline/internal/commands"
-    "Keyline/mediator"
+    "github.com/The127/mediatr"
 )
 ```
 
@@ -316,7 +314,7 @@ logger.Info("user registered",
 ## Troubleshooting
 
 ### Common Issues
-- **Build failures**: Run `go mod tidy` and ensure Go 1.24+ is installed
+- **Build failures**: Run `go mod tidy` and ensure Go 1.25+ is installed
 - **Test failures**: Check database connection and Redis availability
 - **Migration issues**: Ensure PostgreSQL is running and accessible
 - **Import errors**: Run `go mod download` to fetch dependencies

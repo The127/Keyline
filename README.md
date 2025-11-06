@@ -66,7 +66,7 @@ Perfect for new contributors and developers wanting to understand Keyline's arch
 
 ## Prerequisites
 
-- **Go 1.24** or higher
+- **Go 1.25** or higher
 - **Database** - PostgreSQL (recommended for production) or SQLite (work-in-progress, for development/single-server)
 - **Cache Storage** - Redis (Valkey) recommended for production, or in-memory for development/single-instance
 - **Mail server** (for email notifications)
@@ -325,8 +325,6 @@ Keyline provides comprehensive API documentation using Swagger/OpenAPI:
 │   ├── config/           # Configuration management (see internal/config/README.md)
 │   ├── middlewares/      # HTTP middlewares
 │   └── ...
-├── ioc/                  # IoC container implementation (see ioc/Readme.md)
-├── mediator/             # Mediator pattern implementation (see mediator/README.md)
 ├── client/               # API client library (see client/README.md)
 ├── tests/
 │   ├── e2e/              # End-to-end tests (see tests/e2e/README.md)
@@ -403,9 +401,6 @@ go test ./...
 
 # Run tests with coverage
 go test -cover ./...
-
-# Run tests for a specific package
-go test ./ioc/...
 
 # Run end-to-end tests
 go test -tags=e2e ./tests/e2e/...
@@ -586,16 +581,12 @@ Keyline includes a custom IoC (Inversion of Control) container with support for:
 - **Scoped** - Single instance per scope
 - **Singleton** - Single instance for application lifetime
 
-See [ioc/Readme.md](ioc/Readme.md) for detailed documentation.
-
 ## Mediator Pattern
 
 Keyline uses the mediator pattern to decouple components and implement CQRS (Command Query Responsibility Segregation):
 - **Handlers** - Process requests and return responses
 - **Behaviors** - Cross-cutting concerns like validation and logging
 - **Events** - Publish/subscribe pattern for notifications
-
-See [mediator/README.md](mediator/README.md) for detailed documentation.
 
 ## Security
 
