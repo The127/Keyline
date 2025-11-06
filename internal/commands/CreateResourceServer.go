@@ -1,12 +1,15 @@
 package commands
 
 import (
+	"Keyline/internal/authentication"
 	"Keyline/internal/authentication/permissions"
 	"Keyline/internal/behaviours"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
+	"Keyline/utils"
 	"context"
 	"fmt"
+
 	"github.com/The127/ioc"
 
 	"github.com/google/uuid"
@@ -55,6 +58,14 @@ func HandleCreateResourceServer(ctx context.Context, command CreateResourceServe
 	project, err := projectRepository.Single(ctx, projectFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting project: %w", err)
+	}
+
+	if project.SystemProject() {
+		currentUser := authentication.GetCurrentUser(ctx)
+		hasPermissionResult := currentUser.HasPermission(permissions.SystemUser)
+		if !hasPermissionResult.IsSuccess() {
+			return nil, fmt.Errorf("creating resource servers in system project requires system user permission: %w", utils.ErrHttpUnauthorized)
+		}
 	}
 
 	resourceServerRepository := ioc.GetDependency[repositories.ResourceServerRepository](scope)

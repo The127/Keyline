@@ -10,6 +10,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+
 	"github.com/The127/ioc"
 
 	"github.com/google/uuid"
@@ -32,6 +33,7 @@ func (r *projectRepository) selectQuery(filter repositories.ProjectFilter) *sqlb
 		"slug",
 		"name",
 		"description",
+		"system_project",
 	).From("projects")
 
 	if filter.HasId() {
@@ -157,12 +159,13 @@ func (r *projectRepository) Insert(ctx context.Context, project *repositories.Pr
 	}
 
 	s := sqlbuilder.InsertInto("projects").
-		Cols("virtual_server_id", "slug", "name", "description").
+		Cols("virtual_server_id", "slug", "name", "description", "system_project").
 		Values(
 			project.VirtualServerId(),
 			project.Slug(),
 			project.Name(),
 			project.Description(),
+			project.SystemProject(),
 		).
 		Returning("id", "audit_created_at", "audit_updated_at", "version")
 
