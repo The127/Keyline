@@ -15,6 +15,8 @@ type Project struct {
 	slug        string
 	name        string
 	description string
+
+	systemProject bool
 }
 
 func NewProject(virtualServerId uuid.UUID, slug string, name string, description string) *Project {
@@ -27,6 +29,12 @@ func NewProject(virtualServerId uuid.UUID, slug string, name string, description
 	}
 }
 
+func NewSystemProject(virtualServerId uuid.UUID) *Project {
+	project := NewProject(virtualServerId, "system", "System Project", "Keyline internal project for system internal resources.")
+	project.systemProject = true
+	return project
+}
+
 func (p *Project) GetScanPointers() []any {
 	return []any{
 		&p.id,
@@ -37,11 +45,16 @@ func (p *Project) GetScanPointers() []any {
 		&p.slug,
 		&p.name,
 		&p.description,
+		&p.systemProject,
 	}
 }
 
 func (p *Project) Slug() string {
 	return p.slug
+}
+
+func (p *Project) SystemProject() bool {
+	return p.systemProject
 }
 
 func (p *Project) Description() string {

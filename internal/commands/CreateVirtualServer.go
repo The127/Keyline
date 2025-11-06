@@ -138,7 +138,7 @@ func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer)
 
 	projectRepository := ioc.GetDependency[repositories.ProjectRepository](scope)
 
-	systemProject := repositories.NewProject(virtualServer.Id(), "system", "Keyline Internal", "Internal project for keyline management")
+	systemProject := repositories.NewSystemProject(virtualServer.Id())
 	err = projectRepository.Insert(ctx, systemProject)
 	if err != nil {
 		return nil, fmt.Errorf("inserting project: %w", err)

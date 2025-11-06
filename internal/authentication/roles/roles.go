@@ -9,7 +9,7 @@ type Role string
 const (
 	SystemUser         Role = "system_user"
 	SystemAdmin        Role = "system_admin"
-	VirtualServerAdmin Role = "virtual_server_admin"
+	VirtualServerAdmin Role = "admin"
 )
 
 var SystemUserPermissions = []permissions.Permission{

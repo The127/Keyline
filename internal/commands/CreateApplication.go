@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"Keyline/internal/authentication"
 	"Keyline/internal/authentication/permissions"
 	"Keyline/internal/behaviours"
 	"Keyline/internal/middlewares"
@@ -8,6 +9,7 @@ import (
 	"Keyline/utils"
 	"context"
 	"fmt"
+
 	"github.com/The127/ioc"
 
 	"github.com/google/uuid"
@@ -62,6 +64,14 @@ func HandleCreateApplication(ctx context.Context, command CreateApplication) (*C
 	project, err := projectRepository.Single(ctx, projectFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting project: %w", err)
+	}
+
+	if project.SystemProject() {
+		currentUser := authentication.GetCurrentUser(ctx)
+		hasPermissionResult := currentUser.HasPermission(permissions.SystemUser)
+		if !hasPermissionResult.IsSuccess() {
+			return nil, fmt.Errorf("cannot create application in system project: %w", utils.ErrHttpUnauthorized)
+		}
 	}
 
 	applicationRepository := ioc.GetDependency[repositories.ApplicationRepository](scope)

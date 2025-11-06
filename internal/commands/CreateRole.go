@@ -1,13 +1,16 @@
 package commands
 
 import (
+	"Keyline/internal/authentication"
 	"Keyline/internal/authentication/permissions"
 	"Keyline/internal/behaviours"
 	"Keyline/internal/events"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
+	"Keyline/utils"
 	"context"
 	"fmt"
+
 	"github.com/The127/ioc"
 
 	"github.com/The127/mediatr"
@@ -57,6 +60,14 @@ func HandleCreateRole(ctx context.Context, command CreateRole) (*CreateRoleRespo
 	project, err := projectRepository.Single(ctx, projectFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting project: %w", err)
+	}
+
+	if project.SystemProject() {
+		currentUser := authentication.GetCurrentUser(ctx)
+		hasPermissionResult := currentUser.HasPermission(permissions.SystemUser)
+		if !hasPermissionResult.IsSuccess() {
+			return nil, fmt.Errorf("cannot create role in system project: %w", utils.ErrHttpUnauthorized)
+		}
 	}
 
 	roleRepository := ioc.GetDependency[repositories.RoleRepository](scope)
