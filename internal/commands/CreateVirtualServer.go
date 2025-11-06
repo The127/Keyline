@@ -248,7 +248,7 @@ func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer)
 				RoleId:            *defaultRolesResult.systemAdminRoleId,
 			})
 			if err != nil {
-				return nil, fmt.Errorf("assigning admin role to admin user: %w", err)
+				return nil, fmt.Errorf("assigning system admin role to admin user: %w", err)
 			}
 		}
 	}
