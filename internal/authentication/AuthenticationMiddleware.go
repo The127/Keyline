@@ -9,9 +9,10 @@ import (
 	"Keyline/utils"
 	"context"
 	"fmt"
-	"github.com/The127/ioc"
 	"net/http"
 	"strings"
+
+	"github.com/The127/ioc"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -142,7 +143,11 @@ func extractUserFromBearerToken(ctx context.Context, authorizationHeader string,
 					continue
 				}
 
-				role := roles.Role(roleClaimString)
+				if !strings.HasPrefix(roleClaimString, "system:") {
+					continue
+				}
+
+				role := roles.Role(strings.TrimPrefix(roleClaimString, "system:"))
 				assignPermissionsToUser(&currentUser, role)
 			}
 		}

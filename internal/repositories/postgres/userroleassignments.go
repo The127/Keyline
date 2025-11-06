@@ -8,6 +8,7 @@ import (
 	"Keyline/utils"
 	"context"
 	"fmt"
+
 	"github.com/The127/ioc"
 
 	"github.com/huandu/go-sqlbuilder"
@@ -55,6 +56,7 @@ func (r *userRoleAssignmentRepository) selectQuery(filter repositories.UserRoleA
 		s.Join("roles as r", "r.id = ura.role_id")
 		s.SelectMore(
 			"r.name",
+			"(select slug from projects where id = r.project_id) as project_slug",
 		)
 	}
 

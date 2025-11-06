@@ -17,12 +17,13 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
-	"github.com/The127/ioc"
 	"net/http"
 	"net/url"
 	"slices"
 	"strings"
 	"time"
+
+	"github.com/The127/ioc"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -1219,7 +1220,7 @@ func mapClaims(ctx context.Context, params AccessTokenGenerationParams) (jwt.Map
 
 	globalRoles := make([]string, 0, len(globalUserRoleAssignments))
 	for _, userRoleAssignment := range globalUserRoleAssignments {
-		globalRoles = append(globalRoles, userRoleAssignment.RoleInfo().Name)
+		globalRoles = append(globalRoles, fmt.Sprintf("%s:%s", userRoleAssignment.RoleInfo().ProjectSlug, userRoleAssignment.RoleInfo().Name))
 	}
 
 	applicationUserRoleAssignmentFilter := repositories.NewUserRoleAssignmentFilter().

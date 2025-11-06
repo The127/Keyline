@@ -8,7 +8,7 @@
       <option name="DIRENV_TRUSTED" value="false" />
     </EXTENSION>
     <root_directory value="$PROJECT_DIR$" />
-    <kind value="DIRECTORY" />
+    <kind value="PACKAGE" />
     <package value="Keyline/tests/integration" />
     <directory value="$PROJECT_DIR$/tests/integration" />
     <filePath value="$PROJECT_DIR$" />
