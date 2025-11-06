@@ -3455,6 +3455,9 @@
                 "name"
             ],
             "properties": {
+                "admin": {
+                    "$ref": "#/definitions/handlers.CreateVirtualSeverRequestDtoAdminDto"
+                },
                 "displayName": {
                     "type": "string",
                     "maxLength": 255,
@@ -3468,8 +3471,20 @@
                     "maxLength": 255,
                     "minLength": 1
                 },
+                "projects": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.CreateVirtualSeverRequestDtoProjectDto"
+                    }
+                },
                 "require2fa": {
                     "type": "boolean"
+                },
+                "serviceUsers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.CreateVirtualSeverRequestDtoServiceUserDto"
+                    }
                 },
                 "signingAlgorithm": {
                     "type": "string",
@@ -3477,6 +3492,177 @@
                         "RS256",
                         "EdDSA"
                     ]
+                }
+            }
+        },
+        "handlers.CreateVirtualSeverRequestDtoAdminDto": {
+            "type": "object",
+            "required": [
+                "displayName",
+                "passwordHash",
+                "primaryEmail",
+                "username"
+            ],
+            "properties": {
+                "displayName": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                },
+                "passwordHash": {
+                    "type": "string"
+                },
+                "primaryEmail": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                }
+            }
+        },
+        "handlers.CreateVirtualSeverRequestDtoProjectDto": {
+            "type": "object",
+            "required": [
+                "name",
+                "slug"
+            ],
+            "properties": {
+                "applications": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.CreateVirtualSeverRequestDtoProjectDtoApplicationDto"
+                    }
+                },
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                },
+                "resourceServers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.CreateVirtualSeverRequestDtoProjectDtoResourceServerDto"
+                    }
+                },
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.CreateVirtualSeverRequestDtoProjectDtoRoleDto"
+                    }
+                },
+                "slug": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                }
+            }
+        },
+        "handlers.CreateVirtualSeverRequestDtoProjectDtoApplicationDto": {
+            "type": "object",
+            "required": [
+                "displayName",
+                "name",
+                "redirectUris",
+                "type"
+            ],
+            "properties": {
+                "displayName": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                },
+                "hashedSecret": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                },
+                "postLogoutUris": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "redirectUris": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "public",
+                        "confidential"
+                    ]
+                }
+            }
+        },
+        "handlers.CreateVirtualSeverRequestDtoProjectDtoResourceServerDto": {
+            "type": "object",
+            "required": [
+                "name",
+                "slug"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                },
+                "slug": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                }
+            }
+        },
+        "handlers.CreateVirtualSeverRequestDtoProjectDtoRoleDto": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                }
+            }
+        },
+        "handlers.CreateVirtualSeverRequestDtoServiceUserDto": {
+            "type": "object",
+            "required": [
+                "publicKey",
+                "username"
+            ],
+            "properties": {
+                "publicKey": {
+                    "type": "string"
+                },
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "username": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
                 }
             }
         },

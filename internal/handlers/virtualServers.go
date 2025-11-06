@@ -7,20 +7,68 @@ import (
 	"Keyline/internal/queries"
 	"Keyline/utils"
 	"encoding/json"
-	"github.com/The127/ioc"
-	"github.com/The127/mediatr"
 	"net/http"
 	"time"
 
+	"github.com/The127/ioc"
+	"github.com/The127/mediatr"
+
 	"github.com/google/uuid"
 )
+
+type CreateVirtualSeverRequestDtoAdminDto struct {
+	Username     string `json:"username" validate:"required,min=1,max=255"`
+	DisplayName  string `json:"displayName" validate:"required,min=1,max=255"`
+	PrimaryEmail string `json:"primaryEmail" validate:"required,email"`
+	PasswordHash string `json:"passwordHash" validate:"required"`
+}
+
+type CreateVirtualSeverRequestDtoServiceUserDto struct {
+	Username  string   `json:"username" validate:"required,min=1,max=255"`
+	Roles     []string `json:"roles"`
+	PublicKey string   `json:"publicKey" validate:"required"`
+}
+
+type CreateVirtualSeverRequestDtoProjectDtoRoleDto struct {
+	Name        string `json:"name" validate:"required,min=1,max=255"`
+	Description string `json:"description"`
+}
+
+type CreateVirtualSeverRequestDtoProjectDtoApplicationDto struct {
+	Name           string   `json:"name" validate:"required,min=1,max=255"`
+	DisplayName    string   `json:"displayName" validate:"required,min=1,max=255"`
+	Type           string   `json:"type" validate:"required,oneof=public confidential"`
+	HashedSecret   *string  `json:"hashedSecret"`
+	RedirectUris   []string `json:"redirectUris" validate:"required,dive,url,min=1"`
+	PostLogoutUris []string `json:"postLogoutUris" validate:"dive,url"`
+}
+
+type CreateVirtualSeverRequestDtoProjectDtoResourceServerDto struct {
+	Slug        string `json:"slug" validate:"required,min=1,max=255"`
+	Name        string `json:"name" validate:"required,min=1,max=255"`
+	Description string `json:"description"`
+}
+
+type CreateVirtualSeverRequestDtoProjectDto struct {
+	Slug        string `json:"slug" validate:"required,min=1,max=255"`
+	Name        string `json:"name" validate:"required,min=1,max=255"`
+	Description string `json:"description"`
+
+	Roles           []CreateVirtualSeverRequestDtoProjectDtoRoleDto           `json:"roles"`
+	Applications    []CreateVirtualSeverRequestDtoProjectDtoApplicationDto    `json:"applications"`
+	ResourceServers []CreateVirtualSeverRequestDtoProjectDtoResourceServerDto `json:"resourceServers"`
+}
 
 type CreateVirtualSeverRequestDto struct {
 	Name               string  `json:"name" validate:"required,min=1,max=255,alphanum"`
 	DisplayName        string  `json:"displayName" validate:"required,min=1,max=255"`
 	EnableRegistration bool    `json:"enableRegistration"`
-	Require2fa         bool    `json:"require2fa"`
 	SigningAlgorithm   *string `json:"signingAlgorithm" validate:"oneof=RS256 EdDSA"`
+	Require2fa         bool    `json:"require2fa"`
+
+	Admin        *CreateVirtualSeverRequestDtoAdminDto        `json:"admin"`
+	ServiceUsers []CreateVirtualSeverRequestDtoServiceUserDto `json:"serviceUsers"`
+	Projects     []CreateVirtualSeverRequestDtoProjectDto     `json:"projects"`
 }
 
 // CreateVirtualSever creates a new virtual server.
@@ -59,8 +107,53 @@ func CreateVirtualSever(w http.ResponseWriter, r *http.Request) {
 		Name:               dto.Name,
 		DisplayName:        dto.DisplayName,
 		EnableRegistration: dto.EnableRegistration,
-		Require2fa:         dto.Require2fa,
 		SigningAlgorithm:   signingAlgorithm,
+		Require2fa:         dto.Require2fa,
+		Admin: utils.MapPtr(dto.Admin, func(admin CreateVirtualSeverRequestDtoAdminDto) commands.CreateVirtualServerAdmin {
+			return commands.CreateVirtualServerAdmin{
+				Username:     admin.Username,
+				DisplayName:  admin.DisplayName,
+				PrimaryEmail: admin.PrimaryEmail,
+				PasswordHash: admin.PasswordHash,
+			}
+		}),
+		ServiceUsers: utils.MapSlice(dto.ServiceUsers, func(x CreateVirtualSeverRequestDtoServiceUserDto) commands.CreateVirtualServerServiceUser {
+			return commands.CreateVirtualServerServiceUser{
+				Username:  x.Username,
+				Roles:     x.Roles,
+				PublicKey: x.PublicKey,
+			}
+		}),
+		Projects: utils.MapSlice(dto.Projects, func(project CreateVirtualSeverRequestDtoProjectDto) commands.CreateVirtualServerProject {
+			return commands.CreateVirtualServerProject{
+				Slug:        project.Slug,
+				Name:        project.Name,
+				Description: project.Description,
+				Applications: utils.MapSlice(project.Applications, func(app CreateVirtualSeverRequestDtoProjectDtoApplicationDto) commands.CreateVirtualServerProjectApplication {
+					return commands.CreateVirtualServerProjectApplication{
+						Name:           app.Name,
+						DisplayName:    app.DisplayName,
+						Type:           app.Type,
+						HashedSecret:   app.HashedSecret,
+						RedirectUris:   app.RedirectUris,
+						PostLogoutUris: app.PostLogoutUris,
+					}
+				}),
+				Roles: utils.MapSlice(project.Roles, func(role CreateVirtualSeverRequestDtoProjectDtoRoleDto) commands.CreateVirtualServerProjectRole {
+					return commands.CreateVirtualServerProjectRole{
+						Name:        role.Name,
+						Description: role.Description,
+					}
+				}),
+				ResourceServers: utils.MapSlice(project.ResourceServers, func(rs CreateVirtualSeverRequestDtoProjectDtoResourceServerDto) commands.CreateVirtualServerProjectResourceServer {
+					return commands.CreateVirtualServerProjectResourceServer{
+						Slug:        rs.Slug,
+						Name:        rs.Name,
+						Description: rs.Description,
+					}
+				}),
+			}
+		}),
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)
