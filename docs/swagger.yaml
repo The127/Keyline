@@ -560,6 +560,8 @@ definitions:
         type: string
       slug:
         type: string
+      systemProject:
+        type: boolean
     type: object
   handlers.ListResourceServerScopesResponseDto:
     properties:

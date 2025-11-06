@@ -7,8 +7,9 @@ import (
 	"Keyline/internal/repositories"
 	"context"
 	"fmt"
-	"github.com/The127/ioc"
 	"time"
+
+	"github.com/The127/ioc"
 
 	"github.com/google/uuid"
 )
@@ -35,12 +36,13 @@ func (a GetProject) GetRequestName() string {
 }
 
 type GetProjectResponse struct {
-	Id          uuid.UUID
-	Slug        string
-	Name        string
-	Description string
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	Id            uuid.UUID
+	Slug          string
+	Name          string
+	Description   string
+	SystemProject bool
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
 }
 
 func HandleGetProject(ctx context.Context, query GetProject) (*GetProjectResponse, error) {
@@ -63,11 +65,12 @@ func HandleGetProject(ctx context.Context, query GetProject) (*GetProjectRespons
 	}
 
 	return &GetProjectResponse{
-		Id:          project.Id(),
-		Slug:        project.Slug(),
-		Name:        project.Name(),
-		Description: project.Description(),
-		CreatedAt:   project.AuditCreatedAt(),
-		UpdatedAt:   project.AuditUpdatedAt(),
+		Id:            project.Id(),
+		Slug:          project.Slug(),
+		Name:          project.Name(),
+		Description:   project.Description(),
+		SystemProject: project.SystemProject(),
+		CreatedAt:     project.AuditCreatedAt(),
+		UpdatedAt:     project.AuditUpdatedAt(),
 	}, nil
 }

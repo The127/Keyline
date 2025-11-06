@@ -4022,6 +4022,9 @@ const docTemplate = `{
                 },
                 "slug": {
                     "type": "string"
+                },
+                "systemProject": {
+                    "type": "boolean"
                 }
             }
         },
