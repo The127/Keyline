@@ -7,13 +7,14 @@ import (
 	"Keyline/internal/logging"
 	"Keyline/internal/middlewares"
 	"fmt"
-	"github.com/The127/ioc"
 	"net/http"
 
-	gh "github.com/gorilla/handlers"
+	"github.com/The127/ioc"
 	httpSwagger "github.com/swaggo/http-swagger"
 
 	_ "Keyline/docs"
+
+	gh "github.com/gorilla/handlers"
 
 	"github.com/gorilla/mux"
 )
@@ -82,6 +83,38 @@ func Serve(dp *ioc.DependencyProvider, serverConfig config.ServerConfig) {
 	loginRouter.HandleFunc("/{loginToken}/passkey/start", handlers.StartPasskeyLogin).Methods(http.MethodPost, http.MethodOptions)
 	loginRouter.HandleFunc("/{loginToken}/passkey/finish", handlers.FinishPasskeyLogin).Methods(http.MethodPost, http.MethodOptions)
 
+	if config.C.Server.ApiPort == 0 {
+		mapApiRoutes(r)
+	} else {
+		apiRouter := mux.NewRouter()
+
+		apiRouter.Use(middlewares.RecoverMiddleware())
+		apiRouter.Use(middlewares.LoggingMiddleware())
+		apiRouter.Use(middlewares.ScopeMiddleware(dp))
+
+		mapApiRoutes(apiRouter)
+
+		apiAddr := fmt.Sprintf("%s:%d", serverConfig.Host, serverConfig.ApiPort)
+		logging.Logger.Infof("running api server at %s", apiAddr)
+		apiSrv := &http.Server{
+			Handler: apiRouter,
+			Addr:    apiAddr,
+		}
+
+		go serve(apiSrv)
+	}
+
+	addr := fmt.Sprintf("%s:%d", serverConfig.Host, serverConfig.Port)
+	logging.Logger.Infof("running server at %s", addr)
+	srv := &http.Server{
+		Handler: r,
+		Addr:    addr,
+	}
+
+	go serve(srv)
+}
+
+func mapApiRoutes(r *mux.Router) {
 	apiRouter := r.PathPrefix("/api").Subrouter()
 
 	apiRouter.Use(gh.CORS(
@@ -157,15 +190,6 @@ func Serve(dp *ioc.DependencyProvider, serverConfig config.ServerConfig) {
 	vsApiRouter.HandleFunc("/audit", handlers.ListAuditLog).Methods(http.MethodGet, http.MethodOptions)
 
 	r.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
-
-	addr := fmt.Sprintf("%s:%d", serverConfig.Host, serverConfig.Port)
-	logging.Logger.Infof("running server at %s", addr)
-	srv := &http.Server{
-		Handler: r,
-		Addr:    addr,
-	}
-
-	go serve(srv)
 }
 
 func serve(srv *http.Server) {
