@@ -10,7 +10,7 @@ import (
 )
 
 type VirtualServerClient interface {
-	Create(ctx context.Context, dto handlers.CreateVirtualSeverRequestDto) error
+	Create(ctx context.Context, dto handlers.CreateVirtualServerRequestDto) error
 	Get(ctx context.Context) (handlers.GetVirtualServerResponseDto, error)
 	GetPublicInfo(ctx context.Context) (handlers.GetVirtualServerListResponseDto, error)
 	Patch(ctx context.Context, dto handlers.PatchVirtualServerRequestDto) error
@@ -26,7 +26,7 @@ type virtualServerClient struct {
 	transport *Transport
 }
 
-func (c *virtualServerClient) Create(ctx context.Context, dto handlers.CreateVirtualSeverRequestDto) error {
+func (c *virtualServerClient) Create(ctx context.Context, dto handlers.CreateVirtualServerRequestDto) error {
 	jsonBytes, err := json.Marshal(dto)
 	if err != nil {
 		return fmt.Errorf("marshaling dto: %w", err)

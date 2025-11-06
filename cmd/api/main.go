@@ -204,6 +204,7 @@ func initApplication(dp *ioc.DependencyProvider) {
 		for _, resourceServer := range project.ResourceServers {
 			resourceServers = append(resourceServers, commands.CreateVirtualServerProjectResourceServer{
 				Name:        resourceServer.Name,
+				Slug:        resourceServer.Slug,
 				Description: resourceServer.Description,
 			})
 		}

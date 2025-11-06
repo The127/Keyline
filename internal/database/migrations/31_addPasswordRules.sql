@@ -19,7 +19,7 @@ alter table "password_rules"
     foreign key ("virtual_server_id")
     references "virtual_servers" ("id");
 
-create unique index idx_unique_rule_per_virtual_sever on password_rules (virtual_server_id, type);
+create unique index idx_unique_rule_per_virtual_server on password_rules (virtual_server_id, type);
 
 create trigger "trg_set_audit_updated_at"
     before update

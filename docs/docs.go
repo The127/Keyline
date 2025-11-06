@@ -34,7 +34,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.CreateVirtualSeverRequestDto"
+                            "$ref": "#/definitions/handlers.CreateVirtualServerRequestDto"
                         }
                     }
                 ],
@@ -3456,7 +3456,7 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.CreateVirtualSeverRequestDto": {
+        "handlers.CreateVirtualServerRequestDto": {
             "type": "object",
             "required": [
                 "displayName",
@@ -3464,7 +3464,7 @@ const docTemplate = `{
             ],
             "properties": {
                 "admin": {
-                    "$ref": "#/definitions/handlers.CreateVirtualSeverRequestDtoAdminDto"
+                    "$ref": "#/definitions/handlers.CreateVirtualServerRequestDtoAdminDto"
                 },
                 "displayName": {
                     "type": "string",
@@ -3482,7 +3482,7 @@ const docTemplate = `{
                 "projects": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/handlers.CreateVirtualSeverRequestDtoProjectDto"
+                        "$ref": "#/definitions/handlers.CreateVirtualServerRequestDtoProjectDto"
                     }
                 },
                 "require2fa": {
@@ -3491,7 +3491,7 @@ const docTemplate = `{
                 "serviceUsers": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/handlers.CreateVirtualSeverRequestDtoServiceUserDto"
+                        "$ref": "#/definitions/handlers.CreateVirtualServerRequestDtoServiceUserDto"
                     }
                 },
                 "signingAlgorithm": {
@@ -3503,7 +3503,7 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.CreateVirtualSeverRequestDtoAdminDto": {
+        "handlers.CreateVirtualServerRequestDtoAdminDto": {
             "type": "object",
             "required": [
                 "displayName",
@@ -3530,7 +3530,7 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.CreateVirtualSeverRequestDtoProjectDto": {
+        "handlers.CreateVirtualServerRequestDtoProjectDto": {
             "type": "object",
             "required": [
                 "name",
@@ -3540,7 +3540,7 @@ const docTemplate = `{
                 "applications": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/handlers.CreateVirtualSeverRequestDtoProjectDtoApplicationDto"
+                        "$ref": "#/definitions/handlers.CreateVirtualServerRequestDtoProjectDtoApplicationDto"
                     }
                 },
                 "description": {
@@ -3554,13 +3554,13 @@ const docTemplate = `{
                 "resourceServers": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/handlers.CreateVirtualSeverRequestDtoProjectDtoResourceServerDto"
+                        "$ref": "#/definitions/handlers.CreateVirtualServerRequestDtoProjectDtoResourceServerDto"
                     }
                 },
                 "roles": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/handlers.CreateVirtualSeverRequestDtoProjectDtoRoleDto"
+                        "$ref": "#/definitions/handlers.CreateVirtualServerRequestDtoProjectDtoRoleDto"
                     }
                 },
                 "slug": {
@@ -3570,7 +3570,7 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.CreateVirtualSeverRequestDtoProjectDtoApplicationDto": {
+        "handlers.CreateVirtualServerRequestDtoProjectDtoApplicationDto": {
             "type": "object",
             "required": [
                 "displayName",
@@ -3613,7 +3613,7 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.CreateVirtualSeverRequestDtoProjectDtoResourceServerDto": {
+        "handlers.CreateVirtualServerRequestDtoProjectDtoResourceServerDto": {
             "type": "object",
             "required": [
                 "name",
@@ -3635,7 +3635,7 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.CreateVirtualSeverRequestDtoProjectDtoRoleDto": {
+        "handlers.CreateVirtualServerRequestDtoProjectDtoRoleDto": {
             "type": "object",
             "required": [
                 "name"
@@ -3651,7 +3651,7 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.CreateVirtualSeverRequestDtoServiceUserDto": {
+        "handlers.CreateVirtualServerRequestDtoServiceUserDto": {
             "type": "object",
             "required": [
                 "publicKey",

@@ -294,6 +294,7 @@ func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer)
 
 				_, err = mediatr.Send[*AssignRoleToUserResponse](ctx, m, AssignRoleToUser{
 					VirtualServerName: virtualServer.Name(),
+					ProjectSlug:       systemProject.Slug(),
 					UserId:            serviceUserResponse.Id,
 					RoleId:            role.Id(),
 				})

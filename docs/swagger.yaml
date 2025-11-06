@@ -173,10 +173,10 @@ definitions:
       id:
         type: string
     type: object
-  handlers.CreateVirtualSeverRequestDto:
+  handlers.CreateVirtualServerRequestDto:
     properties:
       admin:
-        $ref: '#/definitions/handlers.CreateVirtualSeverRequestDtoAdminDto'
+        $ref: '#/definitions/handlers.CreateVirtualServerRequestDtoAdminDto'
       displayName:
         maxLength: 255
         minLength: 1
@@ -189,13 +189,13 @@ definitions:
         type: string
       projects:
         items:
-          $ref: '#/definitions/handlers.CreateVirtualSeverRequestDtoProjectDto'
+          $ref: '#/definitions/handlers.CreateVirtualServerRequestDtoProjectDto'
         type: array
       require2fa:
         type: boolean
       serviceUsers:
         items:
-          $ref: '#/definitions/handlers.CreateVirtualSeverRequestDtoServiceUserDto'
+          $ref: '#/definitions/handlers.CreateVirtualServerRequestDtoServiceUserDto'
         type: array
       signingAlgorithm:
         enum:
@@ -206,7 +206,7 @@ definitions:
     - displayName
     - name
     type: object
-  handlers.CreateVirtualSeverRequestDtoAdminDto:
+  handlers.CreateVirtualServerRequestDtoAdminDto:
     properties:
       displayName:
         maxLength: 255
@@ -226,11 +226,11 @@ definitions:
     - primaryEmail
     - username
     type: object
-  handlers.CreateVirtualSeverRequestDtoProjectDto:
+  handlers.CreateVirtualServerRequestDtoProjectDto:
     properties:
       applications:
         items:
-          $ref: '#/definitions/handlers.CreateVirtualSeverRequestDtoProjectDtoApplicationDto'
+          $ref: '#/definitions/handlers.CreateVirtualServerRequestDtoProjectDtoApplicationDto'
         type: array
       description:
         type: string
@@ -240,11 +240,11 @@ definitions:
         type: string
       resourceServers:
         items:
-          $ref: '#/definitions/handlers.CreateVirtualSeverRequestDtoProjectDtoResourceServerDto'
+          $ref: '#/definitions/handlers.CreateVirtualServerRequestDtoProjectDtoResourceServerDto'
         type: array
       roles:
         items:
-          $ref: '#/definitions/handlers.CreateVirtualSeverRequestDtoProjectDtoRoleDto'
+          $ref: '#/definitions/handlers.CreateVirtualServerRequestDtoProjectDtoRoleDto'
         type: array
       slug:
         maxLength: 255
@@ -254,7 +254,7 @@ definitions:
     - name
     - slug
     type: object
-  handlers.CreateVirtualSeverRequestDtoProjectDtoApplicationDto:
+  handlers.CreateVirtualServerRequestDtoProjectDtoApplicationDto:
     properties:
       displayName:
         maxLength: 255
@@ -285,7 +285,7 @@ definitions:
     - redirectUris
     - type
     type: object
-  handlers.CreateVirtualSeverRequestDtoProjectDtoResourceServerDto:
+  handlers.CreateVirtualServerRequestDtoProjectDtoResourceServerDto:
     properties:
       description:
         type: string
@@ -301,7 +301,7 @@ definitions:
     - name
     - slug
     type: object
-  handlers.CreateVirtualSeverRequestDtoProjectDtoRoleDto:
+  handlers.CreateVirtualServerRequestDtoProjectDtoRoleDto:
     properties:
       description:
         type: string
@@ -312,7 +312,7 @@ definitions:
     required:
     - name
     type: object
-  handlers.CreateVirtualSeverRequestDtoServiceUserDto:
+  handlers.CreateVirtualServerRequestDtoServiceUserDto:
     properties:
       publicKey:
         type: string
@@ -911,7 +911,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/handlers.CreateVirtualSeverRequestDto'
+          $ref: '#/definitions/handlers.CreateVirtualServerRequestDto'
       produces:
       - application/json
       responses:
