@@ -169,7 +169,7 @@ func initApplication(dp *ioc.DependencyProvider) {
 		}
 	}
 
-	var serviceUsers []commands.CreateVirtualServerServiceUser = nil
+	var serviceUsers []commands.CreateVirtualServerServiceUser = nil //nolint:prealloc
 	for _, serviceUser := range config.C.InitialVirtualServer.ServiceUsers {
 		serviceUsers = append(serviceUsers, commands.CreateVirtualServerServiceUser{
 			Username:  serviceUser.Username,
@@ -178,7 +178,7 @@ func initApplication(dp *ioc.DependencyProvider) {
 		})
 	}
 
-	var projects []commands.CreateVirtualServerProject = nil
+	var projects []commands.CreateVirtualServerProject = nil //nolint:prealloc
 	for _, project := range config.C.InitialVirtualServer.Projects {
 		var apps []commands.CreateVirtualServerProjectApplication = nil
 		for _, app := range project.Applications {
