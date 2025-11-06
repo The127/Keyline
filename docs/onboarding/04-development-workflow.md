@@ -295,7 +295,7 @@ import (
     "Keyline/internal/repositories/mocks"
     "github.com/The127/ioc"
     "github.com/The127/mediatr"
-    mediatormocks "Keyline/mediator/mocks"
+    mediatormocks "github.com/The127/mediatr/mocks"
     "github.com/google/uuid"
     "github.com/stretchr/testify/suite"
     "go.uber.org/mock/gomock"
@@ -349,7 +349,7 @@ func (s *DeactivateUserCommandSuite) TestDeactivateUser_Success() {
     mockRepo.EXPECT().Update(gomock.Any(), gomock.Any()).Return(nil)
     
     mockMediator := mediatormocks.NewMockMediator(ctrl)
-    mockmediatr.EXPECT().SendEvent(gomock.Any(), gomock.AssignableToTypeOf(events.UserDeactivatedEvent{}), gomock.Any())
+    mockMediator.EXPECT().SendEvent(gomock.Any(), gomock.AssignableToTypeOf(events.UserDeactivatedEvent{}), gomock.Any())
     
     ctx := s.createContext(mockRepo, mockMediator)
     

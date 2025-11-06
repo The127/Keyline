@@ -811,7 +811,7 @@ mockRepo.EXPECT().
     Return(errors.New("database error"))
 
 // Match specific types
-mockmediatr.EXPECT().
+mockMediator.EXPECT().
     SendEvent(gomock.Any(), gomock.AssignableToTypeOf(events.UserCreatedEvent{}), gomock.Any())
 
 // Return different values on consecutive calls
