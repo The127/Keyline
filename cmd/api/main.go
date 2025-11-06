@@ -225,6 +225,8 @@ func initApplication(dp *ioc.DependencyProvider) {
 		EnableRegistration: config.C.InitialVirtualServer.EnableRegistration,
 		SigningAlgorithm:   config.C.InitialVirtualServer.SigningAlgorithm,
 
+		CreateSystemAdminRole: config.C.InitialVirtualServer.CreateSystemAdminRole,
+
 		Admin:        adminConfig,
 		ServiceUsers: serviceUsers,
 		Projects:     projects,
