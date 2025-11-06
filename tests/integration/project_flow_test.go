@@ -3,8 +3,8 @@ package integration
 import (
 	"Keyline/internal/commands"
 	"Keyline/internal/queries"
-	"Keyline/mediator"
 	"Keyline/utils"
+	"github.com/The127/mediatr"
 
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
@@ -33,7 +33,7 @@ var _ = Describe("Project flow", Ordered, func() {
 			Name:              "Name",
 			Description:       "Description",
 		}
-		response, err := mediator.Send[*commands.CreateProjectResponse](h.Ctx(), h.Mediator(), req)
+		response, err := mediatr.Send[*commands.CreateProjectResponse](h.Ctx(), h.Mediator(), req)
 		Expect(err).ToNot(HaveOccurred())
 		projectId = response.Id
 	})
@@ -43,7 +43,7 @@ var _ = Describe("Project flow", Ordered, func() {
 			VirtualServerName: h.VirtualServer(),
 			SearchText:        "test",
 		}
-		response, err := mediator.Send[*queries.ListProjectsResponse](h.Ctx(), h.Mediator(), req)
+		response, err := mediatr.Send[*queries.ListProjectsResponse](h.Ctx(), h.Mediator(), req)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(response.Items).To(ContainElement(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
 			"Id":   Equal(projectId),
@@ -58,7 +58,7 @@ var _ = Describe("Project flow", Ordered, func() {
 			Name:              utils.Ptr("Updated Name"),
 			Description:       utils.Ptr("Updated Description"),
 		}
-		_, err := mediator.Send[*commands.PatchProjectResponse](h.Ctx(), h.Mediator(), req)
+		_, err := mediatr.Send[*commands.PatchProjectResponse](h.Ctx(), h.Mediator(), req)
 		Expect(err).ToNot(HaveOccurred())
 	})
 
@@ -67,7 +67,7 @@ var _ = Describe("Project flow", Ordered, func() {
 			VirtualServerName: h.VirtualServer(),
 			ProjectSlug:       projectSlug,
 		}
-		project, err := mediator.Send[*queries.GetProjectResponse](h.Ctx(), h.Mediator(), req)
+		project, err := mediatr.Send[*queries.GetProjectResponse](h.Ctx(), h.Mediator(), req)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(project.Name).To(Equal("Updated Name"))
 		Expect(project.Description).To(Equal("Updated Description"))

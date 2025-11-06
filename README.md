@@ -66,7 +66,7 @@ Perfect for new contributors and developers wanting to understand Keyline's arch
 
 ## Prerequisites
 
-- **Go 1.24** or higher
+- **Go 1.25** or higher
 - **Database** - PostgreSQL (recommended for production) or SQLite (work-in-progress, for development/single-server)
 - **Cache Storage** - Redis (Valkey) recommended for production, or in-memory for development/single-instance
 - **Mail server** (for email notifications)

@@ -5,9 +5,9 @@ import (
 	"Keyline/internal/middlewares"
 	"Keyline/internal/queries"
 	"Keyline/ioc"
-	"Keyline/mediator"
 	"Keyline/utils"
 	"encoding/json"
+	"github.com/The127/mediatr"
 	"net/http"
 	"time"
 
@@ -60,9 +60,9 @@ func CreateProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[mediator.Mediator](scope)
+	m := ioc.GetDependency[mediatr.Mediator](scope)
 
-	response, err := mediator.Send[*commands.CreateProjectResponse](ctx, m, commands.CreateProject{
+	response, err := mediatr.Send[*commands.CreateProjectResponse](ctx, m, commands.CreateProject{
 		VirtualServerName: vsName,
 		Slug:              dto.Slug,
 		Name:              dto.Name,
@@ -125,9 +125,9 @@ func ListProjects(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[mediator.Mediator](scope)
+	m := ioc.GetDependency[mediatr.Mediator](scope)
 
-	projects, err := mediator.Send[*queries.ListProjectsResponse](ctx, m, queries.ListProjects{
+	projects, err := mediatr.Send[*queries.ListProjectsResponse](ctx, m, queries.ListProjects{
 		VirtualServerName: vsName,
 		PagedQuery:        queryOps.ToPagedQuery(),
 		OrderedQuery:      queryOps.ToOrderedQuery(),
@@ -182,9 +182,9 @@ func GetProject(w http.ResponseWriter, r *http.Request) {
 	projectSlug := vars["projectSlug"]
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[mediator.Mediator](scope)
+	m := ioc.GetDependency[mediatr.Mediator](scope)
 
-	resp, err := mediator.Send[*queries.GetProjectResponse](ctx, m, queries.GetProject{
+	resp, err := mediatr.Send[*queries.GetProjectResponse](ctx, m, queries.GetProject{
 		VirtualServerName: vsName,
 		ProjectSlug:       projectSlug,
 	})

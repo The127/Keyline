@@ -4,9 +4,9 @@ import (
 	"Keyline/internal/middlewares"
 	"Keyline/internal/queries"
 	"Keyline/ioc"
-	"Keyline/mediator"
 	"Keyline/utils"
 	"encoding/json"
+	"github.com/The127/mediatr"
 	"net/http"
 	"time"
 
@@ -63,9 +63,9 @@ func ListAuditLog(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[mediator.Mediator](scope)
+	m := ioc.GetDependency[mediatr.Mediator](scope)
 
-	auditEntries, err := mediator.Send[*queries.ListAuditEntriesResponse](ctx, m, queries.ListAuditEntries{
+	auditEntries, err := mediatr.Send[*queries.ListAuditEntriesResponse](ctx, m, queries.ListAuditEntries{
 		VirtualServerName: vsName,
 		PagedQuery:        queryOps.ToPagedQuery(),
 		OrderedQuery:      queryOps.ToOrderedQuery(),

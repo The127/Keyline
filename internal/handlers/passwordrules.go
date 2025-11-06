@@ -6,10 +6,10 @@ import (
 	"Keyline/internal/queries"
 	"Keyline/internal/repositories"
 	"Keyline/ioc"
-	"Keyline/mediator"
 	"Keyline/utils"
 	"encoding/json"
 	"fmt"
+	"github.com/The127/mediatr"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -47,9 +47,9 @@ func ListPasswordRules(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[mediator.Mediator](scope)
+	m := ioc.GetDependency[mediatr.Mediator](scope)
 
-	rules, err := mediator.Send[*queries.ListPasswordRulesResponse](ctx, m, queries.ListPasswordRules{
+	rules, err := mediatr.Send[*queries.ListPasswordRulesResponse](ctx, m, queries.ListPasswordRules{
 		VirtualServerName: vsName,
 	})
 	if err != nil {
@@ -121,9 +121,9 @@ func CreatePasswordRule(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[mediator.Mediator](scope)
+	m := ioc.GetDependency[mediatr.Mediator](scope)
 
-	_, err = mediator.Send[*commands.CreatePasswordRuleResponse](ctx, m, commands.CreatePasswordRule{
+	_, err = mediatr.Send[*commands.CreatePasswordRuleResponse](ctx, m, commands.CreatePasswordRule{
 		VirtualServerName: vsName,
 		Type:              repositories.PasswordRuleType(requestDto.Type),
 		Details:           requestDto.Details,
@@ -175,9 +175,9 @@ func UpdatePasswordRule(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[mediator.Mediator](scope)
+	m := ioc.GetDependency[mediatr.Mediator](scope)
 
-	_, err = mediator.Send[*commands.UpdatePasswordRuleResponse](ctx, m, commands.UpdatePasswordRule{
+	_, err = mediatr.Send[*commands.UpdatePasswordRuleResponse](ctx, m, commands.UpdatePasswordRule{
 		VirtualServerName: vsName,
 		Type:              ruleType,
 		Details:           requestDto,

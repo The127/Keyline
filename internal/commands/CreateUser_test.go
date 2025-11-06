@@ -6,13 +6,14 @@ import (
 	"Keyline/internal/repositories"
 	"Keyline/internal/repositories/mocks"
 	"Keyline/ioc"
-	"Keyline/mediator"
-	mocks2 "Keyline/mediator/mocks"
 	"Keyline/utils"
 	"context"
 	"errors"
 	"testing"
 	"time"
+
+	"github.com/The127/mediatr"
+	mocks2 "github.com/The127/mediatr/mocks"
 
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -43,7 +44,7 @@ func (s *CreateUserCommandSuite) createContext(virtualServerRepository repositor
 	}
 
 	if m != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) mediator.Mediator {
+		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) mediatr.Mediator {
 			return m
 		})
 	}

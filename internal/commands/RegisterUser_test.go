@@ -7,7 +7,7 @@ import (
 	"Keyline/internal/repositories"
 	"Keyline/internal/repositories/mocks"
 	"Keyline/ioc"
-	"Keyline/mediator"
+	"github.com/The127/mediatr"
 	"testing"
 	"time"
 
@@ -48,7 +48,7 @@ func (s *RegisterUserCommandSuite) TestHandleRegisterUser() {
 	passwordValidator := mock.NewMockValidator(ctrl)
 	passwordValidator.EXPECT().Validate(gomock.Any(), gomock.Any()).Return(nil)
 
-	m := mediator.NewMediator()
+	m := mediatr.NewMediator()
 
 	dc := ioc.NewDependencyCollection()
 	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.VirtualServerRepository {
@@ -60,7 +60,7 @@ func (s *RegisterUserCommandSuite) TestHandleRegisterUser() {
 	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.CredentialRepository {
 		return credentialRepository
 	})
-	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) mediator.Mediator {
+	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) mediatr.Mediator {
 		return m
 	})
 	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) password.Validator {

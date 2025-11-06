@@ -6,10 +6,10 @@ import (
 	"Keyline/internal/password"
 	"Keyline/internal/repositories"
 	"Keyline/ioc"
-	"Keyline/mediator"
 	"Keyline/utils"
 	"context"
 	"fmt"
+	"github.com/The127/mediatr"
 
 	"github.com/google/uuid"
 )
@@ -73,8 +73,8 @@ func HandleRegisterUser(ctx context.Context, command RegisterUser) (*RegisterUse
 		return nil, fmt.Errorf("inserting credential: %w", err)
 	}
 
-	m := ioc.GetDependency[mediator.Mediator](scope)
-	err = mediator.SendEvent(ctx, m, events.UserCreatedEvent{
+	m := ioc.GetDependency[mediatr.Mediator](scope)
+	err = mediatr.SendEvent(ctx, m, events.UserCreatedEvent{
 		UserId: user.Id(),
 	})
 	if err != nil {

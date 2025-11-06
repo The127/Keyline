@@ -6,9 +6,9 @@ import (
 	"Keyline/internal/middlewares"
 	"Keyline/internal/queries"
 	"Keyline/ioc"
-	"Keyline/mediator"
 	"Keyline/utils"
 	"encoding/json"
+	"github.com/The127/mediatr"
 	"net/http"
 	"time"
 
@@ -48,14 +48,14 @@ func CreateVirtualSever(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, err)
 		return
 	}
-	m := ioc.GetDependency[mediator.Mediator](scope)
+	m := ioc.GetDependency[mediatr.Mediator](scope)
 
 	signingAlgorithm := config.SigningAlgorithmEdDSA
 	if dto.SigningAlgorithm != nil {
 		signingAlgorithm = config.SigningAlgorithm(*dto.SigningAlgorithm)
 	}
 
-	_, err = mediator.Send[*commands.CreateVirtualServerResponse](ctx, m, commands.CreateVirtualServer{
+	_, err = mediatr.Send[*commands.CreateVirtualServerResponse](ctx, m, commands.CreateVirtualServer{
 		Name:               dto.Name,
 		DisplayName:        dto.DisplayName,
 		EnableRegistration: dto.EnableRegistration,
@@ -100,8 +100,8 @@ func GetVirtualServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m := ioc.GetDependency[mediator.Mediator](scope)
-	response, err := mediator.Send[*queries.GetVirtualServerResponse](ctx, m, queries.GetVirtualServerQuery{
+	m := ioc.GetDependency[mediatr.Mediator](scope)
+	response, err := mediatr.Send[*queries.GetVirtualServerResponse](ctx, m, queries.GetVirtualServerQuery{
 		VirtualServerName: vsName,
 	})
 	if err != nil {
@@ -152,9 +152,9 @@ func GetVirtualServerPublicInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m := ioc.GetDependency[mediator.Mediator](scope)
+	m := ioc.GetDependency[mediatr.Mediator](scope)
 
-	response, err := mediator.Send[*queries.GetVirtualServerPublicInfoResponse](ctx, m, queries.GetVirtualServerPublicInfo{
+	response, err := mediatr.Send[*queries.GetVirtualServerPublicInfoResponse](ctx, m, queries.GetVirtualServerPublicInfo{
 		VirtualServerName: vsName,
 	})
 	if err != nil {
@@ -210,12 +210,12 @@ func PatchVirtualServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m := ioc.GetDependency[mediator.Mediator](scope)
+	m := ioc.GetDependency[mediatr.Mediator](scope)
 	command := commands.PatchVirtualServer{
 		VirtualServerName: vsName,
 		DisplayName:       utils.TrimSpace(dto.DisplayName),
 	}
-	_, err = mediator.Send[*commands.PatchVirtualServerResponse](ctx, m, command)
+	_, err = mediatr.Send[*commands.PatchVirtualServerResponse](ctx, m, command)
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return

@@ -11,7 +11,6 @@ import (
 	"Keyline/internal/services"
 	"Keyline/internal/services/keyValue"
 	"Keyline/ioc"
-	"Keyline/mediator"
 	"Keyline/templates"
 	"Keyline/utils"
 	"bytes"
@@ -27,6 +26,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/The127/mediatr"
 	"net/http"
 	"time"
 
@@ -584,8 +584,8 @@ func ResetTemporaryPassword(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 
-		m := ioc.GetDependency[mediator.Mediator](scope)
-		_, err = mediator.Send[*commands.ResetPasswordResponse](ctx, m, commands.ResetPassword{
+		m := ioc.GetDependency[mediatr.Mediator](scope)
+		_, err = mediatr.Send[*commands.ResetPasswordResponse](ctx, m, commands.ResetPassword{
 			UserId:      loginInfo.UserId,
 			NewPassword: dto.NewPassword,
 			Temporary:   false,

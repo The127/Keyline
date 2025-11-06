@@ -6,9 +6,9 @@ import (
 	"Keyline/internal/queries"
 	"Keyline/internal/repositories"
 	"Keyline/ioc"
-	"Keyline/mediator"
 	"Keyline/utils"
 	"encoding/json"
+	"github.com/The127/mediatr"
 	"net/http"
 	"time"
 
@@ -69,14 +69,14 @@ func CreateApplication(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[mediator.Mediator](scope)
+	m := ioc.GetDependency[mediatr.Mediator](scope)
 
 	accessTokenHeaderType := "at+jwt"
 	if dto.AccessTokenHeaderType != nil {
 		accessTokenHeaderType = *dto.AccessTokenHeaderType
 	}
 
-	response, err := mediator.Send[*commands.CreateApplicationResponse](ctx, m, commands.CreateApplication{
+	response, err := mediatr.Send[*commands.CreateApplicationResponse](ctx, m, commands.CreateApplication{
 		VirtualServerName:      vsName,
 		ProjectSlug:            projectSlug,
 		Name:                   dto.Name,
@@ -154,9 +154,9 @@ func GetApplication(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[mediator.Mediator](scope)
+	m := ioc.GetDependency[mediatr.Mediator](scope)
 
-	application, err := mediator.Send[*queries.GetApplicationResult](ctx, m, queries.GetApplication{
+	application, err := mediatr.Send[*queries.GetApplicationResult](ctx, m, queries.GetApplication{
 		VirtualServerName: vsName,
 		ProjectSlug:       projectSlug,
 		ApplicationId:     appId,
@@ -237,9 +237,9 @@ func PatchApplication(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[mediator.Mediator](scope)
+	m := ioc.GetDependency[mediatr.Mediator](scope)
 
-	_, err = mediator.Send[*commands.PatchApplicationResponse](ctx, m, commands.PatchApplication{
+	_, err = mediatr.Send[*commands.PatchApplicationResponse](ctx, m, commands.PatchApplication{
 		VirtualServerName:   vsName,
 		ProjectSlug:         projectSlug,
 		ApplicationId:       appId,
@@ -285,9 +285,9 @@ func DeleteApplication(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[mediator.Mediator](scope)
+	m := ioc.GetDependency[mediatr.Mediator](scope)
 
-	_, err = mediator.Send[*commands.DeleteApplicationResponse](ctx, m, commands.DeleteApplication{
+	_, err = mediatr.Send[*commands.DeleteApplicationResponse](ctx, m, commands.DeleteApplication{
 		VirtualServerName: vsName,
 		ProjectSlug:       projectSlug,
 		ApplicationId:     appId,
@@ -346,9 +346,9 @@ func ListApplications(w http.ResponseWriter, r *http.Request) {
 	projectSlug := vars["projectSlug"]
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[mediator.Mediator](scope)
+	m := ioc.GetDependency[mediatr.Mediator](scope)
 
-	applications, err := mediator.Send[*queries.ListApplicationsResponse](ctx, m, queries.ListApplications{
+	applications, err := mediatr.Send[*queries.ListApplicationsResponse](ctx, m, queries.ListApplications{
 		VirtualServerName: vsName,
 		ProjectSlug:       projectSlug,
 		PagedQuery:        queryOps.ToPagedQuery(),

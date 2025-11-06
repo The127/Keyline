@@ -227,7 +227,7 @@ func main() {
     provider := dc.BuildProvider()
     
     // 4. Get singleton dependencies
-    mediator := ioc.GetDependency[mediator.Mediator](provider)
+    mediator := ioc.GetDependency[mediatr.Mediator](provider)
     router := ioc.GetDependency[*mux.Router](provider)
     
     // 5. Start server
@@ -263,10 +263,10 @@ func GetUserHandler(w http.ResponseWriter, r *http.Request) {
     scope := r.Context().Value("scope").(*ioc.DependencyProvider)
     
     // Resolve scoped or singleton dependencies
-    mediator := ioc.GetDependency[mediator.Mediator](scope)
+    mediator := ioc.GetDependency[mediatr.Mediator](scope)
     
     // Use the dependency
-    result, err := mediator.Send[GetUserResult](r.Context(), GetUserQuery{...})
+    result, err := mediatr.Send[GetUserResult](r.Context(), GetUserQuery{...})
     // ...
 }
 ```
@@ -417,7 +417,7 @@ func Repositories(dc *ioc.DependencyCollection, mode config.DatabaseMode, c any)
 func Commands(dc *ioc.DependencyCollection) {
     // CreateUser command
     ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) any {
-        m := ioc.GetDependency[mediator.Mediator](dp)
+        m := ioc.GetDependency[mediatr.Mediator](dp)
         userRepo := ioc.GetDependency[repositories.UserRepository](dp)
         emailService := ioc.GetDependency[services.EmailService](dp)
         
@@ -428,21 +428,21 @@ func Commands(dc *ioc.DependencyCollection) {
         }
         
         // Register with mediator
-        mediator.RegisterHandler(m, handler.Handle)
+        mediatr.RegisterHandler(m, handler.Handle)
         
         return handler
     })
     
     // UpdateUser command
     ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) any {
-        m := ioc.GetDependency[mediator.Mediator](dp)
+        m := ioc.GetDependency[mediatr.Mediator](dp)
         userRepo := ioc.GetDependency[repositories.UserRepository](dp)
         
         handler := &commands.UpdateUserHandler{
             userRepo: userRepo,
         }
         
-        mediator.RegisterHandler(m, handler.Handle)
+        mediatr.RegisterHandler(m, handler.Handle)
         return handler
     })
 }

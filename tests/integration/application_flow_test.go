@@ -4,8 +4,8 @@ import (
 	"Keyline/internal/commands"
 	"Keyline/internal/queries"
 	"Keyline/internal/repositories"
-	"Keyline/mediator"
 	"Keyline/utils"
+	"github.com/The127/mediatr"
 
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
@@ -28,7 +28,7 @@ var _ = Describe("Application flow", Ordered, func() {
 			Name:              "Name",
 			Description:       "Description",
 		}
-		_, err := mediator.Send[*commands.CreateProjectResponse](h.Ctx(), h.Mediator(), req)
+		_, err := mediatr.Send[*commands.CreateProjectResponse](h.Ctx(), h.Mediator(), req)
 		Expect(err).ToNot(HaveOccurred())
 	})
 
@@ -46,7 +46,7 @@ var _ = Describe("Application flow", Ordered, func() {
 			RedirectUris:           []string{"http://localhost:8080/callback"},
 			PostLogoutRedirectUris: []string{"http://localhost:8080/logout"},
 		}
-		response, err := mediator.Send[*commands.CreateApplicationResponse](h.Ctx(), h.Mediator(), req)
+		response, err := mediatr.Send[*commands.CreateApplicationResponse](h.Ctx(), h.Mediator(), req)
 		Expect(err).ToNot(HaveOccurred())
 		applicationId = response.Id
 	})
@@ -57,7 +57,7 @@ var _ = Describe("Application flow", Ordered, func() {
 			ProjectSlug:       projectSlug,
 			SearchText:        "test-app",
 		}
-		response, err := mediator.Send[*queries.ListApplicationsResponse](h.Ctx(), h.Mediator(), req)
+		response, err := mediatr.Send[*queries.ListApplicationsResponse](h.Ctx(), h.Mediator(), req)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(response.Items).To(ContainElement(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
 			"Id":   Equal(applicationId),
@@ -72,7 +72,7 @@ var _ = Describe("Application flow", Ordered, func() {
 			ApplicationId:     applicationId,
 			DisplayName:       utils.Ptr("Updated Test App"),
 		}
-		_, err := mediator.Send[*commands.PatchApplicationResponse](h.Ctx(), h.Mediator(), cmd)
+		_, err := mediatr.Send[*commands.PatchApplicationResponse](h.Ctx(), h.Mediator(), cmd)
 		Expect(err).ToNot(HaveOccurred())
 	})
 
@@ -82,7 +82,7 @@ var _ = Describe("Application flow", Ordered, func() {
 			ProjectSlug:       projectSlug,
 			ApplicationId:     applicationId,
 		}
-		app, err := mediator.Send[*queries.GetApplicationResult](h.Ctx(), h.Mediator(), req)
+		app, err := mediatr.Send[*queries.GetApplicationResult](h.Ctx(), h.Mediator(), req)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(app.DisplayName).To(Equal("Updated Test App"))
 	})
@@ -93,7 +93,7 @@ var _ = Describe("Application flow", Ordered, func() {
 			ProjectSlug:       projectSlug,
 			ApplicationId:     applicationId,
 		}
-		_, err := mediator.Send[*commands.DeleteApplicationResponse](h.Ctx(), h.Mediator(), cmd)
+		_, err := mediatr.Send[*commands.DeleteApplicationResponse](h.Ctx(), h.Mediator(), cmd)
 		Expect(err).ToNot(HaveOccurred())
 	})
 
@@ -103,7 +103,7 @@ var _ = Describe("Application flow", Ordered, func() {
 			ProjectSlug:       projectSlug,
 			SearchText:        "test-app",
 		}
-		response, err := mediator.Send[*queries.ListApplicationsResponse](h.Ctx(), h.Mediator(), req)
+		response, err := mediatr.Send[*queries.ListApplicationsResponse](h.Ctx(), h.Mediator(), req)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(response.Items).To(BeEmpty())
 	})

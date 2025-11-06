@@ -7,10 +7,10 @@ import (
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/ioc"
-	"Keyline/mediator"
 	"Keyline/utils"
 	"context"
 	"fmt"
+	"github.com/The127/mediatr"
 
 	"github.com/google/uuid"
 )
@@ -67,8 +67,8 @@ func HandleResetPassword(ctx context.Context, command ResetPassword) (*ResetPass
 		return nil, fmt.Errorf("updating credential: %w", err)
 	}
 
-	m := ioc.GetDependency[mediator.Mediator](scope)
-	err = mediator.SendEvent(ctx, m, events.PasswordChangedEvent{
+	m := ioc.GetDependency[mediatr.Mediator](scope)
+	err = mediatr.SendEvent(ctx, m, events.PasswordChangedEvent{
 		UserId: command.UserId,
 	})
 	if err != nil {

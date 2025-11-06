@@ -5,9 +5,9 @@ import (
 	"Keyline/internal/queries"
 	"Keyline/internal/repositories"
 	"Keyline/ioc"
-	"Keyline/mediator"
 	"Keyline/utils"
 	"encoding/json"
+	"github.com/The127/mediatr"
 	"net/http"
 	"time"
 
@@ -54,12 +54,12 @@ func GetTemplate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m := ioc.GetDependency[mediator.Mediator](scope)
+	m := ioc.GetDependency[mediatr.Mediator](scope)
 	query := queries.GetTemplate{
 		VirtualServerName: vsName,
 		Type:              repositories.TemplateType(templateType),
 	}
-	queryResult, err := mediator.Send[*queries.GetTemplateResult](ctx, m, query)
+	queryResult, err := mediatr.Send[*queries.GetTemplateResult](ctx, m, query)
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
@@ -111,9 +111,9 @@ func ListTemplates(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[mediator.Mediator](scope)
+	m := ioc.GetDependency[mediatr.Mediator](scope)
 
-	templates, err := mediator.Send[*queries.ListTemplatesResponse](ctx, m, queries.ListTemplates{
+	templates, err := mediatr.Send[*queries.ListTemplatesResponse](ctx, m, queries.ListTemplates{
 		VirtualServerName: vsName,
 		PagedQuery:        queryOps.ToPagedQuery(),
 		OrderedQuery:      queryOps.ToOrderedQuery(),

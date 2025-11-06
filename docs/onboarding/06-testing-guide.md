@@ -146,7 +146,7 @@ import (
     "Keyline/internal/repositories"
     "Keyline/internal/repositories/mocks"
     "Keyline/ioc"
-    "Keyline/mediator"
+    "github.com/The127/mediatr"
     mediatormocks "Keyline/mediator/mocks"
     "github.com/stretchr/testify/suite"
     "go.uber.org/mock/gomock"
@@ -164,7 +164,7 @@ func TestCreateUserCommandSuite(t *testing.T) {
 func (s *CreateUserCommandSuite) createContext(
     vsRepo repositories.VirtualServerRepository,
     userRepo repositories.UserRepository,
-    m mediator.Mediator,
+    m mediatr.Mediator,
 ) context.Context {
     dc := ioc.NewDependencyCollection()
     
@@ -181,7 +181,7 @@ func (s *CreateUserCommandSuite) createContext(
     }
     
     if m != nil {
-        ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) mediator.Mediator {
+        ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) mediatr.Mediator {
             return m
         })
     }
@@ -208,7 +208,7 @@ func (s *CreateUserCommandSuite) TestCreateUser_Success() {
     mockUserRepo.EXPECT().Insert(gomock.Any(), gomock.Any()).Return(nil)
     
     mockMediator := mediatormocks.NewMockMediator(ctrl)
-    mockMediator.EXPECT().SendEvent(gomock.Any(), gomock.AssignableToTypeOf(events.UserCreatedEvent{}), gomock.Any())
+    mockmediatr.EXPECT().SendEvent(gomock.Any(), gomock.AssignableToTypeOf(events.UserCreatedEvent{}), gomock.Any())
     
     ctx := s.createContext(mockVsRepo, mockUserRepo, mockMediator)
     cmd := CreateUser{
@@ -484,7 +484,7 @@ import (
     "Keyline/internal/commands"
     "Keyline/internal/queries"
     "Keyline/internal/repositories"
-    "Keyline/mediator"
+    "github.com/The127/mediatr"
     "Keyline/utils"
 
     "github.com/google/uuid"
@@ -519,7 +519,7 @@ var _ = Describe("Application flow", Ordered, func() {
         }
         
         // Act
-        response, err := mediator.Send[*commands.CreateApplicationResponse](
+        response, err := mediatr.Send[*commands.CreateApplicationResponse](
             h.Ctx(), h.Mediator(), req)
         
         // Assert
@@ -533,7 +533,7 @@ var _ = Describe("Application flow", Ordered, func() {
             SearchText:        "test-app",
         }
         
-        response, err := mediator.Send[*queries.ListApplicationsResponse](
+        response, err := mediatr.Send[*queries.ListApplicationsResponse](
             h.Ctx(), h.Mediator(), req)
         
         Expect(err).ToNot(HaveOccurred())
@@ -550,7 +550,7 @@ var _ = Describe("Application flow", Ordered, func() {
             DisplayName:       utils.Ptr("Updated Test App"),
         }
         
-        _, err := mediator.Send[*commands.PatchApplicationResponse](
+        _, err := mediatr.Send[*commands.PatchApplicationResponse](
             h.Ctx(), h.Mediator(), cmd)
         
         Expect(err).ToNot(HaveOccurred())
@@ -562,7 +562,7 @@ var _ = Describe("Application flow", Ordered, func() {
             ApplicationId:     applicationId,
         }
         
-        app, err := mediator.Send[*queries.GetApplicationResult](
+        app, err := mediatr.Send[*queries.GetApplicationResult](
             h.Ctx(), h.Mediator(), req)
         
         Expect(err).ToNot(HaveOccurred())
@@ -811,7 +811,7 @@ mockRepo.EXPECT().
     Return(errors.New("database error"))
 
 // Match specific types
-mockMediator.EXPECT().
+mockmediatr.EXPECT().
     SendEvent(gomock.Any(), gomock.AssignableToTypeOf(events.UserCreatedEvent{}), gomock.Any())
 
 // Return different values on consecutive calls

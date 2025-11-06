@@ -12,11 +12,11 @@ import (
 	"Keyline/internal/server"
 	"Keyline/internal/setup"
 	"Keyline/ioc"
-	"Keyline/mediator"
 	"Keyline/utils"
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/The127/mediatr"
 	"strings"
 	"sync"
 	"time"
@@ -183,9 +183,9 @@ func initTest(dp *ioc.DependencyProvider) (*initResult, error) {
 
 	ctx := middlewares.ContextWithScope(context.Background(), scope)
 	ctx = authentication.ContextWithCurrentUser(ctx, authentication.SystemUser())
-	m := ioc.GetDependency[mediator.Mediator](scope)
+	m := ioc.GetDependency[mediatr.Mediator](scope)
 
-	createVirtualServerResponse, err := mediator.Send[*commands.CreateVirtualServerResponse](ctx, m, commands.CreateVirtualServer{
+	createVirtualServerResponse, err := mediatr.Send[*commands.CreateVirtualServerResponse](ctx, m, commands.CreateVirtualServer{
 		Name:               "test-vs",
 		DisplayName:        "Test Virtual Server",
 		EnableRegistration: true,
@@ -195,7 +195,7 @@ func initTest(dp *ioc.DependencyProvider) (*initResult, error) {
 		return nil, fmt.Errorf("failed to create initial virtual server: %v", err)
 	}
 
-	initialAdminUserInfo, err := mediator.Send[*commands.CreateUserResponse](ctx, m, commands.CreateUser{
+	initialAdminUserInfo, err := mediatr.Send[*commands.CreateUserResponse](ctx, m, commands.CreateUser{
 		VirtualServerName: "test-vs",
 		DisplayName:       "Test Admin User",
 		Username:          "test-admin-user",
@@ -216,7 +216,7 @@ func initTest(dp *ioc.DependencyProvider) (*initResult, error) {
 		return nil, fmt.Errorf("failed to create initial admin credential: %v", err)
 	}
 
-	_, err = mediator.Send[*commands.AssignRoleToUserResponse](ctx, m, commands.AssignRoleToUser{
+	_, err = mediatr.Send[*commands.AssignRoleToUserResponse](ctx, m, commands.AssignRoleToUser{
 		VirtualServerName: "test-vs",
 		ProjectSlug:       createVirtualServerResponse.SystemProjectSlug,
 		UserId:            initialAdminUserInfo.Id,
@@ -226,7 +226,7 @@ func initTest(dp *ioc.DependencyProvider) (*initResult, error) {
 		return nil, fmt.Errorf("failed to assign admin role to initial admin user: %v", err)
 	}
 
-	serviceUserResponse, err := mediator.Send[*commands.CreateServiceUserResponse](ctx, m, commands.CreateServiceUser{
+	serviceUserResponse, err := mediatr.Send[*commands.CreateServiceUserResponse](ctx, m, commands.CreateServiceUser{
 		VirtualServerName: "test-vs",
 		Username:          "service-user",
 	})
@@ -234,7 +234,7 @@ func initTest(dp *ioc.DependencyProvider) (*initResult, error) {
 		return nil, fmt.Errorf("failed to create initial service user: %v", err)
 	}
 
-	_, err = mediator.Send[*commands.AssignRoleToUserResponse](ctx, m, commands.AssignRoleToUser{
+	_, err = mediatr.Send[*commands.AssignRoleToUserResponse](ctx, m, commands.AssignRoleToUser{
 		VirtualServerName: "test-vs",
 		ProjectSlug:       createVirtualServerResponse.SystemProjectSlug,
 		UserId:            serviceUserResponse.Id,
@@ -244,7 +244,7 @@ func initTest(dp *ioc.DependencyProvider) (*initResult, error) {
 		return nil, fmt.Errorf("failed to assign admin role to service user: %v", err)
 	}
 
-	keyResponse, err := mediator.Send[*commands.AssociateServiceUserPublicKeyResponse](ctx, m, commands.AssociateServiceUserPublicKey{
+	keyResponse, err := mediatr.Send[*commands.AssociateServiceUserPublicKeyResponse](ctx, m, commands.AssociateServiceUserPublicKey{
 		VirtualServerName: "test-vs",
 		ServiceUserId:     serviceUserResponse.Id,
 		PublicKey:         serviceUserPublicKey,

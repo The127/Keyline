@@ -10,11 +10,11 @@ import (
 	"Keyline/internal/middlewares"
 	"Keyline/internal/setup"
 	"Keyline/ioc"
-	"Keyline/mediator"
 	"Keyline/utils"
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/The127/mediatr"
 	"strings"
 	"time"
 
@@ -23,7 +23,7 @@ import (
 )
 
 type harness struct {
-	m       mediator.Mediator
+	m       mediatr.Mediator
 	scope   *ioc.DependencyProvider
 	ctx     context.Context
 	setTime clock.TimeSetterFn
@@ -66,7 +66,7 @@ func (h *harness) Ctx() context.Context {
 	return h.ctx
 }
 
-func (h *harness) Mediator() mediator.Mediator {
+func (h *harness) Mediator() mediatr.Mediator {
 	return h.m
 }
 
@@ -112,12 +112,12 @@ func newIntegrationTestHarness() *harness {
 	setup.Mediator(dc)
 
 	scope := dc.BuildProvider()
-	m := ioc.GetDependency[mediator.Mediator](scope)
+	m := ioc.GetDependency[mediatr.Mediator](scope)
 
 	ctx = middlewares.ContextWithScope(ctx, scope)
 	ctx = authentication.ContextWithCurrentUser(ctx, authentication.SystemUser())
 
-	_, err = mediator.Send[*commands.CreateVirtualServerResponse](ctx, m, commands.CreateVirtualServer{
+	_, err = mediatr.Send[*commands.CreateVirtualServerResponse](ctx, m, commands.CreateVirtualServer{
 		Name:               "test-vs",
 		DisplayName:        "Test Virtual Server",
 		EnableRegistration: true,

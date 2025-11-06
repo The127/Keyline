@@ -6,12 +6,13 @@ import (
 	"Keyline/internal/repositories"
 	"Keyline/internal/repositories/mocks"
 	"Keyline/ioc"
-	"Keyline/mediator"
-	mediatorMocks "Keyline/mediator/mocks"
 	"Keyline/utils"
 	"context"
 	"errors"
 	"testing"
+
+	"github.com/The127/mediatr"
+	mediatorMocks "github.com/The127/mediatr/mocks"
 
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -30,7 +31,7 @@ func (s *CreateRoleCommandSuite) createContext(
 	vsr repositories.VirtualServerRepository,
 	pr repositories.ProjectRepository,
 	rr repositories.RoleRepository,
-	m mediator.Mediator,
+	m mediatr.Mediator,
 ) context.Context {
 	dc := ioc.NewDependencyCollection()
 
@@ -53,7 +54,7 @@ func (s *CreateRoleCommandSuite) createContext(
 	}
 
 	if m != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) mediator.Mediator {
+		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) mediatr.Mediator {
 			return m
 		})
 	}

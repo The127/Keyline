@@ -6,7 +6,7 @@ Keyline is an open-source OpenID Connect (OIDC) / Identity Provider (IDP) server
 
 ## Tech Stack
 
-- **Language**: Go 1.24+
+- **Language**: Go 1.25+
 - **Database**: PostgreSQL
 - **Cache/Session**: Redis (Valkey)
 - **Message Queue**: RabbitMQ
@@ -216,7 +216,7 @@ import (
     "github.com/gorilla/mux"
     
     "Keyline/internal/commands"
-    "Keyline/mediator"
+    "github.com/The127/mediatr"
 )
 ```
 
@@ -316,7 +316,7 @@ logger.Info("user registered",
 ## Troubleshooting
 
 ### Common Issues
-- **Build failures**: Run `go mod tidy` and ensure Go 1.24+ is installed
+- **Build failures**: Run `go mod tidy` and ensure Go 1.25+ is installed
 - **Test failures**: Check database connection and Redis availability
 - **Migration issues**: Ensure PostgreSQL is running and accessible
 - **Import errors**: Run `go mod download` to fetch dependencies
