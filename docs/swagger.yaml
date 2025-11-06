@@ -173,8 +173,10 @@ definitions:
       id:
         type: string
     type: object
-  handlers.CreateVirtualSeverRequestDto:
+  handlers.CreateVirtualServerRequestDto:
     properties:
+      admin:
+        $ref: '#/definitions/handlers.CreateVirtualServerRequestDtoAdminDto'
       displayName:
         maxLength: 255
         minLength: 1
@@ -185,8 +187,16 @@ definitions:
         maxLength: 255
         minLength: 1
         type: string
+      projects:
+        items:
+          $ref: '#/definitions/handlers.CreateVirtualServerRequestDtoProjectDto'
+        type: array
       require2fa:
         type: boolean
+      serviceUsers:
+        items:
+          $ref: '#/definitions/handlers.CreateVirtualServerRequestDtoServiceUserDto'
+        type: array
       signingAlgorithm:
         enum:
         - RS256
@@ -195,6 +205,128 @@ definitions:
     required:
     - displayName
     - name
+    type: object
+  handlers.CreateVirtualServerRequestDtoAdminDto:
+    properties:
+      displayName:
+        maxLength: 255
+        minLength: 1
+        type: string
+      passwordHash:
+        type: string
+      primaryEmail:
+        type: string
+      username:
+        maxLength: 255
+        minLength: 1
+        type: string
+    required:
+    - displayName
+    - passwordHash
+    - primaryEmail
+    - username
+    type: object
+  handlers.CreateVirtualServerRequestDtoProjectDto:
+    properties:
+      applications:
+        items:
+          $ref: '#/definitions/handlers.CreateVirtualServerRequestDtoProjectDtoApplicationDto'
+        type: array
+      description:
+        type: string
+      name:
+        maxLength: 255
+        minLength: 1
+        type: string
+      resourceServers:
+        items:
+          $ref: '#/definitions/handlers.CreateVirtualServerRequestDtoProjectDtoResourceServerDto'
+        type: array
+      roles:
+        items:
+          $ref: '#/definitions/handlers.CreateVirtualServerRequestDtoProjectDtoRoleDto'
+        type: array
+      slug:
+        maxLength: 255
+        minLength: 1
+        type: string
+    required:
+    - name
+    - slug
+    type: object
+  handlers.CreateVirtualServerRequestDtoProjectDtoApplicationDto:
+    properties:
+      displayName:
+        maxLength: 255
+        minLength: 1
+        type: string
+      hashedSecret:
+        type: string
+      name:
+        maxLength: 255
+        minLength: 1
+        type: string
+      postLogoutUris:
+        items:
+          type: string
+        type: array
+      redirectUris:
+        items:
+          type: string
+        type: array
+      type:
+        enum:
+        - public
+        - confidential
+        type: string
+    required:
+    - displayName
+    - name
+    - redirectUris
+    - type
+    type: object
+  handlers.CreateVirtualServerRequestDtoProjectDtoResourceServerDto:
+    properties:
+      description:
+        type: string
+      name:
+        maxLength: 255
+        minLength: 1
+        type: string
+      slug:
+        maxLength: 255
+        minLength: 1
+        type: string
+    required:
+    - name
+    - slug
+    type: object
+  handlers.CreateVirtualServerRequestDtoProjectDtoRoleDto:
+    properties:
+      description:
+        type: string
+      name:
+        maxLength: 255
+        minLength: 1
+        type: string
+    required:
+    - name
+    type: object
+  handlers.CreateVirtualServerRequestDtoServiceUserDto:
+    properties:
+      publicKey:
+        type: string
+      roles:
+        items:
+          type: string
+        type: array
+      username:
+        maxLength: 255
+        minLength: 1
+        type: string
+    required:
+    - publicKey
+    - username
     type: object
   handlers.GetApplicationResponseDto:
     properties:
@@ -779,7 +911,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/handlers.CreateVirtualSeverRequestDto'
+          $ref: '#/definitions/handlers.CreateVirtualServerRequestDto'
       produces:
       - application/json
       responses:

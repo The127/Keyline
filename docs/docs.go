@@ -34,7 +34,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.CreateVirtualSeverRequestDto"
+                            "$ref": "#/definitions/handlers.CreateVirtualServerRequestDto"
                         }
                     }
                 ],
@@ -3456,13 +3456,16 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.CreateVirtualSeverRequestDto": {
+        "handlers.CreateVirtualServerRequestDto": {
             "type": "object",
             "required": [
                 "displayName",
                 "name"
             ],
             "properties": {
+                "admin": {
+                    "$ref": "#/definitions/handlers.CreateVirtualServerRequestDtoAdminDto"
+                },
                 "displayName": {
                     "type": "string",
                     "maxLength": 255,
@@ -3476,8 +3479,20 @@ const docTemplate = `{
                     "maxLength": 255,
                     "minLength": 1
                 },
+                "projects": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.CreateVirtualServerRequestDtoProjectDto"
+                    }
+                },
                 "require2fa": {
                     "type": "boolean"
+                },
+                "serviceUsers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.CreateVirtualServerRequestDtoServiceUserDto"
+                    }
                 },
                 "signingAlgorithm": {
                     "type": "string",
@@ -3485,6 +3500,177 @@ const docTemplate = `{
                         "RS256",
                         "EdDSA"
                     ]
+                }
+            }
+        },
+        "handlers.CreateVirtualServerRequestDtoAdminDto": {
+            "type": "object",
+            "required": [
+                "displayName",
+                "passwordHash",
+                "primaryEmail",
+                "username"
+            ],
+            "properties": {
+                "displayName": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                },
+                "passwordHash": {
+                    "type": "string"
+                },
+                "primaryEmail": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                }
+            }
+        },
+        "handlers.CreateVirtualServerRequestDtoProjectDto": {
+            "type": "object",
+            "required": [
+                "name",
+                "slug"
+            ],
+            "properties": {
+                "applications": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.CreateVirtualServerRequestDtoProjectDtoApplicationDto"
+                    }
+                },
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                },
+                "resourceServers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.CreateVirtualServerRequestDtoProjectDtoResourceServerDto"
+                    }
+                },
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.CreateVirtualServerRequestDtoProjectDtoRoleDto"
+                    }
+                },
+                "slug": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                }
+            }
+        },
+        "handlers.CreateVirtualServerRequestDtoProjectDtoApplicationDto": {
+            "type": "object",
+            "required": [
+                "displayName",
+                "name",
+                "redirectUris",
+                "type"
+            ],
+            "properties": {
+                "displayName": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                },
+                "hashedSecret": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                },
+                "postLogoutUris": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "redirectUris": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "public",
+                        "confidential"
+                    ]
+                }
+            }
+        },
+        "handlers.CreateVirtualServerRequestDtoProjectDtoResourceServerDto": {
+            "type": "object",
+            "required": [
+                "name",
+                "slug"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                },
+                "slug": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                }
+            }
+        },
+        "handlers.CreateVirtualServerRequestDtoProjectDtoRoleDto": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                }
+            }
+        },
+        "handlers.CreateVirtualServerRequestDtoServiceUserDto": {
+            "type": "object",
+            "required": [
+                "publicKey",
+                "username"
+            ],
+            "properties": {
+                "publicKey": {
+                    "type": "string"
+                },
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "username": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
                 }
             }
         },

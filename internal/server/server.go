@@ -92,7 +92,7 @@ func Serve(dp *ioc.DependencyProvider, serverConfig config.ServerConfig) {
 		gh.MaxAge(3600),
 	))
 
-	apiRouter.HandleFunc("/virtual-servers", handlers.CreateVirtualSever).Methods(http.MethodPost, http.MethodOptions)
+	apiRouter.HandleFunc("/virtual-servers", handlers.CreateVirtualServer).Methods(http.MethodPost, http.MethodOptions)
 
 	vsApiRouter := apiRouter.PathPrefix("/virtual-servers/{virtualServerName}").Subrouter()
 	vsApiRouter.Use(middlewares.VirtualServerMiddleware())

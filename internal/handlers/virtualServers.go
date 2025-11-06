@@ -7,36 +7,84 @@ import (
 	"Keyline/internal/queries"
 	"Keyline/utils"
 	"encoding/json"
-	"github.com/The127/ioc"
-	"github.com/The127/mediatr"
 	"net/http"
 	"time"
+
+	"github.com/The127/ioc"
+	"github.com/The127/mediatr"
 
 	"github.com/google/uuid"
 )
 
-type CreateVirtualSeverRequestDto struct {
+type CreateVirtualServerRequestDtoAdminDto struct {
+	Username     string `json:"username" validate:"required,min=1,max=255"`
+	DisplayName  string `json:"displayName" validate:"required,min=1,max=255"`
+	PrimaryEmail string `json:"primaryEmail" validate:"required,email"`
+	PasswordHash string `json:"passwordHash" validate:"required"`
+}
+
+type CreateVirtualServerRequestDtoServiceUserDto struct {
+	Username  string   `json:"username" validate:"required,min=1,max=255"`
+	Roles     []string `json:"roles"`
+	PublicKey string   `json:"publicKey" validate:"required"`
+}
+
+type CreateVirtualServerRequestDtoProjectDtoRoleDto struct {
+	Name        string `json:"name" validate:"required,min=1,max=255"`
+	Description string `json:"description"`
+}
+
+type CreateVirtualServerRequestDtoProjectDtoApplicationDto struct {
+	Name           string   `json:"name" validate:"required,min=1,max=255"`
+	DisplayName    string   `json:"displayName" validate:"required,min=1,max=255"`
+	Type           string   `json:"type" validate:"required,oneof=public confidential"`
+	HashedSecret   *string  `json:"hashedSecret"`
+	RedirectUris   []string `json:"redirectUris" validate:"required,dive,url,min=1"`
+	PostLogoutUris []string `json:"postLogoutUris" validate:"dive,url"`
+}
+
+type CreateVirtualServerRequestDtoProjectDtoResourceServerDto struct {
+	Slug        string `json:"slug" validate:"required,min=1,max=255"`
+	Name        string `json:"name" validate:"required,min=1,max=255"`
+	Description string `json:"description"`
+}
+
+type CreateVirtualServerRequestDtoProjectDto struct {
+	Slug        string `json:"slug" validate:"required,min=1,max=255"`
+	Name        string `json:"name" validate:"required,min=1,max=255"`
+	Description string `json:"description"`
+
+	Roles           []CreateVirtualServerRequestDtoProjectDtoRoleDto           `json:"roles"`
+	Applications    []CreateVirtualServerRequestDtoProjectDtoApplicationDto    `json:"applications"`
+	ResourceServers []CreateVirtualServerRequestDtoProjectDtoResourceServerDto `json:"resourceServers"`
+}
+
+type CreateVirtualServerRequestDto struct {
 	Name               string  `json:"name" validate:"required,min=1,max=255,alphanum"`
 	DisplayName        string  `json:"displayName" validate:"required,min=1,max=255"`
 	EnableRegistration bool    `json:"enableRegistration"`
-	Require2fa         bool    `json:"require2fa"`
 	SigningAlgorithm   *string `json:"signingAlgorithm" validate:"oneof=RS256 EdDSA"`
+	Require2fa         bool    `json:"require2fa"`
+
+	Admin        *CreateVirtualServerRequestDtoAdminDto        `json:"admin"`
+	ServiceUsers []CreateVirtualServerRequestDtoServiceUserDto `json:"serviceUsers"`
+	Projects     []CreateVirtualServerRequestDtoProjectDto     `json:"projects"`
 }
 
-// CreateVirtualSever creates a new virtual server.
+// CreateVirtualServer creates a new virtual server.
 // @Summary      Create virtual server
 // @Tags         Admin
 // @Accept       json
 // @Produce      json
-// @Param        body  body  handlers.CreateVirtualSeverRequestDto  true  "Virtual server"
+// @Param        body  body  handlers.CreateVirtualServerRequestDto  true  "Virtual server"
 // @Success      204   {string}  string  "No Content"
 // @Failure      400   {string}  string
 // @Router       /api/virtual-servers [post]
-func CreateVirtualSever(w http.ResponseWriter, r *http.Request) {
+func CreateVirtualServer(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	scope := middlewares.GetScope(ctx)
 
-	var dto CreateVirtualSeverRequestDto
+	var dto CreateVirtualServerRequestDto
 	err := json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -59,8 +107,53 @@ func CreateVirtualSever(w http.ResponseWriter, r *http.Request) {
 		Name:               dto.Name,
 		DisplayName:        dto.DisplayName,
 		EnableRegistration: dto.EnableRegistration,
-		Require2fa:         dto.Require2fa,
 		SigningAlgorithm:   signingAlgorithm,
+		Require2fa:         dto.Require2fa,
+		Admin: utils.MapPtr(dto.Admin, func(admin CreateVirtualServerRequestDtoAdminDto) commands.CreateVirtualServerAdmin {
+			return commands.CreateVirtualServerAdmin{
+				Username:     admin.Username,
+				DisplayName:  admin.DisplayName,
+				PrimaryEmail: admin.PrimaryEmail,
+				PasswordHash: admin.PasswordHash,
+			}
+		}),
+		ServiceUsers: utils.MapSlice(dto.ServiceUsers, func(x CreateVirtualServerRequestDtoServiceUserDto) commands.CreateVirtualServerServiceUser {
+			return commands.CreateVirtualServerServiceUser{
+				Username:  x.Username,
+				Roles:     x.Roles,
+				PublicKey: x.PublicKey,
+			}
+		}),
+		Projects: utils.MapSlice(dto.Projects, func(project CreateVirtualServerRequestDtoProjectDto) commands.CreateVirtualServerProject {
+			return commands.CreateVirtualServerProject{
+				Slug:        project.Slug,
+				Name:        project.Name,
+				Description: project.Description,
+				Applications: utils.MapSlice(project.Applications, func(app CreateVirtualServerRequestDtoProjectDtoApplicationDto) commands.CreateVirtualServerProjectApplication {
+					return commands.CreateVirtualServerProjectApplication{
+						Name:           app.Name,
+						DisplayName:    app.DisplayName,
+						Type:           app.Type,
+						HashedSecret:   app.HashedSecret,
+						RedirectUris:   app.RedirectUris,
+						PostLogoutUris: app.PostLogoutUris,
+					}
+				}),
+				Roles: utils.MapSlice(project.Roles, func(role CreateVirtualServerRequestDtoProjectDtoRoleDto) commands.CreateVirtualServerProjectRole {
+					return commands.CreateVirtualServerProjectRole{
+						Name:        role.Name,
+						Description: role.Description,
+					}
+				}),
+				ResourceServers: utils.MapSlice(project.ResourceServers, func(rs CreateVirtualServerRequestDtoProjectDtoResourceServerDto) commands.CreateVirtualServerProjectResourceServer {
+					return commands.CreateVirtualServerProjectResourceServer{
+						Slug:        rs.Slug,
+						Name:        rs.Name,
+						Description: rs.Description,
+					}
+				}),
+			}
+		}),
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)

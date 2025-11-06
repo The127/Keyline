@@ -23,7 +23,7 @@ func TestVirtualServerClientSuite(t *testing.T) {
 
 func (s *VirtualServerClientSuite) TestCreate_HappyPath() {
 	// arrange
-	request := handlers.CreateVirtualSeverRequestDto{
+	request := handlers.CreateVirtualServerRequestDto{
 		Name:               "name",
 		DisplayName:        "Display Name",
 		EnableRegistration: false,
@@ -35,7 +35,7 @@ func (s *VirtualServerClientSuite) TestCreate_HappyPath() {
 		s.Equal(http.MethodPost, r.Method)
 		s.Equal("/api/virtual-servers", r.URL.Path)
 
-		var requestDto handlers.CreateVirtualSeverRequestDto
+		var requestDto handlers.CreateVirtualServerRequestDto
 		err := json.NewDecoder(r.Body).Decode(&requestDto)
 		s.NoError(err)
 		s.Equal(request, requestDto)

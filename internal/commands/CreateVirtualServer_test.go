@@ -10,9 +10,12 @@ import (
 	"Keyline/utils"
 	"context"
 	"errors"
-	"github.com/The127/ioc"
 	"testing"
 
+	"github.com/The127/ioc"
+
+	"github.com/The127/mediatr"
+	mediatorMock "github.com/The127/mediatr/mocks"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -34,6 +37,7 @@ func (s *CreateVirtualServerCommandSuite) createContext(
 	keyService services.KeyService,
 	applicationRepository repositories.ApplicationRepository,
 	projectRepository repositories.ProjectRepository,
+	mediator mediatr.Mediator,
 ) context.Context {
 	dc := ioc.NewDependencyCollection()
 
@@ -76,6 +80,12 @@ func (s *CreateVirtualServerCommandSuite) createContext(
 	if projectRepository != nil {
 		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.ProjectRepository {
 			return projectRepository
+		})
+	}
+
+	if mediator != nil {
+		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) mediatr.Mediator {
+			return mediator
 		})
 	}
 
@@ -136,7 +146,7 @@ func (s *CreateVirtualServerCommandSuite) TestApplicationError() {
 		Insert(gomock.Any(), gomock.Any()).
 		Return(errors.New("error"))
 
-	ctx := s.createContext(virtualServerRepository, templateRepository, fileRepository, roleRepository, keyService, applicationRepository, projectRepository)
+	ctx := s.createContext(virtualServerRepository, templateRepository, fileRepository, roleRepository, keyService, applicationRepository, projectRepository, nil)
 	cmd := CreateVirtualServer{}
 
 	// act
@@ -191,7 +201,9 @@ func (s *CreateVirtualServerCommandSuite) TestHappyPath() {
 		Return(nil).
 		AnyTimes()
 
-	ctx := s.createContext(virtualServerRepository, templateRepository, fileRepository, roleRepository, keyService, applicationRepository, projectRepository)
+	mediator := mediatorMock.NewMockMediator(ctrl)
+
+	ctx := s.createContext(virtualServerRepository, templateRepository, fileRepository, roleRepository, keyService, applicationRepository, projectRepository, mediator)
 	cmd := CreateVirtualServer{
 		Name:               "virtualServer",
 		DisplayName:        "Virtual Server",
