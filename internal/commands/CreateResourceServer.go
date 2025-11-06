@@ -64,7 +64,7 @@ func HandleCreateResourceServer(ctx context.Context, command CreateResourceServe
 		currentUser := authentication.GetCurrentUser(ctx)
 		hasPermissionResult := currentUser.HasPermission(permissions.SystemUser)
 		if !hasPermissionResult.IsSuccess() {
-			return nil, fmt.Errorf("cannot create resource server in system project: %w", utils.ErrHttpUnauthorized)
+			return nil, fmt.Errorf("creating resource servers in system project requires system user permission: %w", utils.ErrHttpUnauthorized)
 		}
 	}
 
