@@ -68,7 +68,7 @@ var VirtualServerAdminPermissions = []permissions.Permission{
 }
 
 var AllRoles = map[Role][]permissions.Permission{
-	"system:" + SystemUser:         SystemUserPermissions,
-	"system:" + SystemAdmin:        SystemAdminPermissions,
-	"system:" + VirtualServerAdmin: VirtualServerAdminPermissions,
+	SystemUser:         SystemUserPermissions,
+	SystemAdmin:        SystemAdminPermissions,
+	VirtualServerAdmin: VirtualServerAdminPermissions,
 }
