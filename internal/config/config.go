@@ -170,6 +170,7 @@ type ServerConfig struct {
 	ExternalDomain string
 	Host           string
 	Port           int
+	ApiPort        int
 	AllowedOrigins []string
 }
 
@@ -499,6 +500,10 @@ func setServerDefaultsOrPanic() {
 
 	if C.Server.Port == 0 {
 		C.Server.Port = 8080
+	}
+
+	if C.Server.ApiPort == C.Server.Port {
+		panic("api port must be different from server port (server port defaults to 8080)")
 	}
 
 	if C.Server.ExternalUrl == "" {

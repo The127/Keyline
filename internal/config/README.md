@@ -53,6 +53,7 @@ Controls the HTTP server settings and external URLs.
 server:
   host: "0.0.0.0"                    # Server bind address
   port: 8080                          # Server port
+  apiPort: 8081                       # API server port (for running the api on a different port)
   externalUrl: "https://auth.example.com"  # Public-facing URL
   allowedOrigins:                     # CORS allowed origins
     - "https://app.example.com"
@@ -62,6 +63,7 @@ server:
 **Defaults:**
 - **host**: `localhost` (DEVELOPMENT), *required* (PRODUCTION)
 - **port**: `8080`
+- **apiPort**: `0` (runs on the same port as the server/no separate API server)
 - **externalUrl**: `{host}:{port}` (DEVELOPMENT), *required* (PRODUCTION)
 - **allowedOrigins**: `["*", "http://localhost:5173"]` (DEVELOPMENT), *required* (PRODUCTION)
 
