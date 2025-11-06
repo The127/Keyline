@@ -70,7 +70,7 @@ func HandleCreateApplication(ctx context.Context, command CreateApplication) (*C
 		currentUser := authentication.GetCurrentUser(ctx)
 		hasPermissionResult := currentUser.HasPermission(permissions.SystemUser)
 		if !hasPermissionResult.IsSuccess() {
-			return nil, fmt.Errorf("cannot create application in system project: %w", utils.ErrHttpUnauthorized)
+			return nil, fmt.Errorf("creating applications in system project requires system user permission: %w", utils.ErrHttpUnauthorized)
 		}
 	}
 
