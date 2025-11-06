@@ -24,7 +24,8 @@ type UserRoleAssignmentUserInfo struct {
 }
 
 type UserRoleAssignmentRoleInfo struct {
-	Name string
+	ProjectSlug string
+	Name        string
 }
 
 func NewUserRoleAssignment(userId uuid.UUID, roleId uuid.UUID, groupId *uuid.UUID) *UserRoleAssignment {
@@ -77,6 +78,7 @@ func (u *UserRoleAssignment) GetScanPointers(filter UserRoleAssignmentFilter) []
 	if filter.includeRole {
 		ptrs = append(ptrs,
 			&u.roleInfo.Name,
+			&u.roleInfo.ProjectSlug,
 		)
 	}
 
