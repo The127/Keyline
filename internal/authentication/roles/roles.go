@@ -7,15 +7,20 @@ import (
 type Role string
 
 const (
-	SystemUser Role = "system_user"
-	Admin      Role = "admin"
+	SystemUser         Role = "system_user"
+	SystemAdmin        Role = "system_admin"
+	VirtualServerAdmin Role = "virtual_server_admin"
 )
 
 var SystemUserPermissions = []permissions.Permission{
 	permissions.SystemUser,
 }
 
-var AdminPermissions = []permissions.Permission{
+var SystemAdminPermissions = []permissions.Permission{
+	permissions.VirtualServerCreate,
+}
+
+var VirtualServerAdminPermissions = []permissions.Permission{
 	permissions.VirtualServerUpdate,
 	permissions.VirtualServerView,
 
@@ -63,6 +68,7 @@ var AdminPermissions = []permissions.Permission{
 }
 
 var AllRoles = map[Role][]permissions.Permission{
-	SystemUser: SystemUserPermissions,
-	Admin:      AdminPermissions,
+	SystemUser:         SystemUserPermissions,
+	SystemAdmin:        SystemAdminPermissions,
+	VirtualServerAdmin: VirtualServerAdminPermissions,
 }

@@ -401,7 +401,8 @@ initialVirtualServer:
   displayName: "Default Server"        # Display name
   enableRegistration: true             # Allow user self-registration
   signingAlgorithm: "EdDSA"           # JWT signing: "EdDSA" or "RS256"
-  createInitialAdmin: true             # Create initial admin user
+  createSystemAdminRole: true         # Create system admin role (can create and manage virtual servers)
+  createAdmin: true                   # Create initial admin user
   initialAdmin:
     username: "admin"                  # Admin username
     displayName: "Administrator"       # Admin display name

@@ -10,6 +10,7 @@ import (
 	"Keyline/internal/repositories"
 	"Keyline/internal/services"
 	"Keyline/templates"
+	"Keyline/utils"
 	"context"
 	"fmt"
 	"strings"
@@ -21,7 +22,8 @@ import (
 )
 
 const (
-	AdminRoleName = "admin"
+	AdminRoleName       = "admin"
+	SystemAdminRoleName = "system-admin"
 
 	AdminApplicationName = "admin-ui"
 )
@@ -75,6 +77,8 @@ type CreateVirtualServer struct {
 	EnableRegistration bool
 	SigningAlgorithm   config.SigningAlgorithm
 	Require2fa         bool
+
+	CreateSystemAdminRole bool
 
 	Admin        *CreateVirtualServerAdmin
 	ServiceUsers []CreateVirtualServerServiceUser
@@ -143,6 +147,11 @@ func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer)
 	initDefaultAppsResult, err := initializeDefaultApplications(ctx, virtualServer, systemProject)
 	if err != nil {
 		return nil, fmt.Errorf("initializing default applications: %w", err)
+	}
+
+	defaultRolesResult, err := initializeDefaultAdminRoles(ctx, virtualServer, systemProject, command.CreateSystemAdminRole)
+	if err != nil {
+		return nil, fmt.Errorf("initializing default roles: %w", err)
 	}
 
 	m := ioc.GetDependency[mediatr.Mediator](scope)
@@ -225,10 +234,22 @@ func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer)
 			VirtualServerName: virtualServer.Name(),
 			ProjectSlug:       systemProject.Slug(),
 			UserId:            initialAdminUserInfo.Id,
-			RoleId:            initDefaultAppsResult.adminRoleId,
+			RoleId:            defaultRolesResult.adminRoleId,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("assigning admin role to admin user: %w", err)
+		}
+
+		if command.CreateSystemAdminRole {
+			_, err = mediatr.Send[*AssignRoleToUserResponse](ctx, m, AssignRoleToUser{
+				VirtualServerName: virtualServer.Name(),
+				ProjectSlug:       systemProject.Slug(),
+				UserId:            initialAdminUserInfo.Id,
+				RoleId:            *defaultRolesResult.systemAdminRoleId,
+			})
+			if err != nil {
+				return nil, fmt.Errorf("assigning system admin role to admin user: %w", err)
+			}
 		}
 	}
 
@@ -310,13 +331,12 @@ func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer)
 		SystemProjectId:      systemProject.Id(),
 		SystemProjectSlug:    systemProject.Slug(),
 		AdminUiApplicationId: initDefaultAppsResult.adminUidApplicationId,
-		AdminRoleId:          initDefaultAppsResult.adminRoleId,
+		AdminRoleId:          defaultRolesResult.adminRoleId,
 	}, nil
 }
 
 type createDefaultApplicationResult struct {
 	adminUidApplicationId uuid.UUID
-	adminRoleId           uuid.UUID
 }
 
 func initializeDefaultApplications(ctx context.Context, virtualServer *repositories.VirtualServer, systemProject *repositories.Project) (*createDefaultApplicationResult, error) {
@@ -338,22 +358,17 @@ func initializeDefaultApplications(ctx context.Context, virtualServer *repositor
 		return nil, fmt.Errorf("inserting application: %w", err)
 	}
 
-	createAdminUidRolesResult, err := initializeDefaultAdminUiRoles(ctx, virtualServer, systemProject)
-	if err != nil {
-		return nil, fmt.Errorf("initializing default roles: %w", err)
-	}
-
 	return &createDefaultApplicationResult{
 		adminUidApplicationId: adminUiApplication.Id(),
-		adminRoleId:           createAdminUidRolesResult.adminRoleId,
 	}, nil
 }
 
 type createDefaultAdminUiRolesResult struct {
-	adminRoleId uuid.UUID
+	adminRoleId       uuid.UUID
+	systemAdminRoleId *uuid.UUID
 }
 
-func initializeDefaultAdminUiRoles(ctx context.Context, virtualServer *repositories.VirtualServer, project *repositories.Project) (*createDefaultAdminUiRolesResult, error) {
+func initializeDefaultAdminRoles(ctx context.Context, virtualServer *repositories.VirtualServer, project *repositories.Project, createSystemAdminRole bool) (*createDefaultAdminUiRolesResult, error) {
 	scope := middlewares.GetScope(ctx)
 
 	roleRepository := ioc.GetDependency[repositories.RoleRepository](scope)
@@ -367,11 +382,29 @@ func initializeDefaultAdminUiRoles(ctx context.Context, virtualServer *repositor
 
 	err := roleRepository.Insert(ctx, adminRole)
 	if err != nil {
-		return nil, fmt.Errorf("inserting role: %w", err)
+		return nil, fmt.Errorf("inserting admin role: %w", err)
+	}
+
+	var systemAdminRoleId *uuid.UUID
+	if createSystemAdminRole {
+		systemAdminRole := repositories.NewRole(
+			virtualServer.Id(),
+			project.Id(),
+			SystemAdminRoleName,
+			"System administrator role",
+		)
+
+		err := roleRepository.Insert(ctx, systemAdminRole)
+		if err != nil {
+			return nil, fmt.Errorf("inserting system admin role: %w", err)
+		}
+
+		systemAdminRoleId = utils.Ptr(systemAdminRole.Id())
 	}
 
 	return &createDefaultAdminUiRolesResult{
-		adminRoleId: adminRole.Id(),
+		adminRoleId:       adminRole.Id(),
+		systemAdminRoleId: systemAdminRoleId,
 	}, nil
 }
 

@@ -71,12 +71,13 @@ type Config struct {
 		}
 	}
 	InitialVirtualServer struct {
-		Name               string
-		DisplayName        string
-		EnableRegistration bool
-		SigningAlgorithm   SigningAlgorithm
-		CreateAdmin        bool
-		Admin              struct {
+		Name                  string
+		DisplayName           string
+		EnableRegistration    bool
+		SigningAlgorithm      SigningAlgorithm
+		CreateSystemAdminRole bool
+		CreateAdmin           bool
+		Admin                 struct {
 			Username     string
 			DisplayName  string
 			PrimaryEmail string
