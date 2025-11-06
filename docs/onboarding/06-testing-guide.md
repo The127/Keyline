@@ -208,7 +208,7 @@ func (s *CreateUserCommandSuite) TestCreateUser_Success() {
     mockUserRepo.EXPECT().Insert(gomock.Any(), gomock.Any()).Return(nil)
     
     mockMediator := mediatormocks.NewMockMediator(ctrl)
-    mockmediatr.EXPECT().SendEvent(gomock.Any(), gomock.AssignableToTypeOf(events.UserCreatedEvent{}), gomock.Any())
+    mockMediator.EXPECT().SendEvent(gomock.Any(), gomock.AssignableToTypeOf(events.UserCreatedEvent{}), gomock.Any())
     
     ctx := s.createContext(mockVsRepo, mockUserRepo, mockMediator)
     cmd := CreateUser{
