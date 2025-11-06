@@ -8,6 +8,7 @@ import (
 	"Keyline/utils"
 	"context"
 	"fmt"
+
 	"github.com/The127/ioc"
 
 	"github.com/google/uuid"
@@ -41,9 +42,10 @@ type ListProjectsResponse struct {
 }
 
 type ListProjectsResponseItem struct {
-	Id   uuid.UUID
-	Slug string
-	Name string
+	Id            uuid.UUID
+	Slug          string
+	Name          string
+	SystemProject bool
 }
 
 func HandleListProjects(ctx context.Context, query ListProjects) (*ListProjectsResponse, error) {
@@ -69,9 +71,10 @@ func HandleListProjects(ctx context.Context, query ListProjects) (*ListProjectsR
 
 	items := utils.MapSlice(projects, func(t *repositories.Project) ListProjectsResponseItem {
 		return ListProjectsResponseItem{
-			Id:   t.Id(),
-			Slug: t.Slug(),
-			Name: t.Name(),
+			Id:            t.Id(),
+			Slug:          t.Slug(),
+			Name:          t.Name(),
+			SystemProject: t.SystemProject(),
 		}
 	})
 

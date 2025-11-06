@@ -6,10 +6,11 @@ import (
 	"Keyline/internal/queries"
 	"Keyline/utils"
 	"encoding/json"
-	"github.com/The127/ioc"
-	"github.com/The127/mediatr"
 	"net/http"
 	"time"
+
+	"github.com/The127/ioc"
+	"github.com/The127/mediatr"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
@@ -88,9 +89,10 @@ func CreateProject(w http.ResponseWriter, r *http.Request) {
 type PagedProjectsResponseDto = PagedResponseDto[ListProjectsResponseDto]
 
 type ListProjectsResponseDto struct {
-	Id   uuid.UUID `json:"id"`
-	Slug string    `json:"slug"`
-	Name string    `json:"name"`
+	Id            uuid.UUID `json:"id"`
+	Slug          string    `json:"slug"`
+	Name          string    `json:"name"`
+	SystemProject bool      `json:"systemProject"`
 }
 
 // ListProjects lists projects in a virtual server
@@ -140,9 +142,10 @@ func ListProjects(w http.ResponseWriter, r *http.Request) {
 
 	items := utils.MapSlice(projects.Items, func(x queries.ListProjectsResponseItem) ListProjectsResponseDto {
 		return ListProjectsResponseDto{
-			Id:   x.Id,
-			Slug: x.Slug,
-			Name: x.Name,
+			Id:            x.Id,
+			Slug:          x.Slug,
+			Name:          x.Name,
+			SystemProject: x.SystemProject,
 		}
 	})
 
@@ -160,10 +163,11 @@ func ListProjects(w http.ResponseWriter, r *http.Request) {
 }
 
 type GetProjectResponseDto struct {
-	Id          uuid.UUID `json:"id"`
-	Slug        string    `json:"slug"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
+	Id            uuid.UUID `json:"id"`
+	Slug          string    `json:"slug"`
+	Name          string    `json:"name"`
+	Description   string    `json:"description"`
+	SystemProject bool      `json:"systemProject"`
 
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
