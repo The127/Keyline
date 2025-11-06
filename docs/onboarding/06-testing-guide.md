@@ -74,7 +74,7 @@ import (
     "Keyline/internal/middlewares"
     "Keyline/internal/repositories"
     "Keyline/internal/repositories/mocks"
-    "Keyline/ioc"
+    "github.com/The127/ioc"
     "github.com/stretchr/testify/suite"
     "go.uber.org/mock/gomock"
 )
@@ -145,7 +145,7 @@ import (
     "Keyline/internal/middlewares"
     "Keyline/internal/repositories"
     "Keyline/internal/repositories/mocks"
-    "Keyline/ioc"
+    "github.com/The127/ioc"
     "github.com/The127/mediatr"
     mediatormocks "Keyline/mediator/mocks"
     "github.com/stretchr/testify/suite"
@@ -259,7 +259,7 @@ import (
     "Keyline/internal/middlewares"
     "Keyline/internal/repositories"
     "Keyline/internal/repositories/mocks"
-    "Keyline/ioc"
+    "github.com/The127/ioc"
     "github.com/stretchr/testify/suite"
     "go.uber.org/mock/gomock"
 )

@@ -4,9 +4,9 @@ import (
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/internal/repositories/mocks"
-	"Keyline/ioc"
 	"Keyline/utils"
 	"context"
+	"github.com/The127/ioc"
 	"testing"
 	"time"
 

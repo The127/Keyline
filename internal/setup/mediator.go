@@ -5,7 +5,7 @@ import (
 	"Keyline/internal/commands"
 	"Keyline/internal/events"
 	"Keyline/internal/queries"
-	"Keyline/ioc"
+	"github.com/The127/ioc"
 	"github.com/The127/mediatr"
 )
 

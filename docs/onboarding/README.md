@@ -96,7 +96,7 @@ Components communicate through the mediator, not directly. This makes the system
 ## 🎓 Learning Resources
 
 ### Internal Documentation
-- [IoC Container Documentation](../../ioc/Readme.md) - Deep dive into dependency injection
+- [IoC Container Documentation](../../../ioc/Readme.md) - Deep dive into dependency injection
 - [Mediator Pattern Documentation](../../mediator/README.md) - Deep dive into the mediator
 - [Configuration Documentation](../../internal/config/README.md) - Configuration management
 - [E2E Testing Documentation](../../tests/e2e/README.md) - End-to-end testing guide

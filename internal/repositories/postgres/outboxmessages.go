@@ -5,10 +5,10 @@ import (
 	"Keyline/internal/logging"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
-	"Keyline/ioc"
 	"Keyline/utils"
 	"context"
 	"fmt"
+	"github.com/The127/ioc"
 
 	"github.com/google/uuid"
 	"github.com/huandu/go-sqlbuilder"

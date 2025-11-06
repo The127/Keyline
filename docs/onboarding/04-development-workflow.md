@@ -179,7 +179,7 @@ import (
     "Keyline/internal/middlewares"
     "Keyline/internal/repositories"
     "Keyline/internal/events"
-    "Keyline/ioc"
+    "github.com/The127/ioc"
     "github.com/The127/mediatr"
     "github.com/google/uuid"
 )
@@ -293,7 +293,7 @@ import (
     "Keyline/internal/middlewares"
     "Keyline/internal/repositories"
     "Keyline/internal/repositories/mocks"
-    "Keyline/ioc"
+    "github.com/The127/ioc"
     "github.com/The127/mediatr"
     mediatormocks "Keyline/mediator/mocks"
     "github.com/google/uuid"

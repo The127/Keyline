@@ -5,8 +5,8 @@ import (
 	"Keyline/internal/database"
 	"Keyline/internal/repositories"
 	"Keyline/internal/repositories/postgres"
-	"Keyline/ioc"
 	"database/sql"
+	"github.com/The127/ioc"
 )
 
 func Repositories(dc *ioc.DependencyCollection, mode config.DatabaseMode, c any) {

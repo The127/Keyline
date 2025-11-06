@@ -5,10 +5,10 @@ import (
 	"Keyline/internal/middlewares"
 	"Keyline/internal/queries"
 	"Keyline/internal/repositories"
-	"Keyline/ioc"
 	"Keyline/utils"
 	"encoding/json"
 	"fmt"
+	"github.com/The127/ioc"
 	"github.com/The127/mediatr"
 	"net/http"
 

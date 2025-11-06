@@ -6,12 +6,12 @@ import (
 	"Keyline/internal/logging"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
-	"Keyline/ioc"
 	"Keyline/utils"
 	"context"
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/The127/ioc"
 
 	"github.com/huandu/go-sqlbuilder"
 )

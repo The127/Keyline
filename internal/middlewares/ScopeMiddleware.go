@@ -1,9 +1,9 @@
 package middlewares
 
 import (
-	"Keyline/ioc"
 	"Keyline/utils"
 	"context"
+	"github.com/The127/ioc"
 	"net/http"
 
 	"github.com/gorilla/mux"

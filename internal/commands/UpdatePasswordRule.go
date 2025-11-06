@@ -4,10 +4,10 @@ import (
 	"Keyline/internal/middlewares"
 	"Keyline/internal/password"
 	"Keyline/internal/repositories"
-	"Keyline/ioc"
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/The127/ioc"
 )
 
 type UpdatePasswordRule struct {

@@ -3,7 +3,7 @@ package setup
 import (
 	"Keyline/internal/config"
 	"Keyline/internal/services/outbox"
-	"Keyline/ioc"
+	"github.com/The127/ioc"
 )
 
 func OutboxDelivery(dc *ioc.DependencyCollection, queueMode config.QueueMode) {

@@ -4,10 +4,10 @@ import (
 	"Keyline/internal/clock"
 	"Keyline/internal/config"
 	"Keyline/internal/middlewares"
-	"Keyline/ioc"
 	"context"
 	"errors"
 	"fmt"
+	"github.com/The127/ioc"
 	"sync"
 	"time"
 

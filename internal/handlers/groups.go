@@ -3,9 +3,9 @@ package handlers
 import (
 	"Keyline/internal/middlewares"
 	"Keyline/internal/queries"
-	"Keyline/ioc"
 	"Keyline/utils"
 	"encoding/json"
+	"github.com/The127/ioc"
 	"github.com/The127/mediatr"
 	"net/http"
 

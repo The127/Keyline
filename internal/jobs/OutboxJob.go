@@ -5,10 +5,10 @@ import (
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/internal/services/outbox"
-	"Keyline/ioc"
 	"Keyline/utils"
 	"context"
 	"fmt"
+	"github.com/The127/ioc"
 )
 
 func OutboxSendingJob(dp *ioc.DependencyProvider) JobFn {

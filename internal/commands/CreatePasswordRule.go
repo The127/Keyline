@@ -6,11 +6,11 @@ import (
 	"Keyline/internal/middlewares"
 	"Keyline/internal/password"
 	"Keyline/internal/repositories"
-	"Keyline/ioc"
 	"Keyline/utils"
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/The127/ioc"
 )
 
 type CreatePasswordRule struct {

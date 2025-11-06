@@ -6,10 +6,10 @@ import (
 	"Keyline/internal/authentication/roles"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
-	"Keyline/ioc"
 	"Keyline/utils"
 	"context"
 	"fmt"
+	"github.com/The127/ioc"
 
 	"github.com/The127/mediatr"
 

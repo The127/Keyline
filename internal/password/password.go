@@ -3,11 +3,11 @@ package password
 import (
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
-	"Keyline/ioc"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/The127/ioc"
 )
 
 //go:generate mockgen -destination=./mock/mock_validator.go -package=mock . Validator

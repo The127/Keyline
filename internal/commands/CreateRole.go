@@ -6,9 +6,9 @@ import (
 	"Keyline/internal/events"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
-	"Keyline/ioc"
 	"context"
 	"fmt"
+	"github.com/The127/ioc"
 
 	"github.com/The127/mediatr"
 

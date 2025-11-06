@@ -586,7 +586,7 @@ Keyline includes a custom IoC (Inversion of Control) container with support for:
 - **Scoped** - Single instance per scope
 - **Singleton** - Single instance for application lifetime
 
-See [ioc/Readme.md](ioc/Readme.md) for detailed documentation.
+See [ioc/Readme.md](../ioc/Readme.md) for detailed documentation.
 
 ## Mediator Pattern
 

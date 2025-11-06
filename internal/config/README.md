@@ -740,7 +740,7 @@ cache:
 ## Related Documentation
 
 - [Main Project README](../../README.md) - Overall project documentation
-- [IoC Container](../../ioc/Readme.md) - Dependency injection system
+- [IoC Container](../../../ioc/Readme.md) - Dependency injection system
 - [Mediator Pattern](../../mediator/README.md) - CQRS implementation
 
 ## Advanced Configuration Examples
