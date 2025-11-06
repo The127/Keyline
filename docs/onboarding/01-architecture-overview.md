@@ -109,14 +109,6 @@ Keyline/
 │   │
 │   └── ...                      # Other infrastructure
 │
-├── mediator/                    # Mediator pattern implementation
-│   ├── mediatr.go              # Core mediator logic
-│   └── README.md                # Mediator documentation
-│
-├── ioc/                         # IoC container implementation
-│   ├── container.go             # Core IoC logic
-│   └── Readme.md                # IoC documentation
-│
 ├── client/                      # API client library
 │   └── client.go                # HTTP client for Keyline API
 │
@@ -168,8 +160,6 @@ func (h *UserHandlers) CreateUser(w http.ResponseWriter, r *http.Request) {
 - Handlers should not access repositories directly
 
 ### 2. Mediator Layer
-
-**Location**: `mediator/`
 
 **Responsibilities**:
 - Route requests to appropriate handlers

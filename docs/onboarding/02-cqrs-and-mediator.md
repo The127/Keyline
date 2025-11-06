@@ -698,6 +698,5 @@ Now that you understand CQRS and the Mediator pattern:
 
 ## Additional Resources
 
-- [Mediator Package Documentation](../../mediator/README.md) - Deep dive into the mediator
 - [CQRS by Martin Fowler](https://martinfowler.com/bliki/CQRS.html)
 - [Mediator Pattern](https://refactoring.guru/design-patterns/mediator)

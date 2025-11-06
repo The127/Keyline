@@ -668,10 +668,8 @@ Now that you understand dependency injection:
 
 1. **Start developing** → [Development Workflow](04-development-workflow.md)
 2. **See practical examples** → [Common Patterns and Examples](05-common-patterns.md)
-3. **Deep dive into IoC** → [IoC Package Documentation](../../../ioc/Readme.md)
 
 ## Additional Resources
 
-- [IoC Container Documentation](../../../ioc/Readme.md) - Detailed IoC documentation
 - [Dependency Injection Principles](https://martinfowler.com/articles/injection.html)
 - [SOLID Principles](https://en.wikipedia.org/wiki/SOLID)
