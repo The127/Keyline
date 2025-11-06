@@ -66,7 +66,7 @@ func HandleCreateRole(ctx context.Context, command CreateRole) (*CreateRoleRespo
 		currentUser := authentication.GetCurrentUser(ctx)
 		hasPermissionResult := currentUser.HasPermission(permissions.SystemUser)
 		if !hasPermissionResult.IsSuccess() {
-			return nil, fmt.Errorf("cannot create role in system project: %w", utils.ErrHttpUnauthorized)
+			return nil, fmt.Errorf("creating roles in system project requires system user permission: %w", utils.ErrHttpUnauthorized)
 		}
 	}
 
