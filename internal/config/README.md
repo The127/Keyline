@@ -963,18 +963,11 @@ initialVirtualServer:
 
 When assigning roles to service users in the `roles` array:
 
-1. **Global role assignment**: Use just the role name
+Use the format `"project-name:role-name"`
    ```yaml
    roles:
-     - "viewer"
-     - "editor"
-   ```
-
-2. **Application-specific role assignment**: Use the format `"application-name role-name"`
-   ```yaml
-   roles:
-     - "my-app admin"
-     - "api-service write"
+     - "my-app:admin"
+     - "api-service:write"
    ```
 
 The system automatically detects the format based on whether the role string contains a space. If it contains a space, it's treated as an application-specific role where the first part is the application name and the second part is the role name.
