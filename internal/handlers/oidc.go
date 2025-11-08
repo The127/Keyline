@@ -1623,9 +1623,17 @@ func handleTokenExchange(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userId, err := uuid.Parse(subject)
+	userRepository := ioc.GetDependency[repositories.UserRepository](scope)
+	userFilter := repositories.NewUserFilter().
+		VirtualServerId(virtualServer.Id()).
+		Username(subject)
+	user, err := userRepository.First(ctx, userFilter)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("parsing subject: %w", err))
+		utils.HandleHttpError(w, fmt.Errorf("getting user: %w", err))
+		return
+	}
+	if user == nil {
+		utils.HandleHttpError(w, fmt.Errorf("user not found"))
 		return
 	}
 
@@ -1664,7 +1672,7 @@ func handleTokenExchange(w http.ResponseWriter, r *http.Request) {
 	now := clockService.Now()
 
 	accessToken, err := generateAccessToken(ctx, AccessTokenGenerationParams{
-		UserId:            userId,
+		UserId:            user.Id(),
 		VirtualServerName: virtualServer.Name(),
 		ClientId:          applicationName,
 		ApplicationId:     application.Id(),

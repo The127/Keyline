@@ -27,19 +27,19 @@ import (
 )
 
 const (
+	serviceUserUsername   = "test-service-user"
+	serviceUserKid        = "7cae8bb1-71b5-4394-b45f-be5ffe81c64f"
 	serviceUserPublicKey  = "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEA3M7NYNpucIwsMNDHPswe1yvLtMzIau2ddMB2FX40few=\n-----END PUBLIC KEY-----\n"
 	serviceUserPrivateKey = "-----BEGIN PRIVATE KEY-----\nMFECAQEwBQYDK2VwBCIEIDlOHCg/gH43TB4S1n/2g33iti99sEkEFYwVdAkyKoqw\ngSEA3M7NYNpucIwsMNDHPswe1yvLtMzIau2ddMB2FX40few=\n-----END PRIVATE KEY-----\n"
 )
 
 type harness struct {
-	c              client.Client
-	ctx            context.Context
-	setTime        clock.TimeSetterFn
-	dbName         string
-	scope          *ioc.DependencyProvider
-	serverUrl      string
-	serviceUserId  uuid.UUID
-	serviceUserKid string
+	c         client.Client
+	ctx       context.Context
+	setTime   clock.TimeSetterFn
+	dbName    string
+	scope     *ioc.DependencyProvider
+	serverUrl string
 }
 
 func (h *harness) SetTime(t time.Time) {
@@ -56,14 +56,6 @@ func (h *harness) Ctx() context.Context {
 
 func (h *harness) Client() client.Client {
 	return h.c
-}
-
-func (h *harness) ServiceUserId() uuid.UUID {
-	return h.serviceUserId
-}
-
-func (h *harness) ServiceUserKid() string {
-	return h.serviceUserKid
 }
 
 func (h *harness) Close() {
@@ -156,29 +148,22 @@ func newE2eTestHarness(tokenSourceGenerator func(ctx context.Context, url string
 
 	c := client.NewClient(serverConfig.ExternalUrl, "test-vs", opts...)
 
-	res, err := initTest(scope)
+	err = initTest(scope)
 	if err != nil {
 		panic(fmt.Errorf("failed to initialize test: %w", err))
 	}
 
 	return &harness{
-		c:              c,
-		scope:          scope,
-		ctx:            ctx,
-		setTime:        timeSetter,
-		dbName:         dbName,
-		serverUrl:      serverConfig.ExternalUrl,
-		serviceUserKid: res.kid,
-		serviceUserId:  res.serviceUserId,
+		c:         c,
+		scope:     scope,
+		ctx:       ctx,
+		setTime:   timeSetter,
+		dbName:    dbName,
+		serverUrl: serverConfig.ExternalUrl,
 	}
 }
 
-type initResult struct {
-	serviceUserId uuid.UUID
-	kid           string
-}
-
-func initTest(dp *ioc.DependencyProvider) (*initResult, error) {
+func initTest(dp *ioc.DependencyProvider) error {
 	scope := dp.NewScope()
 
 	ctx := middlewares.ContextWithScope(context.Background(), scope)
@@ -192,7 +177,7 @@ func initTest(dp *ioc.DependencyProvider) (*initResult, error) {
 		SigningAlgorithm:   config.SigningAlgorithmEdDSA,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to create initial virtual server: %v", err)
+		return fmt.Errorf("failed to create initial virtual server: %v", err)
 	}
 
 	initialAdminUserInfo, err := mediatr.Send[*commands.CreateUserResponse](ctx, m, commands.CreateUser{
@@ -203,7 +188,7 @@ func initTest(dp *ioc.DependencyProvider) (*initResult, error) {
 		EmailVerified:     true,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to create initial admin user: %v", err)
+		return fmt.Errorf("failed to create initial admin user: %v", err)
 	}
 
 	credentialRepository := ioc.GetDependency[repositories.CredentialRepository](scope)
@@ -213,7 +198,7 @@ func initTest(dp *ioc.DependencyProvider) (*initResult, error) {
 	})
 	err = credentialRepository.Insert(ctx, initialAdminCredential)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create initial admin credential: %v", err)
+		return fmt.Errorf("failed to create initial admin credential: %v", err)
 	}
 
 	_, err = mediatr.Send[*commands.AssignRoleToUserResponse](ctx, m, commands.AssignRoleToUser{
@@ -223,15 +208,15 @@ func initTest(dp *ioc.DependencyProvider) (*initResult, error) {
 		RoleId:            createVirtualServerResponse.AdminRoleId,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to assign admin role to initial admin user: %v", err)
+		return fmt.Errorf("failed to assign admin role to initial admin user: %v", err)
 	}
 
 	serviceUserResponse, err := mediatr.Send[*commands.CreateServiceUserResponse](ctx, m, commands.CreateServiceUser{
 		VirtualServerName: "test-vs",
-		Username:          "service-user",
+		Username:          serviceUserUsername,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to create initial service user: %v", err)
+		return fmt.Errorf("failed to create initial service user: %v", err)
 	}
 
 	_, err = mediatr.Send[*commands.AssignRoleToUserResponse](ctx, m, commands.AssignRoleToUser{
@@ -241,22 +226,20 @@ func initTest(dp *ioc.DependencyProvider) (*initResult, error) {
 		RoleId:            createVirtualServerResponse.AdminRoleId,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to assign admin role to service user: %v", err)
+		return fmt.Errorf("failed to assign admin role to service user: %v", err)
 	}
 
-	keyResponse, err := mediatr.Send[*commands.AssociateServiceUserPublicKeyResponse](ctx, m, commands.AssociateServiceUserPublicKey{
+	_, err = mediatr.Send[*commands.AssociateServiceUserPublicKeyResponse](ctx, m, commands.AssociateServiceUserPublicKey{
 		VirtualServerName: "test-vs",
 		ServiceUserId:     serviceUserResponse.Id,
 		PublicKey:         serviceUserPublicKey,
+		Kid:               utils.Ptr(serviceUserKid),
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to associate service user public key: %v", err)
+		return fmt.Errorf("failed to associate service user public key: %v", err)
 	}
 
-	return &initResult{
-		serviceUserId: serviceUserResponse.Id,
-		kid:           keyResponse.Id.String(),
-	}, scope.Close()
+	return scope.Close()
 }
 
 var nextPort = 25000
