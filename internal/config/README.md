@@ -943,10 +943,12 @@ initialVirtualServer:
   
   initialServiceUsers:
     - username: "test-service"
-      publicKey: |
-        -----BEGIN PUBLIC KEY-----
-        MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...
-        -----END PUBLIC KEY-----
+      publicKey: 
+        kdi: "35cf4fea-62c6-4023-898a-ffa6d9c0a8f3"
+        pem: |
+            -----BEGIN PUBLIC KEY-----
+            MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...
+            -----END PUBLIC KEY-----
       roles:
         - "tester"
         - "dev-app developer"
@@ -989,11 +991,13 @@ cat public_key.pem
 
 The public key in the configuration should look like:
 ```yaml
-publicKey: |
-  -----BEGIN PUBLIC KEY-----
-  MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAw8vLPQXHEYmVHN...
-  YourActualKeyDataHere...
-  -----END PUBLIC KEY-----
+publicKey: 
+  pem: |
+      -----BEGIN PUBLIC KEY-----
+      MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAw8vLPQXHEYmVHN...
+      YourActualKeyDataHere...
+      -----END PUBLIC KEY-----
+  kid: <some-uuid>
 ```
 
 ### Password Hash Generation

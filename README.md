@@ -163,7 +163,9 @@ initialVirtualServer:
   # Optional: Create service users for machine-to-machine auth
   initialServiceUsers:
     - username: "api-service"
-      publicKey: "-----BEGIN PUBLIC KEY-----\n..."
+      publicKey:
+        kid: "35cf4fea-62c6-4023-898a-ffa6d9c0a8f3"
+        pem: "-----BEGIN PUBLIC KEY-----\n..."
       roles: ["viewer"]  # Format: "role-name" or "project-slug role-name"
 ```
 
