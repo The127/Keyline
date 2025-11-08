@@ -9,7 +9,7 @@ The config package provides flexible configuration management for Keyline using 
 - **Validation** - Automatic validation of required fields with panic on missing values
 - **Type-Safe** - Strongly-typed configuration structure
 - **Flexible Cache Modes** - Support for in-memory and Redis caching
-- **Pluggable Key Storage** - Directory-based or OpenBao key storage options
+- **Pluggable Key Storage** - Directory-based or vault key storage options
 
 ## Configuration Sources
 
@@ -187,11 +187,14 @@ Manage cryptographic keys for token signing.
 
 ```yaml
 keyStore:
-  mode: "directory"  # Key store mode: "memory", "directory", or "openbao"
+  mode: "directory"  # Key store mode: "memory", "directory", or "vault"
   directory:
     path: "./keys"   # Directory path for key storage
-  # openbao:
-  #   # OpenBao configuration (work in progress)
+  vault:
+    address: "http://vault.example.com:8200"  # Vault address
+    token: "vault-secret"  # Vault token
+    mount: "secret" # Vault secret engine mount path
+    prefix: "keyline"  # Vault path prefix
 ```
 
 **Key Store Modes:**
@@ -221,17 +224,18 @@ keyStore:
 **Defaults:**
 - **directory.path**: *required*
 
-#### OpenBao Mode
-Store keys in OpenBao for enhanced security in production environments.
+#### Vault Mode
+Store keys in Vault/OpenBao for enhanced security in production environments.
 
 ```yaml
 keyStore:
-  mode: "openbao"
-  openbao:
-    # Configuration work in progress
+  mode: "vault"
+  vault:
+    address: "http://vault.example.com:8200"  # Vault address
+    token: "vault-secret"  # Vault token
+    mount: "secret" # Vault secret engine mount path
+    prefix: "keyline"  # Vault path prefix
 ```
-
-**Note:** OpenBao mode is not yet implemented.
 
 ### Leader Election Configuration
 
