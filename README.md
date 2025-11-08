@@ -32,7 +32,7 @@ For future major releases, we will be including a link to the conformance test r
 - 📝 **Template System** - Customizable email templates
 - 📊 **Audit Logging** - Comprehensive audit trail for security and compliance
 - 🔄 **Session Management** - Secure session handling with Redis support
-- 🪪 **Flexible Key Storage** - In-memory (testing), directory-based, or OpenBao (work-in-progress)
+- 🪪 **Flexible Key Storage** - In-memory (testing), directory-based, or Vault/OpenBao
 - 💾 **Flexible Cache Layer** - in-memory for dev, Redis for production
 - 🗄️ **Configurable Database** - PostgreSQL for production, SQLite for development/single-server (work-in-progress)
 - 🎯 **Service Users** - Support for service accounts with public key authentication
@@ -185,7 +185,7 @@ cache:
 #### Key Store Configuration
 ```yaml
 keyStore:
-  mode: "directory"  # "memory" (testing only), "directory", or "openbao"
+  mode: "directory"  # "memory" (testing only), "directory", or "vault"
   directory:
     path: "./keys"
 ```
@@ -282,7 +282,7 @@ Keyline includes example applications demonstrating how to integrate with variou
 
 ## Configuration
 
-Keyline provides flexible configuration management through YAML files and environment variables. Configuration supports multiple database backends (PostgreSQL, SQLite work-in-progress), cache backends (in-memory or Redis) and key storage options (directory or OpenBao).
+Keyline provides flexible configuration management through YAML files and environment variables. Configuration supports multiple database backends (PostgreSQL, SQLite work-in-progress), cache backends (in-memory or Redis) and key storage options (directory or OpenvaultBao).
 
 **Quick Start:**
 1. Copy `config.yaml.template` to `config.yaml` and customize it
@@ -718,25 +718,6 @@ database:
 - Load balancer for HTTP traffic distribution
 - Shared PostgreSQL database accessible from all instances
 - Shared Redis cache accessible from all instances
-
-### Environment Variables for Production
-
-```bash
-KEYLINE_SERVER_EXTERNALURL=https://auth.example.com
-KEYLINE_DATABASE_MODE=postgres
-KEYLINE_DATABASE_POSTGRES_HOST=prod-db.example.com
-KEYLINE_DATABASE_POSTGRES_PASSWORD=secure-password
-KEYLINE_CACHE_MODE=redis
-KEYLINE_CACHE_REDIS_HOST=prod-redis.example.com
-KEYLINE_KEYSTORE_MODE=openbao
-
-# For multi-instance with leader election:
-KEYLINE_LEADERELECTION_MODE=raft
-KEYLINE_LEADERELECTION_RAFT_HOST=0.0.0.0
-KEYLINE_LEADERELECTION_RAFT_PORT=7000
-KEYLINE_LEADERELECTION_RAFT_ID=keyline-node-1  # Unique per instance
-KEYLINE_LEADERELECTION_RAFT_INITIATORID=keyline-node-1  # Same on all instances
-```
 
 ## Contributing
 

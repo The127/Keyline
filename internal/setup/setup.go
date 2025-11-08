@@ -10,23 +10,34 @@ import (
 	"Keyline/internal/services/audit"
 	"Keyline/internal/services/claimsMapping"
 	"Keyline/internal/services/keyValue"
+	"fmt"
+
 	"github.com/The127/ioc"
 )
 
-func KeyServices(dc *ioc.DependencyCollection, keyStoreMode config.KeyStoreMode) {
+func KeyServices(dc *ioc.DependencyCollection, keyStoreConfig config.KeyStoreConfig) {
 	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) services.KeyCache {
 		return caching.NewMemoryCache[string, services.KeyPair]()
 	})
 	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) services.KeyStore {
-		switch keyStoreMode {
+		switch keyStoreConfig.Mode {
 		case config.KeyStoreModeMemory:
 			return services.NewMemoryKeyStore()
 
 		case config.KeyStoreModeDirectory:
 			return services.NewDirectoryKeyStore()
 
-		case config.KeyStoreModeOpenBao:
-			panic("not implemented yet")
+		case config.KeyStoreModeVault:
+			keyStore, err := services.NewVaultKeyStore(
+				keyStoreConfig.Vault.Address,
+				keyStoreConfig.Vault.Token,
+				keyStoreConfig.Vault.Mount,
+				keyStoreConfig.Vault.Prefix,
+			)
+			if err != nil {
+				panic(fmt.Errorf("creating vault key store: %w", err))
+			}
+			return keyStore
 
 		default:
 			panic("not implemented")

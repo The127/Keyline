@@ -77,7 +77,7 @@ func main() {
 	})
 
 	setup.OutboxDelivery(dc, config.QueueModeInProcess)
-	setup.KeyServices(dc, config.C.KeyStore.Mode)
+	setup.KeyServices(dc, config.C.KeyStore)
 	setup.Caching(dc, config.C.Cache.Mode)
 	setup.Services(dc)
 	setup.Repositories(dc, config.C.Database.Mode, config.C.Database.Postgres)

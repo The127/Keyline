@@ -19,6 +19,13 @@ services:
       - "8025:8025"
       - "1025:1025"
 
+  vault:
+    image: vault:1.13.3
+    ports:
+      - "8222:8200"
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: myroot
+
   redis:
     image: valkey/valkey
     ports:
