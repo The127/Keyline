@@ -38,7 +38,10 @@ type CreateVirtualServerAdmin struct {
 type CreateVirtualServerServiceUser struct {
 	Username  string
 	Roles     []string
-	PublicKey string
+	PublicKey struct {
+		Pem string
+		Kid string
+	}
 }
 
 type CreateVirtualServerProjectResourceServer struct {
@@ -265,15 +268,16 @@ func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer)
 		_, err = mediatr.Send[*AssociateServiceUserPublicKeyResponse](ctx, m, AssociateServiceUserPublicKey{
 			VirtualServerName: virtualServer.Name(),
 			ServiceUserId:     serviceUserResponse.Id,
-			PublicKey:         serviceUser.PublicKey,
+			PublicKey:         serviceUser.PublicKey.Pem,
+			Kid:               &serviceUser.PublicKey.Kid,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("associating service user public key: %w", err)
 		}
 
 		for _, configuredRole := range serviceUser.Roles {
-			if strings.Contains(configuredRole, " ") {
-				split := strings.Split(configuredRole, " ")
+			if strings.Contains(configuredRole, ":") {
+				split := strings.Split(configuredRole, ":")
 				projectSlug := split[0]
 				roleName := split[1]
 

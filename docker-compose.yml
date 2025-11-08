@@ -30,6 +30,7 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
+
   keyline-ui:
     image: ghcr.io/the127/keyline-ui:v0.1.4
     platform: linux/amd64

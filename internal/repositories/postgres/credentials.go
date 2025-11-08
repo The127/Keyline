@@ -10,6 +10,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+
 	"github.com/The127/ioc"
 
 	"github.com/google/uuid"
@@ -52,6 +53,10 @@ func (r *credentialRepository) selectQuery(filter repositories.CredentialFilter)
 
 	if filter.HasDetailPublicKey() {
 		s.Where(s.Equal("details->>'publicKey'", filter.GetDetailPublicKey()))
+	}
+
+	if filter.HasDetailKey() {
+		s.Where(s.Equal("details->>'key'", filter.GetDetailKey()))
 	}
 
 	return s
