@@ -142,6 +142,13 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
+      vault:
+        image: vault:1.13.3
+        ports:
+          - 8222:8200
+        env:
+          VAULT_DEV_ROOT_TOKEN_ID: myroot
+
     steps:
       - name: Checkout
         uses: actions/checkout@v5
