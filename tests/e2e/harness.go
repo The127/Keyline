@@ -59,6 +59,7 @@ func (h *harness) Client() client.Client {
 }
 
 func (h *harness) Close() {
+	// cleanup database
 	dbConnection := ioc.GetDependency[*sql.DB](h.scope)
 	utils.PanicOnError(h.scope.Close, "closing scope")
 	utils.PanicOnError(dbConnection.Close, "closing db connection in test")
@@ -121,7 +122,18 @@ func newE2eTestHarness(tokenSourceGenerator func(ctx context.Context, url string
 		return clockService
 	})
 	setup.OutboxDelivery(dc, config.QueueModeNoop)
-	setup.KeyServices(dc, config.KeyStoreModeMemory)
+
+	vaultPath := fmt.Sprintf("%s/", uuid.New().String())
+	setup.KeyServices(dc, config.KeyStoreConfig{
+		Mode: config.KeyStoreModeVault,
+		Vault: config.VaultKeyStoreConfig{
+			Address: "http://localhost:8222",
+			Token:   "myroot",
+			Mount:   "secret",
+			Prefix:  vaultPath,
+		},
+	})
+
 	setup.Caching(dc, config.CacheModeMemory)
 	setup.Services(dc)
 	setup.Repositories(dc, config.DatabaseModePostgres, pc)

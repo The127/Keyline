@@ -105,7 +105,9 @@ func newIntegrationTestHarness() *harness {
 		return c
 	})
 	setup.OutboxDelivery(dc, config.QueueModeNoop)
-	setup.KeyServices(dc, config.KeyStoreModeMemory)
+	setup.KeyServices(dc, config.KeyStoreConfig{
+		Mode: config.KeyStoreModeMemory,
+	})
 	setup.Caching(dc, config.CacheModeMemory)
 	setup.Services(dc)
 	setup.Repositories(dc, config.DatabaseModePostgres, pc)

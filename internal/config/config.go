@@ -43,7 +43,7 @@ type KeyStoreMode string
 const (
 	KeyStoreModeMemory    KeyStoreMode = "memory"
 	KeyStoreModeDirectory KeyStoreMode = "directory"
-	KeyStoreModeOpenBao   KeyStoreMode = "openbao"
+	KeyStoreModeVault     KeyStoreMode = "vault"
 )
 
 type SigningAlgorithm string
@@ -99,16 +99,8 @@ type Config struct {
 			Password string
 		}
 	}
-	KeyStore struct {
-		Mode    KeyStoreMode
-		OpenBao struct {
-			//TODO:
-		}
-		Directory struct {
-			Path string
-		}
-	}
-	Cache struct {
+	KeyStore KeyStoreConfig
+	Cache    struct {
 		Mode  CacheMode
 		Redis struct {
 			Host     string
@@ -119,6 +111,21 @@ type Config struct {
 		}
 	}
 	LeaderElection LeaderElectionConfig
+}
+
+type KeyStoreConfig struct {
+	Mode      KeyStoreMode
+	Vault     VaultKeyStoreConfig
+	Directory struct {
+		Path string
+	}
+}
+
+type VaultKeyStoreConfig struct {
+	Address string
+	Token   string
+	Mount   string
+	Prefix  string
 }
 
 type LeaderElectionMode string
@@ -334,8 +341,8 @@ func setKeyStoreDefaultsOrPanic() {
 	case KeyStoreModeMemory:
 		// nothing to do
 
-	case KeyStoreModeOpenBao:
-		setKeyStoreModeOpenBaoDefaultsOrPanic()
+	case KeyStoreModeVault:
+		setKeyStoreModeVaultDefaultsOrPanic()
 
 	case KeyStoreModeDirectory:
 		setKeyStoreModeDirectoryDefaultsOrPanic()
@@ -345,9 +352,18 @@ func setKeyStoreDefaultsOrPanic() {
 	}
 }
 
-func setKeyStoreModeOpenBaoDefaultsOrPanic() {
-	// TODO: implement me
-	panic("not implemented")
+func setKeyStoreModeVaultDefaultsOrPanic() {
+	if C.KeyStore.Vault.Address == "" {
+		panic("missing key store vault address")
+	}
+
+	if C.KeyStore.Vault.Token == "" {
+		panic("missing key store vault token")
+	}
+
+	if C.KeyStore.Vault.Mount == "" {
+		panic("missing key store vault mount")
+	}
 }
 
 func setKeyStoreModeDirectoryDefaultsOrPanic() {

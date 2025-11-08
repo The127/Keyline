@@ -4,6 +4,7 @@ import (
 	"Keyline/internal/caching"
 	"Keyline/internal/clock"
 	"Keyline/internal/config"
+	"context"
 	"crypto"
 	"crypto/ed25519"
 	"crypto/rand"
@@ -18,6 +19,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	vault "github.com/hashicorp/vault/api"
 )
 
 type KeyAlgorithmStrategy interface {
@@ -249,6 +252,159 @@ func (m *memoryKeyStore) Remove(virtualServerName string, algorithm config.Signi
 	key := fmt.Sprintf("%s:%s:%s", virtualServerName, algorithm, kid)
 	delete(m.keyPairs, key)
 	return nil
+}
+
+type vaultKeyStore struct {
+	client    *vault.Client
+	mountPath string
+	prefix    string
+}
+
+func NewVaultKeyStore(addr, token, mountPath, prefix string) (KeyStore, error) {
+	c := vault.DefaultConfig()
+	c.Address = addr
+
+	client, err := vault.NewClient(c)
+	if err != nil {
+		return nil, fmt.Errorf("creating vault client: %w", err)
+	}
+
+	client.SetToken(token)
+
+	return &vaultKeyStore{
+		client:    client,
+		mountPath: mountPath,
+		prefix:    prefix,
+	}, nil
+}
+
+func (v *vaultKeyStore) keyPath(virtualServerName string, algorithm config.SigningAlgorithm, kid string) string {
+	return fmt.Sprintf("%s%s/%s/%s", v.prefix, virtualServerName, algorithm, kid)
+}
+
+func (v *vaultKeyStore) Add(virtualServerName string, keyPair KeyPair) error {
+	path := v.keyPath(virtualServerName, keyPair.algorithm, keyPair.GetKid())
+
+	strategy := GetKeyStrategy(keyPair.algorithm)
+	serializedPrivateKey, err := strategy.Export(keyPair.privateKey)
+	if err != nil {
+		return fmt.Errorf("exporting key pair: %w", err)
+	}
+
+	data, err := json.Marshal(keyPairJson{
+		Algorithm:  string(keyPair.algorithm),
+		PrivateKey: serializedPrivateKey,
+		Kid:        keyPair.kid,
+		CreatedAt:  keyPair.createdAt,
+		RotatesAt:  keyPair.rotatesAt,
+		ExpiresAt:  keyPair.expiresAt,
+	})
+	if err != nil {
+		return fmt.Errorf("marshaling key pair: %w", err)
+	}
+
+	_, err = v.client.KVv2(v.mountPath).Put(context.Background(), path, map[string]interface{}{
+		"data": string(data),
+	})
+	if err != nil {
+		return fmt.Errorf("storing key in vault: %w", err)
+	}
+
+	return nil
+}
+
+func (v *vaultKeyStore) Get(virtualServerName string, algorithm config.SigningAlgorithm, kid string) (*KeyPair, error) {
+	path := v.keyPath(virtualServerName, algorithm, kid)
+
+	secret, err := v.client.KVv2(v.mountPath).Get(context.Background(), path)
+	if err != nil {
+		if strings.Contains(err.Error(), "404") {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("reading key from vault: %w", err)
+	}
+
+	rawData, ok := secret.Data["data"].(string)
+	if !ok {
+		return nil, fmt.Errorf("invalid vault data format")
+	}
+
+	var dto keyPairJson
+	if err := json.Unmarshal([]byte(rawData), &dto); err != nil {
+		return nil, fmt.Errorf("unmarshaling key pair: %w", err)
+	}
+
+	strategy := GetKeyStrategy(config.SigningAlgorithm(dto.Algorithm))
+	priv, pub, err := strategy.Import(dto.PrivateKey)
+	if err != nil {
+		return nil, fmt.Errorf("importing key: %w", err)
+	}
+
+	return &KeyPair{
+		algorithm:  config.SigningAlgorithm(dto.Algorithm),
+		publicKey:  pub,
+		privateKey: priv,
+		kid:        dto.Kid,
+		createdAt:  dto.CreatedAt,
+		rotatesAt:  dto.RotatesAt,
+		expiresAt:  dto.ExpiresAt,
+	}, nil
+}
+
+func (v *vaultKeyStore) Remove(virtualServerName string, algorithm config.SigningAlgorithm, kid string) error {
+	path := v.keyPath(virtualServerName, algorithm, kid)
+	return v.client.KVv2(v.mountPath).Delete(context.Background(), path)
+}
+
+func (v *vaultKeyStore) GetAllForAlgorithm(virtualServerName string, algorithm config.SigningAlgorithm) ([]KeyPair, error) {
+	// For KV v2, list under the metadata path
+	metadataPath := fmt.Sprintf("%s/metadata/%s%s/%s", v.mountPath, v.prefix, virtualServerName, algorithm)
+
+	secretList, err := v.client.Logical().List(metadataPath)
+	if err != nil {
+		// 404 means no keys exist
+		if apiErr, ok := err.(*vault.ResponseError); ok && apiErr.StatusCode == 404 {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("listing keys in vault: %w", err)
+	}
+
+	// If no keys exist
+	if secretList == nil || secretList.Data == nil {
+		return nil, nil
+	}
+
+	keysRaw, ok := secretList.Data["keys"].([]interface{})
+	if !ok {
+		return nil, nil
+	}
+
+	var keyPairs []KeyPair //nolint:prealloc
+	for _, k := range keysRaw {
+		kid, ok := k.(string)
+		if !ok {
+			continue
+		}
+		keyPair, err := v.Get(virtualServerName, algorithm, kid)
+		if err != nil {
+			return nil, err
+		}
+		keyPairs = append(keyPairs, *keyPair)
+	}
+
+	return keyPairs, nil
+}
+
+func (v *vaultKeyStore) GetAll(virtualServerName string) ([]KeyPair, error) {
+	var allKeys []KeyPair
+	for _, alg := range config.SupportedSigningAlgorithms {
+		algKeys, err := v.GetAllForAlgorithm(virtualServerName, alg)
+		if err != nil {
+			return nil, err
+		}
+		allKeys = append(allKeys, algKeys...)
+	}
+	return allKeys, nil
 }
 
 type directoryKeyStore struct {
