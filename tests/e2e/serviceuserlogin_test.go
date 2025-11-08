@@ -38,12 +38,12 @@ var _ = Describe("Service user login", Ordered, func() {
 
 		claims := jwt.MapClaims{
 			"aud":    commands.AdminApplicationName,
-			"iss":    h.ServiceUserId().String(),
-			"sub":    h.ServiceUserId().String(),
+			"iss":    serviceUserUsername,
+			"sub":    serviceUserUsername,
 			"scopes": "openid profile email",
 		}
 		jwtToken := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims)
-		jwtToken.Header["kid"] = h.ServiceUserKid()
+		jwtToken.Header["kid"] = serviceUserKid
 		signedJWT, err := jwtToken.SignedString(key)
 		Expect(err).ToNot(HaveOccurred())
 
@@ -69,12 +69,12 @@ var _ = Describe("Service user login", Ordered, func() {
 
 		claims := jwt.MapClaims{
 			"aud":    commands.AdminApplicationName,
-			"iss":    h.ServiceUserId().String(),
-			"sub":    h.ServiceUserId().String(),
+			"iss":    serviceUserUsername,
+			"sub":    serviceUserUsername,
 			"scopes": "openid profile email",
 		}
 		jwtToken := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims)
-		jwtToken.Header["kid"] = h.ServiceUserKid()
+		jwtToken.Header["kid"] = serviceUserKid
 		signedJWT, err := jwtToken.SignedString(key)
 		Expect(err).ToNot(HaveOccurred())
 

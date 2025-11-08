@@ -86,7 +86,10 @@ type Config struct {
 		ServiceUsers []struct {
 			Username  string
 			Roles     []string
-			PublicKey string
+			PublicKey struct {
+				Pem string
+				Kid string
+			}
 		}
 		Projects []InitialProjectConfig
 		Mail     struct {
@@ -377,8 +380,12 @@ func setInitialServiceUserDefaultsOrPanic() {
 			panic("missing service user username")
 		}
 
-		if serviceUser.PublicKey == "" {
-			panic("missing service user public key")
+		if serviceUser.PublicKey.Pem == "" {
+			panic("missing service user public key pem")
+		}
+
+		if serviceUser.PublicKey.Kid == "" {
+			panic("missing service user public key kid")
 		}
 
 	}

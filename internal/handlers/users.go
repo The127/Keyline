@@ -13,10 +13,11 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/The127/ioc"
-	"github.com/The127/mediatr"
 	"net/http"
 	"time"
+
+	"github.com/The127/ioc"
+	"github.com/The127/mediatr"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
@@ -805,7 +806,7 @@ type AssociateServiceUserPublicKeyRequestDto struct {
 }
 
 type AssociateServiceUserPublicKeyResponseDto struct {
-	Id uuid.UUID `json:"id"`
+	Kid string `json:"kid"`
 }
 
 // AssociateServiceUserPublicKey associates a public key with a service user.
@@ -860,7 +861,7 @@ func AssociateServiceUserPublicKey(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	err = json.NewEncoder(w).Encode(AssociateServiceUserPublicKeyResponseDto{
-		Id: response.Id,
+		Kid: response.Kid,
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)

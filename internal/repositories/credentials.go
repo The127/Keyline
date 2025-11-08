@@ -176,6 +176,7 @@ type CredentialDetails interface {
 }
 
 type CredentialServiceUserKey struct {
+	Kid       string `json:"kid"`
 	PublicKey string `json:"publicKey"`
 }
 
@@ -269,6 +270,7 @@ type CredentialFilter struct {
 	userId          *uuid.UUID
 	_type           *CredentialType
 	detailId        *string
+	detailKid       *string
 	detailPublicKey *string
 }
 
@@ -334,6 +336,20 @@ func (f CredentialFilter) HasType() bool {
 
 func (f CredentialFilter) GetType() CredentialType {
 	return utils.ZeroIfNil(f._type)
+}
+
+func (f CredentialFilter) DetailKid(key string) CredentialFilter {
+	filter := f.Clone()
+	filter.detailKid = &key
+	return filter
+}
+
+func (f CredentialFilter) HasDetailKid() bool {
+	return f.detailKid != nil
+}
+
+func (f CredentialFilter) GetDetailKid() string {
+	return utils.ZeroIfNil(f.detailKid)
 }
 
 func (f CredentialFilter) DetailsId(id string) CredentialFilter {

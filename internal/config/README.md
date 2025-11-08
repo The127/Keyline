@@ -943,10 +943,12 @@ initialVirtualServer:
   
   initialServiceUsers:
     - username: "test-service"
-      publicKey: |
-        -----BEGIN PUBLIC KEY-----
-        MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...
-        -----END PUBLIC KEY-----
+      publicKey: 
+        kdi: "35cf4fea-62c6-4023-898a-ffa6d9c0a8f3"
+        pem: |
+            -----BEGIN PUBLIC KEY-----
+            MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...
+            -----END PUBLIC KEY-----
       roles:
         - "tester"
         - "dev-app developer"
@@ -963,18 +965,11 @@ initialVirtualServer:
 
 When assigning roles to service users in the `roles` array:
 
-1. **Global role assignment**: Use just the role name
+Use the format `"project-name:role-name"`
    ```yaml
    roles:
-     - "viewer"
-     - "editor"
-   ```
-
-2. **Application-specific role assignment**: Use the format `"application-name role-name"`
-   ```yaml
-   roles:
-     - "my-app admin"
-     - "api-service write"
+     - "my-app:admin"
+     - "api-service:write"
    ```
 
 The system automatically detects the format based on whether the role string contains a space. If it contains a space, it's treated as an application-specific role where the first part is the application name and the second part is the role name.
@@ -996,11 +991,13 @@ cat public_key.pem
 
 The public key in the configuration should look like:
 ```yaml
-publicKey: |
-  -----BEGIN PUBLIC KEY-----
-  MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAw8vLPQXHEYmVHN...
-  YourActualKeyDataHere...
-  -----END PUBLIC KEY-----
+publicKey: 
+  pem: |
+      -----BEGIN PUBLIC KEY-----
+      MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAw8vLPQXHEYmVHN...
+      YourActualKeyDataHere...
+      -----END PUBLIC KEY-----
+  kid: <some-uuid>
 ```
 
 ### Password Hash Generation

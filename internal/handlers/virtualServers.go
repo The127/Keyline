@@ -26,7 +26,10 @@ type CreateVirtualServerRequestDtoAdminDto struct {
 type CreateVirtualServerRequestDtoServiceUserDto struct {
 	Username  string   `json:"username" validate:"required,min=1,max=255"`
 	Roles     []string `json:"roles"`
-	PublicKey string   `json:"publicKey" validate:"required"`
+	PublicKey struct {
+		Pem string `json:"pem" validate:"required"`
+		Kid string `json:"kid" validate:"required"`
+	} `json:"publicKey" validate:"required"`
 }
 
 type CreateVirtualServerRequestDtoProjectDtoRoleDto struct {
@@ -119,9 +122,15 @@ func CreateVirtualServer(w http.ResponseWriter, r *http.Request) {
 		}),
 		ServiceUsers: utils.MapSlice(dto.ServiceUsers, func(x CreateVirtualServerRequestDtoServiceUserDto) commands.CreateVirtualServerServiceUser {
 			return commands.CreateVirtualServerServiceUser{
-				Username:  x.Username,
-				Roles:     x.Roles,
-				PublicKey: x.PublicKey,
+				Username: x.Username,
+				Roles:    x.Roles,
+				PublicKey: struct {
+					Pem string
+					Kid string
+				}{
+					Pem: x.PublicKey.Pem,
+					Kid: x.PublicKey.Kid,
+				},
 			}
 		}),
 		Projects: utils.MapSlice(dto.Projects, func(project CreateVirtualServerRequestDtoProjectDto) commands.CreateVirtualServerProject {

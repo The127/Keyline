@@ -7,12 +7,14 @@ import (
 	"Keyline/internal/repositories"
 	"context"
 	"fmt"
+
 	"github.com/The127/ioc"
 
 	"github.com/google/uuid"
 )
 
 type AssociateServiceUserPublicKey struct {
+	Kid               *string
 	VirtualServerName string
 	ServiceUserId     uuid.UUID
 	PublicKey         string
@@ -35,7 +37,8 @@ func (a AssociateServiceUserPublicKey) GetRequestName() string {
 }
 
 type AssociateServiceUserPublicKeyResponse struct {
-	Id uuid.UUID
+	Id  uuid.UUID
+	Kid string
 }
 
 func HandleAssociateServiceUserPublicKey(ctx context.Context, command AssociateServiceUserPublicKey) (*AssociateServiceUserPublicKeyResponse, error) {
@@ -58,8 +61,16 @@ func HandleAssociateServiceUserPublicKey(ctx context.Context, command AssociateS
 		return nil, fmt.Errorf("getting user: %w", err)
 	}
 
+	var kid string
+	if command.Kid == nil {
+		kid = uuid.New().String()
+	} else {
+		kid = *command.Kid
+	}
+
 	credentialRepository := ioc.GetDependency[repositories.CredentialRepository](scope)
 	credential := repositories.NewCredential(user.Id(), &repositories.CredentialServiceUserKey{
+		Kid:       kid,
 		PublicKey: command.PublicKey,
 	})
 	err = credentialRepository.Insert(ctx, credential)
@@ -68,6 +79,7 @@ func HandleAssociateServiceUserPublicKey(ctx context.Context, command AssociateS
 	}
 
 	return &AssociateServiceUserPublicKeyResponse{
-		Id: credential.Id(),
+		Id:  credential.Id(),
+		Kid: kid,
 	}, nil
 }

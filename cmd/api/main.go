@@ -172,9 +172,15 @@ func initApplication(dp *ioc.DependencyProvider) {
 	var serviceUsers []commands.CreateVirtualServerServiceUser = nil //nolint:prealloc
 	for _, serviceUser := range config.C.InitialVirtualServer.ServiceUsers {
 		serviceUsers = append(serviceUsers, commands.CreateVirtualServerServiceUser{
-			Username:  serviceUser.Username,
-			Roles:     serviceUser.Roles,
-			PublicKey: serviceUser.PublicKey,
+			Username: serviceUser.Username,
+			Roles:    serviceUser.Roles,
+			PublicKey: struct {
+				Pem string
+				Kid string
+			}{
+				Pem: serviceUser.PublicKey.Pem,
+				Kid: serviceUser.PublicKey.Kid,
+			},
 		})
 	}
 

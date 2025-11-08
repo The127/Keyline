@@ -83,15 +83,15 @@ The service application must create a JWT with the following characteristics:
 **JWT Claims:**
 ```json
 {
-  "iss": "<service-user-id>",
-  "sub": "<service-user-id>",
+  "iss": "<service-user-username>",
+  "sub": "<service-user-username>",
   "aud": "<target-application-name>",
   "scopes": "openid profile email"
 }
 ```
 
 **Key Requirements:**
-- `iss` (issuer) must equal `sub` (subject) - both must be the service user's UUID
+- `iss` (issuer) must equal `sub` (subject) - both must be the service user's username
 - `aud` (audience) must be the name of the target application
 - `scopes` must be a space-separated string and must include "openid"
 - The JWT must be signed with the private key corresponding to the registered public key
@@ -264,7 +264,7 @@ func main() {
     // Configuration
     keylineURL := "https://keyline.example.com"
     virtualServer := "my-virtual-server"
-    serviceUserId := "12345678-90ab-cdef-1234-567890abcdef"
+    serviceUserUsername := "service-user"
     keyId := "abcdefgh-1234-5678-90ab-cdefghijklmn"
     applicationName := "my-application"
     
@@ -282,8 +282,8 @@ func main() {
     // Step 2: Create JWT claims
     claims := jwt.MapClaims{
         "aud":    applicationName,
-        "iss":    serviceUserId,
-        "sub":    serviceUserId,
+        "iss":    serviceUserUsername,
+        "sub":    serviceUserUsername,
         "scopes": "openid profile email",
     }
     
@@ -365,7 +365,7 @@ The algorithm is determined by the public key type when you associate the key wi
 
 ### "Invalid issuer"
 
-- The `iss` claim must equal the `sub` claim (both must be the service user ID)
+- The `iss` claim must equal the `sub` claim (both must be the service user username)
 - This is a security requirement for service user token exchange
 
 ### "Application not found"
