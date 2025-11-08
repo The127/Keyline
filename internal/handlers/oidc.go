@@ -1517,7 +1517,7 @@ func handleTokenExchange(w http.ResponseWriter, r *http.Request) {
 			return nil, fmt.Errorf("missing kid header")
 		}
 
-		keyIdString, ok := keyIdClaim.(string)
+		kid, ok := keyIdClaim.(string)
 		if !ok {
 			return nil, fmt.Errorf("expected kid header to be a string")
 		}
@@ -1551,15 +1551,10 @@ func handleTokenExchange(w http.ResponseWriter, r *http.Request) {
 
 		// TODO: check if scopes are valid
 
-		userId, err := uuid.Parse(subject)
-		if err != nil {
-			return nil, fmt.Errorf("parsing subject: %w", err)
-		}
-
 		userRepository := ioc.GetDependency[repositories.UserRepository](scope)
 		userFilter := repositories.NewUserFilter().
 			VirtualServerId(virtualServer.Id()).
-			Id(userId)
+			Username(subject)
 		user, err := userRepository.First(ctx, userFilter)
 		if err != nil {
 			return nil, fmt.Errorf("getting user: %w", err)
@@ -1572,16 +1567,11 @@ func handleTokenExchange(w http.ResponseWriter, r *http.Request) {
 			return nil, fmt.Errorf("user is not a service user")
 		}
 
-		keyId, err := uuid.Parse(keyIdString)
-		if err != nil {
-			return nil, fmt.Errorf("parsing key id: %w", err)
-		}
-
 		credentialRepository := ioc.GetDependency[repositories.CredentialRepository](scope)
 		credentialFilter := repositories.NewCredentialFilter().
 			Type(repositories.CredentialTypeServiceUserKey).
-			UserId(userId).
-			Id(keyId)
+			UserId(user.Id()).
+			DetailKid(kid)
 		credential, err := credentialRepository.First(ctx, credentialFilter)
 		if err != nil {
 			return nil, fmt.Errorf("getting credential: %w", err)

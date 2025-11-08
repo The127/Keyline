@@ -55,8 +55,8 @@ func (r *credentialRepository) selectQuery(filter repositories.CredentialFilter)
 		s.Where(s.Equal("details->>'publicKey'", filter.GetDetailPublicKey()))
 	}
 
-	if filter.HasDetailKey() {
-		s.Where(s.Equal("details->>'key'", filter.GetDetailKey()))
+	if filter.HasDetailKid() {
+		s.Where(s.Equal("details->>'kid'", filter.GetDetailKid()))
 	}
 
 	return s
