@@ -25,10 +25,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/The127/ioc"
-	"github.com/The127/mediatr"
 	"net/http"
 	"time"
+
+	"github.com/The127/ioc"
+	"github.com/The127/mediatr"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
@@ -262,7 +263,7 @@ func VerifyPassword(w http.ResponseWriter, r *http.Request) {
 		}
 
 		userRepository := ioc.GetDependency[repositories.UserRepository](scope)
-		userFilter := repositories.NewUserFilter().Username(dto.Username)
+		userFilter := repositories.NewUserFilter().VirtualServerId(loginInfo.VirtualServerId).Username(dto.Username)
 		user, err := userRepository.First(ctx, userFilter)
 		if err != nil {
 			return err

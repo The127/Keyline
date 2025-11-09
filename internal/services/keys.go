@@ -744,5 +744,9 @@ func (s *keyServiceImpl) GetKey(virtualServerName string, algorithm config.Signi
 		s.cache.Put(virtualServerName, keyPair)
 	}
 
+	if keyPair.Algorithm() != algorithm {
+		panic(fmt.Errorf("key pair algorithm does not match requested algorithm: %s != %s (multiple keys are not implemented yet)", keyPair.Algorithm(), algorithm))
+	}
+
 	return keyPair
 }

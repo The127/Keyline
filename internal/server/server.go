@@ -124,12 +124,13 @@ func mapApiRoutes(r *mux.Router) {
 		gh.AllowCredentials(),
 		gh.MaxAge(3600),
 	))
+
+	apiRouter.Use(middlewares.VirtualServerMiddleware())
 	apiRouter.Use(authentication.Middleware())
 
 	apiRouter.HandleFunc("/virtual-servers", handlers.CreateVirtualServer).Methods(http.MethodPost, http.MethodOptions)
 
 	vsApiRouter := apiRouter.PathPrefix("/virtual-servers/{virtualServerName}").Subrouter()
-	vsApiRouter.Use(middlewares.VirtualServerMiddleware())
 
 	vsApiRouter.HandleFunc("", handlers.GetVirtualServer).Methods(http.MethodGet, http.MethodOptions)
 	vsApiRouter.HandleFunc("/public-info", handlers.GetVirtualServerPublicInfo).Methods(http.MethodGet, http.MethodOptions)

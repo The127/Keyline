@@ -1,6 +1,7 @@
 package middlewares
 
 import (
+	"Keyline/internal/config"
 	"context"
 	"errors"
 	"net/http"
@@ -18,8 +19,7 @@ func VirtualServerMiddleware() mux.MiddlewareFunc {
 			vars := mux.Vars(r)
 			name := vars["virtualServerName"]
 			if name == "" {
-				http.Error(w, "virtual server name missing in URL", http.StatusBadRequest)
-				return
+				name = config.C.InitialVirtualServer.Name
 			}
 
 			next.ServeHTTP(w, r.WithContext(ContextWithVirtualServerName(r.Context(), name)))
