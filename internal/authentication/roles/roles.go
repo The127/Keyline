@@ -7,8 +7,8 @@ import (
 type Role string
 
 const (
-	SystemUser         Role = "system_user"
-	SystemAdmin        Role = "system_admin"
+	SystemUser         Role = "system-user"
+	SystemAdmin        Role = "system-admin"
 	VirtualServerAdmin Role = "admin"
 )
 
