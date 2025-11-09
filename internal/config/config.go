@@ -1,10 +1,12 @@
 package config
 
 import (
+	"Keyline/internal/retry"
 	"flag"
 	"fmt"
 	"log"
 	"net/url"
+	"os"
 	"strings"
 
 	"github.com/knadh/koanf/parsers/yaml"
@@ -214,6 +216,15 @@ var k = koanf.New(".")
 
 func readConfigFile() {
 	if configFilePath != "" {
+		retry.FiveTimes(func() error {
+			_, err := os.Stat(configFilePath)
+			if err != nil {
+				return fmt.Errorf("failed to stat config file: %w", err)
+			}
+
+			return nil
+		}, "failed to read config file")
+
 		if err := k.Load(file.Provider(configFilePath), yaml.Parser()); err != nil {
 			log.Fatalf("error loading config from file: %v", err)
 		}

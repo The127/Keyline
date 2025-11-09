@@ -22,6 +22,7 @@ import (
 	"Keyline/internal/queries"
 	"Keyline/internal/quorum"
 	"Keyline/internal/repositories"
+	"Keyline/internal/retry"
 	"Keyline/internal/server"
 	"Keyline/internal/setup"
 	"Keyline/utils"
@@ -41,22 +42,6 @@ import (
 	"github.com/huandu/go-sqlbuilder"
 )
 
-func tryFiveTimes(f func() error, msg string) {
-	var err error
-	for i := 0; i < 5; i++ {
-		err = f()
-		if err == nil {
-			return
-		}
-
-		logging.Logger.Infof(msg+": %v", err)
-		logging.Logger.Infof("Retrying in 5 seconds (attempt %d/5)", i+1)
-		time.Sleep(5 * time.Second)
-	}
-
-	panic(err)
-}
-
 func main() {
 	config.Init()
 	configureSwaggerFromConfig()
@@ -66,7 +51,7 @@ func main() {
 	logging.Init()
 	metrics.Init()
 
-	tryFiveTimes(func() error {
+	retry.FiveTimes(func() error {
 		return database.Migrate(config.C.Database.Postgres)
 	}, "failed to migrate database")
 
