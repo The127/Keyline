@@ -146,6 +146,7 @@ func mapApiRoutes(r *mux.Router) {
 	vsApiRouter.HandleFunc("/users/register", handlers.RegisterUser).Methods(http.MethodPost, http.MethodOptions)
 	vsApiRouter.HandleFunc("/users/verify-email", handlers.VerifyEmail).Methods(http.MethodGet, http.MethodOptions)
 	vsApiRouter.HandleFunc("/users", handlers.ListUsers).Methods(http.MethodGet, http.MethodOptions)
+	vsApiRouter.HandleFunc("/users", handlers.CreateUser).Methods(http.MethodPost, http.MethodOptions)
 	vsApiRouter.HandleFunc("/users/{userId}", handlers.GetUserById).Methods(http.MethodGet, http.MethodOptions)
 	vsApiRouter.HandleFunc("/users/{userId}/metadata", handlers.GetUserMetadata).Methods(http.MethodGet, http.MethodOptions)
 	vsApiRouter.HandleFunc("/users/{userId}/metadata/user", handlers.GetUserGlobalMetadata).Methods(http.MethodGet, http.MethodOptions)

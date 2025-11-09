@@ -585,7 +585,7 @@ func ResetTemporaryPassword(w http.ResponseWriter, r *http.Request) {
 		}
 
 		m := ioc.GetDependency[mediatr.Mediator](scope)
-		_, err = mediatr.Send[*commands.ResetPasswordResponse](ctx, m, commands.ResetPassword{
+		_, err = mediatr.Send[*commands.SetPasswordResponse](ctx, m, commands.SetPassword{
 			UserId:      loginInfo.UserId,
 			NewPassword: dto.NewPassword,
 			Temporary:   false,

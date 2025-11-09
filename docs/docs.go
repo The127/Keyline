@@ -804,6 +804,48 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Create user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "keyline",
+                        "description": "Virtual server name",
+                        "name": "virtualServerName",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "User data",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.CreateUserRequestDto"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.CreateUserResponseDto"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
             }
         },
         "/api/virtual-servers/{virtualServerName}/users/register": {
@@ -3228,7 +3270,7 @@ const docTemplate = `{
         "handlers.AssociateServiceUserPublicKeyResponseDto": {
             "type": "object",
             "properties": {
-                "id": {
+                "kid": {
                     "type": "string"
                 }
             }
@@ -3456,6 +3498,54 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.CreateUserRequestDto": {
+            "type": "object",
+            "required": [
+                "displayName",
+                "email",
+                "emailVerified",
+                "username"
+            ],
+            "properties": {
+                "displayName": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "emailVerified": {
+                    "type": "boolean"
+                },
+                "password": {
+                    "$ref": "#/definitions/handlers.CreateUserRequestDtoPasword"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.CreateUserRequestDtoPasword": {
+            "type": "object",
+            "required": [
+                "plain"
+            ],
+            "properties": {
+                "plain": {
+                    "type": "string"
+                },
+                "temporary": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "handlers.CreateUserResponseDto": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                }
+            }
+        },
         "handlers.CreateVirtualServerRequestDto": {
             "type": "object",
             "required": [
@@ -3659,7 +3749,19 @@ const docTemplate = `{
             ],
             "properties": {
                 "publicKey": {
-                    "type": "string"
+                    "type": "object",
+                    "required": [
+                        "kid",
+                        "pem"
+                    ],
+                    "properties": {
+                        "kid": {
+                            "type": "string"
+                        },
+                        "pem": {
+                            "type": "string"
+                        }
+                    }
                 },
                 "roles": {
                     "type": "array",

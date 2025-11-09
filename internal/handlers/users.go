@@ -121,6 +121,91 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+type CreateUserRequestDto struct {
+	Username      string                       `json:"username" validate:"required"`
+	DisplayName   string                       `json:"displayName" validate:"required"`
+	Email         string                       `json:"email" validate:"required"`
+	EmailVerified bool                         `json:"emailVerified" validate:"required"`
+	Password      *CreateUserRequestDtoPasword `json:"password"`
+}
+
+type CreateUserRequestDtoPasword struct {
+	Plain     string `json:"plain" validate:"required"`
+	Temporary bool   `json:"temporary"`
+}
+
+type CreateUserResponseDto struct {
+	Id uuid.UUID `json:"id"`
+}
+
+// CreateUser creates a new user.
+// @Summary      Create user
+// @Tags         Users
+// @Produce      json
+// @Param        virtualServerName  path  string true  "Virtual server name"  default(keyline)
+// @Param        body               body  CreateUserRequestDto   true "User data"
+// @Success      201  {object}  CreateUserResponseDto
+// @Failure      400  {string}  string
+// @Router       /api/virtual-servers/{virtualServerName}/users [post]
+func CreateUser(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	vsName, err := middlewares.GetVirtualServerName(ctx)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	var dto CreateUserRequestDto
+	err = json.NewDecoder(r.Body).Decode(&dto)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	err = utils.ValidateDto(dto)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	scope := middlewares.GetScope(ctx)
+	m := ioc.GetDependency[mediatr.Mediator](scope)
+
+	createUserResponse, err := mediatr.Send[*commands.CreateUserResponse](ctx, m, commands.CreateUser{
+		VirtualServerName: vsName,
+		Username:          dto.Username,
+		DisplayName:       dto.DisplayName,
+		Email:             dto.Email,
+		EmailVerified:     dto.EmailVerified,
+	})
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	if dto.Password != nil {
+		_, err := mediatr.Send[*commands.SetPasswordResponse](ctx, m, commands.SetPassword{
+			UserId:      createUserResponse.Id,
+			NewPassword: dto.Password.Plain,
+			Temporary:   dto.Password.Temporary,
+		})
+		if err != nil {
+			utils.HandleHttpError(w, err)
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	err = json.NewEncoder(w).Encode(CreateUserResponseDto{
+		Id: createUserResponse.Id,
+	})
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+}
+
 type ListUsersResponseDto struct {
 	Id            uuid.UUID `json:"id"`
 	Username      string    `json:"username"`
