@@ -8,6 +8,7 @@ import (
 	"Keyline/internal/services"
 	"Keyline/utils"
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -73,7 +74,11 @@ func Middleware() mux.MiddlewareFunc {
 			authorizationHeader := r.Header.Get("Authorization")
 
 			vsName, err := middlewares.GetVirtualServerName(ctx)
-			if err != nil {
+			switch {
+			case errors.Is(err, middlewares.ErrMissingVirtualServerNameInContext):
+				vsName = config.C.InitialVirtualServer.Name
+
+			case err == nil:
 				utils.HandleHttpError(w, err)
 				return
 			}
