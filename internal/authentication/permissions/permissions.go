@@ -3,7 +3,7 @@ package permissions
 type Permission string
 
 const (
-	SystemUser Permission = "system-user"
+	SystemUser Permission = "system_user"
 
 	AuditView Permission = "audit:view"
 
