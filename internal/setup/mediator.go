@@ -27,7 +27,7 @@ func Mediator(dc *ioc.DependencyCollection) {
 	mediatr.RegisterHandler(m, commands.HandleRegisterUser)
 	mediatr.RegisterHandler(m, commands.HandleCreateUser)
 	mediatr.RegisterHandler(m, commands.HandleVerifyEmail)
-	mediatr.RegisterHandler(m, commands.HandleResetPassword)
+	mediatr.RegisterHandler(m, commands.HandleSetPassword)
 	mediatr.RegisterHandler(m, queries.HandleGetUserQuery)
 	mediatr.RegisterHandler(m, commands.HandlePatchUser)
 	mediatr.RegisterHandler(m, queries.HandleListUsers)

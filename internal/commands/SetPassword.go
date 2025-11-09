@@ -9,38 +9,39 @@ import (
 	"Keyline/utils"
 	"context"
 	"fmt"
+
 	"github.com/The127/ioc"
 	"github.com/The127/mediatr"
 
 	"github.com/google/uuid"
 )
 
-type ResetPassword struct {
+type SetPassword struct {
 	UserId      uuid.UUID
 	NewPassword string
 	Temporary   bool
 }
 
-func (a ResetPassword) LogRequest() bool {
+func (a SetPassword) LogRequest() bool {
 	return true
 }
 
-func (a ResetPassword) LogResponse() bool {
+func (a SetPassword) LogResponse() bool {
 	return true
 }
 
-func (a ResetPassword) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
+func (a SetPassword) IsAllowed(ctx context.Context) (behaviours.PolicyResult, error) {
 	// TODO: users should be able to reset their own password
 	return behaviours.PermissionBasedPolicy(ctx, permissions.UserResetPassword)
 }
 
-func (a ResetPassword) GetRequestName() string {
-	return "ResetPassword"
+func (a SetPassword) GetRequestName() string {
+	return "SetPassword"
 }
 
-type ResetPasswordResponse struct{}
+type SetPasswordResponse struct{}
 
-func HandleResetPassword(ctx context.Context, command ResetPassword) (*ResetPasswordResponse, error) {
+func HandleSetPassword(ctx context.Context, command SetPassword) (*SetPasswordResponse, error) {
 	scope := middlewares.GetScope(ctx)
 
 	hashedPassword := utils.HashPassword(command.NewPassword)
@@ -49,22 +50,36 @@ func HandleResetPassword(ctx context.Context, command ResetPassword) (*ResetPass
 	credentialFilter := repositories.NewCredentialFilter().
 		UserId(command.UserId).
 		Type(repositories.CredentialTypePassword)
-	credential, err := credentialRepository.Single(ctx, credentialFilter)
+	credential, err := credentialRepository.First(ctx, credentialFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting credential: %w", err)
+	}
+
+	passwordExists := credential != nil
+
+	if !passwordExists {
+		credential = repositories.NewCredential(command.UserId, &repositories.CredentialPasswordDetails{})
 	}
 
 	details, err := credential.PasswordDetails()
 	if err != nil {
 		return nil, fmt.Errorf("getting password details: %w", err)
 	}
+
 	details.Temporary = command.Temporary
 	details.HashedPassword = hashedPassword
 	credential.SetDetails(details)
 
-	err = credentialRepository.Update(ctx, credential)
-	if err != nil {
-		return nil, fmt.Errorf("updating credential: %w", err)
+	if passwordExists {
+		err = credentialRepository.Update(ctx, credential)
+		if err != nil {
+			return nil, fmt.Errorf("updating credential: %w", err)
+		}
+	} else {
+		err = credentialRepository.Insert(ctx, credential)
+		if err != nil {
+			return nil, fmt.Errorf("inserting credential: %w", err)
+		}
 	}
 
 	m := ioc.GetDependency[mediatr.Mediator](scope)
@@ -75,5 +90,5 @@ func HandleResetPassword(ctx context.Context, command ResetPassword) (*ResetPass
 		return nil, fmt.Errorf("raising event: %w", err)
 	}
 
-	return &ResetPasswordResponse{}, nil
+	return &SetPasswordResponse{}, nil
 }
