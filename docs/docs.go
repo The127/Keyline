@@ -3516,8 +3516,25 @@ const docTemplate = `{
                 "emailVerified": {
                     "type": "boolean"
                 },
+                "password": {
+                    "$ref": "#/definitions/handlers.CreateUserRequestDtoPasword"
+                },
                 "username": {
                     "type": "string"
+                }
+            }
+        },
+        "handlers.CreateUserRequestDtoPasword": {
+            "type": "object",
+            "required": [
+                "plain"
+            ],
+            "properties": {
+                "plain": {
+                    "type": "string"
+                },
+                "temporary": {
+                    "type": "boolean"
                 }
             }
         },

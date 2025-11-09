@@ -122,10 +122,16 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 }
 
 type CreateUserRequestDto struct {
-	Username      string `json:"username" validate:"required"`
-	DisplayName   string `json:"displayName" validate:"required"`
-	Email         string `json:"email" validate:"required"`
-	EmailVerified bool   `json:"emailVerified" validate:"required"`
+	Username      string                       `json:"username" validate:"required"`
+	DisplayName   string                       `json:"displayName" validate:"required"`
+	Email         string                       `json:"email" validate:"required"`
+	EmailVerified bool                         `json:"emailVerified" validate:"required"`
+	Password      *CreateUserRequestDtoPasword `json:"password"`
+}
+
+type CreateUserRequestDtoPasword struct {
+	Plain     string `json:"plain" validate:"required"`
+	Temporary bool   `json:"temporary"`
 }
 
 type CreateUserResponseDto struct {
@@ -166,7 +172,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	scope := middlewares.GetScope(ctx)
 	m := ioc.GetDependency[mediatr.Mediator](scope)
 
-	response, err := mediatr.Send[*commands.CreateUserResponse](ctx, m, commands.CreateUser{
+	createUserResponse, err := mediatr.Send[*commands.CreateUserResponse](ctx, m, commands.CreateUser{
 		VirtualServerName: vsName,
 		Username:          dto.Username,
 		DisplayName:       dto.DisplayName,
@@ -178,10 +184,21 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if dto.Password != nil {
+		_, err := mediatr.Send[*commands.SetPasswordResponse](ctx, m, commands.SetPassword{
+			UserId:      createUserResponse.Id,
+			NewPassword: dto.Password.Plain,
+			Temporary:   dto.Password.Temporary,
+		})
+		if err != nil {
+			utils.HandleHttpError(w, err)
+		}
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 
 	err = json.NewEncoder(w).Encode(CreateUserResponseDto{
-		Id: response.Id,
+		Id: createUserResponse.Id,
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)
