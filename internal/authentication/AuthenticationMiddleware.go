@@ -107,7 +107,7 @@ func extractUserFromBearerToken(ctx context.Context, authorizationHeader string,
 
 	tokenString := strings.TrimPrefix(authorizationHeader, "Bearer ")
 	if tokenString == "" {
-		return CurrentUser{}, utils.ErrHttpUnauthorized
+		return CurrentUser{}, fmt.Errorf("empty token: %w", utils.ErrHttpUnauthorized)
 	}
 
 	keyService := ioc.GetDependency[services.KeyService](scope)
@@ -118,22 +118,22 @@ func extractUserFromBearerToken(ctx context.Context, authorizationHeader string,
 		return keyPair.PublicKey(), nil
 	})
 	if err != nil {
-		return CurrentUser{}, utils.ErrHttpUnauthorized
+		return CurrentUser{}, fmt.Errorf("parsing token [%s]: %w", err.Error(), utils.ErrHttpUnauthorized)
 	}
 
 	if !token.Valid {
-		return CurrentUser{}, utils.ErrHttpUnauthorized
+		return CurrentUser{}, fmt.Errorf("token is not valid: %w", utils.ErrHttpUnauthorized)
 	}
 
 	claims := token.Claims.(jwt.MapClaims)
 	userIdString, ok := claims["sub"].(string)
 	if !ok {
-		return CurrentUser{}, utils.ErrHttpUnauthorized
+		return CurrentUser{}, fmt.Errorf("sub claim not found: %w", utils.ErrHttpUnauthorized)
 	}
 
 	userId, err := uuid.Parse(userIdString)
 	if err != nil {
-		return CurrentUser{}, utils.ErrHttpUnauthorized
+		return CurrentUser{}, fmt.Errorf("parsing sub claim [%s]: %w", userIdString, utils.ErrHttpUnauthorized)
 	}
 
 	currentUser := NewCurrentUser(userId)
