@@ -312,7 +312,7 @@ func assignRoles(ctx context.Context, m mediatr.Mediator, virtualServer *reposit
 		projectFilter := repositories.NewProjectFilter().VirtualServerId(virtualServer.Id()).Slug(projectSlug)
 		project, err := projectRepository.Single(ctx, projectFilter)
 		if err != nil {
-			return fmt.Errorf("failed to get project: %v", err)
+			return fmt.Errorf("getting project: %w", err)
 		}
 
 		roleFilter := repositories.NewRoleFilter().
