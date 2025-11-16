@@ -331,7 +331,7 @@ func assignRoles(ctx context.Context, m mediatr.Mediator, virtualServer *reposit
 			RoleId:            role.Id(),
 		})
 		if err != nil {
-			return fmt.Errorf("assigning role to user: %v", err)
+			return fmt.Errorf("assigning role to user: %w", err)
 		}
 	}
 
