@@ -5,7 +5,6 @@ import (
 	"Keyline/internal/behaviours"
 	"Keyline/internal/clock"
 	"Keyline/internal/config"
-	"Keyline/internal/logging"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/internal/services"
@@ -33,6 +32,7 @@ type CreateVirtualServerAdmin struct {
 	DisplayName  string
 	PrimaryEmail string
 	PasswordHash string
+	Roles        []string
 }
 
 type CreateVirtualServerServiceUser struct {
@@ -230,7 +230,7 @@ func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer)
 		})
 		err = credentialRepository.Insert(ctx, initialAdminCredential)
 		if err != nil {
-			logging.Logger.Fatalf("failed to create initial admin credential: %v", err)
+			return nil, fmt.Errorf("creating initial admin credential: %w", err)
 		}
 
 		_, err = mediatr.Send[*AssignRoleToUserResponse](ctx, m, AssignRoleToUser{
@@ -254,6 +254,11 @@ func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer)
 				return nil, fmt.Errorf("assigning system admin role to admin user: %w", err)
 			}
 		}
+
+		err = assignRoles(ctx, m, virtualServer, initialAdminUserInfo.Id, command.Admin.Roles)
+		if err != nil {
+			return nil, fmt.Errorf("assigning roles to admin user: %w", err)
+		}
 	}
 
 	for _, serviceUser := range command.ServiceUsers {
@@ -275,41 +280,9 @@ func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer)
 			return nil, fmt.Errorf("associating service user public key: %w", err)
 		}
 
-		for _, configuredRole := range serviceUser.Roles {
-			if !strings.Contains(configuredRole, ":") {
-				return nil, fmt.Errorf("role %s does not contain project slug", configuredRole)
-			}
-
-			split := strings.Split(configuredRole, ":")
-			projectSlug := split[0]
-			roleName := split[1]
-
-			projectRepository := ioc.GetDependency[repositories.ProjectRepository](scope)
-			projectFilter := repositories.NewProjectFilter().VirtualServerId(virtualServer.Id()).Slug(projectSlug)
-			project, err := projectRepository.Single(ctx, projectFilter)
-			if err != nil {
-				logging.Logger.Fatalf("failed to get project: %v", err)
-			}
-
-			roleRepository := ioc.GetDependency[repositories.RoleRepository](scope)
-			roleFilter := repositories.NewRoleFilter().
-				VirtualServerId(virtualServer.Id()).
-				ProjectId(project.Id()).
-				Name(roleName)
-			role, err := roleRepository.Single(ctx, roleFilter)
-			if err != nil {
-				logging.Logger.Fatalf("failed to get role: %v", err)
-			}
-
-			_, err = mediatr.Send[*AssignRoleToUserResponse](ctx, m, AssignRoleToUser{
-				VirtualServerName: virtualServer.Name(),
-				ProjectSlug:       projectSlug,
-				UserId:            serviceUserResponse.Id,
-				RoleId:            role.Id(),
-			})
-			if err != nil {
-				logging.Logger.Fatalf("failed to assign role to service user: %v", err)
-			}
+		err = assignRoles(ctx, m, virtualServer, serviceUserResponse.Id, serviceUser.Roles)
+		if err != nil {
+			return nil, fmt.Errorf("assigning roles to service user: %w", err)
 		}
 	}
 
@@ -320,6 +293,49 @@ func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer)
 		AdminUiApplicationId: initDefaultAppsResult.adminUidApplicationId,
 		AdminRoleId:          defaultRolesResult.adminRoleId,
 	}, nil
+}
+
+func assignRoles(ctx context.Context, m mediatr.Mediator, virtualServer *repositories.VirtualServer, userId uuid.UUID, roleList []string) error {
+	scope := middlewares.GetScope(ctx)
+	projectRepository := ioc.GetDependency[repositories.ProjectRepository](scope)
+	roleRepository := ioc.GetDependency[repositories.RoleRepository](scope)
+
+	for _, configuredRole := range roleList {
+		if !strings.Contains(configuredRole, ":") {
+			return fmt.Errorf("role %s does not contain project slug", configuredRole)
+		}
+
+		split := strings.Split(configuredRole, ":")
+		projectSlug := split[0]
+		roleName := split[1]
+
+		projectFilter := repositories.NewProjectFilter().VirtualServerId(virtualServer.Id()).Slug(projectSlug)
+		project, err := projectRepository.Single(ctx, projectFilter)
+		if err != nil {
+			return fmt.Errorf("getting project: %w", err)
+		}
+
+		roleFilter := repositories.NewRoleFilter().
+			VirtualServerId(virtualServer.Id()).
+			ProjectId(project.Id()).
+			Name(roleName)
+		role, err := roleRepository.Single(ctx, roleFilter)
+		if err != nil {
+			return fmt.Errorf("getting role: %w", err)
+		}
+
+		_, err = mediatr.Send[*AssignRoleToUserResponse](ctx, m, AssignRoleToUser{
+			VirtualServerName: virtualServer.Name(),
+			ProjectSlug:       projectSlug,
+			UserId:            userId,
+			RoleId:            role.Id(),
+		})
+		if err != nil {
+			return fmt.Errorf("assigning role to user: %w", err)
+		}
+	}
+
+	return nil
 }
 
 type createDefaultApplicationResult struct {

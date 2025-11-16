@@ -84,6 +84,7 @@ type Config struct {
 			DisplayName  string
 			PrimaryEmail string
 			PasswordHash string
+			Roles        []string
 		}
 		ServiceUsers []struct {
 			Username  string
