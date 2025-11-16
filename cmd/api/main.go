@@ -151,6 +151,7 @@ func initApplication(dp *ioc.DependencyProvider) {
 			DisplayName:  config.C.InitialVirtualServer.Admin.DisplayName,
 			PrimaryEmail: config.C.InitialVirtualServer.Admin.PrimaryEmail,
 			PasswordHash: config.C.InitialVirtualServer.Admin.PasswordHash,
+			Roles:        config.C.InitialVirtualServer.Admin.Roles,
 		}
 	}
 

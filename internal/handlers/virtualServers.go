@@ -17,10 +17,11 @@ import (
 )
 
 type CreateVirtualServerRequestDtoAdminDto struct {
-	Username     string `json:"username" validate:"required,min=1,max=255"`
-	DisplayName  string `json:"displayName" validate:"required,min=1,max=255"`
-	PrimaryEmail string `json:"primaryEmail" validate:"required,email"`
-	PasswordHash string `json:"passwordHash" validate:"required"`
+	Username     string   `json:"username" validate:"required,min=1,max=255"`
+	DisplayName  string   `json:"displayName" validate:"required,min=1,max=255"`
+	PrimaryEmail string   `json:"primaryEmail" validate:"required,email"`
+	PasswordHash string   `json:"passwordHash" validate:"required"`
+	Roles        []string `json:"roles"`
 }
 
 type CreateVirtualServerRequestDtoServiceUserDto struct {
@@ -118,6 +119,7 @@ func CreateVirtualServer(w http.ResponseWriter, r *http.Request) {
 				DisplayName:  admin.DisplayName,
 				PrimaryEmail: admin.PrimaryEmail,
 				PasswordHash: admin.PasswordHash,
+				Roles:        admin.Roles,
 			}
 		}),
 		ServiceUsers: utils.MapSlice(dto.ServiceUsers, func(x CreateVirtualServerRequestDtoServiceUserDto) commands.CreateVirtualServerServiceUser {
