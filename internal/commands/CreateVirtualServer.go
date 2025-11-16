@@ -230,7 +230,7 @@ func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer)
 		})
 		err = credentialRepository.Insert(ctx, initialAdminCredential)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create initial admin credential: %v", err)
+			return nil, fmt.Errorf("creating initial admin credential: %w", err)
 		}
 
 		_, err = mediatr.Send[*AssignRoleToUserResponse](ctx, m, AssignRoleToUser{
