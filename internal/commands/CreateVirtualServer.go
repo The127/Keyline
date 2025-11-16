@@ -321,7 +321,7 @@ func assignRoles(ctx context.Context, m mediatr.Mediator, virtualServer *reposit
 			Name(roleName)
 		role, err := roleRepository.Single(ctx, roleFilter)
 		if err != nil {
-			return fmt.Errorf("failed to get role: %v", err)
+			return fmt.Errorf("getting role: %w", err)
 		}
 
 		_, err = mediatr.Send[*AssignRoleToUserResponse](ctx, m, AssignRoleToUser{
