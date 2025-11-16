@@ -248,6 +248,10 @@ definitions:
         type: string
       primaryEmail:
         type: string
+      roles:
+        items:
+          type: string
+        type: array
       username:
         maxLength: 255
         minLength: 1

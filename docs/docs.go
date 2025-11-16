@@ -3613,6 +3613,12 @@ const docTemplate = `{
                 "primaryEmail": {
                     "type": "string"
                 },
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "username": {
                     "type": "string",
                     "maxLength": 255,
