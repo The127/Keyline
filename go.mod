@@ -3,6 +3,7 @@ module Keyline
 go 1.25
 
 require (
+	github.com/The127/go-clock v0.0.0-20251223175028-de53998b7f1b
 	github.com/The127/ioc v0.0.0-20251106160055-64edcb05f08d
 	github.com/The127/mediatr v0.0.0-20251106154229-12859853c010
 	github.com/dop251/goja v0.0.0-20251008123653-cf18d89f3cf6

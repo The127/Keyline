@@ -2,7 +2,6 @@ package services
 
 import (
 	"Keyline/internal/caching"
-	"Keyline/internal/clock"
 	"Keyline/internal/config"
 	"context"
 	"crypto"
@@ -15,6 +14,7 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
+	"github.com/The127/go-clock"
 	"os"
 	"path/filepath"
 	"strings"

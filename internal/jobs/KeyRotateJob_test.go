@@ -1,13 +1,14 @@
 package jobs
 
 import (
-	"Keyline/internal/clock"
 	"Keyline/internal/config"
 	"Keyline/internal/logging"
 	"Keyline/internal/services"
 	"Keyline/internal/services/mocks"
 	"testing"
 	"time"
+
+	"github.com/The127/go-clock"
 
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -28,7 +29,7 @@ func (s *KeyRotateJobSuite) TestDeletesExpiredKeys() {
 	ctrl := gomock.NewController(s.T())
 	defer ctrl.Finish()
 
-	clockService, clockSetter := clock.NewMockServiceNow()
+	clockService, clockSetter := clock.NewMockClock(time.Now())
 
 	clockSetter(time.Now().Add(-time.Hour * 24 * 365 * 10))
 	signingAlgorithm := config.SigningAlgorithmEdDSA

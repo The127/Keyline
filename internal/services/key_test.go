@@ -1,9 +1,11 @@
 package services
 
 import (
-	"Keyline/internal/clock"
 	"Keyline/internal/config"
 	"testing"
+	"time"
+
+	"github.com/The127/go-clock"
 
 	"github.com/stretchr/testify/require"
 )
@@ -19,7 +21,7 @@ func TestKeyStrategy(t *testing.T) {
 		{"EdDSA", config.SigningAlgorithmEdDSA},
 	}
 
-	clockService, _ := clock.NewMockServiceNow()
+	clockService, _ := clock.NewMockClock(time.Now())
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
