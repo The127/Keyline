@@ -11,7 +11,6 @@ package main
 
 import (
 	"Keyline/internal/authentication"
-	"Keyline/internal/clock"
 	"Keyline/internal/commands"
 	"Keyline/internal/config"
 	"Keyline/internal/database"
@@ -33,6 +32,8 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/The127/go-clock"
 
 	"github.com/The127/ioc"
 	"github.com/The127/mediatr"
@@ -58,7 +59,7 @@ func main() {
 	dc := ioc.NewDependencyCollection()
 
 	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) clock.Service {
-		return clock.NewClockService()
+		return clock.NewSystemClock()
 	})
 
 	setup.OutboxDelivery(dc, config.QueueModeInProcess)

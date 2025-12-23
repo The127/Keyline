@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"Keyline/internal/clock"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/internal/repositories/mocks"
@@ -11,6 +10,9 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
+
+	"github.com/The127/go-clock"
 
 	"github.com/The127/ioc"
 
@@ -90,7 +92,7 @@ func (s *CreateVirtualServerCommandSuite) createContext(
 	}
 
 	ioc.RegisterSingleton[clock.Service](dc, func(_ *ioc.DependencyProvider) clock.Service {
-		clockService, _ := clock.NewMockServiceNow()
+		clockService, _ := clock.NewMockClock(time.Now())
 		return clockService
 	})
 

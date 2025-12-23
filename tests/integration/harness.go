@@ -2,7 +2,6 @@ package integration
 
 import (
 	"Keyline/internal/authentication"
-	"Keyline/internal/clock"
 	"Keyline/internal/commands"
 	"Keyline/internal/config"
 	"Keyline/internal/database"
@@ -13,10 +12,12 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/The127/ioc"
-	"github.com/The127/mediatr"
 	"strings"
 	"time"
+
+	"github.com/The127/go-clock"
+	"github.com/The127/ioc"
+	"github.com/The127/mediatr"
 
 	"github.com/google/uuid"
 	"github.com/huandu/go-sqlbuilder"
@@ -73,7 +74,7 @@ func (h *harness) Mediator() mediatr.Mediator {
 func newIntegrationTestHarness() *harness {
 	ctx := context.Background()
 	dc := ioc.NewDependencyCollection()
-	c, timeSetter := clock.NewMockServiceNow()
+	c, timeSetter := clock.NewMockClock(time.Now())
 
 	sqlbuilder.DefaultFlavor = sqlbuilder.PostgreSQL
 

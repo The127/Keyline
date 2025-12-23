@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"Keyline/internal/clock"
 	"Keyline/internal/config"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
@@ -11,9 +10,11 @@ import (
 	serviceMocks "Keyline/internal/services/mocks"
 	"Keyline/utils"
 	"context"
-	"github.com/The127/ioc"
 	"testing"
 	"time"
+
+	"github.com/The127/go-clock"
+	"github.com/The127/ioc"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -64,7 +65,7 @@ func newTestContext(t *testing.T) context.Context {
 }
 
 func newDefaultParams(algorithm config.SigningAlgorithm) TokenGenerationParams {
-	keyPair, err := services.GetKeyStrategy(algorithm).Generate(clock.NewClockService())
+	keyPair, err := services.GetKeyStrategy(algorithm).Generate(clock.NewSystemClock())
 	if err != nil {
 		panic(err)
 	}

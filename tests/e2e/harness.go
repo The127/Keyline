@@ -3,7 +3,6 @@ package e2e
 import (
 	"Keyline/client"
 	"Keyline/internal/authentication"
-	"Keyline/internal/clock"
 	"Keyline/internal/commands"
 	"Keyline/internal/config"
 	"Keyline/internal/database"
@@ -15,11 +14,13 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/The127/ioc"
-	"github.com/The127/mediatr"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/The127/go-clock"
+	"github.com/The127/ioc"
+	"github.com/The127/mediatr"
 
 	"github.com/google/uuid"
 	"github.com/huandu/go-sqlbuilder"
@@ -90,7 +91,7 @@ func (h *harness) ApiUrl() string {
 func newE2eTestHarness(tokenSourceGenerator func(ctx context.Context, url string) oauth2.TokenSource) *harness {
 	ctx := context.Background()
 	dc := ioc.NewDependencyCollection()
-	clockService, timeSetter := clock.NewMockServiceNow()
+	clockService, timeSetter := clock.NewMockClock(time.Now())
 
 	sqlbuilder.DefaultFlavor = sqlbuilder.PostgreSQL
 

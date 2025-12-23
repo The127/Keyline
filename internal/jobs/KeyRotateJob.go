@@ -1,7 +1,6 @@
 package jobs
 
 import (
-	"Keyline/internal/clock"
 	"Keyline/internal/config"
 	"Keyline/internal/logging"
 	"Keyline/internal/middlewares"
@@ -10,8 +9,10 @@ import (
 	"Keyline/utils"
 	"context"
 	"fmt"
-	"github.com/The127/ioc"
 	"time"
+
+	"github.com/The127/go-clock"
+	"github.com/The127/ioc"
 )
 
 func KeyRotateJob() JobFn {

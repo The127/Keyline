@@ -4,6 +4,8 @@ github.com/KyleBanks/depth v1.2.1 h1:5h8fQADFrWtarTdtDudMmGsC7GPbOAu6RVB3ffsVFHc
 github.com/KyleBanks/depth v1.2.1/go.mod h1:jzSb9d0L43HxTQfT+oSA1EEp2q+ne2uh6XgeJcm8brE=
 github.com/Masterminds/semver/v3 v3.4.0 h1:Zog+i5UMtVoCU8oKka5P7i9q9HgrJeGzI9SA1Xbatp0=
 github.com/Masterminds/semver/v3 v3.4.0/go.mod h1:4V+yj/TJE1HU9XfppCwVMZq3I84lprf4nC11bSS5beM=
+github.com/The127/go-clock v0.0.0-20251223175028-de53998b7f1b h1:sM4z/HKmzNtT8Dg6qHrQ50k7XXLYPzH0OwzjBy8zQNI=
+github.com/The127/go-clock v0.0.0-20251223175028-de53998b7f1b/go.mod h1:9Dsq0v3wOZuFQF7Z42J9FnZlAb6U/p7iSU3dpEwhemA=
 github.com/The127/ioc v0.0.0-20251106160055-64edcb05f08d h1:PFi8npDfIqlfyYQ0CvhUceUpZl5uA9fPD6K2AwL3ACQ=
 github.com/The127/ioc v0.0.0-20251106160055-64edcb05f08d/go.mod h1:c8VKvlL6+fblOI7zJqnhN5cg0rzU0w4WwJw0VgyhGjE=
 github.com/The127/mediatr v0.0.0-20251106154229-12859853c010 h1:fQzdLJZqbtRKx9VyGLAfRdT8dTL1A6a9D92M8bOJ33M=

@@ -1,7 +1,6 @@
 package services
 
 import (
-	"Keyline/internal/clock"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/internal/services/keyValue"
@@ -11,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/The127/go-clock"
 	"github.com/The127/ioc"
 	"time"
 

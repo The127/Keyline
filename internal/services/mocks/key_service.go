@@ -10,9 +10,9 @@
 package mocks
 
 import (
-	clock "Keyline/internal/clock"
 	config "Keyline/internal/config"
 	services "Keyline/internal/services"
+	clock "github.com/The127/go-clock"
 	reflect "reflect"
 
 	gomock "go.uber.org/mock/gomock"

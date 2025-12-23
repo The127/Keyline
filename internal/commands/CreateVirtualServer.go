@@ -3,7 +3,6 @@ package commands
 import (
 	"Keyline/internal/authentication/permissions"
 	"Keyline/internal/behaviours"
-	"Keyline/internal/clock"
 	"Keyline/internal/config"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
@@ -12,6 +11,7 @@ import (
 	"Keyline/utils"
 	"context"
 	"fmt"
+	"github.com/The127/go-clock"
 	"strings"
 
 	"github.com/The127/ioc"

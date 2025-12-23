@@ -1,12 +1,12 @@
 package keyValue
 
 import (
-	"Keyline/internal/clock"
 	"Keyline/internal/config"
 	"Keyline/internal/middlewares"
 	"context"
 	"errors"
 	"fmt"
+	"github.com/The127/go-clock"
 	"github.com/The127/ioc"
 	"sync"
 	"time"

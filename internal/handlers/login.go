@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"Keyline/internal/clock"
 	"Keyline/internal/commands"
 	"Keyline/internal/config"
 	"Keyline/internal/jsonTypes"
@@ -25,6 +24,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/The127/go-clock"
 	"net/http"
 	"time"
 
