@@ -2,20 +2,57 @@ package postgres
 
 import (
 	"Keyline/internal/change"
-	"Keyline/internal/database"
 	"Keyline/internal/logging"
-	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
+	"Keyline/internal/repositories/postgres/pghelpers"
 	"Keyline/utils"
 	"context"
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/The127/ioc"
 
 	"github.com/google/uuid"
 	"github.com/huandu/go-sqlbuilder"
 )
+
+type postgresRole struct {
+	postgresBaseModel
+	virtualServerId uuid.UUID
+	projectId       uuid.UUID
+	name            string
+	description     string
+}
+
+func mapRole(role *repositories.Role) *postgresRole {
+	return &postgresRole{
+		postgresBaseModel: mapBase(role.BaseModel),
+		virtualServerId:   role.VirtualServerId(),
+		projectId:         role.ProjectId(),
+		name:              role.Name(),
+		description:       role.Description(),
+	}
+}
+
+func (r *postgresRole) Map() *repositories.Role {
+	return repositories.NewRoleFromDB(
+		r.MapBase(),
+		r.virtualServerId,
+		r.projectId,
+		r.name,
+		r.description,
+	)
+}
+
+func (r *postgresRole) scan(row pghelpers.Row) error {
+	return row.Scan(
+		&r.id,
+		&r.auditCreatedAt,
+		&r.auditUpdatedAt,
+		&r.xmin,
+		&r.virtualServerId,
+		&r.projectId,
+	)
+}
 
 type RoleRepository struct {
 	db            *sql.DB
@@ -36,7 +73,7 @@ func (r *RoleRepository) selectQuery(filter repositories.RoleFilter) *sqlbuilder
 		"id",
 		"audit_created_at",
 		"audit_updated_at",
-		"version",
+		"xmin",
 		"virtual_server_id",
 		"project_id",
 		"name",
@@ -78,20 +115,12 @@ func (r *RoleRepository) selectQuery(filter repositories.RoleFilter) *sqlbuilder
 }
 
 func (r *RoleRepository) List(ctx context.Context, filter repositories.RoleFilter) ([]*repositories.Role, int, error) {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
-
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return nil, 0, fmt.Errorf("failed to open tx: %w", err)
-	}
-
 	s := r.selectQuery(filter)
 	s.SelectMore("count(*) over()")
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
-	rows, err := tx.QueryContext(ctx, query, args...)
+	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("querying rows: %w", err)
 	}
@@ -100,15 +129,13 @@ func (r *RoleRepository) List(ctx context.Context, filter repositories.RoleFilte
 	var roles []*repositories.Role
 	var totalCount int
 	for rows.Next() {
-		role := repositories.Role{
-			BaseModel: repositories.NewModelBase(),
-		}
-		err = rows.Scan(append(role.GetScanPointers(), &totalCount)...)
+		role := &postgresRole{}
+		err := role.scan(rows)
 		if err != nil {
 			return nil, 0, fmt.Errorf("scanning row: %w", err)
 		}
 
-		roles = append(roles, &role)
+		roles = append(roles, role.Map())
 	}
 
 	return roles, totalCount, nil
@@ -126,26 +153,15 @@ func (r *RoleRepository) Single(ctx context.Context, filter repositories.RoleFil
 }
 
 func (r *RoleRepository) First(ctx context.Context, filter repositories.RoleFilter) (*repositories.Role, error) {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
-
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return nil, fmt.Errorf("failed to open tx: %w", err)
-	}
-
 	s := r.selectQuery(filter)
-
 	s.Limit(1)
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
-	row := tx.QueryRowContext(ctx, query, args...)
+	row := r.db.QueryRowContext(ctx, query, args...)
 
-	role := repositories.Role{
-		BaseModel: repositories.NewModelBase(),
-	}
-	err = row.Scan(role.GetScanPointers()...)
+	role := &postgresRole{}
+	err := role.scan(row)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, nil
@@ -154,92 +170,110 @@ func (r *RoleRepository) First(ctx context.Context, filter repositories.RoleFilt
 		return nil, fmt.Errorf("scanning row: %w", err)
 	}
 
-	return &role, nil
+	return role.Map(), nil
 }
 
-func (r *RoleRepository) Insert(ctx context.Context, role *repositories.Role) error {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
+func (r *RoleRepository) Insert(role *repositories.Role) {
+	r.changeTracker.Add(change.NewEntry(change.Added, r.entityType, role))
+}
 
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return fmt.Errorf("failed to open tx: %w", err)
-	}
+func (r *RoleRepository) ExecuteInsert(ctx context.Context, tx *sql.Tx, role *repositories.Role) error {
+	mapped := mapRole(role)
 
 	s := sqlbuilder.InsertInto("roles").
 		Cols(
+			"id",
+			"audit_created_at",
+			"audit_updated_at",
 			"virtual_server_id",
 			"project_id",
 			"name",
 			"description",
 		).
 		Values(
-			role.VirtualServerId(),
-			role.ProjectId(),
-			role.Name(),
-			role.Description(),
-		).Returning("id", "audit_created_at", "audit_updated_at", "version")
+			mapped.id,
+			mapped.auditCreatedAt,
+			mapped.auditUpdatedAt,
+			mapped.virtualServerId,
+			mapped.projectId,
+			mapped.name,
+			mapped.description,
+		).
+		Returning("xmin")
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
 	row := tx.QueryRowContext(ctx, query, args...)
 
-	err = row.Scan(role.InsertPointers()...)
+	var xmin uint32
+	err := row.Scan(&xmin)
 	if err != nil {
 		return fmt.Errorf("scanning row: %w", err)
 	}
 
+	role.SetVersion(xmin)
 	role.ClearChanges()
 	return nil
 }
 
-func (r *RoleRepository) Update(ctx context.Context, role *repositories.Role) error {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
+func (r *RoleRepository) Update(role *repositories.Role) {
+	r.changeTracker.Add(change.NewEntry(change.Updated, r.entityType, role))
+}
 
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return fmt.Errorf("failed to open tx: %w", err)
+func (r *RoleRepository) ExecuteUpdate(ctx context.Context, tx *sql.Tx, role *repositories.Role) error {
+	if !role.HasChanges() {
+		return nil
 	}
+
+	mapped := mapRole(role)
 
 	s := sqlbuilder.Update("roles")
-	for fieldName, value := range role.Changes() {
-		s.SetMore(s.Assign(fieldName, value))
+	s.Where(s.Equal("id", mapped.id))
+	s.Where(s.Equal("xmin", mapped.xmin))
+
+	for _, field := range role.GetChanges() {
+		switch field {
+		case repositories.RoleChangeName:
+			s.SetMore(s.Assign("name", mapped.name))
+
+		case repositories.RoleChangeDescription:
+			s.SetMore(s.Assign("description", mapped.description))
+
+		default:
+			return fmt.Errorf("updating field %v is not supported", field)
+		}
 	}
-	s.SetMore(s.Assign("version", role.Version()+1))
 
-	s.Where(s.Equal("id", role.Id()))
-	s.Where(s.Equal("version", role.Version()))
-	s.Returning("audit_updated_at", "version")
-
+	s.Returning("xmin")
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
 	row := tx.QueryRowContext(ctx, query, args...)
 
-	err = row.Scan(role.UpdatePointers()...)
-	if err != nil {
+	var xmin uint32
+	err := row.Scan(&xmin)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return fmt.Errorf("updating application: %w", repositories.ErrVersionMismatch)
+	case err != nil:
 		return fmt.Errorf("scanning row: %w", err)
 	}
 
+	role.SetVersion(xmin)
 	role.ClearChanges()
 	return nil
 }
 
-func (r *RoleRepository) Delete(ctx context.Context, id uuid.UUID) error {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
+func (r *RoleRepository) Delete(id uuid.UUID) {
+	r.changeTracker.Add(change.NewEntry(change.Deleted, r.entityType, id))
+}
 
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return fmt.Errorf("failed to open tx: %w", err)
-	}
-
+func (r *RoleRepository) ExecuteDelete(ctx context.Context, tx *sql.Tx, id uuid.UUID) error {
 	s := sqlbuilder.DeleteFrom("roles")
 	s.Where(s.Equal("id", id))
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
-	_, err = tx.ExecContext(ctx, query, args...)
+	_, err := tx.ExecContext(ctx, query, args...)
 	if err != nil {
 		return fmt.Errorf("executing sql: %w", err)
 	}

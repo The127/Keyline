@@ -37,16 +37,14 @@ func NewRole(virtualServerId uuid.UUID, projectId uuid.UUID, name string, descri
 	}
 }
 
-func (r *Role) GetScanPointers() []any {
-	return []any{
-		&r.id,
-		&r.auditCreatedAt,
-		&r.auditUpdatedAt,
-		&r.version,
-		&r.virtualServerId,
-		&r.projectId,
-		&r.name,
-		&r.description,
+func NewRoleFromDB(base BaseModel, virtualServerId uuid.UUID, projectId uuid.UUID, name string, description string) *Role {
+	return &Role{
+		BaseModel:       base,
+		List:            change.NewChanges[RoleChange](),
+		virtualServerId: virtualServerId,
+		projectId:       projectId,
+		name:            name,
+		description:     description,
 	}
 }
 
