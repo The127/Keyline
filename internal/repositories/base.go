@@ -19,24 +19,6 @@ type BaseModel struct {
 	version any
 }
 
-// InsertPointers is an internal function that returns the pointers to the id, auditCreatedAt, auditUpdatedAt and version fields (in that order).
-func (m *BaseModel) InsertPointers() []any {
-	return []any{
-		&m.id,
-		&m.auditCreatedAt,
-		&m.auditUpdatedAt,
-		&m.version,
-	}
-}
-
-// UpdatePointers is an internal function that returns the pointers to the auditUpdatedAt and version fields (in that order).
-func (m *BaseModel) UpdatePointers() []any {
-	return []any{
-		&m.auditUpdatedAt,
-		&m.version,
-	}
-}
-
 func NewBaseModel() BaseModel {
 	return BaseModel{
 		version: nil,
