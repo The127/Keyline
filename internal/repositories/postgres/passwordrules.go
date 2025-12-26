@@ -2,9 +2,7 @@ package postgres
 
 import (
 	"Keyline/internal/change"
-	"Keyline/internal/database"
 	"Keyline/internal/logging"
-	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/internal/repositories/postgres/pghelpers"
 	"Keyline/utils"
@@ -12,8 +10,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-
-	"github.com/The127/ioc"
 
 	"github.com/google/uuid"
 	"github.com/huandu/go-sqlbuilder"
@@ -116,23 +112,15 @@ func (r *PasswordRuleRepository) List(ctx context.Context, filter *repositories.
 }
 
 func (r *PasswordRuleRepository) First(ctx context.Context, filter *repositories.PasswordRuleFilter) (*repositories.PasswordRule, error) {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
-
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return nil, fmt.Errorf("failed to open tx: %w", err)
-	}
-
 	s := r.selectQuery(filter)
 	s.Limit(1)
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
-	row := tx.QueryRowContext(ctx, query, args...)
+	row := r.db.QueryRowContext(ctx, query, args...)
 
 	passwordRule := &postgresPasswordRule{}
-	err = passwordRule.scan(row)
+	err := passwordRule.scan(row)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, nil
