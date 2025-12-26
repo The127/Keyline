@@ -8,7 +8,6 @@ import (
 	"slices"
 
 	"github.com/google/uuid"
-	"github.com/lib/pq"
 )
 
 type ApplicationType string
@@ -66,23 +65,34 @@ func NewApplication(virtualServerId uuid.UUID, projectId uuid.UUID, name string,
 	}
 }
 
-func (a *Application) GetScanPointers() []any {
-	return []any{
-		&a.id,
-		&a.auditCreatedAt,
-		&a.auditUpdatedAt,
-		&a.version,
-		&a.virtualServerId,
-		&a.projectId,
-		&a.name,
-		&a.displayName,
-		&a.type_,
-		&a.hashedSecret,
-		pq.Array(&a.redirectUris),
-		pq.Array(&a.postLogoutRedirectUris),
-		&a.systemApplication,
-		&a.claimsMappingScript,
-		&a.accessTokenHeaderType,
+func NewApplicationFromDB(
+	base BaseModel,
+	virtualServerId uuid.UUID,
+	projectId uuid.UUID,
+	name string,
+	displayName string,
+	type_ ApplicationType,
+	hashedSecret string,
+	redirectUris []string,
+	postLogoutRedirectUris []string,
+	systemApplication bool,
+	claimsMappingScript *string,
+	accessTokenHeaderType string,
+) *Application {
+	return &Application{
+		BaseModel:              base,
+		List:                   change.NewChanges[ApplicationChange](),
+		virtualServerId:        virtualServerId,
+		projectId:              projectId,
+		name:                   name,
+		displayName:            displayName,
+		type_:                  type_,
+		hashedSecret:           hashedSecret,
+		redirectUris:           redirectUris,
+		postLogoutRedirectUris: postLogoutRedirectUris,
+		systemApplication:      systemApplication,
+		claimsMappingScript:    claimsMappingScript,
+		accessTokenHeaderType:  accessTokenHeaderType,
 	}
 }
 
