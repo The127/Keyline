@@ -39,17 +39,15 @@ func NewResourceServer(virtualServerId uuid.UUID, projectId uuid.UUID, slug stri
 	}
 }
 
-func (r *ResourceServer) GetScanPointers() []any {
-	return []any{
-		&r.id,
-		&r.auditCreatedAt,
-		&r.auditUpdatedAt,
-		&r.version,
-		&r.virtualServerId,
-		&r.projectId,
-		&r.slug,
-		&r.name,
-		&r.description,
+func NewResourceServerFromDB(base BaseModel, virtualServerId uuid.UUID, projectId uuid.UUID, slug string, name string, description string) *ResourceServer {
+	return &ResourceServer{
+		BaseModel:       base,
+		List:            change.NewChanges[ResourceServerChange](),
+		virtualServerId: virtualServerId,
+		projectId:       projectId,
+		slug:            slug,
+		name:            name,
+		description:     description,
 	}
 }
 
