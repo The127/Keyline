@@ -2,20 +2,77 @@ package postgres
 
 import (
 	"Keyline/internal/change"
-	"Keyline/internal/database"
 	"Keyline/internal/logging"
-	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
+	"Keyline/internal/repositories/postgres/pghelpers"
 	"Keyline/utils"
 	"context"
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/The127/ioc"
 
 	"github.com/google/uuid"
 	"github.com/huandu/go-sqlbuilder"
 )
+
+type postgresUser struct {
+	postgresBaseModel
+	virtualServerId uuid.UUID
+	username        string
+	displayName     string
+	primaryEmail    string
+	emailVerified   bool
+	serviceUser     bool
+	metadata        string
+}
+
+func mapUser(m *repositories.User) *postgresUser {
+	return &postgresUser{
+		postgresBaseModel: mapBase(m.BaseModel),
+		virtualServerId:   m.VirtualServerId(),
+		username:          m.Username(),
+		displayName:       m.DisplayName(),
+		primaryEmail:      m.PrimaryEmail(),
+		emailVerified:     m.EmailVerified(),
+		serviceUser:       m.IsServiceUser(),
+		metadata:          m.Metadata(),
+	}
+}
+
+func (u *postgresUser) Map() *repositories.User {
+	return repositories.NewUserFromDB(
+		u.MapBase(),
+		u.virtualServerId,
+		u.username,
+		u.displayName,
+		u.primaryEmail,
+		u.emailVerified,
+		u.serviceUser,
+		u.metadata,
+	)
+}
+
+func (u *postgresUser) scan(row pghelpers.Row, filter repositories.UserFilter) error {
+	pointers := []any{
+		&u.id,
+		&u.auditCreatedAt,
+		&u.auditUpdatedAt,
+		&u.xmin,
+		&u.virtualServerId,
+		&u.displayName,
+		&u.username,
+		&u.primaryEmail,
+		&u.emailVerified,
+		&u.serviceUser,
+		&u.metadata,
+	}
+
+	if filter.GetIncludeMetadata() {
+		pointers = append(pointers, &u.metadata)
+	}
+
+	return row.Scan(pointers...)
+}
 
 type UserRepository struct {
 	db            *sql.DB
@@ -36,7 +93,7 @@ func (r *UserRepository) selectQuery(filter repositories.UserFilter) *sqlbuilder
 		"id",
 		"audit_created_at",
 		"audit_updated_at",
-		"version",
+		"xmin",
 		"virtual_server_id",
 		"display_name",
 		"username",
@@ -86,20 +143,12 @@ func (r *UserRepository) selectQuery(filter repositories.UserFilter) *sqlbuilder
 }
 
 func (r *UserRepository) List(ctx context.Context, filter repositories.UserFilter) ([]*repositories.User, int, error) {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
-
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return nil, 0, fmt.Errorf("failed to open tx: %w", err)
-	}
-
 	s := r.selectQuery(filter)
 	s.SelectMore("count(*) over()")
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
-	rows, err := tx.Query(query, args...)
+	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("querying db: %w", err)
 	}
@@ -108,16 +157,13 @@ func (r *UserRepository) List(ctx context.Context, filter repositories.UserFilte
 	var users []*repositories.User
 	var totalCount int
 	for rows.Next() {
-		user := repositories.User{
-			BaseModel: repositories.NewModelBase(),
-		}
-
-		err = rows.Scan(append(user.GetScanPointers(filter), &totalCount)...)
+		user := &postgresUser{}
+		err := user.scan(rows, filter)
 		if err != nil {
 			return nil, 0, fmt.Errorf("scanning row: %w", err)
 		}
 
-		users = append(users, &user)
+		users = append(users, user.Map())
 	}
 
 	return users, totalCount, nil
@@ -135,25 +181,15 @@ func (r *UserRepository) Single(ctx context.Context, filter repositories.UserFil
 }
 
 func (r *UserRepository) First(ctx context.Context, filter repositories.UserFilter) (*repositories.User, error) {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
-
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return nil, fmt.Errorf("failed to open tx: %w", err)
-	}
-
 	s := r.selectQuery(filter)
 	s.Limit(1)
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
-	row := tx.QueryRowContext(ctx, query, args...)
+	row := r.db.QueryRowContext(ctx, query, args...)
 
-	user := repositories.User{
-		BaseModel: repositories.NewModelBase(),
-	}
-	err = row.Scan(user.GetScanPointers(filter)...)
+	user := &postgresUser{}
+	err := user.scan(row, filter)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, nil
@@ -162,54 +198,20 @@ func (r *UserRepository) First(ctx context.Context, filter repositories.UserFilt
 		return nil, fmt.Errorf("scanning row: %w", err)
 	}
 
-	return &user, nil
+	return user.Map(), nil
 }
 
-func (r *UserRepository) Update(ctx context.Context, user *repositories.User) error {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
-
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return fmt.Errorf("failed to open tx: %w", err)
-	}
-
-	s := sqlbuilder.Update("users")
-	for fieldName, value := range user.Changes() {
-		s.SetMore(s.Assign(fieldName, value))
-	}
-	s.SetMore(s.Assign("version", user.Version()+1))
-
-	s.Where(s.Equal("id", user.Id()))
-	s.Where(s.Equal("version", user.Version()))
-	s.Returning("audit_updated_at", "version")
-
-	query, args := s.Build()
-	logging.Logger.Debug("executing sql: ", query)
-	row := tx.QueryRowContext(ctx, query, args...)
-
-	err = row.Scan(user.UpdatePointers()...)
-	switch {
-	case errors.Is(err, sql.ErrNoRows):
-		return fmt.Errorf("updating user: %w", repositories.ErrVersionMismatch)
-	case err != nil:
-		return fmt.Errorf("scanning row: %w", err)
-	}
-
-	user.ClearChanges()
-	return nil
+func (r *UserRepository) Insert(user *repositories.User) {
+	r.changeTracker.Add(change.NewEntry(change.Added, r.entityType, user))
 }
 
-func (r *UserRepository) Insert(ctx context.Context, user *repositories.User) error {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
-
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return fmt.Errorf("failed to open tx: %w", err)
-	}
+func (r *UserRepository) ExecuteInsert(ctx context.Context, tx *sql.Tx, user *repositories.User) error {
+	mapped := mapUser(user)
 
 	cols := []string{
+		"id",
+		"audit_created_at",
+		"audit_updated_at",
 		"username",
 		"display_name",
 		"primary_email",
@@ -217,6 +219,7 @@ func (r *UserRepository) Insert(ctx context.Context, user *repositories.User) er
 		"service_user",
 		"metadata",
 	}
+
 	if user.VirtualServerId() != uuid.Nil {
 		cols = append(cols, "virtual_server_id")
 	} else {
@@ -227,32 +230,85 @@ func (r *UserRepository) Insert(ctx context.Context, user *repositories.User) er
 		Cols(cols...)
 
 	values := []any{
-		user.Username(),
-		user.DisplayName(),
-		user.PrimaryEmail(),
-		user.EmailVerified(),
-		user.IsServiceUser(),
-		user.Metadata(),
+		mapped.id,
+		mapped.auditCreatedAt,
+		mapped.auditUpdatedAt,
+		mapped.username,
+		mapped.displayName,
+		mapped.primaryEmail,
+		mapped.emailVerified,
+		mapped.serviceUser,
+		mapped.metadata,
 	}
+
 	if user.VirtualServerId() != uuid.Nil {
-		values = append(values, user.VirtualServerId())
+		values = append(values, mapped.virtualServerId)
 	} else {
-		values = append(values, user.Id())
+		values = append(values, mapped.id)
 	}
 
 	s.Values(values...)
 
-	s.Returning("id", "audit_created_at", "audit_updated_at", "version")
+	s.Returning("xmin")
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
 	row := tx.QueryRowContext(ctx, query, args...)
 
-	err = row.Scan(user.InsertPointers()...)
+	var xmin uint32
+	err := row.Scan(&xmin)
 	if err != nil {
 		return fmt.Errorf("scanning row: %w", err)
 	}
 
+	user.SetVersion(xmin)
+	user.ClearChanges()
+	return nil
+}
+
+func (r *UserRepository) Update(user *repositories.User) {
+	r.changeTracker.Add(change.NewEntry(change.Updated, r.entityType, user))
+}
+
+func (r *UserRepository) ExecuteUpdate(ctx context.Context, tx *sql.Tx, user *repositories.User) error {
+	if !user.HasChanges() {
+		return nil
+	}
+
+	mapped := mapUser(user)
+
+	s := sqlbuilder.Update("users")
+	s.Where(s.Equal("id", mapped.id))
+	s.Where(s.Equal("xmin", mapped.xmin))
+
+	for _, field := range user.GetChanges() {
+		switch field {
+		case repositories.UserChangeDisplayName:
+			s.SetMore(s.Assign("display_name", mapped.displayName))
+
+		case repositories.UserChangeEmailVerified:
+			s.SetMore(s.Assign("email_verified", mapped.emailVerified))
+
+		default:
+			return fmt.Errorf("updating field %v is not supported", field)
+		}
+	}
+
+	s.Returning("xmin")
+	query, args := s.Build()
+	logging.Logger.Debug("executing sql: ", query)
+	row := tx.QueryRowContext(ctx, query, args...)
+
+	var xmin uint32
+	err := row.Scan(&xmin)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return fmt.Errorf("updating application: %w", repositories.ErrVersionMismatch)
+	case err != nil:
+		return fmt.Errorf("scanning row: %w", err)
+	}
+
+	user.SetVersion(xmin)
 	user.ClearChanges()
 	return nil
 }

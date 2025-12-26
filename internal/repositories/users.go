@@ -70,6 +70,20 @@ func NewServiceUser(username string, virtualServerId uuid.UUID) *User {
 	}
 }
 
+func NewUserFromDB(base BaseModel, virtualServerId uuid.UUID, username string, displayName string, primaryEmail string, emailVerified bool, serviceUser bool, metadata string) *User {
+	return &User{
+		BaseModel:       base,
+		List:            change.NewChanges[UserChange](),
+		virtualServerId: virtualServerId,
+		username:        username,
+		displayName:     displayName,
+		primaryEmail:    primaryEmail,
+		emailVerified:   emailVerified,
+		serviceUser:     serviceUser,
+		metadata:        metadata,
+	}
+}
+
 func (m *User) VirtualServerId() uuid.UUID {
 	return m.virtualServerId
 }
@@ -123,28 +137,6 @@ func (m *User) SetMetadata(metadata string) {
 
 	m.metadata = metadata
 	m.TrackChange(UserChangeMetadata)
-}
-
-func (m *User) GetScanPointers(filter UserFilter) []any {
-	pointers := []any{
-		&m.id,
-		&m.auditCreatedAt,
-		&m.auditUpdatedAt,
-		&m.version,
-		&m.virtualServerId,
-		&m.displayName,
-		&m.username,
-		&m.primaryEmail,
-		&m.emailVerified,
-		&m.serviceUser,
-		&m.metadata,
-	}
-
-	if filter.includeMetadata {
-		pointers = append(pointers, &m.metadata)
-	}
-
-	return pointers
 }
 
 type UserFilter struct {
