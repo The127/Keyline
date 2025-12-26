@@ -14,8 +14,8 @@ type UserRoleAssignment struct {
 	roleId  uuid.UUID
 	groupId *uuid.UUID
 
-	userInfo UserRoleAssignmentUserInfo
-	roleInfo UserRoleAssignmentRoleInfo
+	userInfo *UserRoleAssignmentUserInfo
+	roleInfo *UserRoleAssignmentRoleInfo
 }
 
 type UserRoleAssignmentUserInfo struct {
@@ -37,15 +37,26 @@ func NewUserRoleAssignment(userId uuid.UUID, roleId uuid.UUID, groupId *uuid.UUI
 	}
 }
 
+func NewUserRoleAssignmentFromDB(base BaseModel, userId uuid.UUID, roleId uuid.UUID, groupId *uuid.UUID, userInfo *UserRoleAssignmentUserInfo, roleInfo *UserRoleAssignmentRoleInfo) *UserRoleAssignment {
+	return &UserRoleAssignment{
+		BaseModel: base,
+		userId:    userId,
+		roleId:    roleId,
+		groupId:   groupId,
+		userInfo:  userInfo,
+		roleInfo:  roleInfo,
+	}
+}
+
 func (u *UserRoleAssignment) UserId() uuid.UUID {
 	return u.userId
 }
 
-func (u *UserRoleAssignment) UserInfo() UserRoleAssignmentUserInfo {
+func (u *UserRoleAssignment) UserInfo() *UserRoleAssignmentUserInfo {
 	return u.userInfo
 }
 
-func (u *UserRoleAssignment) RoleInfo() UserRoleAssignmentRoleInfo {
+func (u *UserRoleAssignment) RoleInfo() *UserRoleAssignmentRoleInfo {
 	return u.roleInfo
 }
 
@@ -55,34 +66,6 @@ func (u *UserRoleAssignment) RoleId() uuid.UUID {
 
 func (u *UserRoleAssignment) GroupId() *uuid.UUID {
 	return u.groupId
-}
-
-func (u *UserRoleAssignment) GetScanPointers(filter UserRoleAssignmentFilter) []any {
-	ptrs := []any{
-		&u.id,
-		&u.auditCreatedAt,
-		&u.auditUpdatedAt,
-		&u.version,
-		&u.userId,
-		&u.roleId,
-		&u.groupId,
-	}
-
-	if filter.includeUser {
-		ptrs = append(ptrs,
-			&u.userInfo.Username,
-			&u.userInfo.DisplayName,
-		)
-	}
-
-	if filter.includeRole {
-		ptrs = append(ptrs,
-			&u.roleInfo.Name,
-			&u.roleInfo.ProjectSlug,
-		)
-	}
-
-	return ptrs
 }
 
 type UserRoleAssignmentFilter struct {
