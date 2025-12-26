@@ -136,7 +136,7 @@ type PasswordRuleRepository interface {
 	List(ctx context.Context, filter PasswordRuleFilter) ([]*PasswordRule, error)
 	Single(ctx context.Context, filter PasswordRuleFilter) (*PasswordRule, error)
 	First(ctx context.Context, filter PasswordRuleFilter) (*PasswordRule, error)
-	Insert(ctx context.Context, passwordRule *PasswordRule) error
-	Update(ctx context.Context, passwordRule *PasswordRule) error
-	Delete(ctx context.Context, id uuid.UUID) error
+	Insert(passwordRule *PasswordRule)
+	Update(passwordRule *PasswordRule)
+	Delete(id uuid.UUID)
 }

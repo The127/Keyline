@@ -346,7 +346,7 @@ type ApplicationRepository interface {
 	Single(ctx context.Context, filter ApplicationFilter) (*Application, error)
 	First(ctx context.Context, filter ApplicationFilter) (*Application, error)
 	List(ctx context.Context, filter ApplicationFilter) ([]*Application, int, error)
-	Insert(ctx context.Context, application *Application) error
-	Update(ctx context.Context, application *Application) error
-	Delete(ctx context.Context, id uuid.UUID) error
+	Insert(application *Application)
+	Update(application *Application)
+	Delete(id uuid.UUID)
 }

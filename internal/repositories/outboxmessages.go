@@ -87,6 +87,6 @@ func (f OutboxMessageFilter) GetId() uuid.UUID {
 //go:generate mockgen -destination=./mocks/outboxmessage_repository.go -package=mocks Keyline/internal/repositories OutboxMessageRepository
 type OutboxMessageRepository interface {
 	List(ctx context.Context, filter OutboxMessageFilter) ([]*OutboxMessage, error)
-	Insert(ctx context.Context, outboxMessage *OutboxMessage) error
-	Delete(ctx context.Context, id uuid.UUID) error
+	Insert(outboxMessage *OutboxMessage)
+	Delete(id uuid.UUID)
 }

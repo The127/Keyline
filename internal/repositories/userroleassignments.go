@@ -165,6 +165,6 @@ func (f UserRoleAssignmentFilter) GetIncludeRole() bool {
 
 //go:generate mockgen -destination=./mocks/userroleassignment_repository.go -package=mocks Keyline/internal/repositories UserRoleAssignmentRepository
 type UserRoleAssignmentRepository interface {
-	Insert(ctx context.Context, userRoleAssignment *UserRoleAssignment) error
 	List(ctx context.Context, filter UserRoleAssignmentFilter) ([]*UserRoleAssignment, int, error)
+	Insert(userRoleAssignment *UserRoleAssignment)
 }

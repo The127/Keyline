@@ -224,7 +224,7 @@ type ResourceServerScopeRepository interface {
 	List(ctx context.Context, filter ResourceServerScopeFilter) ([]*ResourceServerScope, int, error)
 	Single(ctx context.Context, filter ResourceServerScopeFilter) (*ResourceServerScope, error)
 	First(ctx context.Context, filter ResourceServerScopeFilter) (*ResourceServerScope, error)
-	Insert(ctx context.Context, resourceServerScope *ResourceServerScope) error
-	Update(ctx context.Context, resourceServerScope *ResourceServerScope) error
-	Delete(ctx context.Context, id uuid.UUID) error
+	Insert(resourceServerScope *ResourceServerScope)
+	Update(resourceServerScope *ResourceServerScope)
+	Delete(id uuid.UUID)
 }

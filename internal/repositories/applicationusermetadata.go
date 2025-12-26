@@ -131,6 +131,6 @@ type ApplicationUserMetadataRepository interface {
 	Single(ctx context.Context, filter ApplicationUserMetadataFilter) (*ApplicationUserMetadata, error)
 	First(ctx context.Context, filter ApplicationUserMetadataFilter) (*ApplicationUserMetadata, error)
 	List(ctx context.Context, filter ApplicationUserMetadataFilter) ([]*ApplicationUserMetadata, int, error)
-	Insert(ctx context.Context, applicationUserMetadata *ApplicationUserMetadata) error
-	Update(ctx context.Context, applicationUserMetadata *ApplicationUserMetadata) error
+	Insert(applicationUserMetadata *ApplicationUserMetadata)
+	Update(applicationUserMetadata *ApplicationUserMetadata)
 }

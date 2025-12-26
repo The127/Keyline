@@ -150,6 +150,6 @@ func (f TemplateFilter) GetOrderInfo() OrderInfo {
 type TemplateRepository interface {
 	Single(ctx context.Context, filter TemplateFilter) (*Template, error)
 	First(ctx context.Context, filter TemplateFilter) (*Template, error)
-	Insert(ctx context.Context, template *Template) error
 	List(ctx context.Context, filter TemplateFilter) ([]*Template, int, error)
+	Insert(template *Template)
 }

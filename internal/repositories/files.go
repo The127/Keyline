@@ -78,5 +78,5 @@ func (f FileFilter) GetId() uuid.UUID {
 type FileRepository interface {
 	Single(ctx context.Context, filter FileFilter) (*File, error)
 	First(ctx context.Context, filter FileFilter) (*File, error)
-	Insert(ctx context.Context, file *File) error
+	Insert(file *File)
 }

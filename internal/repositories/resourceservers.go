@@ -218,7 +218,7 @@ type ResourceServerRepository interface {
 	List(ctx context.Context, filter ResourceServerFilter) ([]*ResourceServer, int, error)
 	First(ctx context.Context, filter ResourceServerFilter) (*ResourceServer, error)
 	Single(ctx context.Context, filter ResourceServerFilter) (*ResourceServer, error)
-	Insert(ctx context.Context, resourceServer *ResourceServer) error
-	Update(ctx context.Context, resourceServer *ResourceServer) error
-	Delete(ctx context.Context, id uuid.UUID) error
+	Insert(resourceServer *ResourceServer)
+	Update(resourceServer *ResourceServer)
+	Delete(id uuid.UUID)
 }

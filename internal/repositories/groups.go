@@ -189,7 +189,7 @@ type GroupRepository interface {
 	Single(ctx context.Context, filter GroupFilter) (*Group, error)
 	First(ctx context.Context, filter GroupFilter) (*Group, error)
 	List(ctx context.Context, filter GroupFilter) ([]*Group, int, error)
-	Insert(ctx context.Context, group *Group) error
-	Update(ctx context.Context, group *Group) error
-	Delete(ctx context.Context, id uuid.UUID) error
+	Insert(group *Group)
+	Update(group *Group)
+	Delete(id uuid.UUID)
 }

@@ -146,6 +146,6 @@ func (f SessionFilter) GetId() uuid.UUID {
 type SessionRepository interface {
 	Single(ctx context.Context, filter SessionFilter) (*Session, error)
 	First(ctx context.Context, filter SessionFilter) (*Session, error)
-	Insert(ctx context.Context, session *Session) error
-	Delete(ctx context.Context, id uuid.UUID) error
+	Insert(session *Session)
+	Delete(id uuid.UUID)
 }

@@ -382,7 +382,7 @@ type CredentialRepository interface {
 	Single(ctx context.Context, filter CredentialFilter) (*Credential, error)
 	First(ctx context.Context, filter CredentialFilter) (*Credential, error)
 	List(ctx context.Context, filter CredentialFilter) ([]*Credential, error)
-	Insert(ctx context.Context, credential *Credential) error
-	Update(ctx context.Context, credential *Credential) error
-	Delete(ctx context.Context, id uuid.UUID) error
+	Insert(credential *Credential)
+	Update(credential *Credential)
+	Delete(id uuid.UUID)
 }

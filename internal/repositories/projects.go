@@ -209,7 +209,7 @@ type ProjectRepository interface {
 	List(ctx context.Context, filter ProjectFilter) ([]*Project, int, error)
 	Single(ctx context.Context, filter ProjectFilter) (*Project, error)
 	First(ctx context.Context, filter ProjectFilter) (*Project, error)
-	Insert(ctx context.Context, project *Project) error
-	Update(ctx context.Context, project *Project) error
-	Delete(ctx context.Context, id uuid.UUID) error
+	Insert(project *Project)
+	Update(project *Project)
+	Delete(id uuid.UUID)
 }

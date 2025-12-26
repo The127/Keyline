@@ -208,5 +208,5 @@ func (f AuditLogFilter) GetOrderInfo() OrderInfo {
 //go:generate mockgen -destination=./mocks/auditlog_repository.go -package=mocks Keyline/internal/repositories AuditLogRepository
 type AuditLogRepository interface {
 	List(ctx context.Context, filter AuditLogFilter) ([]*AuditLog, int, error)
-	Insert(ctx context.Context, auditLog *AuditLog) error
+	Insert(auditLog *AuditLog)
 }

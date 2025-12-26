@@ -285,6 +285,6 @@ type UserRepository interface {
 	List(ctx context.Context, filter UserFilter) ([]*User, int, error)
 	Single(ctx context.Context, filter UserFilter) (*User, error)
 	First(ctx context.Context, filter UserFilter) (*User, error)
-	Update(ctx context.Context, user *User) error
-	Insert(ctx context.Context, user *User) error
+	Insert(user *User)
+	Update(user *User)
 }
