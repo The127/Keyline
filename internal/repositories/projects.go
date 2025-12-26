@@ -45,17 +45,15 @@ func NewSystemProject(virtualServerId uuid.UUID) *Project {
 	return project
 }
 
-func (p *Project) GetScanPointers() []any {
-	return []any{
-		&p.id,
-		&p.auditCreatedAt,
-		&p.auditUpdatedAt,
-		&p.version,
-		&p.virtualServerId,
-		&p.slug,
-		&p.name,
-		&p.description,
-		&p.systemProject,
+func NewProjectFromDB(base BaseModel, virtualServerId uuid.UUID, slug string, name string, description string, systemProject bool) *Project {
+	return &Project{
+		BaseModel:       base,
+		List:            change.NewChanges[ProjectChange](),
+		virtualServerId: virtualServerId,
+		slug:            slug,
+		name:            name,
+		description:     description,
+		systemProject:   systemProject,
 	}
 }
 
