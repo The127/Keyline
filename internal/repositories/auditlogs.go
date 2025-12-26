@@ -79,20 +79,27 @@ func NewDeniedAuditLog(virtualServerId uuid.UUID, userId uuid.UUID, request Requ
 	}, nil
 }
 
-func (a *AuditLog) GetScanPointers() []any {
-	return []any{
-		&a.id,
-		&a.auditCreatedAt,
-		&a.auditUpdatedAt,
-		&a.version,
-		&a.virtualServerId,
-		&a.userId,
-		&a.requestType,
-		&a.request,
-		&a.response,
-		&a.allowed,
-		&a.allowReasonType,
-		&a.allowReason,
+func NewAuditLogFromDB(
+	base BaseModel,
+	virtualServerId uuid.UUID,
+	userId *uuid.UUID,
+	requestType string,
+	request string,
+	response *string,
+	allowed bool,
+	allowReasonType *string,
+	allowReason *string,
+) *AuditLog {
+	return &AuditLog{
+		BaseModel:       base,
+		virtualServerId: virtualServerId,
+		userId:          userId,
+		requestType:     requestType,
+		request:         request,
+		response:        response,
+		allowed:         allowed,
+		allowReasonType: allowReasonType,
+		allowReason:     allowReason,
 	}
 }
 
