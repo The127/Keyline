@@ -36,17 +36,15 @@ func NewSession(virtualServerId uuid.UUID, userId uuid.UUID, expiresAt time.Time
 	}
 }
 
-func (s *Session) GetScanPointers() []any {
-	return []any{
-		&s.id,
-		&s.auditCreatedAt,
-		&s.auditUpdatedAt,
-		&s.version,
-		&s.virtualServerId,
-		&s.userId,
-		&s.hashedToken,
-		&s.expiresAt,
-		&s.lastUsedAt,
+func NewSessionFromDB(base BaseModel, virtualServerId uuid.UUID, userId uuid.UUID, hashedToken string, expiresAt time.Time, lastUsedAt *time.Time) *Session {
+	return &Session{
+		BaseModel:       base,
+		List:            change.NewChanges[SessionChange](),
+		virtualServerId: virtualServerId,
+		userId:          userId,
+		hashedToken:     hashedToken,
+		expiresAt:       expiresAt,
+		lastUsedAt:      lastUsedAt,
 	}
 }
 

@@ -2,20 +2,64 @@ package postgres
 
 import (
 	"Keyline/internal/change"
-	"Keyline/internal/database"
 	"Keyline/internal/logging"
-	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
+	"Keyline/internal/repositories/postgres/pghelpers"
 	"Keyline/utils"
 	"context"
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/The127/ioc"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/huandu/go-sqlbuilder"
 )
+
+type postgresSession struct {
+	postgresBaseModel
+	virtualServerId uuid.UUID
+	userId          uuid.UUID
+	hashedToken     string
+	expiresAt       time.Time
+	lastUsedAt      *time.Time
+}
+
+func mapSession(session *repositories.Session) *postgresSession {
+	return &postgresSession{
+		postgresBaseModel: mapBase(session.BaseModel),
+		virtualServerId:   session.VirtualServerId(),
+		userId:            session.UserId(),
+		hashedToken:       session.HashedToken(),
+		expiresAt:         session.ExpiresAt(),
+		lastUsedAt:        session.LastUsedAt(),
+	}
+}
+
+func (s *postgresSession) Map() *repositories.Session {
+	return repositories.NewSessionFromDB(
+		s.MapBase(),
+		s.virtualServerId,
+		s.userId,
+		s.hashedToken,
+		s.expiresAt,
+		s.lastUsedAt,
+	)
+}
+
+func (s *postgresSession) scan(row pghelpers.Row) error {
+	return row.Scan(
+		&s.id,
+		&s.auditCreatedAt,
+		&s.auditUpdatedAt,
+		&s.xmin,
+		&s.virtualServerId,
+		&s.userId,
+		&s.hashedToken,
+		&s.expiresAt,
+		&s.lastUsedAt,
+	)
+}
 
 type SessionRepository struct {
 	db            *sql.DB
@@ -36,7 +80,7 @@ func (r *SessionRepository) selectQuery(filter repositories.SessionFilter) *sqlb
 		"id",
 		"audit_created_at",
 		"audit_updated_at",
-		"version",
+		"xmin",
 		"virtual_server_id",
 		"user_id",
 		"hashed_token",
@@ -71,25 +115,15 @@ func (r *SessionRepository) Single(ctx context.Context, filter repositories.Sess
 }
 
 func (r *SessionRepository) First(ctx context.Context, filter repositories.SessionFilter) (*repositories.Session, error) {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
-
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return nil, fmt.Errorf("failed to open tx: %w", err)
-	}
-
 	s := r.selectQuery(filter)
 	s.Limit(1)
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
-	row := tx.QueryRowContext(ctx, query, args...)
+	row := r.db.QueryRowContext(ctx, query, args...)
 
-	session := repositories.Session{
-		BaseModel: repositories.NewModelBase(),
-	}
-	err = row.Scan(session.GetScanPointers()...)
+	session := &postgresSession{}
+	err := session.scan(row)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, nil
@@ -98,20 +132,21 @@ func (r *SessionRepository) First(ctx context.Context, filter repositories.Sessi
 		return nil, fmt.Errorf("scanning row: %w", err)
 	}
 
-	return &session, nil
+	return session.Map(), nil
 }
 
-func (r *SessionRepository) Insert(ctx context.Context, session *repositories.Session) error {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
+func (r *SessionRepository) Insert(session *repositories.Session) {
+	r.changeTracker.Add(change.NewEntry(change.Added, r.entityType, session))
+}
 
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return fmt.Errorf("failed to open tx: %w", err)
-	}
+func (r *SessionRepository) ExecuteInsert(ctx context.Context, tx *sql.Tx, session *repositories.Session) error {
+	mapped := mapSession(session)
 
 	s := sqlbuilder.InsertInto("sessions").
 		Cols(
+			"id",
+			"audit_created_at",
+			"audit_updated_at",
 			"virtual_server_id",
 			"user_id",
 			"hashed_token",
@@ -119,41 +154,43 @@ func (r *SessionRepository) Insert(ctx context.Context, session *repositories.Se
 			"last_used_at",
 		).
 		Values(
-			session.VirtualServerId(),
-			session.UserId(),
-			session.HashedToken(),
-			session.ExpiresAt(),
-			session.LastUsedAt(),
-		).Returning("id", "audit_created_at", "audit_updated_at", "version")
+			mapped.id,
+			mapped.auditCreatedAt,
+			mapped.auditUpdatedAt,
+			mapped.virtualServerId,
+			mapped.userId,
+			mapped.hashedToken,
+			mapped.expiresAt,
+			mapped.lastUsedAt,
+		).
+		Returning("xmin")
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
 	row := tx.QueryRowContext(ctx, query, args...)
 
-	err = row.Scan(session.InsertPointers()...)
+	var xmin uint32
+	err := row.Scan(&xmin)
 	if err != nil {
 		return fmt.Errorf("scanning row: %w", err)
 	}
 
+	session.SetVersion(xmin)
 	session.ClearChanges()
 	return nil
 }
 
-func (r *SessionRepository) Delete(ctx context.Context, id uuid.UUID) error {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
+func (r *SessionRepository) Delete(id uuid.UUID) {
+	r.changeTracker.Add(change.NewEntry(change.Deleted, r.entityType, id))
+}
 
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return fmt.Errorf("failed to open tx: %w", err)
-	}
-
+func (r *SessionRepository) ExecuteDelete(ctx context.Context, tx *sql.Tx, id uuid.UUID) error {
 	s := sqlbuilder.DeleteFrom("sessions")
 	s.Where(s.Equal("id", id))
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
-	_, err = tx.ExecContext(ctx, query, args...)
+	_, err := tx.ExecContext(ctx, query, args...)
 	if err != nil {
 		return fmt.Errorf("executing sql: %w", err)
 	}
