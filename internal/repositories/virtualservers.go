@@ -43,18 +43,16 @@ func NewVirtualServer(name string, displayName string) *VirtualServer {
 	}
 }
 
-func (m *VirtualServer) GetScanPointers() []any {
-	return []any{
-		&m.id,
-		&m.auditCreatedAt,
-		&m.auditUpdatedAt,
-		&m.version,
-		&m.displayName,
-		&m.name,
-		&m.enableRegistration,
-		&m.require2fa,
-		&m.requireEmailVerification,
-		&m.signingAlgorithm,
+func NewVirtualServerFromDB(base BaseModel, name string, displayName string, enableRegistration bool, require2fa bool, requireEmailVerification bool, signingAlgorithm string) *VirtualServer {
+	return &VirtualServer{
+		BaseModel:                base,
+		List:                     change.NewChanges[VirtualServerChange](),
+		name:                     name,
+		displayName:              displayName,
+		enableRegistration:       enableRegistration,
+		require2fa:               require2fa,
+		requireEmailVerification: requireEmailVerification,
+		signingAlgorithm:         config.SigningAlgorithm(signingAlgorithm),
 	}
 }
 
