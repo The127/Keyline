@@ -15,6 +15,7 @@ type Context interface {
 	Groups() repositories.GroupRepository
 	OutboxMessages() repositories.OutboxMessageRepository
 	PasswordRules() repositories.PasswordRuleRepository
+	Projects() repositories.ProjectRepository
 	ResourceServers() repositories.ResourceServerRepository
 	ResourceServerScopes() repositories.ResourceServerScopeRepository
 	Roles() repositories.RoleRepository
