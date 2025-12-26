@@ -2,6 +2,7 @@ package events
 
 import (
 	"Keyline/internal/config"
+	db "Keyline/internal/database"
 	"Keyline/internal/messages"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
@@ -9,8 +10,9 @@ import (
 	"Keyline/templates"
 	"context"
 	"fmt"
-	"github.com/The127/ioc"
 	"time"
+
+	"github.com/The127/ioc"
 
 	"github.com/google/uuid"
 )
@@ -21,9 +23,9 @@ type UserCreatedEvent struct {
 
 func QueueEmailVerificationJobOnUserCreatedEvent(ctx context.Context, event UserCreatedEvent) error {
 	scope := middlewares.GetScope(ctx)
+	dbContext := ioc.GetDependency[db.Context](scope)
 
-	userRepository := ioc.GetDependency[repositories.UserRepository](scope)
-	user, err := userRepository.First(ctx, repositories.NewUserFilter().Id(event.UserId))
+	user, err := dbContext.Users().First(ctx, repositories.NewUserFilter().Id(event.UserId))
 	if err != nil {
 		return fmt.Errorf("getting user: %w", err)
 	}
@@ -32,8 +34,7 @@ func QueueEmailVerificationJobOnUserCreatedEvent(ctx context.Context, event User
 		return nil
 	}
 
-	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
-	virtualServer, err := virtualServerRepository.First(ctx, repositories.NewVirtualServerFilter().Id(user.VirtualServerId()))
+	virtualServer, err := dbContext.VirtualServers().First(ctx, repositories.NewVirtualServerFilter().Id(user.VirtualServerId()))
 	if err != nil {
 		return fmt.Errorf("getting virtual server: %w", err)
 	}
@@ -69,16 +70,11 @@ func QueueEmailVerificationJobOnUserCreatedEvent(ctx context.Context, event User
 		Body:            mailBody,
 	}
 
-	outboxMessageRepository := ioc.GetDependency[repositories.OutboxMessageRepository](scope)
 	outboxMessage, err := repositories.NewOutboxMessage(message)
 	if err != nil {
 		return fmt.Errorf("creating email outbox message: %w", err)
 	}
 
-	err = outboxMessageRepository.Insert(ctx, outboxMessage)
-	if err != nil {
-		return fmt.Errorf("creating email outbox message: %w", err)
-	}
-
+	dbContext.OutboxMessages().Insert(outboxMessage)
 	return nil
 }
