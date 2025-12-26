@@ -30,7 +30,7 @@ type UserRoleAssignmentRoleInfo struct {
 
 func NewUserRoleAssignment(userId uuid.UUID, roleId uuid.UUID, groupId *uuid.UUID) *UserRoleAssignment {
 	return &UserRoleAssignment{
-		BaseModel: NewModelBase(),
+		BaseModel: NewBaseModel(),
 		userId:    userId,
 		roleId:    roleId,
 		groupId:   groupId,

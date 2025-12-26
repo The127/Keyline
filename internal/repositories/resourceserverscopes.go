@@ -30,7 +30,7 @@ type ResourceServerScope struct {
 
 func NewResourceServerScope(virtualServerId uuid.UUID, projectId uuid.UUID, resourceServerId uuid.UUID, scope string, name string) *ResourceServerScope {
 	return &ResourceServerScope{
-		BaseModel:        NewModelBase(),
+		BaseModel:        NewBaseModel(),
 		List:             change.NewChanges[ResourceServerScopeChange](),
 		virtualServerId:  virtualServerId,
 		projectId:        projectId,

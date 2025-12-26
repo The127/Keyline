@@ -35,7 +35,7 @@ type User struct {
 
 func NewUser(username string, displayName string, primaryEmail string, virtualServerId uuid.UUID) *User {
 	return &User{
-		BaseModel:       NewModelBase(),
+		BaseModel:       NewBaseModel(),
 		List:            change.NewChanges[UserChange](),
 		virtualServerId: virtualServerId,
 		username:        username,
@@ -48,7 +48,7 @@ func NewUser(username string, displayName string, primaryEmail string, virtualSe
 
 func NewSystemUser(username string) *User {
 	return &User{
-		BaseModel:       NewModelBase(),
+		BaseModel:       NewBaseModel(),
 		List:            change.NewChanges[UserChange](),
 		virtualServerId: uuid.Nil,
 		username:        username,
@@ -60,7 +60,7 @@ func NewSystemUser(username string) *User {
 
 func NewServiceUser(username string, virtualServerId uuid.UUID) *User {
 	return &User{
-		BaseModel:       NewModelBase(),
+		BaseModel:       NewBaseModel(),
 		List:            change.NewChanges[UserChange](),
 		virtualServerId: virtualServerId,
 		username:        username,

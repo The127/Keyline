@@ -23,7 +23,7 @@ type Template struct {
 
 func NewTemplate(virtualServerId uuid.UUID, fileId uuid.UUID, templateType TemplateType) *Template {
 	return &Template{
-		BaseModel:       NewModelBase(),
+		BaseModel:       NewBaseModel(),
 		virtualServerId: virtualServerId,
 		fileId:          fileId,
 		templateType:    templateType,

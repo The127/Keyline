@@ -28,7 +28,7 @@ type Role struct {
 
 func NewRole(virtualServerId uuid.UUID, projectId uuid.UUID, name string, description string) *Role {
 	return &Role{
-		BaseModel:       NewModelBase(),
+		BaseModel:       NewBaseModel(),
 		List:            change.NewChanges[RoleChange](),
 		virtualServerId: virtualServerId,
 		projectId:       projectId,

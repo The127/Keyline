@@ -28,7 +28,7 @@ type Session struct {
 
 func NewSession(virtualServerId uuid.UUID, userId uuid.UUID, expiresAt time.Time) *Session {
 	return &Session{
-		BaseModel:       NewModelBase(),
+		BaseModel:       NewBaseModel(),
 		List:            change.NewChanges[SessionChange](),
 		virtualServerId: virtualServerId,
 		userId:          userId,

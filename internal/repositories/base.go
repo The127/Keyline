@@ -37,9 +37,18 @@ func (m *BaseModel) UpdatePointers() []any {
 	}
 }
 
-func NewModelBase() BaseModel {
+func NewBaseModel() BaseModel {
 	return BaseModel{
 		version: nil,
+	}
+}
+
+func NewBaseModelFromDB(id uuid.UUID, auditCreatedAt time.Time, auditUpdatedAt time.Time, version any) BaseModel {
+	return BaseModel{
+		id:             id,
+		auditCreatedAt: auditCreatedAt,
+		auditUpdatedAt: auditUpdatedAt,
+		version:        version,
 	}
 }
 

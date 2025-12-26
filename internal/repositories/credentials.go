@@ -35,7 +35,7 @@ type Credential struct {
 
 func NewCredential(userId uuid.UUID, details CredentialDetails) *Credential {
 	return &Credential{
-		BaseModel: NewModelBase(),
+		BaseModel: NewBaseModel(),
 		List:      change.NewChanges[CredentialChange](),
 		userId:    userId,
 		_type:     details.CredentialDetailType(),

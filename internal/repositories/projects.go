@@ -30,7 +30,7 @@ type Project struct {
 
 func NewProject(virtualServerId uuid.UUID, slug string, name string, description string) *Project {
 	return &Project{
-		BaseModel:       NewModelBase(),
+		BaseModel:       NewBaseModel(),
 		List:            change.NewChanges[ProjectChange](),
 		virtualServerId: virtualServerId,
 		slug:            slug,

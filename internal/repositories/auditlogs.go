@@ -51,7 +51,7 @@ func NewAllowedAuditLog(virtualServerId uuid.UUID, userId uuid.UUID, request Req
 	allowReasonJsonString := string(allowReasonJsonBytes)
 
 	return &AuditLog{
-		BaseModel:       NewModelBase(),
+		BaseModel:       NewBaseModel(),
 		virtualServerId: virtualServerId,
 		userId:          &userId,
 		requestType:     request.GetRequestName(),
@@ -70,7 +70,7 @@ func NewDeniedAuditLog(virtualServerId uuid.UUID, userId uuid.UUID, request Requ
 	}
 
 	return &AuditLog{
-		BaseModel:       NewModelBase(),
+		BaseModel:       NewBaseModel(),
 		virtualServerId: virtualServerId,
 		userId:          &userId,
 		requestType:     request.GetRequestName(),

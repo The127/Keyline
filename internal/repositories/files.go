@@ -17,7 +17,7 @@ type File struct {
 
 func NewFile(name string, mimeType string, content []byte) *File {
 	return &File{
-		BaseModel: NewModelBase(),
+		BaseModel: NewBaseModel(),
 		name:      name,
 		mimeType:  mimeType,
 		content:   content,

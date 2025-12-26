@@ -35,7 +35,7 @@ type VirtualServer struct {
 
 func NewVirtualServer(name string, displayName string) *VirtualServer {
 	return &VirtualServer{
-		BaseModel:          NewModelBase(),
+		BaseModel:          NewBaseModel(),
 		List:               change.NewChanges[VirtualServerChange](),
 		name:               name,
 		displayName:        displayName,

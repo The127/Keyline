@@ -29,7 +29,7 @@ type ResourceServer struct {
 
 func NewResourceServer(virtualServerId uuid.UUID, projectId uuid.UUID, slug string, name string, description string) *ResourceServer {
 	return &ResourceServer{
-		BaseModel:       NewModelBase(),
+		BaseModel:       NewBaseModel(),
 		List:            change.NewChanges[ResourceServerChange](),
 		virtualServerId: virtualServerId,
 		projectId:       projectId,

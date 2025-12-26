@@ -27,7 +27,7 @@ type Group struct {
 
 func NewGroup(virtualServerId uuid.UUID, name string, description string) *Group {
 	return &Group{
-		BaseModel:       NewModelBase(),
+		BaseModel:       NewBaseModel(),
 		List:            change.NewChanges[GroupChange](),
 		virtualServerId: virtualServerId,
 		name:            name,

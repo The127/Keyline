@@ -48,7 +48,7 @@ func NewPasswordRule(virtualServerId uuid.UUID, details PasswordRuleDetails) (*P
 	}
 
 	return &PasswordRule{
-		BaseModel:       NewModelBase(),
+		BaseModel:       NewBaseModel(),
 		virtualServerId: virtualServerId,
 		_type:           details.GetPasswordRuleType(),
 		details:         serializedDetails,

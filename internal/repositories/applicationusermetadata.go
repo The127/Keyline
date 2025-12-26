@@ -26,7 +26,7 @@ type ApplicationUserMetadata struct {
 
 func NewApplicationUserMetadata(applicationId uuid.UUID, userId uuid.UUID, metadata string) *ApplicationUserMetadata {
 	return &ApplicationUserMetadata{
-		BaseModel:     NewModelBase(),
+		BaseModel:     NewBaseModel(),
 		List:          change.NewChanges[ApplicationUserMetadataChange](),
 		applicationId: applicationId,
 		userId:        userId,

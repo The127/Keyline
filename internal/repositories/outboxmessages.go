@@ -52,7 +52,7 @@ func NewOutboxMessage(details OutboxMessageDetails) (*OutboxMessage, error) {
 	}
 
 	return &OutboxMessage{
-		BaseModel: NewModelBase(),
+		BaseModel: NewBaseModel(),
 		_type:     details.OutboxMessageType(),
 		details:   serializedDetails,
 	}, nil

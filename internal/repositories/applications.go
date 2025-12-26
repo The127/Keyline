@@ -53,7 +53,7 @@ type Application struct {
 
 func NewApplication(virtualServerId uuid.UUID, projectId uuid.UUID, name string, displayName string, type_ ApplicationType, redirectUris []string) *Application {
 	return &Application{
-		BaseModel:              NewModelBase(),
+		BaseModel:              NewBaseModel(),
 		List:                   change.NewChanges[ApplicationChange](),
 		virtualServerId:        virtualServerId,
 		projectId:              projectId,

@@ -15,7 +15,7 @@ type GroupRole struct {
 
 func NewGroupRole(groupId uuid.UUID, roleId uuid.UUID) *GroupRole {
 	return &GroupRole{
-		BaseModel: NewModelBase(),
+		BaseModel: NewBaseModel(),
 		groupId:   groupId,
 		roleId:    roleId,
 	}
