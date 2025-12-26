@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"Keyline/internal/change"
 	"Keyline/utils"
 	"context"
 	"encoding/base64"
@@ -9,8 +10,15 @@ import (
 	"github.com/google/uuid"
 )
 
+type SessionChange int
+
+const (
+	SessionChangeLastUsedAt SessionChange = iota
+)
+
 type Session struct {
 	BaseModel
+	change.List[SessionChange]
 	virtualServerId uuid.UUID
 	userId          uuid.UUID
 	hashedToken     string
@@ -20,6 +28,8 @@ type Session struct {
 
 func NewSession(virtualServerId uuid.UUID, userId uuid.UUID, expiresAt time.Time) *Session {
 	return &Session{
+		BaseModel:       NewModelBase(),
+		List:            change.NewChanges[SessionChange](),
 		virtualServerId: virtualServerId,
 		userId:          userId,
 		expiresAt:       expiresAt,
@@ -57,8 +67,12 @@ func (s *Session) LastUsedAt() *time.Time {
 }
 
 func (s *Session) SetLastUsedAt(lastUsedAt time.Time) {
+	if s.lastUsedAt != nil && s.lastUsedAt.Equal(lastUsedAt) {
+		return
+	}
+
 	s.lastUsedAt = &lastUsedAt
-	s.TrackChange("last_used_at", &lastUsedAt)
+	s.TrackChange(SessionChangeLastUsedAt)
 }
 
 func (s *Session) HashedToken() string {

@@ -1,9 +1,11 @@
 package repositories
 
 import (
+	"Keyline/internal/change"
 	"Keyline/utils"
 	"context"
 	"encoding/base64"
+	"slices"
 
 	"github.com/google/uuid"
 	"github.com/lib/pq"
@@ -16,8 +18,21 @@ const (
 	ApplicationTypeConfidential ApplicationType = "confidential"
 )
 
+type ApplicationChange int
+
+const (
+	ApplicationChangeHashedSecret ApplicationChange = iota
+	ApplicationChangeClaimsMappingScript
+	ApplicationChangeAccessTokenHeaderType
+	ApplicationChangeDisplayName
+	ApplicationChangeRedirectUris
+	ApplicationChangePostLogoutRedirectUris
+	ApplicationChangeSystemApplication
+)
+
 type Application struct {
 	BaseModel
+	change.List[ApplicationChange]
 
 	virtualServerId uuid.UUID
 	projectId       uuid.UUID
@@ -39,13 +54,14 @@ type Application struct {
 func NewApplication(virtualServerId uuid.UUID, projectId uuid.UUID, name string, displayName string, type_ ApplicationType, redirectUris []string) *Application {
 	return &Application{
 		BaseModel:              NewModelBase(),
+		List:                   change.NewChanges[ApplicationChange](),
 		virtualServerId:        virtualServerId,
 		projectId:              projectId,
 		name:                   name,
 		displayName:            displayName,
 		type_:                  type_,
 		redirectUris:           redirectUris,
-		postLogoutRedirectUris: make([]string, 0),
+		postLogoutRedirectUris: []string{},
 		accessTokenHeaderType:  "at+jwt",
 	}
 }
@@ -73,8 +89,8 @@ func (a *Application) GetScanPointers() []any {
 func (a *Application) GenerateSecret() string {
 	secretBytes := utils.GetSecureRandomBytes(16)
 	secretBase64 := base64.RawURLEncoding.EncodeToString(secretBytes)
-	a.hashedSecret = utils.CheapHash(secretBase64)
-	a.TrackChange("hashed_secret", a.hashedSecret)
+
+	a.SetHashedSecret(utils.CheapHash(secretBase64))
 	return secretBase64
 }
 
@@ -91,13 +107,21 @@ func (a *Application) ClaimsMappingScript() *string {
 }
 
 func (a *Application) SetClaimsMappingScript(script *string) {
+	if a.claimsMappingScript == script {
+		return
+	}
+
 	a.claimsMappingScript = script
-	a.TrackChange("claims_mapping_script", script)
+	a.TrackChange(ApplicationChangeClaimsMappingScript)
 }
 
 func (a *Application) SetAccessTokenHeaderType(accessTokenHeaderType string) {
+	if a.accessTokenHeaderType == accessTokenHeaderType {
+		return
+	}
+
 	a.accessTokenHeaderType = accessTokenHeaderType
-	a.TrackChange("access_token_header_type", accessTokenHeaderType)
+	a.TrackChange(ApplicationChangeAccessTokenHeaderType)
 }
 
 func (a *Application) AccessTokenHeaderType() string {
@@ -113,8 +137,12 @@ func (a *Application) DisplayName() string {
 }
 
 func (a *Application) SetDisplayName(displayName string) {
-	a.TrackChange("display_name", displayName)
+	if a.displayName == displayName {
+		return
+	}
+
 	a.displayName = displayName
+	a.TrackChange(ApplicationChangeDisplayName)
 }
 
 func (a *Application) Type() ApplicationType {
@@ -126,8 +154,12 @@ func (a *Application) HashedSecret() string {
 }
 
 func (a *Application) SetHashedSecret(hashedSecret string) {
-	a.TrackChange("hashed_secret", hashedSecret)
+	if a.hashedSecret == hashedSecret {
+		return
+	}
+
 	a.hashedSecret = hashedSecret
+	a.TrackChange(ApplicationChangeHashedSecret)
 }
 
 func (a *Application) RedirectUris() []string {
@@ -135,8 +167,12 @@ func (a *Application) RedirectUris() []string {
 }
 
 func (a *Application) SetRedirectUris(redirectUris []string) {
-	a.TrackChange("redirect_uris", redirectUris)
+	if slices.Equal(a.redirectUris, redirectUris) {
+		return
+	}
+
 	a.redirectUris = redirectUris
+	a.TrackChange(ApplicationChangeRedirectUris)
 }
 
 func (a *Application) PostLogoutRedirectUris() []string {
@@ -144,8 +180,12 @@ func (a *Application) PostLogoutRedirectUris() []string {
 }
 
 func (a *Application) SetPostLogoutRedirectUris(postLogoutRedirectUris []string) {
-	a.TrackChange("post_logout_redirect_uris", postLogoutRedirectUris)
+	if slices.Equal(a.postLogoutRedirectUris, postLogoutRedirectUris) {
+		return
+	}
+
 	a.postLogoutRedirectUris = postLogoutRedirectUris
+	a.TrackChange(ApplicationChangePostLogoutRedirectUris)
 }
 
 func (a *Application) SystemApplication() bool {
@@ -153,8 +193,12 @@ func (a *Application) SystemApplication() bool {
 }
 
 func (a *Application) SetSystemApplication(systemApplication bool) {
-	a.TrackChange("system_application", systemApplication)
+	if a.systemApplication == systemApplication {
+		return
+	}
+
 	a.systemApplication = systemApplication
+	a.TrackChange(ApplicationChangeSystemApplication)
 }
 
 type ApplicationFilter struct {

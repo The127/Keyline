@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"Keyline/internal/change"
 	"Keyline/internal/config"
 	"Keyline/utils"
 	"context"
@@ -8,8 +9,19 @@ import (
 	"github.com/google/uuid"
 )
 
+type VirtualServerChange int
+
+const (
+	VirtualServerChangeDisplayName VirtualServerChange = iota
+	VirtualServerChangeEnableRegistration
+	VirtualServerChangeRequire2fa
+	VirtualServerChangeRequireEmailVerification
+	VirtualServerChangeSigningAlgorithm
+)
+
 type VirtualServer struct {
 	BaseModel
+	change.List[VirtualServerChange]
 
 	name        string
 	displayName string
@@ -24,6 +36,7 @@ type VirtualServer struct {
 func NewVirtualServer(name string, displayName string) *VirtualServer {
 	return &VirtualServer{
 		BaseModel:          NewModelBase(),
+		List:               change.NewChanges[VirtualServerChange](),
 		name:               name,
 		displayName:        displayName,
 		enableRegistration: false,
@@ -54,8 +67,12 @@ func (m *VirtualServer) DisplayName() string {
 }
 
 func (m *VirtualServer) SetDisplayName(displayName string) {
+	if m.displayName == displayName {
+		return
+	}
+
 	m.displayName = displayName
-	m.TrackChange("display_name", displayName)
+	m.TrackChange(VirtualServerChangeDisplayName)
 }
 
 func (m *VirtualServer) EnableRegistration() bool {
@@ -63,8 +80,12 @@ func (m *VirtualServer) EnableRegistration() bool {
 }
 
 func (m *VirtualServer) SetEnableRegistration(enableRegistration bool) {
+	if m.enableRegistration == enableRegistration {
+		return
+	}
+
 	m.enableRegistration = enableRegistration
-	m.TrackChange("enable_registration", enableRegistration)
+	m.TrackChange(VirtualServerChangeEnableRegistration)
 }
 
 func (m *VirtualServer) Require2fa() bool {
@@ -72,8 +93,12 @@ func (m *VirtualServer) Require2fa() bool {
 }
 
 func (m *VirtualServer) SetRequire2fa(require2fa bool) {
+	if m.require2fa == require2fa {
+		return
+	}
+
 	m.require2fa = require2fa
-	m.TrackChange("require_2fa", require2fa)
+	m.TrackChange(VirtualServerChangeRequire2fa)
 }
 
 func (m *VirtualServer) RequireEmailVerification() bool {
@@ -81,8 +106,12 @@ func (m *VirtualServer) RequireEmailVerification() bool {
 }
 
 func (m *VirtualServer) SetRequireEmailVerification(requireEmailVerification bool) {
+	if m.requireEmailVerification == requireEmailVerification {
+		return
+	}
+
 	m.requireEmailVerification = requireEmailVerification
-	m.TrackChange("require_email_verification", requireEmailVerification)
+	m.TrackChange(VirtualServerChangeRequireEmailVerification)
 }
 
 func (m *VirtualServer) SigningAlgorithm() config.SigningAlgorithm {
@@ -90,8 +119,12 @@ func (m *VirtualServer) SigningAlgorithm() config.SigningAlgorithm {
 }
 
 func (m *VirtualServer) SetSigningAlgorithm(signingAlgorithm config.SigningAlgorithm) {
+	if m.signingAlgorithm == signingAlgorithm {
+		return
+	}
+
 	m.signingAlgorithm = signingAlgorithm
-	m.TrackChange("signing_algorithm", signingAlgorithm)
+	m.TrackChange(VirtualServerChangeSigningAlgorithm)
 }
 
 type VirtualServerFilter struct {

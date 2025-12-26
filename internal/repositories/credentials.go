@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"Keyline/internal/change"
 	"Keyline/utils"
 	"context"
 	"database/sql/driver"
@@ -15,8 +16,16 @@ var (
 	ErrWrongCredentialCast = errors.New("wrong credential cast")
 )
 
+type CredentialChange int
+
+const (
+	CredentialChangeDetails CredentialChange = iota
+	CredentialChangeType
+)
+
 type Credential struct {
 	BaseModel
+	change.List[CredentialChange]
 
 	userId uuid.UUID
 
@@ -27,6 +36,7 @@ type Credential struct {
 func NewCredential(userId uuid.UUID, details CredentialDetails) *Credential {
 	return &Credential{
 		BaseModel: NewModelBase(),
+		List:      change.NewChanges[CredentialChange](),
 		userId:    userId,
 		_type:     details.CredentialDetailType(),
 		details:   details,
@@ -60,8 +70,9 @@ func (c *Credential) Details() any {
 func (c *Credential) SetDetails(details CredentialDetails) {
 	c._type = details.CredentialDetailType()
 	c.details = details
-	c.TrackChange("type", details.CredentialDetailType())
-	c.TrackChange("details", details)
+
+	c.TrackChange(CredentialChangeDetails)
+	c.TrackChange(CredentialChangeType)
 }
 
 func (c *Credential) PasswordDetails() (*CredentialPasswordDetails, error) {

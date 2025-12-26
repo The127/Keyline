@@ -1,14 +1,23 @@
 package repositories
 
 import (
+	"Keyline/internal/change"
 	"Keyline/utils"
 	"context"
 
 	"github.com/google/uuid"
 )
 
+type ProjectChange int
+
+const (
+	ProjectChangeName ProjectChange = iota
+	ProjectChangeDescription
+)
+
 type Project struct {
 	BaseModel
+	change.List[ProjectChange]
 
 	virtualServerId uuid.UUID
 
@@ -22,6 +31,7 @@ type Project struct {
 func NewProject(virtualServerId uuid.UUID, slug string, name string, description string) *Project {
 	return &Project{
 		BaseModel:       NewModelBase(),
+		List:            change.NewChanges[ProjectChange](),
 		virtualServerId: virtualServerId,
 		slug:            slug,
 		name:            name,
@@ -62,8 +72,12 @@ func (p *Project) Description() string {
 }
 
 func (p *Project) SetDescription(description string) {
+	if p.description == description {
+		return
+	}
+
 	p.description = description
-	p.TrackChange("description", description)
+	p.TrackChange(ProjectChangeDescription)
 }
 
 func (p *Project) Name() string {
@@ -71,8 +85,12 @@ func (p *Project) Name() string {
 }
 
 func (p *Project) SetName(name string) {
+	if p.name == name {
+		return
+	}
+
 	p.name = name
-	p.TrackChange("name", name)
+	p.TrackChange(ProjectChangeName)
 }
 
 func (p *Project) VirtualServerId() uuid.UUID {

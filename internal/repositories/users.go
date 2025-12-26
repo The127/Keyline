@@ -1,14 +1,24 @@
 package repositories
 
 import (
+	"Keyline/internal/change"
 	"Keyline/utils"
 	"context"
 
 	"github.com/google/uuid"
 )
 
+type UserChange int
+
+const (
+	UserChangeDisplayName UserChange = iota
+	UserChangeEmailVerified
+	UserChangeMetadata
+)
+
 type User struct {
 	BaseModel
+	change.List[UserChange]
 
 	virtualServerId uuid.UUID
 
@@ -26,6 +36,7 @@ type User struct {
 func NewUser(username string, displayName string, primaryEmail string, virtualServerId uuid.UUID) *User {
 	return &User{
 		BaseModel:       NewModelBase(),
+		List:            change.NewChanges[UserChange](),
 		virtualServerId: virtualServerId,
 		username:        username,
 		displayName:     displayName,
@@ -37,17 +48,20 @@ func NewUser(username string, displayName string, primaryEmail string, virtualSe
 
 func NewSystemUser(username string) *User {
 	return &User{
-		BaseModel:   NewModelBase(),
-		username:    username,
-		displayName: username,
-		serviceUser: true,
-		metadata:    "{}",
+		BaseModel:       NewModelBase(),
+		List:            change.NewChanges[UserChange](),
+		virtualServerId: uuid.Nil,
+		username:        username,
+		displayName:     username,
+		serviceUser:     true,
+		metadata:        "{}",
 	}
 }
 
 func NewServiceUser(username string, virtualServerId uuid.UUID) *User {
 	return &User{
 		BaseModel:       NewModelBase(),
+		List:            change.NewChanges[UserChange](),
 		virtualServerId: virtualServerId,
 		username:        username,
 		displayName:     username,
@@ -69,8 +83,12 @@ func (m *User) DisplayName() string {
 }
 
 func (m *User) SetDisplayName(displayName string) {
+	if m.displayName == displayName {
+		return
+	}
+
 	m.displayName = displayName
-	m.TrackChange("display_name", displayName)
+	m.TrackChange(UserChangeDisplayName)
 }
 
 func (m *User) IsServiceUser() bool {
@@ -86,8 +104,12 @@ func (m *User) EmailVerified() bool {
 }
 
 func (m *User) SetEmailVerified(emailVerified bool) {
+	if m.emailVerified == emailVerified {
+		return
+	}
+
 	m.emailVerified = emailVerified
-	m.TrackChange("email_verified", emailVerified)
+	m.TrackChange(UserChangeEmailVerified)
 }
 
 func (m *User) Metadata() string {
@@ -95,8 +117,12 @@ func (m *User) Metadata() string {
 }
 
 func (m *User) SetMetadata(metadata string) {
+	if m.metadata == metadata {
+		return
+	}
+
 	m.metadata = metadata
-	m.TrackChange("metadata", metadata)
+	m.TrackChange(UserChangeMetadata)
 }
 
 func (m *User) GetScanPointers(filter UserFilter) []any {

@@ -1,14 +1,23 @@
 package repositories
 
 import (
+	"Keyline/internal/change"
 	"Keyline/utils"
 	"context"
 
 	"github.com/google/uuid"
 )
 
+type ResourceServerChange int
+
+const (
+	ResourceServerChangeName ResourceServerChange = iota
+	ResourceServerChangeDescription
+)
+
 type ResourceServer struct {
 	BaseModel
+	change.List[ResourceServerChange]
 
 	virtualServerId uuid.UUID
 	projectId       uuid.UUID
@@ -21,6 +30,7 @@ type ResourceServer struct {
 func NewResourceServer(virtualServerId uuid.UUID, projectId uuid.UUID, slug string, name string, description string) *ResourceServer {
 	return &ResourceServer{
 		BaseModel:       NewModelBase(),
+		List:            change.NewChanges[ResourceServerChange](),
 		virtualServerId: virtualServerId,
 		projectId:       projectId,
 		slug:            slug,
@@ -52,8 +62,12 @@ func (r *ResourceServer) Name() string {
 }
 
 func (r *ResourceServer) SetName(name string) {
-	r.TrackChange("name", name)
+	if r.name == name {
+		return
+	}
+
 	r.name = name
+	r.TrackChange(ResourceServerChangeName)
 }
 
 func (r *ResourceServer) Description() string {
@@ -61,8 +75,12 @@ func (r *ResourceServer) Description() string {
 }
 
 func (r *ResourceServer) SetDescription(description string) {
+	if r.description == description {
+		return
+	}
+
 	r.description = description
-	r.TrackChange("description", description)
+	r.TrackChange(ResourceServerChangeDescription)
 }
 
 func (r *ResourceServer) VirtualServerId() uuid.UUID {

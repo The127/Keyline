@@ -1,14 +1,22 @@
 package repositories
 
 import (
+	"Keyline/internal/change"
 	"Keyline/utils"
 	"context"
 
 	"github.com/google/uuid"
 )
 
+type ApplicationUserMetadataChange int
+
+const (
+	ApplicationUserMetadataChangeMetadata ApplicationUserMetadataChange = iota
+)
+
 type ApplicationUserMetadata struct {
 	BaseModel
+	change.List[ApplicationUserMetadataChange]
 
 	applicationId uuid.UUID
 	userId        uuid.UUID
@@ -19,6 +27,7 @@ type ApplicationUserMetadata struct {
 func NewApplicationUserMetadata(applicationId uuid.UUID, userId uuid.UUID, metadata string) *ApplicationUserMetadata {
 	return &ApplicationUserMetadata{
 		BaseModel:     NewModelBase(),
+		List:          change.NewChanges[ApplicationUserMetadataChange](),
 		applicationId: applicationId,
 		userId:        userId,
 		metadata:      metadata,
@@ -50,8 +59,12 @@ func (a *ApplicationUserMetadata) Metadata() string {
 }
 
 func (a *ApplicationUserMetadata) SetMetadata(metadata string) {
+	if a.metadata == metadata {
+		return
+	}
+
 	a.metadata = metadata
-	a.TrackChange("metadata", metadata)
+	a.TrackChange(ApplicationUserMetadataChangeMetadata)
 }
 
 type ApplicationUserMetadataFilter struct {

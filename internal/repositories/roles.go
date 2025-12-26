@@ -1,14 +1,23 @@
 package repositories
 
 import (
+	"Keyline/internal/change"
 	"Keyline/utils"
 	"context"
 
 	"github.com/google/uuid"
 )
 
+type RoleChange int
+
+const (
+	RoleChangeName RoleChange = iota
+	RoleChangeDescription
+)
+
 type Role struct {
 	BaseModel
+	change.List[RoleChange]
 
 	virtualServerId uuid.UUID
 	projectId       uuid.UUID
@@ -20,6 +29,7 @@ type Role struct {
 func NewRole(virtualServerId uuid.UUID, projectId uuid.UUID, name string, description string) *Role {
 	return &Role{
 		BaseModel:       NewModelBase(),
+		List:            change.NewChanges[RoleChange](),
 		virtualServerId: virtualServerId,
 		projectId:       projectId,
 		name:            name,
@@ -45,8 +55,12 @@ func (r *Role) Name() string {
 }
 
 func (r *Role) SetName(name string) {
-	r.TrackChange("name", name)
+	if r.name == name {
+		return
+	}
+
 	r.name = name
+	r.TrackChange(RoleChangeName)
 }
 
 func (r *Role) Description() string {
@@ -54,8 +68,12 @@ func (r *Role) Description() string {
 }
 
 func (r *Role) SetDescription(description string) {
-	r.TrackChange("description", description)
+	if r.description == description {
+		return
+	}
+
 	r.description = description
+	r.TrackChange(RoleChangeDescription)
 }
 
 func (r *Role) VirtualServerId() uuid.UUID {

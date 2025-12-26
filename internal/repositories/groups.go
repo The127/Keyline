@@ -1,14 +1,23 @@
 package repositories
 
 import (
+	"Keyline/internal/change"
 	"Keyline/utils"
 	"context"
 
 	"github.com/google/uuid"
 )
 
+type GroupChange int
+
+const (
+	GroupChangeName GroupChange = iota
+	GroupChangeDescription
+)
+
 type Group struct {
 	BaseModel
+	change.List[GroupChange]
 
 	virtualServerId uuid.UUID
 
@@ -19,6 +28,7 @@ type Group struct {
 func NewGroup(virtualServerId uuid.UUID, name string, description string) *Group {
 	return &Group{
 		BaseModel:       NewModelBase(),
+		List:            change.NewChanges[GroupChange](),
 		virtualServerId: virtualServerId,
 		name:            name,
 		description:     description,
@@ -42,8 +52,12 @@ func (g *Group) Name() string {
 }
 
 func (g *Group) SetName(name string) {
-	g.TrackChange("name", name)
+	if g.name == name {
+		return
+	}
+
 	g.name = name
+	g.TrackChange(GroupChangeName)
 }
 
 func (g *Group) Description() string {
@@ -51,8 +65,12 @@ func (g *Group) Description() string {
 }
 
 func (g *Group) SetDescription(description string) {
-	g.TrackChange("description", description)
+	if g.description == description {
+		return
+	}
+
 	g.description = description
+	g.TrackChange(GroupChangeDescription)
 }
 
 func (g *Group) VirtualServerId() uuid.UUID {

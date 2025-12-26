@@ -1,21 +1,13 @@
 package repositories
 
 import (
+	"Keyline/internal/change"
 	"Keyline/utils"
 	"context"
 	"fmt"
 
 	"github.com/google/uuid"
 )
-
-type PasswordRule struct {
-	BaseModel
-
-	virtualServerId uuid.UUID
-
-	_type   PasswordRuleType
-	details []byte
-}
 
 type PasswordRuleType string
 
@@ -27,6 +19,22 @@ const (
 	PasswordRuleTypeDigits    PasswordRuleType = "digits"
 	PasswordRuleTypeSpecial   PasswordRuleType = "special"
 )
+
+type PasswordRuleChange int
+
+const (
+	PasswordRuleChangeDetails PasswordRuleChange = iota
+)
+
+type PasswordRule struct {
+	BaseModel
+	change.List[PasswordRuleChange]
+
+	virtualServerId uuid.UUID
+
+	_type   PasswordRuleType
+	details []byte
+}
 
 type PasswordRuleDetails interface {
 	GetPasswordRuleType() PasswordRuleType
@@ -78,7 +86,7 @@ func (p *PasswordRule) SetDetails(details PasswordRuleDetails) error {
 	}
 
 	p.details = serialized
-	p.TrackChange("details", serialized)
+	p.TrackChange(PasswordRuleChangeDetails)
 	return nil
 }
 
