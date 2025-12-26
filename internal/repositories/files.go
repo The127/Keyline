@@ -24,15 +24,12 @@ func NewFile(name string, mimeType string, content []byte) *File {
 	}
 }
 
-func (f *File) GetScanPointers() []any {
-	return []any{
-		&f.id,
-		&f.auditCreatedAt,
-		&f.auditUpdatedAt,
-		&f.version,
-		&f.name,
-		&f.mimeType,
-		&f.content,
+func NewFileFromDB(base BaseModel, name string, mimeType string, content []byte) *File {
+	return &File{
+		BaseModel: base,
+		name:      name,
+		mimeType:  mimeType,
+		content:   content,
 	}
 }
 
