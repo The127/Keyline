@@ -3,14 +3,16 @@ package queries
 import (
 	"Keyline/internal/authentication/permissions"
 	"Keyline/internal/behaviours"
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/utils"
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/The127/ioc"
 	"time"
+
+	"github.com/The127/ioc"
 
 	"github.com/google/uuid"
 )
@@ -59,20 +61,19 @@ type ListAuditEntriesResponseItem struct {
 
 func HandleListAuditEntries(ctx context.Context, query ListAuditEntries) (*ListAuditEntriesResponse, error) {
 	scope := middlewares.GetScope(ctx)
+	dbContext := ioc.GetDependency[database.Context](scope)
 
-	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(query.VirtualServerName)
-	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().Single(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
-	auditLogRepository := ioc.GetDependency[repositories.AuditLogRepository](scope)
 	auditLogFilter := repositories.NewAuditLogFilter().
 		VirtualServerId(virtualServer.Id()).
 		Pagination(query.Page, query.PageSize).
 		Order(query.OrderBy, query.OrderDir)
-	auditLogs, total, err := auditLogRepository.List(ctx, auditLogFilter)
+	auditLogs, total, err := dbContext.AuditLogs().List(ctx, auditLogFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting audit logs: %w", err)
 	}

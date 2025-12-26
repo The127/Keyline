@@ -3,10 +3,12 @@ package queries
 import (
 	"Keyline/internal/authentication/permissions"
 	"Keyline/internal/behaviours"
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"context"
 	"fmt"
+
 	"github.com/The127/ioc"
 
 	"github.com/google/uuid"
@@ -43,20 +45,19 @@ type GetUserMetadataResult struct {
 
 func HandleGetUserMetadata(ctx context.Context, query GetUserMetadata) (*GetUserMetadataResult, error) {
 	scope := middlewares.GetScope(ctx)
+	dbContext := ioc.GetDependency[database.Context](scope)
 
-	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(query.VirtualServerName)
-	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().Single(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
-	userRepository := ioc.GetDependency[repositories.UserRepository](scope)
 	userFilter := repositories.NewUserFilter().
 		VirtualServerId(virtualServer.Id()).
 		Id(query.UserId).
 		IncludeMetadata()
-	user, err := userRepository.Single(ctx, userFilter)
+	user, err := dbContext.Users().Single(ctx, userFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting user: %w", err)
 	}
@@ -71,14 +72,13 @@ func HandleGetUserMetadata(ctx context.Context, query GetUserMetadata) (*GetUser
 	}
 
 	if query.ApplicationIds != nil || query.IncludeAllApplicationMetadata {
-		applicationRepository := ioc.GetDependency[repositories.ApplicationRepository](scope)
 		applicationFilter := repositories.NewApplicationFilter()
 
 		if query.ApplicationIds != nil {
 			applicationFilter = applicationFilter.Ids(*query.ApplicationIds)
 		}
 
-		applications, _, err := applicationRepository.List(ctx, applicationFilter)
+		applications, _, err := dbContext.Applications().List(ctx, applicationFilter)
 		if err != nil {
 			return nil, fmt.Errorf("searching applications: %w", err)
 		}
@@ -88,11 +88,10 @@ func HandleGetUserMetadata(ctx context.Context, query GetUserMetadata) (*GetUser
 			appIds[i] = application.Id()
 		}
 
-		applicationUserMetadataRepository := ioc.GetDependency[repositories.ApplicationUserMetadataRepository](scope)
 		applicationUserMetadataFilter := repositories.NewApplicationUserMetadataFilter().
 			ApplicationIds(appIds).
 			UserId(query.UserId)
-		applicationMetadata, _, err := applicationUserMetadataRepository.List(ctx, applicationUserMetadataFilter)
+		applicationMetadata, _, err := dbContext.ApplicationUserMetadata().List(ctx, applicationUserMetadataFilter)
 		if err != nil {
 			return nil, fmt.Errorf("searching application user metadata: %w", err)
 		}

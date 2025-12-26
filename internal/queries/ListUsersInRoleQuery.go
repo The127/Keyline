@@ -3,11 +3,13 @@ package queries
 import (
 	"Keyline/internal/authentication/permissions"
 	"Keyline/internal/behaviours"
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/utils"
 	"context"
 	"fmt"
+
 	"github.com/The127/ioc"
 
 	"github.com/google/uuid"
@@ -49,27 +51,25 @@ type ListUsersInRoleResponseItem struct {
 
 func HandleListUsersInRole(ctx context.Context, query ListUsersInRole) (*ListUsersInRoleResponse, error) {
 	scope := middlewares.GetScope(ctx)
+	dbContext := ioc.GetDependency[database.Context](scope)
 
-	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(query.VirtualServerName)
-	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().Single(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
-	projectRepository := ioc.GetDependency[repositories.ProjectRepository](scope)
 	projectFilter := repositories.NewProjectFilter().VirtualServerId(virtualServer.Id()).Slug(query.ProjectSlug)
-	_, err = projectRepository.Single(ctx, projectFilter)
+	_, err = dbContext.Projects().Single(ctx, projectFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting project: %w", err)
 	}
 
-	userRoleAssignmentRepository := ioc.GetDependency[repositories.UserRoleAssignmentRepository](scope)
 	userRoleAssignmentFilter := repositories.NewUserRoleAssignmentFilter().
 		// TODO: Add virtual server + project filter
 		RoleId(query.RoleId).
 		IncludeUser()
-	userRoleAssignments, totalCount, err := userRoleAssignmentRepository.List(ctx, userRoleAssignmentFilter)
+	userRoleAssignments, totalCount, err := dbContext.UserRoleAssignments().List(ctx, userRoleAssignmentFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting user role assignments: %w", err)
 	}

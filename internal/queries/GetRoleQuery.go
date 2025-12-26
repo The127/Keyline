@@ -3,12 +3,14 @@ package queries
 import (
 	"Keyline/internal/authentication/permissions"
 	"Keyline/internal/behaviours"
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"context"
 	"fmt"
-	"github.com/The127/ioc"
 	"time"
+
+	"github.com/The127/ioc"
 
 	"github.com/google/uuid"
 )
@@ -45,27 +47,25 @@ type GetRoleQueryResult struct {
 
 func HandleGetRole(ctx context.Context, query GetRoleQuery) (*GetRoleQueryResult, error) {
 	scope := middlewares.GetScope(ctx)
+	dbContext := ioc.GetDependency[database.Context](scope)
 
-	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(query.VirtualServerName)
-	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().Single(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
-	projectRepository := ioc.GetDependency[repositories.ProjectRepository](scope)
 	projectFilter := repositories.NewProjectFilter().VirtualServerId(virtualServer.Id()).Slug(query.ProjectSlug)
-	project, err := projectRepository.Single(ctx, projectFilter)
+	project, err := dbContext.Projects().Single(ctx, projectFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting project: %w", err)
 	}
 
-	roleRepository := ioc.GetDependency[repositories.RoleRepository](scope)
 	roleFilter := repositories.NewRoleFilter().
 		VirtualServerId(virtualServer.Id()).
 		ProjectId(project.Id()).
 		Id(query.RoleId)
-	role, err := roleRepository.Single(ctx, roleFilter)
+	role, err := dbContext.Roles().Single(ctx, roleFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting role: %w", err)
 	}
