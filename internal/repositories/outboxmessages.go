@@ -26,17 +26,6 @@ type OutboxMessage struct {
 	details []byte
 }
 
-func (m *OutboxMessage) GetScanPointers() []any {
-	return []any{
-		&m.id,
-		&m.auditCreatedAt,
-		&m.auditUpdatedAt,
-		&m.version,
-		&m._type,
-		&m.details,
-	}
-}
-
 func (m *OutboxMessage) Type() OutboxMessageType {
 	return m._type
 }
@@ -56,6 +45,14 @@ func NewOutboxMessage(details OutboxMessageDetails) (*OutboxMessage, error) {
 		_type:     details.OutboxMessageType(),
 		details:   serializedDetails,
 	}, nil
+}
+
+func NewOutboxMessageFromDB(base BaseModel, _type OutboxMessageType, details []byte) *OutboxMessage {
+	return &OutboxMessage{
+		BaseModel: base,
+		_type:     _type,
+		details:   details,
+	}
 }
 
 type OutboxMessageFilter struct {
