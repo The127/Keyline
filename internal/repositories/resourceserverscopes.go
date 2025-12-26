@@ -40,18 +40,16 @@ func NewResourceServerScope(virtualServerId uuid.UUID, projectId uuid.UUID, reso
 	}
 }
 
-func (r *ResourceServerScope) GetScanPointers() []any {
-	return []any{
-		&r.id,
-		&r.auditCreatedAt,
-		&r.auditUpdatedAt,
-		&r.version,
-		&r.virtualServerId,
-		&r.projectId,
-		&r.resourceServerId,
-		&r.scope,
-		&r.name,
-		&r.description,
+func NewResourceServerScopeFromDB(base BaseModel, virtualServerId uuid.UUID, projectId uuid.UUID, resourceServerId uuid.UUID, scope string, name string, description string) *ResourceServerScope {
+	return &ResourceServerScope{
+		BaseModel:        base,
+		List:             change.NewChanges[ResourceServerScopeChange](),
+		virtualServerId:  virtualServerId,
+		projectId:        projectId,
+		resourceServerId: resourceServerId,
+		scope:            scope,
+		name:             name,
+		description:      description,
 	}
 }
 
