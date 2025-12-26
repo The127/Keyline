@@ -7,7 +7,7 @@ import (
 
 type Context interface {
 	Applications() repositories.ApplicationRepository
-	ApplicationUserMetadata() repositories.ApplicationUserMetadata
+	ApplicationUserMetadata() repositories.ApplicationUserMetadataRepository
 	AuditLogs() repositories.AuditLogRepository
 	Credentials() repositories.CredentialRepository
 	Files() repositories.FileRepository
