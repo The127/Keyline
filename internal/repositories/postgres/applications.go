@@ -99,7 +99,7 @@ func NewApplicationRepository(db *sql.DB, changeTracker change.Tracker, entityTy
 	}
 }
 
-func (r *ApplicationRepository) selectQuery(filter repositories.ApplicationFilter) *sqlbuilder.SelectBuilder {
+func (r *ApplicationRepository) selectQuery(filter *repositories.ApplicationFilter) *sqlbuilder.SelectBuilder {
 	s := sqlbuilder.Select(
 		"id",
 		"audit_created_at",
@@ -157,7 +157,7 @@ func (r *ApplicationRepository) selectQuery(filter repositories.ApplicationFilte
 	return s
 }
 
-func (r *ApplicationRepository) Single(ctx context.Context, filter repositories.ApplicationFilter) (*repositories.Application, error) {
+func (r *ApplicationRepository) Single(ctx context.Context, filter *repositories.ApplicationFilter) (*repositories.Application, error) {
 	application, err := r.First(ctx, filter)
 	if err != nil {
 		return nil, err
@@ -168,7 +168,7 @@ func (r *ApplicationRepository) Single(ctx context.Context, filter repositories.
 	return application, nil
 }
 
-func (r *ApplicationRepository) First(ctx context.Context, filter repositories.ApplicationFilter) (*repositories.Application, error) {
+func (r *ApplicationRepository) First(ctx context.Context, filter *repositories.ApplicationFilter) (*repositories.Application, error) {
 	s := r.selectQuery(filter)
 	s.Limit(1)
 
@@ -189,13 +189,13 @@ func (r *ApplicationRepository) First(ctx context.Context, filter repositories.A
 	return application.Map(), nil
 }
 
-func (r *ApplicationRepository) List(ctx context.Context, filter repositories.ApplicationFilter) ([]*repositories.Application, int, error) {
+func (r *ApplicationRepository) List(ctx context.Context, filter *repositories.ApplicationFilter) ([]*repositories.Application, int, error) {
 	s := r.selectQuery(filter)
 	s.SelectMore("count(*) over()")
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
-	rows, err := r.db.Query(query, args...)
+	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("querying db: %w", err)
 	}

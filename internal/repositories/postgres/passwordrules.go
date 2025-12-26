@@ -69,7 +69,7 @@ func NewPasswordRuleRepository(db *sql.DB, changeTracker change.Tracker, entityT
 	}
 }
 
-func (r *PasswordRuleRepository) selectQuery(filter repositories.PasswordRuleFilter) *sqlbuilder.SelectBuilder {
+func (r *PasswordRuleRepository) selectQuery(filter *repositories.PasswordRuleFilter) *sqlbuilder.SelectBuilder {
 	s := sqlbuilder.Select(
 		"id",
 		"audit_created_at",
@@ -91,12 +91,12 @@ func (r *PasswordRuleRepository) selectQuery(filter repositories.PasswordRuleFil
 	return s
 }
 
-func (r *PasswordRuleRepository) List(ctx context.Context, filter repositories.PasswordRuleFilter) ([]*repositories.PasswordRule, error) {
+func (r *PasswordRuleRepository) List(ctx context.Context, filter *repositories.PasswordRuleFilter) ([]*repositories.PasswordRule, error) {
 	s := r.selectQuery(filter)
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
-	rows, err := r.db.Query(query, args...)
+	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("querying db: %w", err)
 	}
@@ -115,7 +115,7 @@ func (r *PasswordRuleRepository) List(ctx context.Context, filter repositories.P
 	return result, nil
 }
 
-func (r *PasswordRuleRepository) First(ctx context.Context, filter repositories.PasswordRuleFilter) (*repositories.PasswordRule, error) {
+func (r *PasswordRuleRepository) First(ctx context.Context, filter *repositories.PasswordRuleFilter) (*repositories.PasswordRule, error) {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -143,7 +143,7 @@ func (r *PasswordRuleRepository) First(ctx context.Context, filter repositories.
 	return passwordRule.Map(), nil
 }
 
-func (r *PasswordRuleRepository) Single(ctx context.Context, filter repositories.PasswordRuleFilter) (*repositories.PasswordRule, error) {
+func (r *PasswordRuleRepository) Single(ctx context.Context, filter *repositories.PasswordRuleFilter) (*repositories.PasswordRule, error) {
 	rule, err := r.First(ctx, filter)
 	if err != nil {
 		return nil, err

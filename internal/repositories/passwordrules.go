@@ -92,47 +92,47 @@ type PasswordRuleFilter struct {
 	type_           *PasswordRuleType
 }
 
-func NewPasswordRuleFilter() PasswordRuleFilter {
-	return PasswordRuleFilter{}
+func NewPasswordRuleFilter() *PasswordRuleFilter {
+	return &PasswordRuleFilter{}
 }
 
-func (f PasswordRuleFilter) Clone() PasswordRuleFilter {
+func (f *PasswordRuleFilter) Clone() *PasswordRuleFilter {
 	return f
 }
 
-func (f PasswordRuleFilter) VirtualServerId(virtualServerId uuid.UUID) PasswordRuleFilter {
+func (f *PasswordRuleFilter) VirtualServerId(virtualServerId uuid.UUID) *PasswordRuleFilter {
 	filter := f.Clone()
 	filter.virtualServerId = &virtualServerId
 	return filter
 }
 
-func (f PasswordRuleFilter) HasVirtualServerId() bool {
+func (f *PasswordRuleFilter) HasVirtualServerId() bool {
 	return f.virtualServerId != nil
 }
 
-func (f PasswordRuleFilter) GetVirtualServerId() uuid.UUID {
+func (f *PasswordRuleFilter) GetVirtualServerId() uuid.UUID {
 	return utils.ZeroIfNil(f.virtualServerId)
 }
 
-func (f PasswordRuleFilter) Type(type_ PasswordRuleType) PasswordRuleFilter {
+func (f *PasswordRuleFilter) Type(type_ PasswordRuleType) *PasswordRuleFilter {
 	filter := f.Clone()
 	filter.type_ = &type_
 	return filter
 }
 
-func (f PasswordRuleFilter) HasType() bool {
+func (f *PasswordRuleFilter) HasType() bool {
 	return f.type_ != nil
 }
 
-func (f PasswordRuleFilter) GetType() PasswordRuleType {
+func (f *PasswordRuleFilter) GetType() PasswordRuleType {
 	return utils.ZeroIfNil(f.type_)
 }
 
 //go:generate mockgen -destination=./mocks/passwordrule_repository.go -package=mocks Keyline/internal/repositories PasswordRuleRepository
 type PasswordRuleRepository interface {
-	List(ctx context.Context, filter PasswordRuleFilter) ([]*PasswordRule, error)
-	Single(ctx context.Context, filter PasswordRuleFilter) (*PasswordRule, error)
-	First(ctx context.Context, filter PasswordRuleFilter) (*PasswordRule, error)
+	List(ctx context.Context, filter *PasswordRuleFilter) ([]*PasswordRule, error)
+	Single(ctx context.Context, filter *PasswordRuleFilter) (*PasswordRule, error)
+	First(ctx context.Context, filter *PasswordRuleFilter) (*PasswordRule, error)
 	Insert(passwordRule *PasswordRule)
 	Update(passwordRule *PasswordRule)
 	Delete(id uuid.UUID)

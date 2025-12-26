@@ -59,31 +59,32 @@ type OutboxMessageFilter struct {
 	id *uuid.UUID
 }
 
-func NewOutboxMessageFilter() OutboxMessageFilter {
-	return OutboxMessageFilter{}
+func NewOutboxMessageFilter() *OutboxMessageFilter {
+	return &OutboxMessageFilter{}
 }
 
-func (f OutboxMessageFilter) Clone() OutboxMessageFilter {
-	return f
+func (f *OutboxMessageFilter) Clone() *OutboxMessageFilter {
+	clone := *f
+	return &clone
 }
 
-func (f OutboxMessageFilter) Id(id uuid.UUID) OutboxMessageFilter {
+func (f *OutboxMessageFilter) Id(id uuid.UUID) *OutboxMessageFilter {
 	filter := f.Clone()
 	filter.id = &id
 	return filter
 }
 
-func (f OutboxMessageFilter) HasId() bool {
+func (f *OutboxMessageFilter) HasId() bool {
 	return f.id != nil
 }
 
-func (f OutboxMessageFilter) GetId() uuid.UUID {
+func (f *OutboxMessageFilter) GetId() uuid.UUID {
 	return utils.ZeroIfNil(f.id)
 }
 
 //go:generate mockgen -destination=./mocks/outboxmessage_repository.go -package=mocks Keyline/internal/repositories OutboxMessageRepository
 type OutboxMessageRepository interface {
-	List(ctx context.Context, filter OutboxMessageFilter) ([]*OutboxMessage, error)
+	List(ctx context.Context, filter *OutboxMessageFilter) ([]*OutboxMessage, error)
 	Insert(outboxMessage *OutboxMessage)
 	Delete(id uuid.UUID)
 }

@@ -67,7 +67,7 @@ func NewApplicationUserMetadataRepository(db *sql.DB, changeTracker change.Track
 	}
 }
 
-func (r *ApplicationUserMetadataRepository) selectQuery(filter repositories.ApplicationUserMetadataFilter) *sqlbuilder.SelectBuilder {
+func (r *ApplicationUserMetadataRepository) selectQuery(filter *repositories.ApplicationUserMetadataFilter) *sqlbuilder.SelectBuilder {
 	s := sqlbuilder.Select(
 		"id",
 		"audit_created_at",
@@ -93,13 +93,13 @@ func (r *ApplicationUserMetadataRepository) selectQuery(filter repositories.Appl
 	return s
 }
 
-func (r *ApplicationUserMetadataRepository) List(ctx context.Context, filter repositories.ApplicationUserMetadataFilter) ([]*repositories.ApplicationUserMetadata, int, error) {
+func (r *ApplicationUserMetadataRepository) List(ctx context.Context, filter *repositories.ApplicationUserMetadataFilter) ([]*repositories.ApplicationUserMetadata, int, error) {
 	s := r.selectQuery(filter)
 	s.SelectMore("count(*) over()")
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
-	rows, err := r.db.Query(query, args...)
+	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("querying db: %w", err)
 	}
@@ -120,7 +120,7 @@ func (r *ApplicationUserMetadataRepository) List(ctx context.Context, filter rep
 	return metadata, totalCount, nil
 }
 
-func (r *ApplicationUserMetadataRepository) Single(ctx context.Context, filter repositories.ApplicationUserMetadataFilter) (*repositories.ApplicationUserMetadata, error) {
+func (r *ApplicationUserMetadataRepository) Single(ctx context.Context, filter *repositories.ApplicationUserMetadataFilter) (*repositories.ApplicationUserMetadata, error) {
 	result, err := r.First(ctx, filter)
 	if err != nil {
 		return nil, err
@@ -131,7 +131,7 @@ func (r *ApplicationUserMetadataRepository) Single(ctx context.Context, filter r
 	return result, nil
 }
 
-func (r *ApplicationUserMetadataRepository) First(ctx context.Context, filter repositories.ApplicationUserMetadataFilter) (*repositories.ApplicationUserMetadata, error) {
+func (r *ApplicationUserMetadataRepository) First(ctx context.Context, filter *repositories.ApplicationUserMetadataFilter) (*repositories.ApplicationUserMetadata, error) {
 	s := r.selectQuery(filter)
 	s.Limit(1)
 

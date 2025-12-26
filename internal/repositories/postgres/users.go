@@ -52,7 +52,7 @@ func (u *postgresUser) Map() *repositories.User {
 	)
 }
 
-func (u *postgresUser) scan(row pghelpers.Row, filter repositories.UserFilter) error {
+func (u *postgresUser) scan(row pghelpers.Row, filter *repositories.UserFilter) error {
 	pointers := []any{
 		&u.id,
 		&u.auditCreatedAt,
@@ -88,7 +88,7 @@ func NewUserRepository(db *sql.DB, changeTracker change.Tracker, entityType int)
 	}
 }
 
-func (r *UserRepository) selectQuery(filter repositories.UserFilter) *sqlbuilder.SelectBuilder {
+func (r *UserRepository) selectQuery(filter *repositories.UserFilter) *sqlbuilder.SelectBuilder {
 	s := sqlbuilder.Select(
 		"id",
 		"audit_created_at",
@@ -142,7 +142,7 @@ func (r *UserRepository) selectQuery(filter repositories.UserFilter) *sqlbuilder
 	return s
 }
 
-func (r *UserRepository) List(ctx context.Context, filter repositories.UserFilter) ([]*repositories.User, int, error) {
+func (r *UserRepository) List(ctx context.Context, filter *repositories.UserFilter) ([]*repositories.User, int, error) {
 	s := r.selectQuery(filter)
 	s.SelectMore("count(*) over()")
 
@@ -169,7 +169,7 @@ func (r *UserRepository) List(ctx context.Context, filter repositories.UserFilte
 	return users, totalCount, nil
 }
 
-func (r *UserRepository) Single(ctx context.Context, filter repositories.UserFilter) (*repositories.User, error) {
+func (r *UserRepository) Single(ctx context.Context, filter *repositories.UserFilter) (*repositories.User, error) {
 	result, err := r.First(ctx, filter)
 	if err != nil {
 		return nil, err
@@ -180,7 +180,7 @@ func (r *UserRepository) Single(ctx context.Context, filter repositories.UserFil
 	return result, nil
 }
 
-func (r *UserRepository) First(ctx context.Context, filter repositories.UserFilter) (*repositories.User, error) {
+func (r *UserRepository) First(ctx context.Context, filter *repositories.UserFilter) (*repositories.User, error) {
 	s := r.selectQuery(filter)
 	s.Limit(1)
 

@@ -70,7 +70,7 @@ func (a *postgresUserRoleAssignment) Map() *repositories.UserRoleAssignment {
 	)
 }
 
-func (a *postgresUserRoleAssignment) scan(row pghelpers.Row, filter repositories.UserRoleAssignmentFilter) error {
+func (a *postgresUserRoleAssignment) scan(row pghelpers.Row, filter *repositories.UserRoleAssignmentFilter) error {
 	ptrs := []any{
 		&a.id,
 		&a.auditCreatedAt,
@@ -114,7 +114,7 @@ func NewUserRoleAssignmentRepository(db *sql.DB, changeTracker change.Tracker, e
 	}
 }
 
-func (r *UserRoleAssignmentRepository) selectQuery(filter repositories.UserRoleAssignmentFilter) *sqlbuilder.SelectBuilder {
+func (r *UserRoleAssignmentRepository) selectQuery(filter *repositories.UserRoleAssignmentFilter) *sqlbuilder.SelectBuilder {
 	s := sqlbuilder.Select(
 		"ura.id",
 		"ura.audit_created_at",
@@ -156,13 +156,13 @@ func (r *UserRoleAssignmentRepository) selectQuery(filter repositories.UserRoleA
 	return s
 }
 
-func (r *UserRoleAssignmentRepository) List(ctx context.Context, filter repositories.UserRoleAssignmentFilter) ([]*repositories.UserRoleAssignment, int, error) {
+func (r *UserRoleAssignmentRepository) List(ctx context.Context, filter *repositories.UserRoleAssignmentFilter) ([]*repositories.UserRoleAssignment, int, error) {
 	s := r.selectQuery(filter)
 	s.SelectMore("count(*) over()")
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
-	rows, err := r.db.Query(query, args...)
+	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("querying db: %w", err)
 	}

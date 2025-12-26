@@ -68,7 +68,7 @@ func NewRoleRepository(db *sql.DB, changeTracker change.Tracker, entityType int)
 	}
 }
 
-func (r *RoleRepository) selectQuery(filter repositories.RoleFilter) *sqlbuilder.SelectBuilder {
+func (r *RoleRepository) selectQuery(filter *repositories.RoleFilter) *sqlbuilder.SelectBuilder {
 	s := sqlbuilder.Select(
 		"id",
 		"audit_created_at",
@@ -114,7 +114,7 @@ func (r *RoleRepository) selectQuery(filter repositories.RoleFilter) *sqlbuilder
 	return s
 }
 
-func (r *RoleRepository) List(ctx context.Context, filter repositories.RoleFilter) ([]*repositories.Role, int, error) {
+func (r *RoleRepository) List(ctx context.Context, filter *repositories.RoleFilter) ([]*repositories.Role, int, error) {
 	s := r.selectQuery(filter)
 	s.SelectMore("count(*) over()")
 
@@ -141,7 +141,7 @@ func (r *RoleRepository) List(ctx context.Context, filter repositories.RoleFilte
 	return roles, totalCount, nil
 }
 
-func (r *RoleRepository) Single(ctx context.Context, filter repositories.RoleFilter) (*repositories.Role, error) {
+func (r *RoleRepository) Single(ctx context.Context, filter *repositories.RoleFilter) (*repositories.Role, error) {
 	result, err := r.First(ctx, filter)
 	if err != nil {
 		return nil, err
@@ -152,7 +152,7 @@ func (r *RoleRepository) Single(ctx context.Context, filter repositories.RoleFil
 	return result, nil
 }
 
-func (r *RoleRepository) First(ctx context.Context, filter repositories.RoleFilter) (*repositories.Role, error) {
+func (r *RoleRepository) First(ctx context.Context, filter *repositories.RoleFilter) (*repositories.Role, error) {
 	s := r.selectQuery(filter)
 	s.Limit(1)
 

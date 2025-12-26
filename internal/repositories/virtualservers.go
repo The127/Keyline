@@ -135,54 +135,55 @@ type VirtualServerFilterCacheKey struct {
 	id   uuid.UUID
 }
 
-func NewVirtualServerFilter() VirtualServerFilter {
-	return VirtualServerFilter{}
+func NewVirtualServerFilter() *VirtualServerFilter {
+	return &VirtualServerFilter{}
 }
 
-func (f VirtualServerFilter) GetCacheKey() VirtualServerFilterCacheKey {
+func (f *VirtualServerFilter) GetCacheKey() VirtualServerFilterCacheKey {
 	return VirtualServerFilterCacheKey{
 		name: utils.ZeroIfNil(f.name),
 		id:   utils.ZeroIfNil(f.id),
 	}
 }
 
-func (f VirtualServerFilter) Clone() VirtualServerFilter {
-	return f
+func (f *VirtualServerFilter) Clone() *VirtualServerFilter {
+	clone := *f
+	return &clone
 }
 
-func (f VirtualServerFilter) Name(name string) VirtualServerFilter {
+func (f *VirtualServerFilter) Name(name string) *VirtualServerFilter {
 	filter := f.Clone()
 	filter.name = &name
 	return filter
 }
 
-func (f VirtualServerFilter) HasName() bool {
+func (f *VirtualServerFilter) HasName() bool {
 	return f.name != nil
 }
 
-func (f VirtualServerFilter) GetName() string {
+func (f *VirtualServerFilter) GetName() string {
 	return utils.ZeroIfNil(f.name)
 }
 
-func (f VirtualServerFilter) Id(id uuid.UUID) VirtualServerFilter {
+func (f *VirtualServerFilter) Id(id uuid.UUID) *VirtualServerFilter {
 	filter := f.Clone()
 	filter.id = &id
 	return filter
 }
 
-func (f VirtualServerFilter) HasId() bool {
+func (f *VirtualServerFilter) HasId() bool {
 	return f.id != nil
 }
 
-func (f VirtualServerFilter) GetId() uuid.UUID {
+func (f *VirtualServerFilter) GetId() uuid.UUID {
 	return utils.ZeroIfNil(f.id)
 }
 
 //go:generate mockgen -destination=./mocks/virtualserver_repository.go -package=mocks Keyline/internal/repositories VirtualServerRepository
 type VirtualServerRepository interface {
-	Single(ctx context.Context, filter VirtualServerFilter) (*VirtualServer, error)
-	First(ctx context.Context, filter VirtualServerFilter) (*VirtualServer, error)
-	List(ctx context.Context, filter VirtualServerFilter) ([]*VirtualServer, int, error)
+	Single(ctx context.Context, filter *VirtualServerFilter) (*VirtualServer, error)
+	First(ctx context.Context, filter *VirtualServerFilter) (*VirtualServer, error)
+	List(ctx context.Context, filter *VirtualServerFilter) ([]*VirtualServer, int, error)
 	Insert(virtualServer *VirtualServer)
 	Update(virtualServer *VirtualServer)
 }

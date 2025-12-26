@@ -90,60 +90,61 @@ type SessionFilter struct {
 	userId          *uuid.UUID
 }
 
-func NewSessionFilter() SessionFilter {
-	return SessionFilter{}
+func NewSessionFilter() *SessionFilter {
+	return &SessionFilter{}
 }
 
-func (f SessionFilter) Clone() SessionFilter {
-	return f
+func (f *SessionFilter) Clone() *SessionFilter {
+	clone := *f
+	return &clone
 }
 
-func (f SessionFilter) VirtualServerId(virtualServerId uuid.UUID) SessionFilter {
+func (f *SessionFilter) VirtualServerId(virtualServerId uuid.UUID) *SessionFilter {
 	filter := f.Clone()
 	filter.virtualServerId = &virtualServerId
 	return filter
 }
 
-func (f SessionFilter) HasVirtualServerId() bool {
+func (f *SessionFilter) HasVirtualServerId() bool {
 	return f.virtualServerId != nil
 }
 
-func (f SessionFilter) GetVirtualServerId() uuid.UUID {
+func (f *SessionFilter) GetVirtualServerId() uuid.UUID {
 	return utils.ZeroIfNil(f.virtualServerId)
 }
 
-func (f SessionFilter) UserId(userId uuid.UUID) SessionFilter {
+func (f *SessionFilter) UserId(userId uuid.UUID) *SessionFilter {
 	filter := f.Clone()
 	filter.userId = &userId
 	return filter
 }
 
-func (f SessionFilter) HasUserId() bool {
+func (f *SessionFilter) HasUserId() bool {
 	return f.userId != nil
 }
 
-func (f SessionFilter) GetUserId() uuid.UUID {
+func (f *SessionFilter) GetUserId() uuid.UUID {
 	return utils.ZeroIfNil(f.userId)
 }
 
-func (f SessionFilter) Id(id uuid.UUID) SessionFilter {
+func (f *SessionFilter) Id(id uuid.UUID) *SessionFilter {
 	filter := f.Clone()
 	filter.id = &id
 	return filter
 }
 
-func (f SessionFilter) HasId() bool {
+func (f *SessionFilter) HasId() bool {
 	return f.id != nil
 }
 
-func (f SessionFilter) GetId() uuid.UUID {
+func (f *SessionFilter) GetId() uuid.UUID {
 	return utils.ZeroIfNil(f.id)
 }
 
 //go:generate mockgen -destination=./mocks/session_repository.go -package=mocks Keyline/internal/repositories SessionRepository
 type SessionRepository interface {
-	Single(ctx context.Context, filter SessionFilter) (*Session, error)
-	First(ctx context.Context, filter SessionFilter) (*Session, error)
+	Single(ctx context.Context, filter *SessionFilter) (*Session, error)
+	First(ctx context.Context, filter *SessionFilter) (*Session, error)
 	Insert(session *Session)
 	Delete(id uuid.UUID)
 }

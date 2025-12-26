@@ -61,7 +61,7 @@ func NewOutboxMessageRepository(db *sql.DB, changeTracker change.Tracker, entity
 	}
 }
 
-func (r *OutboxMessageRepository) selectQuery(filter repositories.OutboxMessageFilter) *sqlbuilder.SelectBuilder {
+func (r *OutboxMessageRepository) selectQuery(filter *repositories.OutboxMessageFilter) *sqlbuilder.SelectBuilder {
 	s := sqlbuilder.Select(
 		"id",
 		"audit_created_at",
@@ -78,12 +78,12 @@ func (r *OutboxMessageRepository) selectQuery(filter repositories.OutboxMessageF
 	return s
 }
 
-func (r *OutboxMessageRepository) List(ctx context.Context, filter repositories.OutboxMessageFilter) ([]*repositories.OutboxMessage, error) {
+func (r *OutboxMessageRepository) List(ctx context.Context, filter *repositories.OutboxMessageFilter) ([]*repositories.OutboxMessage, error) {
 	s := r.selectQuery(filter)
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
-	rows, err := r.db.Query(query, args...)
+	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("querying db: %w", err)
 	}

@@ -65,7 +65,7 @@ func NewFileRepository(db *sql.DB, changeTracker change.Tracker, entityType int)
 	}
 }
 
-func (r *FileRepository) selectQuery(filter repositories.FileFilter) *sqlbuilder.SelectBuilder {
+func (r *FileRepository) selectQuery(filter *repositories.FileFilter) *sqlbuilder.SelectBuilder {
 	s := sqlbuilder.Select(
 		"id",
 		"audit_created_at",
@@ -83,7 +83,7 @@ func (r *FileRepository) selectQuery(filter repositories.FileFilter) *sqlbuilder
 	return s
 }
 
-func (r *FileRepository) Single(ctx context.Context, filter repositories.FileFilter) (*repositories.File, error) {
+func (r *FileRepository) Single(ctx context.Context, filter *repositories.FileFilter) (*repositories.File, error) {
 	file, err := r.First(ctx, filter)
 	if err != nil {
 		return nil, err
@@ -94,7 +94,7 @@ func (r *FileRepository) Single(ctx context.Context, filter repositories.FileFil
 	return file, nil
 }
 
-func (r *FileRepository) First(ctx context.Context, filter repositories.FileFilter) (*repositories.File, error) {
+func (r *FileRepository) First(ctx context.Context, filter *repositories.FileFilter) (*repositories.File, error) {
 	s := r.selectQuery(filter)
 
 	s.Limit(1)

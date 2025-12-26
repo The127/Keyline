@@ -83,7 +83,7 @@ func NewVirtualServerRepository(db *sql.DB, changeTracker change.Tracker, entity
 	}
 }
 
-func (r *VirtualServerRepository) selectQuery(filter repositories.VirtualServerFilter) *sqlbuilder.SelectBuilder {
+func (r *VirtualServerRepository) selectQuery(filter *repositories.VirtualServerFilter) *sqlbuilder.SelectBuilder {
 	s := sqlbuilder.Select(
 		"id",
 		"audit_created_at",
@@ -108,7 +108,7 @@ func (r *VirtualServerRepository) selectQuery(filter repositories.VirtualServerF
 	return s
 }
 
-func (r *VirtualServerRepository) Single(ctx context.Context, filter repositories.VirtualServerFilter) (*repositories.VirtualServer, error) {
+func (r *VirtualServerRepository) Single(ctx context.Context, filter *repositories.VirtualServerFilter) (*repositories.VirtualServer, error) {
 	result, err := r.First(ctx, filter)
 	if err != nil {
 		return nil, err
@@ -120,7 +120,7 @@ func (r *VirtualServerRepository) Single(ctx context.Context, filter repositorie
 	return result, nil
 }
 
-func (r *VirtualServerRepository) First(ctx context.Context, filter repositories.VirtualServerFilter) (*repositories.VirtualServer, error) {
+func (r *VirtualServerRepository) First(ctx context.Context, filter *repositories.VirtualServerFilter) (*repositories.VirtualServer, error) {
 	cacheKey := filter.GetCacheKey()
 	cachedValue, ok := r.cache.TryGet(cacheKey)
 	if ok {
@@ -151,7 +151,7 @@ func (r *VirtualServerRepository) First(ctx context.Context, filter repositories
 	return result, nil
 }
 
-func (r *VirtualServerRepository) List(ctx context.Context, filter repositories.VirtualServerFilter) ([]*repositories.VirtualServer, int, error) {
+func (r *VirtualServerRepository) List(ctx context.Context, filter *repositories.VirtualServerFilter) ([]*repositories.VirtualServer, int, error) {
 	s := r.selectQuery(filter)
 	s.SelectMore("count(*) over()")
 

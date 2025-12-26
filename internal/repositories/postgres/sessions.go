@@ -75,7 +75,7 @@ func NewSessionRepository(db *sql.DB, changeTracker change.Tracker, entityType i
 	}
 }
 
-func (r *SessionRepository) selectQuery(filter repositories.SessionFilter) *sqlbuilder.SelectBuilder {
+func (r *SessionRepository) selectQuery(filter *repositories.SessionFilter) *sqlbuilder.SelectBuilder {
 	s := sqlbuilder.Select(
 		"id",
 		"audit_created_at",
@@ -103,7 +103,7 @@ func (r *SessionRepository) selectQuery(filter repositories.SessionFilter) *sqlb
 	return s
 }
 
-func (r *SessionRepository) Single(ctx context.Context, filter repositories.SessionFilter) (*repositories.Session, error) {
+func (r *SessionRepository) Single(ctx context.Context, filter *repositories.SessionFilter) (*repositories.Session, error) {
 	result, err := r.First(ctx, filter)
 	if err != nil {
 		return nil, err
@@ -114,7 +114,7 @@ func (r *SessionRepository) Single(ctx context.Context, filter repositories.Sess
 	return result, nil
 }
 
-func (r *SessionRepository) First(ctx context.Context, filter repositories.SessionFilter) (*repositories.Session, error) {
+func (r *SessionRepository) First(ctx context.Context, filter *repositories.SessionFilter) (*repositories.Session, error) {
 	s := r.selectQuery(filter)
 	s.Limit(1)
 

@@ -279,103 +279,104 @@ type CredentialFilter struct {
 	detailPublicKey *string
 }
 
-func NewCredentialFilter() CredentialFilter {
-	return CredentialFilter{}
+func NewCredentialFilter() *CredentialFilter {
+	return &CredentialFilter{}
 }
 
-func (f CredentialFilter) Clone() CredentialFilter {
-	return f
+func (f *CredentialFilter) Clone() *CredentialFilter {
+	clone := *f
+	return &clone
 }
 
-func (f CredentialFilter) Id(id uuid.UUID) CredentialFilter {
+func (f *CredentialFilter) Id(id uuid.UUID) *CredentialFilter {
 	filter := f.Clone()
 	filter.id = &id
 	return filter
 }
 
-func (f CredentialFilter) HasId() bool {
+func (f *CredentialFilter) HasId() bool {
 	return f.id != nil
 }
 
-func (f CredentialFilter) GetId() uuid.UUID {
+func (f *CredentialFilter) GetId() uuid.UUID {
 	return utils.ZeroIfNil(f.id)
 }
 
-func (f CredentialFilter) UserId(userId uuid.UUID) CredentialFilter {
+func (f *CredentialFilter) UserId(userId uuid.UUID) *CredentialFilter {
 	filter := f.Clone()
 	filter.userId = &userId
 	return filter
 }
 
-func (f CredentialFilter) HasUserId() bool {
+func (f *CredentialFilter) HasUserId() bool {
 	return f.userId != nil
 }
 
-func (f CredentialFilter) GetUserId() uuid.UUID {
+func (f *CredentialFilter) GetUserId() uuid.UUID {
 	return utils.ZeroIfNil(f.userId)
 }
 
-func (f CredentialFilter) DetailPublicKey(publicKey string) CredentialFilter {
+func (f *CredentialFilter) DetailPublicKey(publicKey string) *CredentialFilter {
 	filter := f.Clone()
 	filter.detailPublicKey = &publicKey
 	return filter
 }
 
-func (f CredentialFilter) HasDetailPublicKey() bool {
+func (f *CredentialFilter) HasDetailPublicKey() bool {
 	return f.detailPublicKey != nil
 }
 
-func (f CredentialFilter) GetDetailPublicKey() string {
+func (f *CredentialFilter) GetDetailPublicKey() string {
 	return utils.ZeroIfNil(f.detailPublicKey)
 }
 
-func (f CredentialFilter) Type(credentialType CredentialType) CredentialFilter {
+func (f *CredentialFilter) Type(credentialType CredentialType) *CredentialFilter {
 	filter := f.Clone()
 	filter._type = &credentialType
 	return filter
 }
 
-func (f CredentialFilter) HasType() bool {
+func (f *CredentialFilter) HasType() bool {
 	return f._type != nil
 }
 
-func (f CredentialFilter) GetType() CredentialType {
+func (f *CredentialFilter) GetType() CredentialType {
 	return utils.ZeroIfNil(f._type)
 }
 
-func (f CredentialFilter) DetailKid(key string) CredentialFilter {
+func (f *CredentialFilter) DetailKid(key string) *CredentialFilter {
 	filter := f.Clone()
 	filter.detailKid = &key
 	return filter
 }
 
-func (f CredentialFilter) HasDetailKid() bool {
+func (f *CredentialFilter) HasDetailKid() bool {
 	return f.detailKid != nil
 }
 
-func (f CredentialFilter) GetDetailKid() string {
+func (f *CredentialFilter) GetDetailKid() string {
 	return utils.ZeroIfNil(f.detailKid)
 }
 
-func (f CredentialFilter) DetailsId(id string) CredentialFilter {
+func (f *CredentialFilter) DetailsId(id string) *CredentialFilter {
 	filter := f.Clone()
 	filter.detailId = &id
 	return filter
 }
 
-func (f CredentialFilter) HasDetailsId() bool {
+func (f *CredentialFilter) HasDetailsId() bool {
 	return f.detailId != nil
 }
 
-func (f CredentialFilter) GetDetailsId() string {
+func (f *CredentialFilter) GetDetailsId() string {
 	return utils.ZeroIfNil(f.detailId)
 }
 
 //go:generate mockgen -destination=./mocks/credential_repository.go -package=mocks Keyline/internal/repositories CredentialRepository
 type CredentialRepository interface {
-	Single(ctx context.Context, filter CredentialFilter) (*Credential, error)
-	First(ctx context.Context, filter CredentialFilter) (*Credential, error)
-	List(ctx context.Context, filter CredentialFilter) ([]*Credential, error)
+	Single(ctx context.Context, filter *CredentialFilter) (*Credential, error)
+	First(ctx context.Context, filter *CredentialFilter) (*Credential, error)
+	List(ctx context.Context, filter *CredentialFilter) ([]*Credential, error)
 	Insert(credential *Credential)
 	Update(credential *Credential)
 	Delete(id uuid.UUID)

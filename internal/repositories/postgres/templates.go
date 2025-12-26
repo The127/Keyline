@@ -67,7 +67,7 @@ func NewTemplateRepository(db *sql.DB, changeTracker change.Tracker, entityType 
 	}
 }
 
-func (r *TemplateRepository) selectQuery(filter repositories.TemplateFilter) *sqlbuilder.SelectBuilder {
+func (r *TemplateRepository) selectQuery(filter *repositories.TemplateFilter) *sqlbuilder.SelectBuilder {
 	s := sqlbuilder.Select(
 		"id",
 		"audit_created_at",
@@ -104,7 +104,7 @@ func (r *TemplateRepository) selectQuery(filter repositories.TemplateFilter) *sq
 	return s
 }
 
-func (r *TemplateRepository) Single(ctx context.Context, filter repositories.TemplateFilter) (*repositories.Template, error) {
+func (r *TemplateRepository) Single(ctx context.Context, filter *repositories.TemplateFilter) (*repositories.Template, error) {
 	template, err := r.First(ctx, filter)
 	if err != nil {
 		return nil, err
@@ -115,7 +115,7 @@ func (r *TemplateRepository) Single(ctx context.Context, filter repositories.Tem
 	return template, nil
 }
 
-func (r *TemplateRepository) First(ctx context.Context, filter repositories.TemplateFilter) (*repositories.Template, error) {
+func (r *TemplateRepository) First(ctx context.Context, filter *repositories.TemplateFilter) (*repositories.Template, error) {
 	s := r.selectQuery(filter)
 	s.Limit(1)
 
@@ -137,7 +137,7 @@ func (r *TemplateRepository) First(ctx context.Context, filter repositories.Temp
 	return template.Map(), nil
 }
 
-func (r *TemplateRepository) List(ctx context.Context, filter repositories.TemplateFilter) ([]*repositories.Template, int, error) {
+func (r *TemplateRepository) List(ctx context.Context, filter *repositories.TemplateFilter) ([]*repositories.Template, int, error) {
 	s := r.selectQuery(filter)
 	s.SelectMore("count(*) over()")
 

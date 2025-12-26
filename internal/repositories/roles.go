@@ -92,71 +92,72 @@ type RoleFilter struct {
 	searchFilter    *SearchFilter
 }
 
-func NewRoleFilter() RoleFilter {
-	return RoleFilter{}
+func NewRoleFilter() *RoleFilter {
+	return &RoleFilter{}
 }
 
-func (f RoleFilter) Clone() RoleFilter {
-	return f
+func (f *RoleFilter) Clone() *RoleFilter {
+	clone := *f
+	return &clone
 }
 
-func (f RoleFilter) Name(name string) RoleFilter {
+func (f *RoleFilter) Name(name string) *RoleFilter {
 	filter := f.Clone()
 	filter.name = &name
 	return filter
 }
 
-func (f RoleFilter) HasName() bool {
+func (f *RoleFilter) HasName() bool {
 	return f.name != nil
 }
 
-func (f RoleFilter) GetName() string {
+func (f *RoleFilter) GetName() string {
 	return utils.ZeroIfNil(f.name)
 }
 
-func (f RoleFilter) Id(id uuid.UUID) RoleFilter {
+func (f *RoleFilter) Id(id uuid.UUID) *RoleFilter {
 	filter := f.Clone()
 	filter.id = &id
 	return filter
 }
 
-func (f RoleFilter) HasId() bool {
+func (f *RoleFilter) HasId() bool {
 	return f.id != nil
 }
 
-func (f RoleFilter) GetId() uuid.UUID {
+func (f *RoleFilter) GetId() uuid.UUID {
 	return utils.ZeroIfNil(f.id)
 }
 
-func (f RoleFilter) ProjectId(projectId uuid.UUID) RoleFilter {
+func (f *RoleFilter) ProjectId(projectId uuid.UUID) *RoleFilter {
 	filter := f.Clone()
 	filter.projectId = &projectId
 	return filter
 }
 
-func (f RoleFilter) HasProjectId() bool {
+func (f *RoleFilter) HasProjectId() bool {
 	return f.projectId != nil
 }
 
-func (f RoleFilter) GetProjectId() uuid.UUID {
+func (f *RoleFilter) GetProjectId() uuid.UUID {
 	return utils.ZeroIfNil(f.projectId)
 }
 
-func (f RoleFilter) Search(searchFilter SearchFilter) RoleFilter {
+func (f *RoleFilter) Search(searchFilter SearchFilter) *RoleFilter {
 	filter := f.Clone()
 	filter.searchFilter = &searchFilter
 	return filter
 }
 
-func (f RoleFilter) HasSearch() bool {
+func (f *RoleFilter) HasSearch() bool {
 	return f.searchFilter != nil
 }
 
-func (f RoleFilter) GetSearch() SearchFilter {
+func (f *RoleFilter) GetSearch() SearchFilter {
 	return *f.searchFilter
 }
 
-func (f RoleFilter) Pagination(page int, size int) RoleFilter {
+func (f *RoleFilter) Pagination(page int, size int) *RoleFilter {
 	filter := f.Clone()
 	filter.PagingInfo = PagingInfo{
 		page: page,
@@ -165,15 +166,15 @@ func (f RoleFilter) Pagination(page int, size int) RoleFilter {
 	return filter
 }
 
-func (f RoleFilter) HasPagination() bool {
+func (f *RoleFilter) HasPagination() bool {
 	return !f.PagingInfo.IsZero()
 }
 
-func (f RoleFilter) GetPagingInfo() PagingInfo {
+func (f *RoleFilter) GetPagingInfo() PagingInfo {
 	return f.PagingInfo
 }
 
-func (f RoleFilter) Order(by string, direction string) RoleFilter {
+func (f *RoleFilter) Order(by string, direction string) *RoleFilter {
 	filter := f.Clone()
 	filter.OrderInfo = OrderInfo{
 		orderBy:  by,
@@ -182,33 +183,33 @@ func (f RoleFilter) Order(by string, direction string) RoleFilter {
 	return filter
 }
 
-func (f RoleFilter) HasOrder() bool {
+func (f *RoleFilter) HasOrder() bool {
 	return !f.OrderInfo.IsZero()
 }
 
-func (f RoleFilter) GetOrderInfo() OrderInfo {
+func (f *RoleFilter) GetOrderInfo() OrderInfo {
 	return f.OrderInfo
 }
 
-func (f RoleFilter) VirtualServerId(virtualServerId uuid.UUID) RoleFilter {
+func (f *RoleFilter) VirtualServerId(virtualServerId uuid.UUID) *RoleFilter {
 	filter := f.Clone()
 	filter.virtualServerId = &virtualServerId
 	return filter
 }
 
-func (f RoleFilter) HasVirtualServerId() bool {
+func (f *RoleFilter) HasVirtualServerId() bool {
 	return f.virtualServerId != nil
 }
 
-func (f RoleFilter) GetVirtualServerId() uuid.UUID {
+func (f *RoleFilter) GetVirtualServerId() uuid.UUID {
 	return utils.ZeroIfNil(f.virtualServerId)
 }
 
 //go:generate mockgen -destination=./mocks/role_repository.go -package=mocks Keyline/internal/repositories RoleRepository
 type RoleRepository interface {
-	List(ctx context.Context, filter RoleFilter) ([]*Role, int, error)
-	Single(ctx context.Context, filter RoleFilter) (*Role, error)
-	First(ctx context.Context, filter RoleFilter) (*Role, error)
+	List(ctx context.Context, filter *RoleFilter) ([]*Role, int, error)
+	Single(ctx context.Context, filter *RoleFilter) (*Role, error)
+	First(ctx context.Context, filter *RoleFilter) (*Role, error)
 	Insert(role *Role)
 	Update(role *Role)
 	Delete(id uuid.UUID)

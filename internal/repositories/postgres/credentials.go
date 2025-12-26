@@ -64,7 +64,7 @@ func NewCredentialRepository(db *sql.DB, changeTracker change.Tracker, entityTyp
 	}
 }
 
-func (r *CredentialRepository) selectQuery(filter repositories.CredentialFilter) *sqlbuilder.SelectBuilder {
+func (r *CredentialRepository) selectQuery(filter *repositories.CredentialFilter) *sqlbuilder.SelectBuilder {
 	s := sqlbuilder.Select(
 		"id",
 		"audit_created_at",
@@ -102,7 +102,7 @@ func (r *CredentialRepository) selectQuery(filter repositories.CredentialFilter)
 	return s
 }
 
-func (r *CredentialRepository) Single(ctx context.Context, filter repositories.CredentialFilter) (*repositories.Credential, error) {
+func (r *CredentialRepository) Single(ctx context.Context, filter *repositories.CredentialFilter) (*repositories.Credential, error) {
 	credential, err := r.First(ctx, filter)
 	if err != nil {
 		return nil, err
@@ -113,7 +113,7 @@ func (r *CredentialRepository) Single(ctx context.Context, filter repositories.C
 	return credential, nil
 }
 
-func (r *CredentialRepository) First(ctx context.Context, filter repositories.CredentialFilter) (*repositories.Credential, error) {
+func (r *CredentialRepository) First(ctx context.Context, filter *repositories.CredentialFilter) (*repositories.Credential, error) {
 	s := r.selectQuery(filter)
 	s.Limit(1)
 
@@ -134,12 +134,12 @@ func (r *CredentialRepository) First(ctx context.Context, filter repositories.Cr
 	return credential.Map(), nil
 }
 
-func (r *CredentialRepository) List(ctx context.Context, filter repositories.CredentialFilter) ([]*repositories.Credential, error) {
+func (r *CredentialRepository) List(ctx context.Context, filter *repositories.CredentialFilter) ([]*repositories.Credential, error) {
 	s := r.selectQuery(filter)
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
-	rows, err := r.db.Query(query, args...)
+	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("querying db: %w", err)
 	}

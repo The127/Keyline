@@ -79,7 +79,7 @@ func NewAuditLogRepository(db *sql.DB, changeTracker change.Tracker, entityType 
 	}
 }
 
-func (r *AuditLogRepository) selectQuery(filter repositories.AuditLogFilter) *sqlbuilder.SelectBuilder {
+func (r *AuditLogRepository) selectQuery(filter *repositories.AuditLogFilter) *sqlbuilder.SelectBuilder {
 	s := sqlbuilder.Select(
 		"id",
 		"audit_created_at",
@@ -114,13 +114,13 @@ func (r *AuditLogRepository) selectQuery(filter repositories.AuditLogFilter) *sq
 	return s
 }
 
-func (r *AuditLogRepository) List(ctx context.Context, filter repositories.AuditLogFilter) ([]*repositories.AuditLog, int, error) {
+func (r *AuditLogRepository) List(ctx context.Context, filter *repositories.AuditLogFilter) ([]*repositories.AuditLog, int, error) {
 	s := r.selectQuery(filter)
 	s.SelectMore("count(*) over()")
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
-	rows, err := r.db.Query(query, args...)
+	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("querying db: %w", err)
 	}

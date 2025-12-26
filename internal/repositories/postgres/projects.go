@@ -73,7 +73,7 @@ func NewProjectRepository(db *sql.DB, changeTracker change.Tracker, entityType i
 	}
 }
 
-func (r *ProjectRepository) selectQuery(filter repositories.ProjectFilter) *sqlbuilder.SelectBuilder {
+func (r *ProjectRepository) selectQuery(filter *repositories.ProjectFilter) *sqlbuilder.SelectBuilder {
 	s := sqlbuilder.Select(
 		"id",
 		"audit_created_at",
@@ -118,13 +118,13 @@ func (r *ProjectRepository) selectQuery(filter repositories.ProjectFilter) *sqlb
 	return s
 }
 
-func (r *ProjectRepository) List(ctx context.Context, filter repositories.ProjectFilter) ([]*repositories.Project, int, error) {
+func (r *ProjectRepository) List(ctx context.Context, filter *repositories.ProjectFilter) ([]*repositories.Project, int, error) {
 	s := r.selectQuery(filter)
 	s.SelectMore("count(*) over()")
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
-	rows, err := r.db.Query(query, args...)
+	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("querying db: %w", err)
 	}
@@ -145,7 +145,7 @@ func (r *ProjectRepository) List(ctx context.Context, filter repositories.Projec
 	return projects, totalCount, nil
 }
 
-func (r *ProjectRepository) First(ctx context.Context, filter repositories.ProjectFilter) (*repositories.Project, error) {
+func (r *ProjectRepository) First(ctx context.Context, filter *repositories.ProjectFilter) (*repositories.Project, error) {
 	s := r.selectQuery(filter)
 	s.Limit(1)
 
@@ -166,7 +166,7 @@ func (r *ProjectRepository) First(ctx context.Context, filter repositories.Proje
 	return project.Map(), nil
 }
 
-func (r *ProjectRepository) Single(ctx context.Context, filter repositories.ProjectFilter) (*repositories.Project, error) {
+func (r *ProjectRepository) Single(ctx context.Context, filter *repositories.ProjectFilter) (*repositories.Project, error) {
 	project, err := r.First(ctx, filter)
 	if err != nil {
 		return nil, err

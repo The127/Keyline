@@ -66,7 +66,7 @@ func NewGroupRepository(db *sql.DB, changeTracker change.Tracker, entityType int
 	}
 }
 
-func (r *GroupRepository) selectQuery(filter repositories.GroupFilter) *sqlbuilder.SelectBuilder {
+func (r *GroupRepository) selectQuery(filter *repositories.GroupFilter) *sqlbuilder.SelectBuilder {
 	s := sqlbuilder.Select(
 		"id",
 		"audit_created_at",
@@ -107,7 +107,7 @@ func (r *GroupRepository) selectQuery(filter repositories.GroupFilter) *sqlbuild
 	return s
 }
 
-func (r *GroupRepository) Single(ctx context.Context, filter repositories.GroupFilter) (*repositories.Group, error) {
+func (r *GroupRepository) Single(ctx context.Context, filter *repositories.GroupFilter) (*repositories.Group, error) {
 	result, err := r.First(ctx, filter)
 	if err != nil {
 		return nil, err
@@ -118,7 +118,7 @@ func (r *GroupRepository) Single(ctx context.Context, filter repositories.GroupF
 	return result, nil
 }
 
-func (r *GroupRepository) First(ctx context.Context, filter repositories.GroupFilter) (*repositories.Group, error) {
+func (r *GroupRepository) First(ctx context.Context, filter *repositories.GroupFilter) (*repositories.Group, error) {
 	s := r.selectQuery(filter)
 	s.Limit(1)
 
@@ -139,13 +139,13 @@ func (r *GroupRepository) First(ctx context.Context, filter repositories.GroupFi
 	return group.Map(), nil
 }
 
-func (r *GroupRepository) List(ctx context.Context, filter repositories.GroupFilter) ([]*repositories.Group, int, error) {
+func (r *GroupRepository) List(ctx context.Context, filter *repositories.GroupFilter) ([]*repositories.Group, int, error) {
 	s := r.selectQuery(filter)
 	s.SelectMore("count(*) over()")
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
-	rows, err := r.db.Query(query, args...)
+	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("querying db: %w", err)
 	}

@@ -77,7 +77,7 @@ func NewResourceServerScopeRepository(db *sql.DB, changeTracker change.Tracker, 
 	}
 }
 
-func (r *ResourceServerScopeRepository) selectQuery(filter repositories.ResourceServerScopeFilter) *sqlbuilder.SelectBuilder {
+func (r *ResourceServerScopeRepository) selectQuery(filter *repositories.ResourceServerScopeFilter) *sqlbuilder.SelectBuilder {
 	s := sqlbuilder.Select(
 		"id",
 		"audit_created_at",
@@ -125,7 +125,7 @@ func (r *ResourceServerScopeRepository) selectQuery(filter repositories.Resource
 	return s
 }
 
-func (r *ResourceServerScopeRepository) List(ctx context.Context, filter repositories.ResourceServerScopeFilter) ([]*repositories.ResourceServerScope, int, error) {
+func (r *ResourceServerScopeRepository) List(ctx context.Context, filter *repositories.ResourceServerScopeFilter) ([]*repositories.ResourceServerScope, int, error) {
 	s := r.selectQuery(filter)
 	s.SelectMore("count(*) over()")
 
@@ -151,7 +151,7 @@ func (r *ResourceServerScopeRepository) List(ctx context.Context, filter reposit
 	return resourceServerScopes, totalCount, nil
 }
 
-func (r *ResourceServerScopeRepository) First(ctx context.Context, filter repositories.ResourceServerScopeFilter) (*repositories.ResourceServerScope, error) {
+func (r *ResourceServerScopeRepository) First(ctx context.Context, filter *repositories.ResourceServerScopeFilter) (*repositories.ResourceServerScope, error) {
 	s := r.selectQuery(filter)
 	s.Limit(1)
 
@@ -172,7 +172,7 @@ func (r *ResourceServerScopeRepository) First(ctx context.Context, filter reposi
 	return resourceServerScope.Map(), nil
 }
 
-func (r *ResourceServerScopeRepository) Single(ctx context.Context, filter repositories.ResourceServerScopeFilter) (*repositories.ResourceServerScope, error) {
+func (r *ResourceServerScopeRepository) Single(ctx context.Context, filter *repositories.ResourceServerScopeFilter) (*repositories.ResourceServerScope, error) {
 	resourceServerScope, err := r.First(ctx, filter)
 	if err != nil {
 		return nil, err

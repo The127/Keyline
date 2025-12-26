@@ -222,15 +222,16 @@ type ApplicationFilter struct {
 	searchFilter    *SearchFilter
 }
 
-func NewApplicationFilter() ApplicationFilter {
-	return ApplicationFilter{}
+func NewApplicationFilter() *ApplicationFilter {
+	return &ApplicationFilter{}
 }
 
-func (f ApplicationFilter) Clone() ApplicationFilter {
-	return f
+func (f *ApplicationFilter) Clone() *ApplicationFilter {
+	clone := *f
+	return &clone
 }
 
-func (f ApplicationFilter) Pagination(page int, size int) ApplicationFilter {
+func (f *ApplicationFilter) Pagination(page int, size int) *ApplicationFilter {
 	filter := f.Clone()
 	filter.PagingInfo = PagingInfo{
 		page: page,
@@ -239,15 +240,15 @@ func (f ApplicationFilter) Pagination(page int, size int) ApplicationFilter {
 	return filter
 }
 
-func (f ApplicationFilter) HasPagination() bool {
+func (f *ApplicationFilter) HasPagination() bool {
 	return !f.PagingInfo.IsZero()
 }
 
-func (f ApplicationFilter) GetPagingInfo() PagingInfo {
+func (f *ApplicationFilter) GetPagingInfo() PagingInfo {
 	return f.PagingInfo
 }
 
-func (f ApplicationFilter) Order(by string, direction string) ApplicationFilter {
+func (f *ApplicationFilter) Order(by string, direction string) *ApplicationFilter {
 	filter := f.Clone()
 	filter.OrderInfo = OrderInfo{
 		orderBy:  by,
@@ -256,95 +257,95 @@ func (f ApplicationFilter) Order(by string, direction string) ApplicationFilter 
 	return filter
 }
 
-func (f ApplicationFilter) HasOrder() bool {
+func (f *ApplicationFilter) HasOrder() bool {
 	return !f.OrderInfo.IsZero()
 }
 
-func (f ApplicationFilter) GetOrderInfo() OrderInfo {
+func (f *ApplicationFilter) GetOrderInfo() OrderInfo {
 	return f.OrderInfo
 }
 
-func (f ApplicationFilter) Search(searchFilter SearchFilter) ApplicationFilter {
+func (f *ApplicationFilter) Search(searchFilter SearchFilter) *ApplicationFilter {
 	filter := f.Clone()
 	filter.searchFilter = &searchFilter
 	return filter
 }
 
-func (f ApplicationFilter) HasSearch() bool {
+func (f *ApplicationFilter) HasSearch() bool {
 	return f.searchFilter != nil
 }
 
-func (f ApplicationFilter) GetSearch() SearchFilter {
+func (f *ApplicationFilter) GetSearch() SearchFilter {
 	return *f.searchFilter
 }
 
-func (f ApplicationFilter) Name(name string) ApplicationFilter {
+func (f *ApplicationFilter) Name(name string) *ApplicationFilter {
 	filter := f.Clone()
 	filter.name = &name
 	return filter
 }
 
-func (f ApplicationFilter) HasName() bool {
+func (f *ApplicationFilter) HasName() bool {
 	return f.name != nil
 }
 
-func (f ApplicationFilter) GetName() string {
+func (f *ApplicationFilter) GetName() string {
 	return utils.ZeroIfNil(f.name)
 }
 
-func (f ApplicationFilter) Id(id uuid.UUID) ApplicationFilter {
+func (f *ApplicationFilter) Id(id uuid.UUID) *ApplicationFilter {
 	filter := f.Clone()
 	filter.id = &id
 	return filter
 }
 
-func (f ApplicationFilter) HasId() bool {
+func (f *ApplicationFilter) HasId() bool {
 	return f.id != nil
 }
 
-func (f ApplicationFilter) GetId() uuid.UUID {
+func (f *ApplicationFilter) GetId() uuid.UUID {
 	return utils.ZeroIfNil(f.id)
 }
 
-func (f ApplicationFilter) ProjectId(projectId uuid.UUID) ApplicationFilter {
+func (f *ApplicationFilter) ProjectId(projectId uuid.UUID) *ApplicationFilter {
 	filter := f.Clone()
 	filter.projectId = &projectId
 	return filter
 }
 
-func (f ApplicationFilter) HasProjectId() bool {
+func (f *ApplicationFilter) HasProjectId() bool {
 	return f.projectId != nil
 }
 
-func (f ApplicationFilter) GetProjectId() uuid.UUID {
+func (f *ApplicationFilter) GetProjectId() uuid.UUID {
 	return utils.ZeroIfNil(f.projectId)
 }
 
-func (f ApplicationFilter) VirtualServerId(virtualServerId uuid.UUID) ApplicationFilter {
+func (f *ApplicationFilter) VirtualServerId(virtualServerId uuid.UUID) *ApplicationFilter {
 	filter := f.Clone()
 	filter.virtualServerId = &virtualServerId
 	return filter
 }
 
-func (f ApplicationFilter) HasVirtualServerId() bool {
+func (f *ApplicationFilter) HasVirtualServerId() bool {
 	return f.virtualServerId != nil
 }
 
-func (f ApplicationFilter) GetVirtualServerId() uuid.UUID {
+func (f *ApplicationFilter) GetVirtualServerId() uuid.UUID {
 	return utils.ZeroIfNil(f.virtualServerId)
 }
 
-func (f ApplicationFilter) Ids(ids []uuid.UUID) ApplicationFilter {
+func (f *ApplicationFilter) Ids(ids []uuid.UUID) *ApplicationFilter {
 	fiter := f.Clone()
 	fiter.ids = &ids
 	return fiter
 }
 
-func (f ApplicationFilter) HasIds() bool {
+func (f *ApplicationFilter) HasIds() bool {
 	return f.ids != nil
 }
 
-func (f ApplicationFilter) GetIds() []uuid.UUID {
+func (f *ApplicationFilter) GetIds() []uuid.UUID {
 	if f.ids == nil {
 		return []uuid.UUID{}
 	}
@@ -353,9 +354,9 @@ func (f ApplicationFilter) GetIds() []uuid.UUID {
 
 //go:generate mockgen -destination=./mocks/application_repository.go -package=mocks Keyline/internal/repositories ApplicationRepository
 type ApplicationRepository interface {
-	Single(ctx context.Context, filter ApplicationFilter) (*Application, error)
-	First(ctx context.Context, filter ApplicationFilter) (*Application, error)
-	List(ctx context.Context, filter ApplicationFilter) ([]*Application, int, error)
+	Single(ctx context.Context, filter *ApplicationFilter) (*Application, error)
+	First(ctx context.Context, filter *ApplicationFilter) (*Application, error)
+	List(ctx context.Context, filter *ApplicationFilter) ([]*Application, int, error)
 	Insert(application *Application)
 	Update(application *Application)
 	Delete(id uuid.UUID)

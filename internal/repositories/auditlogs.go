@@ -142,43 +142,44 @@ type AuditLogFilter struct {
 	userId          *uuid.UUID
 }
 
-func NewAuditLogFilter() AuditLogFilter {
-	return AuditLogFilter{}
+func NewAuditLogFilter() *AuditLogFilter {
+	return &AuditLogFilter{}
 }
 
-func (f AuditLogFilter) Clone() AuditLogFilter {
-	return f
+func (f *AuditLogFilter) Clone() *AuditLogFilter {
+	clone := *f
+	return &clone
 }
 
-func (f AuditLogFilter) VirtualServerId(virtualServerId uuid.UUID) AuditLogFilter {
+func (f *AuditLogFilter) VirtualServerId(virtualServerId uuid.UUID) *AuditLogFilter {
 	filter := f.Clone()
 	filter.virtualServerId = &virtualServerId
 	return filter
 }
 
-func (f AuditLogFilter) HasVirtualServerId() bool {
+func (f *AuditLogFilter) HasVirtualServerId() bool {
 	return f.virtualServerId != nil
 }
 
-func (f AuditLogFilter) GetVirtualServerId() uuid.UUID {
+func (f *AuditLogFilter) GetVirtualServerId() uuid.UUID {
 	return utils.ZeroIfNil(f.virtualServerId)
 }
 
-func (f AuditLogFilter) UserId(userId uuid.UUID) AuditLogFilter {
+func (f *AuditLogFilter) UserId(userId uuid.UUID) *AuditLogFilter {
 	filter := f.Clone()
 	filter.userId = &userId
 	return filter
 }
 
-func (f AuditLogFilter) HasUserId() bool {
+func (f *AuditLogFilter) HasUserId() bool {
 	return f.userId != nil
 }
 
-func (f AuditLogFilter) GetUserId() uuid.UUID {
+func (f *AuditLogFilter) GetUserId() uuid.UUID {
 	return utils.ZeroIfNil(f.userId)
 }
 
-func (f AuditLogFilter) Pagination(page int, pageSize int) AuditLogFilter {
+func (f *AuditLogFilter) Pagination(page int, pageSize int) *AuditLogFilter {
 	filter := f.Clone()
 	filter.PagingInfo = PagingInfo{
 		page: page,
@@ -187,15 +188,15 @@ func (f AuditLogFilter) Pagination(page int, pageSize int) AuditLogFilter {
 	return filter
 }
 
-func (f AuditLogFilter) HasPagination() bool {
+func (f *AuditLogFilter) HasPagination() bool {
 	return !f.PagingInfo.IsZero()
 }
 
-func (f AuditLogFilter) GetPagingInfo() PagingInfo {
+func (f *AuditLogFilter) GetPagingInfo() PagingInfo {
 	return f.PagingInfo
 }
 
-func (f AuditLogFilter) Order(by string, direction string) AuditLogFilter {
+func (f *AuditLogFilter) Order(by string, direction string) *AuditLogFilter {
 	filter := f.Clone()
 	filter.OrderInfo = OrderInfo{
 		orderBy:  by,
@@ -204,16 +205,16 @@ func (f AuditLogFilter) Order(by string, direction string) AuditLogFilter {
 	return filter
 }
 
-func (f AuditLogFilter) HasOrder() bool {
+func (f *AuditLogFilter) HasOrder() bool {
 	return !f.OrderInfo.IsZero()
 }
 
-func (f AuditLogFilter) GetOrderInfo() OrderInfo {
+func (f *AuditLogFilter) GetOrderInfo() OrderInfo {
 	return f.OrderInfo
 }
 
 //go:generate mockgen -destination=./mocks/auditlog_repository.go -package=mocks Keyline/internal/repositories AuditLogRepository
 type AuditLogRepository interface {
-	List(ctx context.Context, filter AuditLogFilter) ([]*AuditLog, int, error)
+	List(ctx context.Context, filter *AuditLogFilter) ([]*AuditLog, int, error)
 	Insert(auditLog *AuditLog)
 }

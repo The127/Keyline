@@ -84,15 +84,16 @@ type GroupFilter struct {
 	searchFilter    *SearchFilter
 }
 
-func NewGroupFilter() GroupFilter {
-	return GroupFilter{}
+func NewGroupFilter() *GroupFilter {
+	return &GroupFilter{}
 }
 
-func (f GroupFilter) Clone() GroupFilter {
-	return f
+func (f *GroupFilter) Clone() *GroupFilter {
+	clone := *f
+	return &clone
 }
 
-func (f GroupFilter) Pagination(page int, size int) GroupFilter {
+func (f *GroupFilter) Pagination(page int, size int) *GroupFilter {
 	filter := f.Clone()
 	filter.PagingInfo = PagingInfo{
 		page: page,
@@ -101,15 +102,15 @@ func (f GroupFilter) Pagination(page int, size int) GroupFilter {
 	return filter
 }
 
-func (f GroupFilter) HasPagination() bool {
+func (f *GroupFilter) HasPagination() bool {
 	return !f.PagingInfo.IsZero()
 }
 
-func (f GroupFilter) GetPagingInfo() PagingInfo {
+func (f *GroupFilter) GetPagingInfo() PagingInfo {
 	return f.PagingInfo
 }
 
-func (f GroupFilter) Order(by string, direction string) GroupFilter {
+func (f *GroupFilter) Order(by string, direction string) *GroupFilter {
 	filter := f.Clone()
 	filter.OrderInfo = OrderInfo{
 		orderBy:  by,
@@ -118,75 +119,75 @@ func (f GroupFilter) Order(by string, direction string) GroupFilter {
 	return filter
 }
 
-func (f GroupFilter) HasOrder() bool {
+func (f *GroupFilter) HasOrder() bool {
 	return !f.OrderInfo.IsZero()
 }
 
-func (f GroupFilter) GetOrderInfo() OrderInfo {
+func (f *GroupFilter) GetOrderInfo() OrderInfo {
 	return f.OrderInfo
 }
 
-func (f GroupFilter) Search(searchFilter SearchFilter) GroupFilter {
+func (f *GroupFilter) Search(searchFilter SearchFilter) *GroupFilter {
 	filter := f.Clone()
 	filter.searchFilter = &searchFilter
 	return filter
 }
 
-func (f GroupFilter) HasSearch() bool {
+func (f *GroupFilter) HasSearch() bool {
 	return f.searchFilter != nil
 }
 
-func (f GroupFilter) GetSearch() SearchFilter {
+func (f *GroupFilter) GetSearch() SearchFilter {
 	return *f.searchFilter
 }
 
-func (f GroupFilter) Name(name string) GroupFilter {
+func (f *GroupFilter) Name(name string) *GroupFilter {
 	filter := f.Clone()
 	filter.name = &name
 	return filter
 }
 
-func (f GroupFilter) HasName() bool {
+func (f *GroupFilter) HasName() bool {
 	return f.name != nil
 }
 
-func (f GroupFilter) GetName() string {
+func (f *GroupFilter) GetName() string {
 	return utils.ZeroIfNil(f.name)
 }
 
-func (f GroupFilter) VirtualServerId(virtualServerId uuid.UUID) GroupFilter {
+func (f *GroupFilter) VirtualServerId(virtualServerId uuid.UUID) *GroupFilter {
 	filter := f.Clone()
 	filter.virtualServerId = &virtualServerId
 	return filter
 }
 
-func (f GroupFilter) HasVirtualServerId() bool {
+func (f *GroupFilter) HasVirtualServerId() bool {
 	return f.virtualServerId != nil
 }
 
-func (f GroupFilter) GetVirtualServerId() uuid.UUID {
+func (f *GroupFilter) GetVirtualServerId() uuid.UUID {
 	return utils.ZeroIfNil(f.virtualServerId)
 }
 
-func (f GroupFilter) Id(id uuid.UUID) GroupFilter {
+func (f *GroupFilter) Id(id uuid.UUID) *GroupFilter {
 	filter := f.Clone()
 	filter.id = &id
 	return filter
 }
 
-func (f GroupFilter) HasId() bool {
+func (f *GroupFilter) HasId() bool {
 	return f.id != nil
 }
 
-func (f GroupFilter) GetId() uuid.UUID {
+func (f *GroupFilter) GetId() uuid.UUID {
 	return utils.ZeroIfNil(f.id)
 }
 
 //go:generate mockgen -destination=./mocks/group_repository.go -package=mocks Keyline/internal/repositories GroupRepository
 type GroupRepository interface {
-	Single(ctx context.Context, filter GroupFilter) (*Group, error)
-	First(ctx context.Context, filter GroupFilter) (*Group, error)
-	List(ctx context.Context, filter GroupFilter) ([]*Group, int, error)
+	Single(ctx context.Context, filter *GroupFilter) (*Group, error)
+	First(ctx context.Context, filter *GroupFilter) (*Group, error)
+	List(ctx context.Context, filter *GroupFilter) ([]*Group, int, error)
 	Insert(group *Group)
 	Update(group *Group)
 	Delete(id uuid.UUID)

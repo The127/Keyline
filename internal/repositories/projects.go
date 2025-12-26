@@ -104,71 +104,72 @@ type ProjectFilter struct {
 	searchFilter    *SearchFilter
 }
 
-func NewProjectFilter() ProjectFilter {
-	return ProjectFilter{}
+func NewProjectFilter() *ProjectFilter {
+	return &ProjectFilter{}
 }
 
-func (f ProjectFilter) Clone() ProjectFilter {
-	return f
+func (f *ProjectFilter) Clone() *ProjectFilter {
+	clone := *f
+	return &clone
 }
 
-func (f ProjectFilter) VirtualServerId(virtualServerId uuid.UUID) ProjectFilter {
+func (f *ProjectFilter) VirtualServerId(virtualServerId uuid.UUID) *ProjectFilter {
 	filter := f.Clone()
 	filter.virtualServerId = &virtualServerId
 	return filter
 }
 
-func (f ProjectFilter) HasVirtualServerId() bool {
+func (f *ProjectFilter) HasVirtualServerId() bool {
 	return f.virtualServerId != nil
 }
 
-func (f ProjectFilter) GetVirtualServerId() uuid.UUID {
+func (f *ProjectFilter) GetVirtualServerId() uuid.UUID {
 	return utils.ZeroIfNil(f.virtualServerId)
 }
 
-func (f ProjectFilter) Slug(slug string) ProjectFilter {
+func (f *ProjectFilter) Slug(slug string) *ProjectFilter {
 	filter := f.Clone()
 	filter.slug = &slug
 	return filter
 }
 
-func (f ProjectFilter) HasSlug() bool {
+func (f *ProjectFilter) HasSlug() bool {
 	return f.slug != nil
 }
 
-func (f ProjectFilter) GetSlug() string {
+func (f *ProjectFilter) GetSlug() string {
 	return utils.ZeroIfNil(f.slug)
 }
 
-func (f ProjectFilter) Id(id uuid.UUID) ProjectFilter {
+func (f *ProjectFilter) Id(id uuid.UUID) *ProjectFilter {
 	filter := f.Clone()
 	filter.id = &id
 	return filter
 }
 
-func (f ProjectFilter) HasId() bool {
+func (f *ProjectFilter) HasId() bool {
 	return f.id != nil
 }
 
-func (f ProjectFilter) GetId() uuid.UUID {
+func (f *ProjectFilter) GetId() uuid.UUID {
 	return utils.ZeroIfNil(f.id)
 }
 
-func (f ProjectFilter) Search(searchFilter SearchFilter) ProjectFilter {
+func (f *ProjectFilter) Search(searchFilter SearchFilter) *ProjectFilter {
 	filter := f.Clone()
 	filter.searchFilter = &searchFilter
 	return filter
 }
 
-func (f ProjectFilter) HasSearch() bool {
+func (f *ProjectFilter) HasSearch() bool {
 	return f.searchFilter != nil
 }
 
-func (f ProjectFilter) GetSearch() SearchFilter {
+func (f *ProjectFilter) GetSearch() SearchFilter {
 	return *f.searchFilter
 }
 
-func (f ProjectFilter) Pagination(page int, size int) ProjectFilter {
+func (f *ProjectFilter) Pagination(page int, size int) *ProjectFilter {
 	filter := f.Clone()
 	filter.PagingInfo = PagingInfo{
 		page: page,
@@ -177,15 +178,15 @@ func (f ProjectFilter) Pagination(page int, size int) ProjectFilter {
 	return filter
 }
 
-func (f ProjectFilter) HasPagination() bool {
+func (f *ProjectFilter) HasPagination() bool {
 	return !f.PagingInfo.IsZero()
 }
 
-func (f ProjectFilter) GetPagingInfo() PagingInfo {
+func (f *ProjectFilter) GetPagingInfo() PagingInfo {
 	return f.PagingInfo
 }
 
-func (f ProjectFilter) Order(by string, direction string) ProjectFilter {
+func (f *ProjectFilter) Order(by string, direction string) *ProjectFilter {
 	filter := f.Clone()
 	filter.OrderInfo = OrderInfo{
 		orderBy:  by,
@@ -194,19 +195,19 @@ func (f ProjectFilter) Order(by string, direction string) ProjectFilter {
 	return filter
 }
 
-func (f ProjectFilter) HasOrder() bool {
+func (f *ProjectFilter) HasOrder() bool {
 	return !f.OrderInfo.IsZero()
 }
 
-func (f ProjectFilter) GetOrderInfo() OrderInfo {
+func (f *ProjectFilter) GetOrderInfo() OrderInfo {
 	return f.OrderInfo
 }
 
 //go:generate mockgen -destination=./mocks/project_repository.go -package=mocks Keyline/internal/repositories ProjectRepository
 type ProjectRepository interface {
-	List(ctx context.Context, filter ProjectFilter) ([]*Project, int, error)
-	Single(ctx context.Context, filter ProjectFilter) (*Project, error)
-	First(ctx context.Context, filter ProjectFilter) (*Project, error)
+	List(ctx context.Context, filter *ProjectFilter) ([]*Project, int, error)
+	Single(ctx context.Context, filter *ProjectFilter) (*Project, error)
+	First(ctx context.Context, filter *ProjectFilter) (*Project, error)
 	Insert(project *Project)
 	Update(project *Project)
 	Delete(id uuid.UUID)
