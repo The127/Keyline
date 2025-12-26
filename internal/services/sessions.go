@@ -1,6 +1,7 @@
 package services
 
 import (
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/internal/services/keyValue"
@@ -10,9 +11,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/The127/go-clock"
 	"github.com/The127/ioc"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -45,10 +47,7 @@ func (s *sessionService) NewSession(ctx context.Context, virtualServerName strin
 	sessionRepository := ioc.GetDependency[repositories.SessionRepository](scope)
 	session := repositories.NewSession(virtualServer.Id(), userId, now.Add(time.Hour*24*30))
 	token := session.GenerateToken()
-	err = sessionRepository.Insert(ctx, session)
-	if err != nil {
-		return nil, fmt.Errorf("inserting session: %w", err)
-	}
+	sessionRepository.Insert(session)
 
 	sessionToken := utils.NewSplitToken(session.Id().String(), token)
 	return &sessionToken, nil
@@ -106,17 +105,16 @@ func (s *sessionService) GetSession(ctx context.Context, virtualServerName strin
 
 func (s *sessionService) DeleteSession(ctx context.Context, virtualServerName string, id uuid.UUID) error {
 	scope := middlewares.GetScope(ctx)
+	dbContext := ioc.GetDependency[database.Context](scope)
 
-	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
 	vsFilter := repositories.NewVirtualServerFilter().Name(virtualServerName)
-	virtualServer, err := virtualServerRepository.Single(ctx, vsFilter)
+	virtualServer, err := dbContext.VirtualServers().Single(ctx, vsFilter)
 	if err != nil {
 		return fmt.Errorf("getting virtual server: %w", err)
 	}
 
-	sessionRepository := ioc.GetDependency[repositories.SessionRepository](scope)
 	sessionFilter := repositories.NewSessionFilter().Id(id)
-	dbSession, err := sessionRepository.First(ctx, sessionFilter)
+	dbSession, err := dbContext.Sessions().First(ctx, sessionFilter)
 	if err != nil {
 		return fmt.Errorf("getting session from db: %w", err)
 	}
@@ -136,30 +134,26 @@ func (s *sessionService) DeleteSession(ctx context.Context, virtualServerName st
 		return fmt.Errorf("deleting session token from kv: %w", err)
 	}
 
-	err = sessionRepository.Delete(ctx, id)
-	if err != nil {
-		return fmt.Errorf("deleting session: %w", err)
-	}
+	dbContext.Sessions().Delete(id)
 
 	return nil
 }
 
 func (s *sessionService) loadSessionFromDatabase(ctx context.Context, virtualServerName string, id uuid.UUID) (*middlewares.Session, error) {
 	scope := middlewares.GetScope(ctx)
+	dbContext := ioc.GetDependency[database.Context](scope)
 
-	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
 	vsFilter := repositories.NewVirtualServerFilter().
 		Name(virtualServerName)
-	virtualServer, err := virtualServerRepository.Single(ctx, vsFilter)
+	virtualServer, err := dbContext.VirtualServers().Single(ctx, vsFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
-	sessionRepository := ioc.GetDependency[repositories.SessionRepository](scope)
 	sessionFilter := repositories.NewSessionFilter().
 		VirtualServerId(virtualServer.Id()).
 		Id(id)
-	dbSession, err := sessionRepository.First(ctx, sessionFilter)
+	dbSession, err := dbContext.Sessions().First(ctx, sessionFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting session from db: %w", err)
 	}

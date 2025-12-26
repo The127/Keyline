@@ -1,7 +1,28 @@
 package database
 
-import "context"
+import (
+	"Keyline/internal/repositories"
+	"context"
+)
 
 type Context interface {
+	Applications() repositories.ApplicationRepository
+	ApplicationUserMetadata() repositories.ApplicationUserMetadata
+	AuditLogs() repositories.AuditLogRepository
+	Credentials() repositories.CredentialRepository
+	Files() repositories.FileRepository
+	GroupRoles() repositories.GroupRoleRepository
+	Groups() repositories.GroupRepository
+	OutboxMessages() repositories.OutboxMessageRepository
+	PasswordRules() repositories.PasswordRuleRepository
+	ResourceServers() repositories.ResourceServerRepository
+	ResourceServerScopes() repositories.ResourceServerScopeRepository
+	Roles() repositories.RoleRepository
+	Sessions() repositories.SessionRepository
+	Templates() repositories.TemplateRepository
+	UserRoleAssignments() repositories.UserRoleAssignmentRepository
+	Users() repositories.UserRepository
+	VirtualServers() repositories.VirtualServerRepository
+
 	SaveChanges(ctx context.Context) error
 }
