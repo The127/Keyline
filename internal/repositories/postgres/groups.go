@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"Keyline/internal/change"
 	"Keyline/internal/database"
 	"Keyline/internal/logging"
 	"Keyline/internal/middlewares"
@@ -16,14 +17,21 @@ import (
 	"github.com/huandu/go-sqlbuilder"
 )
 
-type groupRepository struct {
+type GroupRepository struct {
+	db            *sql.DB
+	changeTracker *change.Tracker
+	entityType    int
 }
 
-func NewGroupRepository() repositories.GroupRepository {
-	return &groupRepository{}
+func NewGroupRepository(db *sql.DB, changeTracker change.Tracker, entityType int) repositories.GroupRepository {
+	return &GroupRepository{
+		db:            db,
+		changeTracker: &changeTracker,
+		entityType:    entityType,
+	}
 }
 
-func (r *groupRepository) selectQuery(filter repositories.GroupFilter) *sqlbuilder.SelectBuilder {
+func (r *GroupRepository) selectQuery(filter repositories.GroupFilter) *sqlbuilder.SelectBuilder {
 	s := sqlbuilder.Select(
 		"id",
 		"audit_created_at",
@@ -64,7 +72,7 @@ func (r *groupRepository) selectQuery(filter repositories.GroupFilter) *sqlbuild
 	return s
 }
 
-func (r *groupRepository) Update(ctx context.Context, group *repositories.Group) error {
+func (r *GroupRepository) Update(ctx context.Context, group *repositories.Group) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -99,7 +107,7 @@ func (r *groupRepository) Update(ctx context.Context, group *repositories.Group)
 	return nil
 }
 
-func (r *groupRepository) Single(ctx context.Context, filter repositories.GroupFilter) (*repositories.Group, error) {
+func (r *GroupRepository) Single(ctx context.Context, filter repositories.GroupFilter) (*repositories.Group, error) {
 	result, err := r.First(ctx, filter)
 	if err != nil {
 		return nil, err
@@ -110,7 +118,7 @@ func (r *groupRepository) Single(ctx context.Context, filter repositories.GroupF
 	return result, nil
 }
 
-func (r *groupRepository) First(ctx context.Context, filter repositories.GroupFilter) (*repositories.Group, error) {
+func (r *GroupRepository) First(ctx context.Context, filter repositories.GroupFilter) (*repositories.Group, error) {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -141,7 +149,7 @@ func (r *groupRepository) First(ctx context.Context, filter repositories.GroupFi
 	return &group, nil
 }
 
-func (r *groupRepository) List(ctx context.Context, filter repositories.GroupFilter) ([]*repositories.Group, int, error) {
+func (r *GroupRepository) List(ctx context.Context, filter repositories.GroupFilter) ([]*repositories.Group, int, error) {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -179,7 +187,7 @@ func (r *groupRepository) List(ctx context.Context, filter repositories.GroupFil
 	return groups, totalCount, nil
 }
 
-func (r *groupRepository) Insert(ctx context.Context, group *repositories.Group) error {
+func (r *GroupRepository) Insert(ctx context.Context, group *repositories.Group) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -209,7 +217,7 @@ func (r *groupRepository) Insert(ctx context.Context, group *repositories.Group)
 	return nil
 }
 
-func (r *groupRepository) Delete(ctx context.Context, id uuid.UUID) error {
+func (r *GroupRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 

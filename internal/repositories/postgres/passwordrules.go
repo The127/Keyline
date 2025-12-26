@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"Keyline/internal/change"
 	"Keyline/internal/database"
 	"Keyline/internal/logging"
 	"Keyline/internal/middlewares"
@@ -16,13 +17,21 @@ import (
 	"github.com/huandu/go-sqlbuilder"
 )
 
-type passwordRuleRepository struct{}
-
-func NewPasswordRuleRepository() repositories.PasswordRuleRepository {
-	return &passwordRuleRepository{}
+type PasswordRuleRepository struct {
+	db            *sql.DB
+	changeTracker *change.Tracker
+	entityType    int
 }
 
-func (r *passwordRuleRepository) selectQuery(filter repositories.PasswordRuleFilter) *sqlbuilder.SelectBuilder {
+func NewPasswordRuleRepository(db *sql.DB, changeTracker change.Tracker, entityType int) repositories.PasswordRuleRepository {
+	return &PasswordRuleRepository{
+		db:            db,
+		changeTracker: &changeTracker,
+		entityType:    entityType,
+	}
+}
+
+func (r *PasswordRuleRepository) selectQuery(filter repositories.PasswordRuleFilter) *sqlbuilder.SelectBuilder {
 	s := sqlbuilder.Select(
 		"id",
 		"audit_created_at",
@@ -44,7 +53,7 @@ func (r *passwordRuleRepository) selectQuery(filter repositories.PasswordRuleFil
 	return s
 }
 
-func (r *passwordRuleRepository) List(ctx context.Context, filter repositories.PasswordRuleFilter) ([]*repositories.PasswordRule, error) {
+func (r *PasswordRuleRepository) List(ctx context.Context, filter repositories.PasswordRuleFilter) ([]*repositories.PasswordRule, error) {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -78,7 +87,7 @@ func (r *passwordRuleRepository) List(ctx context.Context, filter repositories.P
 	return result, nil
 }
 
-func (r *passwordRuleRepository) Insert(ctx context.Context, passwordRule *repositories.PasswordRule) error {
+func (r *PasswordRuleRepository) Insert(ctx context.Context, passwordRule *repositories.PasswordRule) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -108,7 +117,7 @@ func (r *passwordRuleRepository) Insert(ctx context.Context, passwordRule *repos
 	return nil
 }
 
-func (r *passwordRuleRepository) Update(ctx context.Context, passwordRule *repositories.PasswordRule) error {
+func (r *PasswordRuleRepository) Update(ctx context.Context, passwordRule *repositories.PasswordRule) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -139,7 +148,7 @@ func (r *passwordRuleRepository) Update(ctx context.Context, passwordRule *repos
 	return nil
 }
 
-func (r *passwordRuleRepository) Delete(ctx context.Context, id uuid.UUID) error {
+func (r *PasswordRuleRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -161,7 +170,7 @@ func (r *passwordRuleRepository) Delete(ctx context.Context, id uuid.UUID) error
 	return nil
 }
 
-func (r *passwordRuleRepository) First(ctx context.Context, filter repositories.PasswordRuleFilter) (*repositories.PasswordRule, error) {
+func (r *PasswordRuleRepository) First(ctx context.Context, filter repositories.PasswordRuleFilter) (*repositories.PasswordRule, error) {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -191,7 +200,7 @@ func (r *passwordRuleRepository) First(ctx context.Context, filter repositories.
 	return &passwordRule, nil
 }
 
-func (r *passwordRuleRepository) Single(ctx context.Context, filter repositories.PasswordRuleFilter) (*repositories.PasswordRule, error) {
+func (r *PasswordRuleRepository) Single(ctx context.Context, filter repositories.PasswordRuleFilter) (*repositories.PasswordRule, error) {
 	rule, err := r.First(ctx, filter)
 	if err != nil {
 		return nil, err

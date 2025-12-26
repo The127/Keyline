@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"Keyline/internal/change"
 	"Keyline/internal/database"
 	"Keyline/internal/logging"
 	"Keyline/internal/middlewares"
@@ -16,13 +17,21 @@ import (
 	"github.com/huandu/go-sqlbuilder"
 )
 
-type resourceServerScopeRepository struct{}
-
-func NewResourceServerScopeRepository() repositories.ResourceServerScopeRepository {
-	return &resourceServerScopeRepository{}
+type ResourceServerScopeRepository struct {
+	db            *sql.DB
+	changeTracker *change.Tracker
+	entityType    int
 }
 
-func (r *resourceServerScopeRepository) selectQuery(filter repositories.ResourceServerScopeFilter) *sqlbuilder.SelectBuilder {
+func NewResourceServerScopeRepository(db *sql.DB, changeTracker change.Tracker, entityType int) repositories.ResourceServerScopeRepository {
+	return &ResourceServerScopeRepository{
+		db:            db,
+		changeTracker: &changeTracker,
+		entityType:    entityType,
+	}
+}
+
+func (r *ResourceServerScopeRepository) selectQuery(filter repositories.ResourceServerScopeFilter) *sqlbuilder.SelectBuilder {
 	s := sqlbuilder.Select(
 		"id",
 		"audit_created_at",
@@ -70,7 +79,7 @@ func (r *resourceServerScopeRepository) selectQuery(filter repositories.Resource
 	return s
 }
 
-func (r *resourceServerScopeRepository) List(ctx context.Context, filter repositories.ResourceServerScopeFilter) ([]*repositories.ResourceServerScope, int, error) {
+func (r *ResourceServerScopeRepository) List(ctx context.Context, filter repositories.ResourceServerScopeFilter) ([]*repositories.ResourceServerScope, int, error) {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -106,7 +115,7 @@ func (r *resourceServerScopeRepository) List(ctx context.Context, filter reposit
 	return resourceServerScopes, totalCount, nil
 }
 
-func (r *resourceServerScopeRepository) First(ctx context.Context, filter repositories.ResourceServerScopeFilter) (*repositories.ResourceServerScope, error) {
+func (r *ResourceServerScopeRepository) First(ctx context.Context, filter repositories.ResourceServerScopeFilter) (*repositories.ResourceServerScope, error) {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -137,7 +146,7 @@ func (r *resourceServerScopeRepository) First(ctx context.Context, filter reposi
 	return &resourceServerScope, nil
 }
 
-func (r *resourceServerScopeRepository) Single(ctx context.Context, filter repositories.ResourceServerScopeFilter) (*repositories.ResourceServerScope, error) {
+func (r *ResourceServerScopeRepository) Single(ctx context.Context, filter repositories.ResourceServerScopeFilter) (*repositories.ResourceServerScope, error) {
 	resourceServerScope, err := r.First(ctx, filter)
 	if err != nil {
 		return nil, err
@@ -148,7 +157,7 @@ func (r *resourceServerScopeRepository) Single(ctx context.Context, filter repos
 	return resourceServerScope, nil
 }
 
-func (r *resourceServerScopeRepository) Insert(ctx context.Context, resourceServerScope *repositories.ResourceServerScope) error {
+func (r *ResourceServerScopeRepository) Insert(ctx context.Context, resourceServerScope *repositories.ResourceServerScope) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -187,7 +196,7 @@ func (r *resourceServerScopeRepository) Insert(ctx context.Context, resourceServ
 	return nil
 }
 
-func (r *resourceServerScopeRepository) Update(ctx context.Context, resourceServerScope *repositories.ResourceServerScope) error {
+func (r *ResourceServerScopeRepository) Update(ctx context.Context, resourceServerScope *repositories.ResourceServerScope) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -223,7 +232,7 @@ func (r *resourceServerScopeRepository) Update(ctx context.Context, resourceServ
 	return nil
 }
 
-func (r *resourceServerScopeRepository) Delete(ctx context.Context, id uuid.UUID) error {
+func (r *ResourceServerScopeRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 

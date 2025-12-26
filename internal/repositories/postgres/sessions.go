@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"Keyline/internal/change"
 	"Keyline/internal/database"
 	"Keyline/internal/logging"
 	"Keyline/internal/middlewares"
@@ -16,14 +17,21 @@ import (
 	"github.com/huandu/go-sqlbuilder"
 )
 
-type sessionRepository struct {
+type SessionRepository struct {
+	db            *sql.DB
+	changeTracker *change.Tracker
+	entityType    int
 }
 
-func NewSessionRepository() repositories.SessionRepository {
-	return &sessionRepository{}
+func NewSessionRepository(db *sql.DB, changeTracker change.Tracker, entityType int) repositories.SessionRepository {
+	return &SessionRepository{
+		db:            db,
+		changeTracker: &changeTracker,
+		entityType:    entityType,
+	}
 }
 
-func (r *sessionRepository) selectQuery(filter repositories.SessionFilter) *sqlbuilder.SelectBuilder {
+func (r *SessionRepository) selectQuery(filter repositories.SessionFilter) *sqlbuilder.SelectBuilder {
 	s := sqlbuilder.Select(
 		"id",
 		"audit_created_at",
@@ -51,7 +59,7 @@ func (r *sessionRepository) selectQuery(filter repositories.SessionFilter) *sqlb
 	return s
 }
 
-func (r *sessionRepository) Single(ctx context.Context, filter repositories.SessionFilter) (*repositories.Session, error) {
+func (r *SessionRepository) Single(ctx context.Context, filter repositories.SessionFilter) (*repositories.Session, error) {
 	result, err := r.First(ctx, filter)
 	if err != nil {
 		return nil, err
@@ -62,7 +70,7 @@ func (r *sessionRepository) Single(ctx context.Context, filter repositories.Sess
 	return result, nil
 }
 
-func (r *sessionRepository) First(ctx context.Context, filter repositories.SessionFilter) (*repositories.Session, error) {
+func (r *SessionRepository) First(ctx context.Context, filter repositories.SessionFilter) (*repositories.Session, error) {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -93,7 +101,7 @@ func (r *sessionRepository) First(ctx context.Context, filter repositories.Sessi
 	return &session, nil
 }
 
-func (r *sessionRepository) Insert(ctx context.Context, session *repositories.Session) error {
+func (r *SessionRepository) Insert(ctx context.Context, session *repositories.Session) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -131,7 +139,7 @@ func (r *sessionRepository) Insert(ctx context.Context, session *repositories.Se
 	return nil
 }
 
-func (r *sessionRepository) Delete(ctx context.Context, id uuid.UUID) error {
+func (r *SessionRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 

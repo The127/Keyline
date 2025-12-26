@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"Keyline/internal/change"
 	"Keyline/internal/database"
 	"Keyline/internal/logging"
 	"Keyline/internal/middlewares"
@@ -17,13 +18,21 @@ import (
 	"github.com/lib/pq"
 )
 
-type applicationRepository struct{}
-
-func NewApplicationRepository() repositories.ApplicationRepository {
-	return &applicationRepository{}
+type ApplicationRepository struct {
+	db            *sql.DB
+	changeTracker *change.Tracker
+	entityType    int
 }
 
-func (r *applicationRepository) selectQuery(filter repositories.ApplicationFilter) *sqlbuilder.SelectBuilder {
+func NewApplicationRepository(db *sql.DB, changeTracker change.Tracker, entityType int) repositories.ApplicationRepository {
+	return &ApplicationRepository{
+		db:            db,
+		changeTracker: &changeTracker,
+		entityType:    entityType,
+	}
+}
+
+func (r *ApplicationRepository) selectQuery(filter repositories.ApplicationFilter) *sqlbuilder.SelectBuilder {
 	s := sqlbuilder.Select(
 		"id",
 		"audit_created_at",
@@ -81,7 +90,7 @@ func (r *applicationRepository) selectQuery(filter repositories.ApplicationFilte
 	return s
 }
 
-func (r *applicationRepository) Update(ctx context.Context, application *repositories.Application) error {
+func (r *ApplicationRepository) Update(ctx context.Context, application *repositories.Application) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -116,7 +125,7 @@ func (r *applicationRepository) Update(ctx context.Context, application *reposit
 	return nil
 }
 
-func (r *applicationRepository) Single(ctx context.Context, filter repositories.ApplicationFilter) (*repositories.Application, error) {
+func (r *ApplicationRepository) Single(ctx context.Context, filter repositories.ApplicationFilter) (*repositories.Application, error) {
 	application, err := r.First(ctx, filter)
 	if err != nil {
 		return nil, err
@@ -127,7 +136,7 @@ func (r *applicationRepository) Single(ctx context.Context, filter repositories.
 	return application, nil
 }
 
-func (r *applicationRepository) First(ctx context.Context, filter repositories.ApplicationFilter) (*repositories.Application, error) {
+func (r *ApplicationRepository) First(ctx context.Context, filter repositories.ApplicationFilter) (*repositories.Application, error) {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -158,7 +167,7 @@ func (r *applicationRepository) First(ctx context.Context, filter repositories.A
 	return &application, nil
 }
 
-func (r *applicationRepository) Insert(ctx context.Context, application *repositories.Application) error {
+func (r *ApplicationRepository) Insert(ctx context.Context, application *repositories.Application) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -196,7 +205,7 @@ func (r *applicationRepository) Insert(ctx context.Context, application *reposit
 	return nil
 }
 
-func (r *applicationRepository) List(ctx context.Context, filter repositories.ApplicationFilter) ([]*repositories.Application, int, error) {
+func (r *ApplicationRepository) List(ctx context.Context, filter repositories.ApplicationFilter) ([]*repositories.Application, int, error) {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -234,7 +243,7 @@ func (r *applicationRepository) List(ctx context.Context, filter repositories.Ap
 	return applications, totalCount, nil
 }
 
-func (r *applicationRepository) Delete(ctx context.Context, id uuid.UUID) error {
+func (r *ApplicationRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 

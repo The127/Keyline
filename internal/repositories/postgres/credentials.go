@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"Keyline/internal/change"
 	"Keyline/internal/database"
 	"Keyline/internal/logging"
 	"Keyline/internal/middlewares"
@@ -17,14 +18,21 @@ import (
 	"github.com/huandu/go-sqlbuilder"
 )
 
-type credentialRepository struct {
+type CredentialRepository struct {
+	db            *sql.DB
+	changeTracker *change.Tracker
+	entityType    int
 }
 
-func NewCredentialRepository() repositories.CredentialRepository {
-	return &credentialRepository{}
+func NewCredentialRepository(db *sql.DB, changeTracker change.Tracker, entityType int) repositories.CredentialRepository {
+	return &CredentialRepository{
+		db:            db,
+		changeTracker: &changeTracker,
+		entityType:    entityType,
+	}
 }
 
-func (r *credentialRepository) selectQuery(filter repositories.CredentialFilter) *sqlbuilder.SelectBuilder {
+func (r *CredentialRepository) selectQuery(filter repositories.CredentialFilter) *sqlbuilder.SelectBuilder {
 	s := sqlbuilder.Select(
 		"id",
 		"audit_created_at",
@@ -62,7 +70,7 @@ func (r *credentialRepository) selectQuery(filter repositories.CredentialFilter)
 	return s
 }
 
-func (r *credentialRepository) Single(ctx context.Context, filter repositories.CredentialFilter) (*repositories.Credential, error) {
+func (r *CredentialRepository) Single(ctx context.Context, filter repositories.CredentialFilter) (*repositories.Credential, error) {
 	credential, err := r.First(ctx, filter)
 	if err != nil {
 		return nil, err
@@ -73,7 +81,7 @@ func (r *credentialRepository) Single(ctx context.Context, filter repositories.C
 	return credential, nil
 }
 
-func (r *credentialRepository) First(ctx context.Context, filter repositories.CredentialFilter) (*repositories.Credential, error) {
+func (r *CredentialRepository) First(ctx context.Context, filter repositories.CredentialFilter) (*repositories.Credential, error) {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -104,7 +112,7 @@ func (r *credentialRepository) First(ctx context.Context, filter repositories.Cr
 	return &credential, nil
 }
 
-func (r *credentialRepository) List(ctx context.Context, filter repositories.CredentialFilter) ([]*repositories.Credential, error) {
+func (r *CredentialRepository) List(ctx context.Context, filter repositories.CredentialFilter) ([]*repositories.Credential, error) {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -138,7 +146,7 @@ func (r *credentialRepository) List(ctx context.Context, filter repositories.Cre
 	return credentials, nil
 }
 
-func (r *credentialRepository) Insert(ctx context.Context, credential *repositories.Credential) error {
+func (r *CredentialRepository) Insert(ctx context.Context, credential *repositories.Credential) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -165,7 +173,7 @@ func (r *credentialRepository) Insert(ctx context.Context, credential *repositor
 	return nil
 }
 
-func (r *credentialRepository) Update(ctx context.Context, credential *repositories.Credential) error {
+func (r *CredentialRepository) Update(ctx context.Context, credential *repositories.Credential) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -200,7 +208,7 @@ func (r *credentialRepository) Update(ctx context.Context, credential *repositor
 	return nil
 }
 
-func (r *credentialRepository) Delete(ctx context.Context, id uuid.UUID) error {
+func (r *CredentialRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 

@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"Keyline/internal/change"
 	"Keyline/internal/database"
 	"Keyline/internal/logging"
 	"Keyline/internal/middlewares"
@@ -15,13 +16,21 @@ import (
 	"github.com/huandu/go-sqlbuilder"
 )
 
-type applicationUserMetadataRepository struct{}
-
-func NewApplicationUserMetadataRepository() repositories.ApplicationUserMetadataRepository {
-	return &applicationUserMetadataRepository{}
+type ApplicationUserMetadataRepository struct {
+	db            *sql.DB
+	changeTracker *change.Tracker
+	entityType    int
 }
 
-func (r *applicationUserMetadataRepository) selectQuery(filter repositories.ApplicationUserMetadataFilter) *sqlbuilder.SelectBuilder {
+func NewApplicationUserMetadataRepository(db *sql.DB, changeTracker change.Tracker, entityType int) repositories.ApplicationUserMetadataRepository {
+	return &ApplicationUserMetadataRepository{
+		db:            db,
+		changeTracker: &changeTracker,
+		entityType:    entityType,
+	}
+}
+
+func (r *ApplicationUserMetadataRepository) selectQuery(filter repositories.ApplicationUserMetadataFilter) *sqlbuilder.SelectBuilder {
 	s := sqlbuilder.Select(
 		"id",
 		"audit_created_at",
@@ -47,7 +56,7 @@ func (r *applicationUserMetadataRepository) selectQuery(filter repositories.Appl
 	return s
 }
 
-func (r *applicationUserMetadataRepository) List(ctx context.Context, filter repositories.ApplicationUserMetadataFilter) ([]*repositories.ApplicationUserMetadata, int, error) {
+func (r *ApplicationUserMetadataRepository) List(ctx context.Context, filter repositories.ApplicationUserMetadataFilter) ([]*repositories.ApplicationUserMetadata, int, error) {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -85,7 +94,7 @@ func (r *applicationUserMetadataRepository) List(ctx context.Context, filter rep
 	return metadata, totalCount, nil
 }
 
-func (r *applicationUserMetadataRepository) Single(ctx context.Context, filter repositories.ApplicationUserMetadataFilter) (*repositories.ApplicationUserMetadata, error) {
+func (r *ApplicationUserMetadataRepository) Single(ctx context.Context, filter repositories.ApplicationUserMetadataFilter) (*repositories.ApplicationUserMetadata, error) {
 	result, err := r.First(ctx, filter)
 	if err != nil {
 		return nil, err
@@ -96,7 +105,7 @@ func (r *applicationUserMetadataRepository) Single(ctx context.Context, filter r
 	return result, nil
 }
 
-func (r *applicationUserMetadataRepository) First(ctx context.Context, filter repositories.ApplicationUserMetadataFilter) (*repositories.ApplicationUserMetadata, error) {
+func (r *ApplicationUserMetadataRepository) First(ctx context.Context, filter repositories.ApplicationUserMetadataFilter) (*repositories.ApplicationUserMetadata, error) {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -127,7 +136,7 @@ func (r *applicationUserMetadataRepository) First(ctx context.Context, filter re
 	return &metadata, nil
 }
 
-func (r *applicationUserMetadataRepository) Insert(ctx context.Context, applicationUserMetadata *repositories.ApplicationUserMetadata) error {
+func (r *ApplicationUserMetadataRepository) Insert(ctx context.Context, applicationUserMetadata *repositories.ApplicationUserMetadata) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -160,7 +169,7 @@ func (r *applicationUserMetadataRepository) Insert(ctx context.Context, applicat
 	return nil
 }
 
-func (r *applicationUserMetadataRepository) Update(ctx context.Context, applicationUserMetadata *repositories.ApplicationUserMetadata) error {
+func (r *ApplicationUserMetadataRepository) Update(ctx context.Context, applicationUserMetadata *repositories.ApplicationUserMetadata) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 

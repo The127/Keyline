@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"Keyline/internal/change"
 	"Keyline/internal/database"
 	"Keyline/internal/logging"
 	"Keyline/internal/middlewares"
@@ -16,14 +17,21 @@ import (
 	"github.com/huandu/go-sqlbuilder"
 )
 
-type userRepository struct {
+type UserRepository struct {
+	db            *sql.DB
+	changeTracker *change.Tracker
+	entityType    int
 }
 
-func NewUserRepository() repositories.UserRepository {
-	return &userRepository{}
+func NewUserRepository(db *sql.DB, changeTracker change.Tracker, entityType int) repositories.UserRepository {
+	return &UserRepository{
+		db:            db,
+		changeTracker: &changeTracker,
+		entityType:    entityType,
+	}
 }
 
-func (r *userRepository) selectQuery(filter repositories.UserFilter) *sqlbuilder.SelectBuilder {
+func (r *UserRepository) selectQuery(filter repositories.UserFilter) *sqlbuilder.SelectBuilder {
 	s := sqlbuilder.Select(
 		"id",
 		"audit_created_at",
@@ -77,7 +85,7 @@ func (r *userRepository) selectQuery(filter repositories.UserFilter) *sqlbuilder
 	return s
 }
 
-func (r *userRepository) List(ctx context.Context, filter repositories.UserFilter) ([]*repositories.User, int, error) {
+func (r *UserRepository) List(ctx context.Context, filter repositories.UserFilter) ([]*repositories.User, int, error) {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -115,7 +123,7 @@ func (r *userRepository) List(ctx context.Context, filter repositories.UserFilte
 	return users, totalCount, nil
 }
 
-func (r *userRepository) Single(ctx context.Context, filter repositories.UserFilter) (*repositories.User, error) {
+func (r *UserRepository) Single(ctx context.Context, filter repositories.UserFilter) (*repositories.User, error) {
 	result, err := r.First(ctx, filter)
 	if err != nil {
 		return nil, err
@@ -126,7 +134,7 @@ func (r *userRepository) Single(ctx context.Context, filter repositories.UserFil
 	return result, nil
 }
 
-func (r *userRepository) First(ctx context.Context, filter repositories.UserFilter) (*repositories.User, error) {
+func (r *UserRepository) First(ctx context.Context, filter repositories.UserFilter) (*repositories.User, error) {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -157,7 +165,7 @@ func (r *userRepository) First(ctx context.Context, filter repositories.UserFilt
 	return &user, nil
 }
 
-func (r *userRepository) Update(ctx context.Context, user *repositories.User) error {
+func (r *UserRepository) Update(ctx context.Context, user *repositories.User) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -192,7 +200,7 @@ func (r *userRepository) Update(ctx context.Context, user *repositories.User) er
 	return nil
 }
 
-func (r *userRepository) Insert(ctx context.Context, user *repositories.User) error {
+func (r *UserRepository) Insert(ctx context.Context, user *repositories.User) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 

@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"Keyline/internal/change"
 	"Keyline/internal/database"
 	"Keyline/internal/logging"
 	"Keyline/internal/middlewares"
@@ -16,14 +17,21 @@ import (
 	"github.com/huandu/go-sqlbuilder"
 )
 
-type roleRepository struct {
+type RoleRepository struct {
+	db            *sql.DB
+	changeTracker *change.Tracker
+	entityType    int
 }
 
-func NewRoleRepository() repositories.RoleRepository {
-	return &roleRepository{}
+func NewRoleRepository(db *sql.DB, changeTracker change.Tracker, entityType int) repositories.RoleRepository {
+	return &RoleRepository{
+		db:            db,
+		changeTracker: &changeTracker,
+		entityType:    entityType,
+	}
 }
 
-func (r *roleRepository) selectQuery(filter repositories.RoleFilter) *sqlbuilder.SelectBuilder {
+func (r *RoleRepository) selectQuery(filter repositories.RoleFilter) *sqlbuilder.SelectBuilder {
 	s := sqlbuilder.Select(
 		"id",
 		"audit_created_at",
@@ -69,7 +77,7 @@ func (r *roleRepository) selectQuery(filter repositories.RoleFilter) *sqlbuilder
 	return s
 }
 
-func (r *roleRepository) List(ctx context.Context, filter repositories.RoleFilter) ([]*repositories.Role, int, error) {
+func (r *RoleRepository) List(ctx context.Context, filter repositories.RoleFilter) ([]*repositories.Role, int, error) {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -106,7 +114,7 @@ func (r *roleRepository) List(ctx context.Context, filter repositories.RoleFilte
 	return roles, totalCount, nil
 }
 
-func (r *roleRepository) Single(ctx context.Context, filter repositories.RoleFilter) (*repositories.Role, error) {
+func (r *RoleRepository) Single(ctx context.Context, filter repositories.RoleFilter) (*repositories.Role, error) {
 	result, err := r.First(ctx, filter)
 	if err != nil {
 		return nil, err
@@ -117,7 +125,7 @@ func (r *roleRepository) Single(ctx context.Context, filter repositories.RoleFil
 	return result, nil
 }
 
-func (r *roleRepository) First(ctx context.Context, filter repositories.RoleFilter) (*repositories.Role, error) {
+func (r *RoleRepository) First(ctx context.Context, filter repositories.RoleFilter) (*repositories.Role, error) {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -149,7 +157,7 @@ func (r *roleRepository) First(ctx context.Context, filter repositories.RoleFilt
 	return &role, nil
 }
 
-func (r *roleRepository) Insert(ctx context.Context, role *repositories.Role) error {
+func (r *RoleRepository) Insert(ctx context.Context, role *repositories.Role) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -185,7 +193,7 @@ func (r *roleRepository) Insert(ctx context.Context, role *repositories.Role) er
 	return nil
 }
 
-func (r *roleRepository) Update(ctx context.Context, role *repositories.Role) error {
+func (r *RoleRepository) Update(ctx context.Context, role *repositories.Role) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -217,7 +225,7 @@ func (r *roleRepository) Update(ctx context.Context, role *repositories.Role) er
 	return nil
 }
 
-func (r *roleRepository) Delete(ctx context.Context, id uuid.UUID) error {
+func (r *RoleRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 

@@ -1,12 +1,14 @@
 package postgres
 
 import (
+	"Keyline/internal/change"
 	"Keyline/internal/database"
 	"Keyline/internal/logging"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/utils"
 	"context"
+	"database/sql"
 	"fmt"
 
 	"github.com/The127/ioc"
@@ -14,14 +16,21 @@ import (
 	"github.com/huandu/go-sqlbuilder"
 )
 
-type userRoleAssignmentRepository struct {
+type UserRoleAssignmentRepository struct {
+	db            *sql.DB
+	changeTracker *change.Tracker
+	entityType    int
 }
 
-func NewUserRoleAssignmentRepository() repositories.UserRoleAssignmentRepository {
-	return &userRoleAssignmentRepository{}
+func NewUserRoleAssignmentRepository(db *sql.DB, changeTracker change.Tracker, entityType int) repositories.UserRoleAssignmentRepository {
+	return &UserRoleAssignmentRepository{
+		db:            db,
+		changeTracker: &changeTracker,
+		entityType:    entityType,
+	}
 }
 
-func (r *userRoleAssignmentRepository) selectQuery(filter repositories.UserRoleAssignmentFilter) *sqlbuilder.SelectBuilder {
+func (r *UserRoleAssignmentRepository) selectQuery(filter repositories.UserRoleAssignmentFilter) *sqlbuilder.SelectBuilder {
 	s := sqlbuilder.Select(
 		"ura.id",
 		"ura.audit_created_at",
@@ -63,7 +72,7 @@ func (r *userRoleAssignmentRepository) selectQuery(filter repositories.UserRoleA
 	return s
 }
 
-func (r *userRoleAssignmentRepository) List(ctx context.Context, filter repositories.UserRoleAssignmentFilter) ([]*repositories.UserRoleAssignment, int, error) {
+func (r *UserRoleAssignmentRepository) List(ctx context.Context, filter repositories.UserRoleAssignmentFilter) ([]*repositories.UserRoleAssignment, int, error) {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -100,7 +109,7 @@ func (r *userRoleAssignmentRepository) List(ctx context.Context, filter reposito
 	return userRoleAssignments, totalCount, nil
 }
 
-func (r *userRoleAssignmentRepository) Insert(ctx context.Context, userRoleAssignment *repositories.UserRoleAssignment) error {
+func (r *UserRoleAssignmentRepository) Insert(ctx context.Context, userRoleAssignment *repositories.UserRoleAssignment) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 

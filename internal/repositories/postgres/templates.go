@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"Keyline/internal/change"
 	"Keyline/internal/database"
 	"Keyline/internal/logging"
 	"Keyline/internal/middlewares"
@@ -15,14 +16,21 @@ import (
 	"github.com/huandu/go-sqlbuilder"
 )
 
-type templateRepository struct {
+type TemplateRepository struct {
+	db            *sql.DB
+	changeTracker *change.Tracker
+	entityType    int
 }
 
-func NewTemplateRepository() repositories.TemplateRepository {
-	return &templateRepository{}
+func NewTemplateRepository(db *sql.DB, changeTracker change.Tracker, entityType int) repositories.TemplateRepository {
+	return &TemplateRepository{
+		db:            db,
+		changeTracker: &changeTracker,
+		entityType:    entityType,
+	}
 }
 
-func (r *templateRepository) selectQuery(filter repositories.TemplateFilter) *sqlbuilder.SelectBuilder {
+func (r *TemplateRepository) selectQuery(filter repositories.TemplateFilter) *sqlbuilder.SelectBuilder {
 	s := sqlbuilder.Select(
 		"id",
 		"audit_created_at",
@@ -59,7 +67,7 @@ func (r *templateRepository) selectQuery(filter repositories.TemplateFilter) *sq
 	return s
 }
 
-func (r *templateRepository) Single(ctx context.Context, filter repositories.TemplateFilter) (*repositories.Template, error) {
+func (r *TemplateRepository) Single(ctx context.Context, filter repositories.TemplateFilter) (*repositories.Template, error) {
 	template, err := r.First(ctx, filter)
 	if err != nil {
 		return nil, err
@@ -70,7 +78,7 @@ func (r *templateRepository) Single(ctx context.Context, filter repositories.Tem
 	return template, nil
 }
 
-func (r *templateRepository) First(ctx context.Context, filter repositories.TemplateFilter) (*repositories.Template, error) {
+func (r *TemplateRepository) First(ctx context.Context, filter repositories.TemplateFilter) (*repositories.Template, error) {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -102,7 +110,7 @@ func (r *templateRepository) First(ctx context.Context, filter repositories.Temp
 	return &template, nil
 }
 
-func (r *templateRepository) Insert(ctx context.Context, template *repositories.Template) error {
+func (r *TemplateRepository) Insert(ctx context.Context, template *repositories.Template) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -136,7 +144,7 @@ func (r *templateRepository) Insert(ctx context.Context, template *repositories.
 	return nil
 }
 
-func (r *templateRepository) List(ctx context.Context, filter repositories.TemplateFilter) ([]*repositories.Template, int, error) {
+func (r *TemplateRepository) List(ctx context.Context, filter repositories.TemplateFilter) ([]*repositories.Template, int, error) {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 

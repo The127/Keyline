@@ -1,25 +1,35 @@
 package postgres
 
 import (
+	"Keyline/internal/change"
 	"Keyline/internal/database"
 	"Keyline/internal/logging"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/utils"
 	"context"
+	"database/sql"
 	"fmt"
 	"github.com/The127/ioc"
 
 	"github.com/huandu/go-sqlbuilder"
 )
 
-type auditLogRepository struct{}
-
-func NewAuditLogRepository() repositories.AuditLogRepository {
-	return &auditLogRepository{}
+type AuditLogRepository struct {
+	db            *sql.DB
+	changeTracker *change.Tracker
+	entityType    int
 }
 
-func (r *auditLogRepository) selectQuery(filter repositories.AuditLogFilter) *sqlbuilder.SelectBuilder {
+func NewAuditLogRepository(db *sql.DB, changeTracker change.Tracker, entityType int) repositories.AuditLogRepository {
+	return &AuditLogRepository{
+		db:            db,
+		changeTracker: &changeTracker,
+		entityType:    entityType,
+	}
+}
+
+func (r *AuditLogRepository) selectQuery(filter repositories.AuditLogFilter) *sqlbuilder.SelectBuilder {
 	s := sqlbuilder.Select(
 		"id",
 		"audit_created_at",
@@ -54,7 +64,7 @@ func (r *auditLogRepository) selectQuery(filter repositories.AuditLogFilter) *sq
 	return s
 }
 
-func (r *auditLogRepository) List(ctx context.Context, filter repositories.AuditLogFilter) ([]*repositories.AuditLog, int, error) {
+func (r *AuditLogRepository) List(ctx context.Context, filter repositories.AuditLogFilter) ([]*repositories.AuditLog, int, error) {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -91,7 +101,7 @@ func (r *auditLogRepository) List(ctx context.Context, filter repositories.Audit
 	return auditLogs, totalCount, nil
 }
 
-func (r *auditLogRepository) Insert(ctx context.Context, auditLog *repositories.AuditLog) error {
+func (r *AuditLogRepository) Insert(ctx context.Context, auditLog *repositories.AuditLog) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 

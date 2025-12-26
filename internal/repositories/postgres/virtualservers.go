@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"Keyline/internal/caching"
+	"Keyline/internal/change"
 	"Keyline/internal/database"
 	"Keyline/internal/logging"
 	"Keyline/internal/middlewares"
@@ -18,17 +19,24 @@ import (
 
 type virtualServerCache caching.Cache[repositories.VirtualServerFilterCacheKey, *repositories.VirtualServer]
 
-type virtualServerRepository struct {
+type VirtualServerRepository struct {
 	cache virtualServerCache
+
+	db            *sql.DB
+	changeTracker *change.Tracker
+	entityType    int
 }
 
-func NewVirtualServerRepository() repositories.VirtualServerRepository {
-	return &virtualServerRepository{
-		cache: caching.NewMemoryCache[repositories.VirtualServerFilterCacheKey, *repositories.VirtualServer](),
+func NewVirtualServerRepository(db *sql.DB, changeTracker change.Tracker, entityType int) repositories.VirtualServerRepository {
+	return &VirtualServerRepository{
+		cache:         caching.NewMemoryCache[repositories.VirtualServerFilterCacheKey, *repositories.VirtualServer](),
+		db:            db,
+		changeTracker: &changeTracker,
+		entityType:    entityType,
 	}
 }
 
-func (r *virtualServerRepository) selectQuery(filter repositories.VirtualServerFilter) *sqlbuilder.SelectBuilder {
+func (r *VirtualServerRepository) selectQuery(filter repositories.VirtualServerFilter) *sqlbuilder.SelectBuilder {
 	s := sqlbuilder.Select(
 		"id",
 		"audit_created_at",
@@ -53,7 +61,7 @@ func (r *virtualServerRepository) selectQuery(filter repositories.VirtualServerF
 	return s
 }
 
-func (r *virtualServerRepository) Update(ctx context.Context, virtualServer *repositories.VirtualServer) error {
+func (r *VirtualServerRepository) Update(ctx context.Context, virtualServer *repositories.VirtualServer) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -88,7 +96,7 @@ func (r *virtualServerRepository) Update(ctx context.Context, virtualServer *rep
 	return nil
 }
 
-func (r *virtualServerRepository) Single(ctx context.Context, filter repositories.VirtualServerFilter) (*repositories.VirtualServer, error) {
+func (r *VirtualServerRepository) Single(ctx context.Context, filter repositories.VirtualServerFilter) (*repositories.VirtualServer, error) {
 	result, err := r.First(ctx, filter)
 	if err != nil {
 		return nil, err
@@ -100,7 +108,7 @@ func (r *virtualServerRepository) Single(ctx context.Context, filter repositorie
 	return result, nil
 }
 
-func (r *virtualServerRepository) First(ctx context.Context, filter repositories.VirtualServerFilter) (*repositories.VirtualServer, error) {
+func (r *VirtualServerRepository) First(ctx context.Context, filter repositories.VirtualServerFilter) (*repositories.VirtualServer, error) {
 	cacheKey := filter.GetCacheKey()
 	cachedValue, ok := r.cache.TryGet(cacheKey)
 	if ok {
@@ -141,7 +149,7 @@ func (r *virtualServerRepository) First(ctx context.Context, filter repositories
 	return result, nil
 }
 
-func (r *virtualServerRepository) Insert(ctx context.Context, virtualServer *repositories.VirtualServer) error {
+func (r *VirtualServerRepository) Insert(ctx context.Context, virtualServer *repositories.VirtualServer) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -179,7 +187,7 @@ func (r *virtualServerRepository) Insert(ctx context.Context, virtualServer *rep
 	return nil
 }
 
-func (r *virtualServerRepository) List(ctx context.Context, filter repositories.VirtualServerFilter) ([]*repositories.VirtualServer, int, error) {
+func (r *VirtualServerRepository) List(ctx context.Context, filter repositories.VirtualServerFilter) ([]*repositories.VirtualServer, int, error) {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 

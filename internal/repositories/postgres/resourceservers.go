@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"Keyline/internal/change"
 	"Keyline/internal/database"
 	"Keyline/internal/logging"
 	"Keyline/internal/middlewares"
@@ -16,13 +17,21 @@ import (
 	"github.com/huandu/go-sqlbuilder"
 )
 
-type resourceServerRepository struct{}
-
-func NewResourceServerRepository() repositories.ResourceServerRepository {
-	return &resourceServerRepository{}
+type ResourceServerRepository struct {
+	db            *sql.DB
+	changeTracker *change.Tracker
+	entityType    int
 }
 
-func (r *resourceServerRepository) selectQuery(filter repositories.ResourceServerFilter) *sqlbuilder.SelectBuilder {
+func NewResourceServerRepository(db *sql.DB, changeTracker change.Tracker, entityType int) repositories.ResourceServerRepository {
+	return &ResourceServerRepository{
+		db:            db,
+		changeTracker: &changeTracker,
+		entityType:    entityType,
+	}
+}
+
+func (r *ResourceServerRepository) selectQuery(filter repositories.ResourceServerFilter) *sqlbuilder.SelectBuilder {
 	s := sqlbuilder.Select(
 		"id",
 		"audit_created_at",
@@ -65,7 +74,7 @@ func (r *resourceServerRepository) selectQuery(filter repositories.ResourceServe
 	return s
 }
 
-func (r *resourceServerRepository) List(ctx context.Context, filter repositories.ResourceServerFilter) ([]*repositories.ResourceServer, int, error) {
+func (r *ResourceServerRepository) List(ctx context.Context, filter repositories.ResourceServerFilter) ([]*repositories.ResourceServer, int, error) {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -102,7 +111,7 @@ func (r *resourceServerRepository) List(ctx context.Context, filter repositories
 	return resourceServers, totalCount, nil
 }
 
-func (r *resourceServerRepository) First(ctx context.Context, filter repositories.ResourceServerFilter) (*repositories.ResourceServer, error) {
+func (r *ResourceServerRepository) First(ctx context.Context, filter repositories.ResourceServerFilter) (*repositories.ResourceServer, error) {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -129,7 +138,7 @@ func (r *resourceServerRepository) First(ctx context.Context, filter repositorie
 	return &resourceServer, nil
 }
 
-func (r *resourceServerRepository) Single(ctx context.Context, filter repositories.ResourceServerFilter) (*repositories.ResourceServer, error) {
+func (r *ResourceServerRepository) Single(ctx context.Context, filter repositories.ResourceServerFilter) (*repositories.ResourceServer, error) {
 	resourceServer, err := r.First(ctx, filter)
 	if err != nil {
 		return nil, err
@@ -140,7 +149,7 @@ func (r *resourceServerRepository) Single(ctx context.Context, filter repositori
 	return resourceServer, nil
 }
 
-func (r *resourceServerRepository) Insert(ctx context.Context, resourceServer *repositories.ResourceServer) error {
+func (r *ResourceServerRepository) Insert(ctx context.Context, resourceServer *repositories.ResourceServer) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -177,7 +186,7 @@ func (r *resourceServerRepository) Insert(ctx context.Context, resourceServer *r
 	return nil
 }
 
-func (r *resourceServerRepository) Update(ctx context.Context, resourceServer *repositories.ResourceServer) error {
+func (r *ResourceServerRepository) Update(ctx context.Context, resourceServer *repositories.ResourceServer) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -213,7 +222,7 @@ func (r *resourceServerRepository) Update(ctx context.Context, resourceServer *r
 	return nil
 }
 
-func (r *resourceServerRepository) Delete(ctx context.Context, id uuid.UUID) error {
+func (r *ResourceServerRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 

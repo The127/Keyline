@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"Keyline/internal/change"
 	"Keyline/internal/database"
 	"Keyline/internal/logging"
 	"Keyline/internal/middlewares"
@@ -15,14 +16,21 @@ import (
 	"github.com/huandu/go-sqlbuilder"
 )
 
-type fileRepository struct {
+type FileRepository struct {
+	db            *sql.DB
+	changeTracker *change.Tracker
+	entityType    int
 }
 
-func NewFileRepository() repositories.FileRepository {
-	return &fileRepository{}
+func NewFileRepository(db *sql.DB, changeTracker change.Tracker, entityType int) repositories.FileRepository {
+	return &FileRepository{
+		db:            db,
+		changeTracker: &changeTracker,
+		entityType:    entityType,
+	}
 }
 
-func (r *fileRepository) selectQuery(filter repositories.FileFilter) *sqlbuilder.SelectBuilder {
+func (r *FileRepository) selectQuery(filter repositories.FileFilter) *sqlbuilder.SelectBuilder {
 	s := sqlbuilder.Select(
 		"id",
 		"audit_created_at",
@@ -40,7 +48,7 @@ func (r *fileRepository) selectQuery(filter repositories.FileFilter) *sqlbuilder
 	return s
 }
 
-func (r *fileRepository) Single(ctx context.Context, filter repositories.FileFilter) (*repositories.File, error) {
+func (r *FileRepository) Single(ctx context.Context, filter repositories.FileFilter) (*repositories.File, error) {
 	file, err := r.First(ctx, filter)
 	if err != nil {
 		return nil, err
@@ -51,7 +59,7 @@ func (r *fileRepository) Single(ctx context.Context, filter repositories.FileFil
 	return file, nil
 }
 
-func (r *fileRepository) First(ctx context.Context, filter repositories.FileFilter) (*repositories.File, error) {
+func (r *FileRepository) First(ctx context.Context, filter repositories.FileFilter) (*repositories.File, error) {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -83,7 +91,7 @@ func (r *fileRepository) First(ctx context.Context, filter repositories.FileFilt
 	return &file, nil
 }
 
-func (r *fileRepository) Insert(ctx context.Context, file *repositories.File) error {
+func (r *FileRepository) Insert(ctx context.Context, file *repositories.File) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 

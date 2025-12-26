@@ -1,12 +1,14 @@
 package postgres
 
 import (
+	"Keyline/internal/change"
 	"Keyline/internal/database"
 	"Keyline/internal/logging"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/utils"
 	"context"
+	"database/sql"
 	"fmt"
 	"github.com/The127/ioc"
 
@@ -14,14 +16,21 @@ import (
 	"github.com/huandu/go-sqlbuilder"
 )
 
-type outboxMessageRepository struct {
+type OutboxMessageRepository struct {
+	db            *sql.DB
+	changeTracker *change.Tracker
+	entityType    int
 }
 
-func NewOutboxMessageRepository() repositories.OutboxMessageRepository {
-	return &outboxMessageRepository{}
+func NewOutboxMessageRepository(db *sql.DB, changeTracker change.Tracker, entityType int) repositories.OutboxMessageRepository {
+	return &OutboxMessageRepository{
+		db:            db,
+		changeTracker: &changeTracker,
+		entityType:    entityType,
+	}
 }
 
-func (r *outboxMessageRepository) selectQuery(filter repositories.OutboxMessageFilter) *sqlbuilder.SelectBuilder {
+func (r *OutboxMessageRepository) selectQuery(filter repositories.OutboxMessageFilter) *sqlbuilder.SelectBuilder {
 	s := sqlbuilder.Select(
 		"id",
 		"audit_created_at",
@@ -38,7 +47,7 @@ func (r *outboxMessageRepository) selectQuery(filter repositories.OutboxMessageF
 	return s
 }
 
-func (r *outboxMessageRepository) List(ctx context.Context, filter repositories.OutboxMessageFilter) ([]*repositories.OutboxMessage, error) {
+func (r *OutboxMessageRepository) List(ctx context.Context, filter repositories.OutboxMessageFilter) ([]*repositories.OutboxMessage, error) {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -72,7 +81,7 @@ func (r *outboxMessageRepository) List(ctx context.Context, filter repositories.
 	return outboxMessages, nil
 }
 
-func (r *outboxMessageRepository) Insert(ctx context.Context, outboxMessage *repositories.OutboxMessage) error {
+func (r *OutboxMessageRepository) Insert(ctx context.Context, outboxMessage *repositories.OutboxMessage) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -101,7 +110,7 @@ func (r *outboxMessageRepository) Insert(ctx context.Context, outboxMessage *rep
 	return nil
 }
 
-func (r *outboxMessageRepository) Delete(ctx context.Context, id uuid.UUID) error {
+func (r *OutboxMessageRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 

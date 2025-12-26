@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"Keyline/internal/change"
 	"Keyline/internal/database"
 	"Keyline/internal/logging"
 	"Keyline/internal/middlewares"
@@ -17,13 +18,21 @@ import (
 	"github.com/huandu/go-sqlbuilder"
 )
 
-type projectRepository struct{}
-
-func NewProjectRepository() repositories.ProjectRepository {
-	return &projectRepository{}
+type ProjectRepository struct {
+	db            *sql.DB
+	changeTracker *change.Tracker
+	entityType    int
 }
 
-func (r *projectRepository) selectQuery(filter repositories.ProjectFilter) *sqlbuilder.SelectBuilder {
+func NewProjectRepository(db *sql.DB, changeTracker change.Tracker, entityType int) repositories.ProjectRepository {
+	return &ProjectRepository{
+		db:            db,
+		changeTracker: &changeTracker,
+		entityType:    entityType,
+	}
+}
+
+func (r *ProjectRepository) selectQuery(filter repositories.ProjectFilter) *sqlbuilder.SelectBuilder {
 	s := sqlbuilder.Select(
 		"id",
 		"audit_created_at",
@@ -68,7 +77,7 @@ func (r *projectRepository) selectQuery(filter repositories.ProjectFilter) *sqlb
 	return s
 }
 
-func (r *projectRepository) List(ctx context.Context, filter repositories.ProjectFilter) ([]*repositories.Project, int, error) {
+func (r *ProjectRepository) List(ctx context.Context, filter repositories.ProjectFilter) ([]*repositories.Project, int, error) {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -106,7 +115,7 @@ func (r *projectRepository) List(ctx context.Context, filter repositories.Projec
 	return projects, totalCount, nil
 }
 
-func (r *projectRepository) First(ctx context.Context, filter repositories.ProjectFilter) (*repositories.Project, error) {
+func (r *ProjectRepository) First(ctx context.Context, filter repositories.ProjectFilter) (*repositories.Project, error) {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -138,7 +147,7 @@ func (r *projectRepository) First(ctx context.Context, filter repositories.Proje
 	return &project, nil
 }
 
-func (r *projectRepository) Single(ctx context.Context, filter repositories.ProjectFilter) (*repositories.Project, error) {
+func (r *ProjectRepository) Single(ctx context.Context, filter repositories.ProjectFilter) (*repositories.Project, error) {
 	project, err := r.First(ctx, filter)
 	if err != nil {
 		return nil, err
@@ -149,7 +158,7 @@ func (r *projectRepository) Single(ctx context.Context, filter repositories.Proj
 	return project, nil
 }
 
-func (r *projectRepository) Insert(ctx context.Context, project *repositories.Project) error {
+func (r *ProjectRepository) Insert(ctx context.Context, project *repositories.Project) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -182,7 +191,7 @@ func (r *projectRepository) Insert(ctx context.Context, project *repositories.Pr
 	return nil
 }
 
-func (r *projectRepository) Update(ctx context.Context, project *repositories.Project) error {
+func (r *ProjectRepository) Update(ctx context.Context, project *repositories.Project) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
@@ -214,7 +223,7 @@ func (r *projectRepository) Update(ctx context.Context, project *repositories.Pr
 	return nil
 }
 
-func (r *projectRepository) Delete(ctx context.Context, id uuid.UUID) error {
+func (r *ProjectRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	scope := middlewares.GetScope(ctx)
 	dbService := ioc.GetDependency[database.DbService](scope)
 
