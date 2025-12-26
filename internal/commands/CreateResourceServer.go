@@ -4,6 +4,7 @@ import (
 	"Keyline/internal/authentication"
 	"Keyline/internal/authentication/permissions"
 	"Keyline/internal/behaviours"
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/utils"
@@ -45,17 +46,16 @@ type CreateResourceServerResponse struct {
 
 func HandleCreateResourceServer(ctx context.Context, command CreateResourceServer) (*CreateResourceServerResponse, error) {
 	scope := middlewares.GetScope(ctx)
+	dbContext := ioc.GetDependency[database.Context](scope)
 
-	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(command.VirtualServerName)
-	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().Single(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
-	projectRepository := ioc.GetDependency[repositories.ProjectRepository](scope)
 	projectFilter := repositories.NewProjectFilter().VirtualServerId(virtualServer.Id()).Slug(command.ProjectSlug)
-	project, err := projectRepository.Single(ctx, projectFilter)
+	project, err := dbContext.Projects().Single(ctx, projectFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting project: %w", err)
 	}
@@ -68,12 +68,8 @@ func HandleCreateResourceServer(ctx context.Context, command CreateResourceServe
 		}
 	}
 
-	resourceServerRepository := ioc.GetDependency[repositories.ResourceServerRepository](scope)
 	resourceServer := repositories.NewResourceServer(virtualServer.Id(), project.Id(), command.Slug, command.Name, command.Description)
-	err = resourceServerRepository.Insert(ctx, resourceServer)
-	if err != nil {
-		return nil, fmt.Errorf("inserting resource server: %w", err)
-	}
+	dbContext.ResourceServers().Insert(resourceServer)
 
 	return &CreateResourceServerResponse{
 		Id: resourceServer.Id(),

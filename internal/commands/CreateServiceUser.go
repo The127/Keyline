@@ -3,10 +3,12 @@ package commands
 import (
 	"Keyline/internal/authentication/permissions"
 	"Keyline/internal/behaviours"
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"context"
 	"fmt"
+
 	"github.com/The127/ioc"
 
 	"github.com/google/uuid"
@@ -39,23 +41,19 @@ type CreateServiceUserResponse struct {
 
 func HandleCreateServiceUser(ctx context.Context, command CreateServiceUser) (*CreateServiceUserResponse, error) {
 	scope := middlewares.GetScope(ctx)
+	dbContext := ioc.GetDependency[database.Context](scope)
 
-	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(command.VirtualServerName)
-	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().Single(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
-	userRepository := ioc.GetDependency[repositories.UserRepository](scope)
 	user := repositories.NewServiceUser(
 		command.Username,
 		virtualServer.Id(),
 	)
-	err = userRepository.Insert(ctx, user)
-	if err != nil {
-		return nil, fmt.Errorf("inserting user: %w", err)
-	}
+	dbContext.Users().Insert(user)
 
 	return &CreateServiceUserResponse{
 		Id: user.Id(),

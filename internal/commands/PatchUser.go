@@ -3,10 +3,12 @@ package commands
 import (
 	"Keyline/internal/authentication/permissions"
 	"Keyline/internal/behaviours"
+	db "Keyline/internal/database"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"context"
 	"fmt"
+
 	"github.com/The127/ioc"
 
 	"github.com/google/uuid"
@@ -38,17 +40,16 @@ type PatchUserResponse struct{}
 
 func HandlePatchUser(ctx context.Context, command PatchUser) (*PatchUserResponse, error) {
 	scope := middlewares.GetScope(ctx)
+	dbContext := ioc.GetDependency[db.Context](scope)
 
-	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(command.VirtualServerName)
-	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().Single(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
-	userRepository := ioc.GetDependency[repositories.UserRepository](scope)
 	userFilter := repositories.NewUserFilter().Id(command.UserId).VirtualServerId(virtualServer.Id())
-	user, err := userRepository.Single(ctx, userFilter)
+	user, err := dbContext.Users().Single(ctx, userFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting user: %w", err)
 	}
@@ -57,10 +58,6 @@ func HandlePatchUser(ctx context.Context, command PatchUser) (*PatchUserResponse
 		user.SetDisplayName(*command.DisplayName)
 	}
 
-	err = userRepository.Update(ctx, user)
-	if err != nil {
-		return nil, fmt.Errorf("updating user: %w", err)
-	}
-
+	dbContext.Users().Update(user)
 	return &PatchUserResponse{}, nil
 }

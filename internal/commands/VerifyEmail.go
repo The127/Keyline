@@ -1,11 +1,13 @@
 package commands
 
 import (
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/internal/services"
 	"context"
 	"fmt"
+
 	"github.com/The127/ioc"
 
 	"github.com/google/uuid"
@@ -27,6 +29,7 @@ type VerifyEmailResponse struct {
 
 func HandleVerifyEmail(ctx context.Context, command VerifyEmail) (*VerifyEmailResponse, error) {
 	scope := middlewares.GetScope(ctx)
+	dbContext := ioc.GetDependency[database.Context](scope)
 
 	tokenService := ioc.GetDependency[services.TokenService](scope)
 	value, err := tokenService.GetToken(ctx, services.EmailVerificationTokenType, command.Token)
@@ -39,17 +42,13 @@ func HandleVerifyEmail(ctx context.Context, command VerifyEmail) (*VerifyEmailRe
 		return nil, fmt.Errorf("parsing value: %w", err)
 	}
 
-	userRepository := ioc.GetDependency[repositories.UserRepository](scope)
-	user, err := userRepository.Single(ctx, repositories.NewUserFilter().Id(userId))
+	user, err := dbContext.Users().Single(ctx, repositories.NewUserFilter().Id(userId))
 	if err != nil {
 		return nil, fmt.Errorf("getting user: %w", err)
 	}
 
 	user.SetEmailVerified(true)
-	err = userRepository.Update(ctx, user)
-	if err != nil {
-		return nil, fmt.Errorf("updating user: %w", err)
-	}
+	dbContext.Users().Update(user)
 
 	err = tokenService.DeleteToken(ctx, services.EmailVerificationTokenType, command.Token)
 	if err != nil {

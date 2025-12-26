@@ -3,10 +3,12 @@ package commands
 import (
 	"Keyline/internal/authentication/permissions"
 	"Keyline/internal/behaviours"
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"context"
 	"fmt"
+
 	"github.com/The127/ioc"
 
 	"github.com/google/uuid"
@@ -40,27 +42,25 @@ type PatchResourceServerResponse struct{}
 
 func HandlePatchResourceServer(ctx context.Context, command PatchResourceServer) (*PatchResourceServerResponse, error) {
 	scope := middlewares.GetScope(ctx)
+	dbContext := ioc.GetDependency[database.Context](scope)
 
-	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(command.VirtualServerName)
-	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().Single(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
-	projectRepository := ioc.GetDependency[repositories.ProjectRepository](scope)
 	projectFilter := repositories.NewProjectFilter().VirtualServerId(virtualServer.Id()).Slug(command.ProjectSlug)
-	project, err := projectRepository.Single(ctx, projectFilter)
+	project, err := dbContext.Projects().Single(ctx, projectFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting project: %w", err)
 	}
 
-	resourceServerRepository := ioc.GetDependency[repositories.ResourceServerRepository](scope)
 	resourceServerFilter := repositories.NewResourceServerFilter().
 		VirtualServerId(virtualServer.Id()).
 		ProjectId(project.Id()).
 		Id(command.ResourceServerId)
-	resourceServer, err := resourceServerRepository.Single(ctx, resourceServerFilter)
+	resourceServer, err := dbContext.ResourceServers().Single(ctx, resourceServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting resource server: %w", err)
 	}
@@ -72,10 +72,6 @@ func HandlePatchResourceServer(ctx context.Context, command PatchResourceServer)
 		resourceServer.SetDescription(*command.Description)
 	}
 
-	err = resourceServerRepository.Update(ctx, resourceServer)
-	if err != nil {
-		return nil, fmt.Errorf("updating resource server: %w", err)
-	}
-
+	dbContext.ResourceServers().Update(resourceServer)
 	return &PatchResourceServerResponse{}, nil
 }

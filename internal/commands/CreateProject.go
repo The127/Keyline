@@ -3,10 +3,12 @@ package commands
 import (
 	"Keyline/internal/authentication/permissions"
 	"Keyline/internal/behaviours"
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"context"
 	"fmt"
+
 	"github.com/The127/ioc"
 
 	"github.com/google/uuid"
@@ -41,20 +43,16 @@ type CreateProjectResponse struct {
 
 func HandleCreateProject(ctx context.Context, command CreateProject) (*CreateProjectResponse, error) {
 	scope := middlewares.GetScope(ctx)
+	dbContext := ioc.GetDependency[database.Context](scope)
 
-	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(command.VirtualServerName)
-	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().Single(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
-	projectRepository := ioc.GetDependency[repositories.ProjectRepository](scope)
 	project := repositories.NewProject(virtualServer.Id(), command.Slug, command.Name, command.Description)
-	err = projectRepository.Insert(ctx, project)
-	if err != nil {
-		return nil, fmt.Errorf("inserting project: %w", err)
-	}
+	dbContext.Projects().Insert(project)
 
 	return &CreateProjectResponse{
 		Id: project.Id(),

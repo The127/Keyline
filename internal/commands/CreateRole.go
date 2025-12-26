@@ -4,6 +4,7 @@ import (
 	"Keyline/internal/authentication"
 	"Keyline/internal/authentication/permissions"
 	"Keyline/internal/behaviours"
+	"Keyline/internal/database"
 	"Keyline/internal/events"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
@@ -47,17 +48,16 @@ type CreateRoleResponse struct {
 
 func HandleCreateRole(ctx context.Context, command CreateRole) (*CreateRoleResponse, error) {
 	scope := middlewares.GetScope(ctx)
+	dbContext := ioc.GetDependency[database.Context](scope)
 
-	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(command.VirtualServerName)
-	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().Single(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
-	projectRepository := ioc.GetDependency[repositories.ProjectRepository](scope)
 	projectFilter := repositories.NewProjectFilter().VirtualServerId(virtualServer.Id()).Slug(command.ProjectSlug)
-	project, err := projectRepository.Single(ctx, projectFilter)
+	project, err := dbContext.Projects().Single(ctx, projectFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting project: %w", err)
 	}
@@ -70,17 +70,13 @@ func HandleCreateRole(ctx context.Context, command CreateRole) (*CreateRoleRespo
 		}
 	}
 
-	roleRepository := ioc.GetDependency[repositories.RoleRepository](scope)
 	role := repositories.NewRole(
 		virtualServer.Id(),
 		project.Id(),
 		command.Name,
 		command.Description,
 	)
-	err = roleRepository.Insert(ctx, role)
-	if err != nil {
-		return nil, fmt.Errorf("inserting role: %w", err)
-	}
+	dbContext.Roles().Insert(role)
 
 	m := ioc.GetDependency[mediatr.Mediator](scope)
 	err = mediatr.SendEvent(ctx, m, events.RoleCreatedEvent{

@@ -3,11 +3,13 @@ package commands
 import (
 	"Keyline/internal/authentication/permissions"
 	"Keyline/internal/behaviours"
+	"Keyline/internal/database"
 	"Keyline/internal/events"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"context"
 	"fmt"
+
 	"github.com/The127/ioc"
 	"github.com/The127/mediatr"
 
@@ -44,15 +46,14 @@ type CreateUserResponse struct {
 
 func HandleCreateUser(ctx context.Context, command CreateUser) (*CreateUserResponse, error) {
 	scope := middlewares.GetScope(ctx)
+	dbContext := ioc.GetDependency[database.Context](scope)
 
-	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(command.VirtualServerName)
-	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().Single(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
-	userRepository := ioc.GetDependency[repositories.UserRepository](scope)
 	user := repositories.NewUser(
 		command.Username,
 		command.DisplayName,
@@ -60,10 +61,7 @@ func HandleCreateUser(ctx context.Context, command CreateUser) (*CreateUserRespo
 		virtualServer.Id(),
 	)
 	user.SetEmailVerified(command.EmailVerified)
-	err = userRepository.Insert(ctx, user)
-	if err != nil {
-		return nil, fmt.Errorf("inserting user: %w", err)
-	}
+	dbContext.Users().Insert(user)
 
 	m := ioc.GetDependency[mediatr.Mediator](scope)
 	err = mediatr.SendEvent(ctx, m, events.UserCreatedEvent{

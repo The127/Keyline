@@ -3,6 +3,7 @@ package commands
 import (
 	"Keyline/internal/authentication/permissions"
 	"Keyline/internal/behaviours"
+	"Keyline/internal/database"
 	"Keyline/internal/events"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
@@ -43,14 +44,14 @@ type SetPasswordResponse struct{}
 
 func HandleSetPassword(ctx context.Context, command SetPassword) (*SetPasswordResponse, error) {
 	scope := middlewares.GetScope(ctx)
+	dbContext := ioc.GetDependency[database.Context](scope)
 
 	hashedPassword := utils.HashPassword(command.NewPassword)
 
-	credentialRepository := ioc.GetDependency[repositories.CredentialRepository](scope)
 	credentialFilter := repositories.NewCredentialFilter().
 		UserId(command.UserId).
 		Type(repositories.CredentialTypePassword)
-	credential, err := credentialRepository.First(ctx, credentialFilter)
+	credential, err := dbContext.Credentials().First(ctx, credentialFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting credential: %w", err)
 	}
@@ -71,15 +72,9 @@ func HandleSetPassword(ctx context.Context, command SetPassword) (*SetPasswordRe
 	credential.SetDetails(details)
 
 	if passwordExists {
-		err = credentialRepository.Update(ctx, credential)
-		if err != nil {
-			return nil, fmt.Errorf("updating credential: %w", err)
-		}
+		dbContext.Credentials().Update(credential)
 	} else {
-		err = credentialRepository.Insert(ctx, credential)
-		if err != nil {
-			return nil, fmt.Errorf("inserting credential: %w", err)
-		}
+		dbContext.Credentials().Insert(credential)
 	}
 
 	m := ioc.GetDependency[mediatr.Mediator](scope)

@@ -4,6 +4,7 @@ import (
 	"Keyline/internal/authentication/permissions"
 	"Keyline/internal/behaviours"
 	"Keyline/internal/config"
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/internal/services"
@@ -114,38 +115,26 @@ type CreateVirtualServerResponse struct {
 
 func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer) (*CreateVirtualServerResponse, error) {
 	scope := middlewares.GetScope(ctx)
-
-	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
+	dbContext := ioc.GetDependency[database.Context](scope)
 
 	virtualServer := repositories.NewVirtualServer(command.Name, command.DisplayName)
 	virtualServer.SetEnableRegistration(command.EnableRegistration)
 	virtualServer.SetRequire2fa(command.Require2fa)
 	virtualServer.SetSigningAlgorithm(command.SigningAlgorithm)
 
-	err := virtualServerRepository.Insert(ctx, virtualServer)
-	if err != nil {
-		return nil, fmt.Errorf("inserting virtual server: %w", err)
-	}
+	dbContext.VirtualServers().Insert(virtualServer)
 
 	clockService := ioc.GetDependency[clock.Service](scope)
 
 	keyService := ioc.GetDependency[services.KeyService](scope)
-	_, err = keyService.Generate(clockService, command.Name, command.SigningAlgorithm)
+	_, err := keyService.Generate(clockService, command.Name, command.SigningAlgorithm)
 	if err != nil {
 		return nil, fmt.Errorf("generating keypair: %w", err)
 	}
-	err = initializeDefaultTemplates(ctx, virtualServer)
-	if err != nil {
-		return nil, fmt.Errorf("initializing default templates: %w", err)
-	}
-
-	projectRepository := ioc.GetDependency[repositories.ProjectRepository](scope)
+	initializeDefaultTemplates(ctx, virtualServer)
 
 	systemProject := repositories.NewSystemProject(virtualServer.Id())
-	err = projectRepository.Insert(ctx, systemProject)
-	if err != nil {
-		return nil, fmt.Errorf("inserting project: %w", err)
-	}
+	dbContext.Projects().Insert(systemProject)
 
 	initDefaultAppsResult, err := initializeDefaultApplications(ctx, virtualServer, systemProject)
 	if err != nil {
@@ -223,15 +212,11 @@ func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer)
 			return nil, fmt.Errorf("creating admin user: %w", err)
 		}
 
-		credentialRepository := ioc.GetDependency[repositories.CredentialRepository](scope)
 		initialAdminCredential := repositories.NewCredential(initialAdminUserInfo.Id, &repositories.CredentialPasswordDetails{
 			HashedPassword: command.Admin.PasswordHash,
 			Temporary:      false,
 		})
-		err = credentialRepository.Insert(ctx, initialAdminCredential)
-		if err != nil {
-			return nil, fmt.Errorf("creating initial admin credential: %w", err)
-		}
+		dbContext.Credentials().Insert(initialAdminCredential)
 
 		_, err = mediatr.Send[*AssignRoleToUserResponse](ctx, m, AssignRoleToUser{
 			VirtualServerName: virtualServer.Name(),
@@ -297,8 +282,7 @@ func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer)
 
 func assignRoles(ctx context.Context, m mediatr.Mediator, virtualServer *repositories.VirtualServer, userId uuid.UUID, roleList []string) error {
 	scope := middlewares.GetScope(ctx)
-	projectRepository := ioc.GetDependency[repositories.ProjectRepository](scope)
-	roleRepository := ioc.GetDependency[repositories.RoleRepository](scope)
+	dbContext := ioc.GetDependency[database.Context](scope)
 
 	for _, configuredRole := range roleList {
 		if !strings.Contains(configuredRole, ":") {
@@ -310,7 +294,7 @@ func assignRoles(ctx context.Context, m mediatr.Mediator, virtualServer *reposit
 		roleName := split[1]
 
 		projectFilter := repositories.NewProjectFilter().VirtualServerId(virtualServer.Id()).Slug(projectSlug)
-		project, err := projectRepository.Single(ctx, projectFilter)
+		project, err := dbContext.Projects().Single(ctx, projectFilter)
 		if err != nil {
 			return fmt.Errorf("getting project: %w", err)
 		}
@@ -319,7 +303,7 @@ func assignRoles(ctx context.Context, m mediatr.Mediator, virtualServer *reposit
 			VirtualServerId(virtualServer.Id()).
 			ProjectId(project.Id()).
 			Name(roleName)
-		role, err := roleRepository.Single(ctx, roleFilter)
+		role, err := dbContext.Roles().Single(ctx, roleFilter)
 		if err != nil {
 			return fmt.Errorf("getting role: %w", err)
 		}
@@ -344,8 +328,7 @@ type createDefaultApplicationResult struct {
 
 func initializeDefaultApplications(ctx context.Context, virtualServer *repositories.VirtualServer, systemProject *repositories.Project) (*createDefaultApplicationResult, error) {
 	scope := middlewares.GetScope(ctx)
-
-	applicationRepository := ioc.GetDependency[repositories.ApplicationRepository](scope)
+	dbContext := ioc.GetDependency[database.Context](scope)
 
 	adminUiApplication := repositories.NewApplication(virtualServer.Id(), systemProject.Id(), AdminApplicationName, "Admin Application", repositories.ApplicationTypePublic, []string{
 		fmt.Sprintf("%s/mgmt/%s/auth", config.C.Frontend.ExternalUrl, virtualServer.Name()),
@@ -356,10 +339,7 @@ func initializeDefaultApplications(ctx context.Context, virtualServer *repositor
 	})
 	adminUiApplication.SetSystemApplication(true)
 
-	err := applicationRepository.Insert(ctx, adminUiApplication)
-	if err != nil {
-		return nil, fmt.Errorf("inserting application: %w", err)
-	}
+	dbContext.Applications().Insert(adminUiApplication)
 
 	return &createDefaultApplicationResult{
 		adminUidApplicationId: adminUiApplication.Id(),
@@ -373,8 +353,7 @@ type createDefaultAdminUiRolesResult struct {
 
 func initializeDefaultAdminRoles(ctx context.Context, virtualServer *repositories.VirtualServer, project *repositories.Project, createSystemAdminRole bool) (*createDefaultAdminUiRolesResult, error) {
 	scope := middlewares.GetScope(ctx)
-
-	roleRepository := ioc.GetDependency[repositories.RoleRepository](scope)
+	dbContext := ioc.GetDependency[database.Context](scope)
 
 	adminRole := repositories.NewRole(
 		virtualServer.Id(),
@@ -382,11 +361,7 @@ func initializeDefaultAdminRoles(ctx context.Context, virtualServer *repositorie
 		AdminRoleName,
 		"Administrator role",
 	)
-
-	err := roleRepository.Insert(ctx, adminRole)
-	if err != nil {
-		return nil, fmt.Errorf("inserting admin role: %w", err)
-	}
+	dbContext.Roles().Insert(adminRole)
 
 	var systemAdminRoleId *uuid.UUID
 	if createSystemAdminRole {
@@ -396,11 +371,7 @@ func initializeDefaultAdminRoles(ctx context.Context, virtualServer *repositorie
 			SystemAdminRoleName,
 			"System administrator role",
 		)
-
-		err := roleRepository.Insert(ctx, systemAdminRole)
-		if err != nil {
-			return nil, fmt.Errorf("inserting system admin role: %w", err)
-		}
+		dbContext.Roles().Insert(systemAdminRole)
 
 		systemAdminRoleId = utils.Ptr(systemAdminRole.Id())
 	}
@@ -411,43 +382,25 @@ func initializeDefaultAdminRoles(ctx context.Context, virtualServer *repositorie
 	}, nil
 }
 
-func initializeDefaultTemplates(ctx context.Context, virtualServer *repositories.VirtualServer) error {
-	scope := middlewares.GetScope(ctx)
-
-	fileRepository := ioc.GetDependency[repositories.FileRepository](scope)
-	templateRepository := ioc.GetDependency[repositories.TemplateRepository](scope)
-
-	err := insertTemplate(
+func initializeDefaultTemplates(ctx context.Context, virtualServer *repositories.VirtualServer) {
+	insertTemplate(
 		ctx,
 		"email_verification_template",
 		virtualServer,
-		fileRepository,
-		templateRepository)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	)
 }
 
 func insertTemplate(
 	ctx context.Context,
 	templateName string,
 	virtualServer *repositories.VirtualServer,
-	fileRepository repositories.FileRepository,
-	templateRepository repositories.TemplateRepository,
-) error {
+) {
+	scope := middlewares.GetScope(ctx)
+	dbContext := ioc.GetDependency[database.Context](scope)
+
 	file := repositories.NewFile(templateName, "text/plain", templates.DefaultEmailVerificationTemplate)
-	err := fileRepository.Insert(ctx, file)
-	if err != nil {
-		return fmt.Errorf("inserting %s file: %w", templateName, err)
-	}
+	dbContext.Files().Insert(file)
 
 	t := repositories.NewTemplate(virtualServer.Id(), file.Id(), repositories.EmailVerificationMailTemplate)
-	err = templateRepository.Insert(ctx, t)
-	if err != nil {
-		return fmt.Errorf("inserting %s template: %w", templateName, err)
-	}
-
-	return nil
+	dbContext.Templates().Insert(t)
 }
