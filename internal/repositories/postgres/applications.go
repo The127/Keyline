@@ -260,7 +260,6 @@ func (r *ApplicationRepository) ExecuteInsert(ctx context.Context, tx *sql.Tx, a
 	row := tx.QueryRowContext(ctx, query, args...)
 
 	var xmin uint32
-
 	err := row.Scan(&xmin)
 	if err != nil {
 		return fmt.Errorf("inserting project: %w", err)
@@ -320,7 +319,6 @@ func (r *ApplicationRepository) ExecuteUpdate(ctx context.Context, tx *sql.Tx, a
 	row := tx.QueryRowContext(ctx, query, args...)
 
 	var xmin uint32
-
 	err := row.Scan(&xmin)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
@@ -329,6 +327,7 @@ func (r *ApplicationRepository) ExecuteUpdate(ctx context.Context, tx *sql.Tx, a
 		return fmt.Errorf("scanning row: %w", err)
 	}
 
+	application.SetVersion(xmin)
 	application.ClearChanges()
 	return nil
 }

@@ -2,19 +2,56 @@ package postgres
 
 import (
 	"Keyline/internal/change"
-	"Keyline/internal/database"
 	"Keyline/internal/logging"
-	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
+	"Keyline/internal/repositories/postgres/pghelpers"
 	"Keyline/utils"
 	"context"
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/The127/ioc"
+
+	"github.com/google/uuid"
 
 	"github.com/huandu/go-sqlbuilder"
 )
+
+type postgresApplicationUserMetadata struct {
+	postgresBaseModel
+	applicationId uuid.UUID
+	userId        uuid.UUID
+	metadata      string
+}
+
+func mapApplicationUserMetadata(m *repositories.ApplicationUserMetadata) *postgresApplicationUserMetadata {
+	return &postgresApplicationUserMetadata{
+		postgresBaseModel: mapBase(m.BaseModel),
+		applicationId:     m.ApplicationId(),
+		userId:            m.UserId(),
+		metadata:          m.Metadata(),
+	}
+}
+
+func (m *postgresApplicationUserMetadata) Map() *repositories.ApplicationUserMetadata {
+	return repositories.NewApplicationUserMetadataFromDB(
+		m.MapBase(),
+		m.applicationId,
+		m.userId,
+		m.metadata,
+	)
+}
+
+func (m *postgresApplicationUserMetadata) scan(row pghelpers.Row) error {
+	return row.Scan(
+		&m.id,
+		&m.auditCreatedAt,
+		&m.auditUpdatedAt,
+		&m.xmin,
+		&m.applicationId,
+		&m.userId,
+		&m.metadata,
+	)
+}
 
 type ApplicationUserMetadataRepository struct {
 	db            *sql.DB
@@ -35,7 +72,7 @@ func (r *ApplicationUserMetadataRepository) selectQuery(filter repositories.Appl
 		"id",
 		"audit_created_at",
 		"audit_updated_at",
-		"version",
+		"xmin",
 		"application_id",
 		"user_id",
 		"metadata",
@@ -57,20 +94,12 @@ func (r *ApplicationUserMetadataRepository) selectQuery(filter repositories.Appl
 }
 
 func (r *ApplicationUserMetadataRepository) List(ctx context.Context, filter repositories.ApplicationUserMetadataFilter) ([]*repositories.ApplicationUserMetadata, int, error) {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
-
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return nil, 0, fmt.Errorf("failed to open tx: %w", err)
-	}
-
 	s := r.selectQuery(filter)
 	s.SelectMore("count(*) over()")
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
-	rows, err := tx.Query(query, args...)
+	rows, err := r.db.Query(query, args...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("querying db: %w", err)
 	}
@@ -79,16 +108,13 @@ func (r *ApplicationUserMetadataRepository) List(ctx context.Context, filter rep
 	var metadata []*repositories.ApplicationUserMetadata
 	var totalCount int
 	for rows.Next() {
-		m := repositories.ApplicationUserMetadata{
-			BaseModel: repositories.NewModelBase(),
-		}
-
-		err = rows.Scan(append(m.GetScanPointers(), &totalCount)...)
+		m := &postgresApplicationUserMetadata{}
+		err := m.scan(rows)
 		if err != nil {
 			return nil, 0, fmt.Errorf("scanning row: %w", err)
 		}
 
-		metadata = append(metadata, &m)
+		metadata = append(metadata, m.Map())
 	}
 
 	return metadata, totalCount, nil
@@ -106,26 +132,15 @@ func (r *ApplicationUserMetadataRepository) Single(ctx context.Context, filter r
 }
 
 func (r *ApplicationUserMetadataRepository) First(ctx context.Context, filter repositories.ApplicationUserMetadataFilter) (*repositories.ApplicationUserMetadata, error) {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
-
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return nil, fmt.Errorf("failed to open tx: %w", err)
-	}
-
 	s := r.selectQuery(filter)
 	s.Limit(1)
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
-	row := tx.QueryRowContext(ctx, query, args...)
+	row := r.db.QueryRowContext(ctx, query, args...)
 
-	metadata := repositories.ApplicationUserMetadata{
-		BaseModel: repositories.NewModelBase(),
-	}
-
-	err = row.Scan(metadata.GetScanPointers()...)
+	metadata := &postgresApplicationUserMetadata{}
+	err := metadata.scan(row)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, nil
@@ -133,73 +148,90 @@ func (r *ApplicationUserMetadataRepository) First(ctx context.Context, filter re
 		return nil, fmt.Errorf("scanning row: %w", err)
 	}
 
-	return &metadata, nil
+	return metadata.Map(), nil
 }
 
-func (r *ApplicationUserMetadataRepository) Insert(ctx context.Context, applicationUserMetadata *repositories.ApplicationUserMetadata) error {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
+func (r *ApplicationUserMetadataRepository) Insert(applicationUserMetadata *repositories.ApplicationUserMetadata) {
+	r.changeTracker.Add(change.NewEntry(change.Added, r.entityType, applicationUserMetadata))
+}
 
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return fmt.Errorf("failed to open tx: %w", err)
-	}
+func (r *ApplicationUserMetadataRepository) ExecuteInsert(ctx context.Context, tx *sql.Tx, applicationUserMetadata *repositories.ApplicationUserMetadata) error {
+	mapped := mapApplicationUserMetadata(applicationUserMetadata)
 
 	s := sqlbuilder.InsertInto("application_user_metadata").
 		Cols(
+			"id",
+			"audit_created_at",
+			"audit_updated_at",
 			"application_id",
 			"user_id",
 			"metadata",
 		).
 		Values(
-			applicationUserMetadata.ApplicationId(),
-			applicationUserMetadata.UserId(),
-			applicationUserMetadata.Metadata(),
-		).Returning("id", "audit_created_at", "audit_updated_at", "version")
+			mapped.id,
+			mapped.auditCreatedAt,
+			mapped.auditUpdatedAt,
+			mapped.applicationId,
+			mapped.userId,
+			mapped.metadata,
+		).
+		Returning("xmin")
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
 	row := tx.QueryRowContext(ctx, query, args...)
 
-	err = row.Scan(applicationUserMetadata.InsertPointers()...)
+	var xmin uint32
+	err := row.Scan(&xmin)
 	if err != nil {
 		return fmt.Errorf("scanning row: %w", err)
 	}
 
+	applicationUserMetadata.SetVersion(xmin)
+	applicationUserMetadata.ClearChanges()
 	return nil
 }
 
-func (r *ApplicationUserMetadataRepository) Update(ctx context.Context, applicationUserMetadata *repositories.ApplicationUserMetadata) error {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
+func (r *ApplicationUserMetadataRepository) Update(applicationUserMetadata *repositories.ApplicationUserMetadata) {
+	r.changeTracker.Add(change.NewEntry(change.Updated, r.entityType, applicationUserMetadata))
+}
 
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return fmt.Errorf("failed to open tx: %w", err)
+func (r *ApplicationUserMetadataRepository) ExecuteUpdate(ctx context.Context, tx *sql.Tx, applicationUserMetadata *repositories.ApplicationUserMetadata) error {
+	if !applicationUserMetadata.HasChanges() {
+		return nil
 	}
+
+	mapped := mapApplicationUserMetadata(applicationUserMetadata)
 
 	s := sqlbuilder.Update("application_user_metadata")
-	for fieldName, value := range applicationUserMetadata.Changes() {
-		s.SetMore(s.Assign(fieldName, value))
+	s.Where(s.Equal("id", mapped.id))
+	s.Where(s.Equal("xmin", mapped.xmin))
+
+	for _, field := range applicationUserMetadata.GetChanges() {
+		switch field {
+		case repositories.ApplicationUserMetadataChangeMetadata:
+			s.SetMore(s.Assign("metadata", mapped.metadata))
+
+		default:
+			return fmt.Errorf("updating field %v is not supported", field)
+		}
 	}
-	s.SetMore(s.Assign("version", applicationUserMetadata.Version()+1))
 
-	s.Where(s.Equal("id", applicationUserMetadata.Id()))
-	s.Where(s.Equal("version", applicationUserMetadata.Version()))
-	s.Returning("audit_updated_at", "version")
-
+	s.Returning("xmin")
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
 	row := tx.QueryRowContext(ctx, query, args...)
 
-	err = row.Scan(applicationUserMetadata.UpdatePointers()...)
+	var xmin uint32
+	err := row.Scan(&xmin)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
-		return fmt.Errorf("updating application user metadata: %w", repositories.ErrVersionMismatch)
+		return fmt.Errorf("updating application: %w", repositories.ErrVersionMismatch)
 	case err != nil:
 		return fmt.Errorf("scanning row: %w", err)
 	}
 
+	applicationUserMetadata.SetVersion(xmin)
 	applicationUserMetadata.ClearChanges()
 	return nil
 }

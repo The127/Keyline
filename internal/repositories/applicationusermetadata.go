@@ -34,15 +34,17 @@ func NewApplicationUserMetadata(applicationId uuid.UUID, userId uuid.UUID, metad
 	}
 }
 
-func (a *ApplicationUserMetadata) GetScanPointers() []any {
-	return []any{
-		&a.id,
-		&a.auditCreatedAt,
-		&a.auditUpdatedAt,
-		&a.version,
-		&a.applicationId,
-		&a.userId,
-		&a.metadata,
+func NewApplicationUserMetadataFromDB(
+	base BaseModel,
+	applicationId uuid.UUID,
+	userId uuid.UUID,
+	metadata string,
+) *ApplicationUserMetadata {
+	return &ApplicationUserMetadata{
+		BaseModel:     base,
+		applicationId: applicationId,
+		userId:        userId,
+		metadata:      metadata,
 	}
 }
 
