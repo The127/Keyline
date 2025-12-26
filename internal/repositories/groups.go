@@ -35,15 +35,13 @@ func NewGroup(virtualServerId uuid.UUID, name string, description string) *Group
 	}
 }
 
-func (g *Group) GetScanPointers() []any {
-	return []any{
-		&g.id,
-		&g.auditCreatedAt,
-		&g.auditUpdatedAt,
-		&g.version,
-		&g.virtualServerId,
-		&g.name,
-		&g.description,
+func NewGroupFromDB(base BaseModel, virtualServerId uuid.UUID, name string, description string) *Group {
+	return &Group{
+		BaseModel:       base,
+		List:            change.NewChanges[GroupChange](),
+		virtualServerId: virtualServerId,
+		name:            name,
+		description:     description,
 	}
 }
 

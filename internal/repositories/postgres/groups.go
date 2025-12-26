@@ -2,20 +2,55 @@ package postgres
 
 import (
 	"Keyline/internal/change"
-	"Keyline/internal/database"
 	"Keyline/internal/logging"
-	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
+	"Keyline/internal/repositories/postgres/pghelpers"
 	"Keyline/utils"
 	"context"
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/The127/ioc"
 
 	"github.com/google/uuid"
 	"github.com/huandu/go-sqlbuilder"
 )
+
+type postgresGroup struct {
+	postgresBaseModel
+	virtualServerId uuid.UUID
+	name            string
+	description     string
+}
+
+func mapGroup(group *repositories.Group) *postgresGroup {
+	return &postgresGroup{
+		postgresBaseModel: mapBase(group.BaseModel),
+		virtualServerId:   group.VirtualServerId(),
+		name:              group.Name(),
+		description:       group.Description(),
+	}
+}
+
+func (g *postgresGroup) Map() *repositories.Group {
+	return repositories.NewGroupFromDB(
+		g.MapBase(),
+		g.virtualServerId,
+		g.name,
+		g.description,
+	)
+}
+
+func (g *postgresGroup) scan(row pghelpers.Row) error {
+	return row.Scan(
+		&g.id,
+		&g.auditCreatedAt,
+		&g.auditUpdatedAt,
+		&g.xmin,
+		&g.virtualServerId,
+		&g.name,
+		&g.description,
+	)
+}
 
 type GroupRepository struct {
 	db            *sql.DB
@@ -36,7 +71,7 @@ func (r *GroupRepository) selectQuery(filter repositories.GroupFilter) *sqlbuild
 		"id",
 		"audit_created_at",
 		"audit_updated_at",
-		"version",
+		"xmin",
 		"virtual_server_id",
 		"name",
 		"description",
@@ -72,41 +107,6 @@ func (r *GroupRepository) selectQuery(filter repositories.GroupFilter) *sqlbuild
 	return s
 }
 
-func (r *GroupRepository) Update(ctx context.Context, group *repositories.Group) error {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
-
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return fmt.Errorf("failed to open tx: %w", err)
-	}
-
-	s := sqlbuilder.Update("groups")
-	for fieldName, value := range group.Changes() {
-		s.SetMore(s.Assign(fieldName, value))
-	}
-	s.SetMore(s.Assign("version", group.Version()+1))
-
-	s.Where(s.Equal("id", group.Id()))
-	s.Where(s.Equal("version", group.Version()))
-	s.Returning("audit_updated_at", "version")
-
-	query, args := s.Build()
-	logging.Logger.Debug("executing sql: ", query)
-	row := tx.QueryRowContext(ctx, query, args...)
-
-	err = row.Scan(group.UpdatePointers()...)
-	switch {
-	case errors.Is(err, sql.ErrNoRows):
-		return fmt.Errorf("updating group: %w", repositories.ErrVersionMismatch)
-	case err != nil:
-		return fmt.Errorf("scanning row: %w", err)
-	}
-
-	group.ClearChanges()
-	return nil
-}
-
 func (r *GroupRepository) Single(ctx context.Context, filter repositories.GroupFilter) (*repositories.Group, error) {
 	result, err := r.First(ctx, filter)
 	if err != nil {
@@ -119,25 +119,15 @@ func (r *GroupRepository) Single(ctx context.Context, filter repositories.GroupF
 }
 
 func (r *GroupRepository) First(ctx context.Context, filter repositories.GroupFilter) (*repositories.Group, error) {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
-
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return nil, fmt.Errorf("failed to open tx: %w", err)
-	}
-
 	s := r.selectQuery(filter)
 	s.Limit(1)
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
-	row := tx.QueryRowContext(ctx, query, args...)
+	row := r.db.QueryRowContext(ctx, query, args...)
 
-	group := repositories.Group{
-		BaseModel: repositories.NewModelBase(),
-	}
-	err = row.Scan(group.GetScanPointers()...)
+	group := &postgresGroup{}
+	err := group.scan(row)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, nil
@@ -146,24 +136,16 @@ func (r *GroupRepository) First(ctx context.Context, filter repositories.GroupFi
 		return nil, fmt.Errorf("scanning row: %w", err)
 	}
 
-	return &group, nil
+	return group.Map(), nil
 }
 
 func (r *GroupRepository) List(ctx context.Context, filter repositories.GroupFilter) ([]*repositories.Group, int, error) {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
-
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return nil, 0, fmt.Errorf("failed to open tx: %w", err)
-	}
-
 	s := r.selectQuery(filter)
 	s.SelectMore("count(*) over()")
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
-	rows, err := tx.Query(query, args...)
+	rows, err := r.db.Query(query, args...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("querying db: %w", err)
 	}
@@ -172,67 +154,118 @@ func (r *GroupRepository) List(ctx context.Context, filter repositories.GroupFil
 	var groups []*repositories.Group
 	var totalCount int
 	for rows.Next() {
-		group := repositories.Group{
-			BaseModel: repositories.NewModelBase(),
-		}
-
-		err = rows.Scan(append(group.GetScanPointers(), &totalCount)...)
+		group := &postgresGroup{}
+		err := group.scan(rows)
 		if err != nil {
 			return nil, 0, fmt.Errorf("scanning row: %w", err)
 		}
 
-		groups = append(groups, &group)
+		groups = append(groups, group.Map())
 	}
 
 	return groups, totalCount, nil
 }
 
-func (r *GroupRepository) Insert(ctx context.Context, group *repositories.Group) error {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
+func (r *GroupRepository) Insert(group *repositories.Group) {
+	r.changeTracker.Add(change.NewEntry(change.Added, r.entityType, group))
+}
 
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return fmt.Errorf("failed to open tx: %w", err)
-	}
+func (r *GroupRepository) ExecuteInsert(ctx context.Context, tx *sql.Tx, group *repositories.Group) error {
+	mapped := mapGroup(group)
 
 	s := sqlbuilder.InsertInto("groups").
-		Cols("virtual_server_id", "name", "description").
+		Cols(
+			"id",
+			"audit_created_at",
+			"audit_updated_at",
+			"virtual_server_id",
+			"name",
+			"description",
+		).
 		Values(
-			group.VirtualServerId(),
-			group.Name(),
-			group.Description(),
-		).Returning("id", "audit_created_at", "audit_updated_at", "version")
+			mapped.id,
+			mapped.auditCreatedAt,
+			mapped.auditUpdatedAt,
+			mapped.virtualServerId,
+			mapped.name,
+			mapped.description,
+		).
+		Returning("xmin")
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
 	row := tx.QueryRowContext(ctx, query, args...)
 
-	err = row.Scan(group.InsertPointers()...)
+	var xmin uint32
+	err := row.Scan(&xmin)
 	if err != nil {
 		return fmt.Errorf("scanning row: %w", err)
 	}
 
+	group.SetVersion(xmin)
 	group.ClearChanges()
 	return nil
 }
 
-func (r *GroupRepository) Delete(ctx context.Context, id uuid.UUID) error {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
+func (r *GroupRepository) Update(group *repositories.Group) {
+	r.changeTracker.Add(change.NewEntry(change.Updated, r.entityType, group))
+}
 
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return fmt.Errorf("failed to open tx: %w", err)
+func (r *GroupRepository) ExecuteUpdate(ctx context.Context, tx *sql.Tx, group *repositories.Group) error {
+	if !group.HasChanges() {
+		return nil
 	}
 
+	mapped := mapGroup(group)
+
+	s := sqlbuilder.Update("groups")
+	s.Where(s.Equal("id", mapped.id))
+	s.Where(s.Equal("xmin", mapped.xmin))
+
+	for _, field := range group.GetChanges() {
+		switch field {
+		case repositories.GroupChangeName:
+			s.SetMore(s.Assign("name", mapped.name))
+
+		case repositories.GroupChangeDescription:
+			s.SetMore(s.Assign("description", mapped.description))
+
+		default:
+			return fmt.Errorf("updating field %v is not supported", field)
+		}
+	}
+
+	s.Returning("xmin")
+	query, args := s.Build()
+	logging.Logger.Debug("executing sql: ", query)
+	row := tx.QueryRowContext(ctx, query, args...)
+
+	var xmin uint32
+	err := row.Scan(&xmin)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return fmt.Errorf("updating application: %w", repositories.ErrVersionMismatch)
+	case err != nil:
+		return fmt.Errorf("scanning row: %w", err)
+	}
+
+	group.SetVersion(xmin)
+	group.ClearChanges()
+	return nil
+}
+
+func (r *GroupRepository) Delete(id uuid.UUID) {
+	r.changeTracker.Add(change.NewEntry(change.Deleted, r.entityType, id))
+}
+
+func (r *GroupRepository) ExecuteDelete(ctx context.Context, tx *sql.Tx, id uuid.UUID) error {
 	s := sqlbuilder.DeleteFrom("groups")
 
 	s.Where(s.Equal("id", id))
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
-	_, err = tx.ExecContext(ctx, query, args...)
+	_, err := tx.ExecContext(ctx, query, args...)
 	if err != nil {
 		return fmt.Errorf("executing delete: %w", err)
 	}
