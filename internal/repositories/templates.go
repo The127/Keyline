@@ -30,6 +30,15 @@ func NewTemplate(virtualServerId uuid.UUID, fileId uuid.UUID, templateType Templ
 	}
 }
 
+func NewTemplateFromDB(base BaseModel, virtualServerId uuid.UUID, fileId uuid.UUID, templateType TemplateType) *Template {
+	return &Template{
+		BaseModel:       base,
+		virtualServerId: virtualServerId,
+		fileId:          fileId,
+		templateType:    templateType,
+	}
+}
+
 func (t *Template) VirtualServerId() uuid.UUID {
 	return t.virtualServerId
 }
@@ -40,18 +49,6 @@ func (t *Template) FileId() uuid.UUID {
 
 func (t *Template) TemplateType() TemplateType {
 	return t.templateType
-}
-
-func (t *Template) GetScanPointers() []any {
-	return []any{
-		&t.id,
-		&t.auditCreatedAt,
-		&t.auditUpdatedAt,
-		&t.version,
-		&t.virtualServerId,
-		&t.fileId,
-		&t.templateType,
-	}
 }
 
 type TemplateFilter struct {
