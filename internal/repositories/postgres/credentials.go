@@ -2,21 +2,53 @@ package postgres
 
 import (
 	"Keyline/internal/change"
-	"Keyline/internal/database"
 	"Keyline/internal/logging"
-	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
+	"Keyline/internal/repositories/postgres/pghelpers"
 	"Keyline/utils"
 	"context"
 	"database/sql"
 	"errors"
 	"fmt"
 
-	"github.com/The127/ioc"
-
 	"github.com/google/uuid"
 	"github.com/huandu/go-sqlbuilder"
 )
+
+type postgresCredential struct {
+	postgresBaseModel
+	userId  uuid.UUID
+	type_   string
+	details string
+}
+
+func mapCredential(credential *repositories.Credential) *postgresCredential {
+	return &postgresCredential{
+		postgresBaseModel: mapBase(credential.BaseModel),
+		userId:            credential.UserId(),
+		type_:             string(credential.Type()),
+		details:           "", // TODO
+	}
+}
+
+func (c *postgresCredential) Map() *repositories.Credential {
+	return repositories.NewCredentialFromDB(
+		c.MapBase(),
+		// TODO
+	)
+}
+
+func (c *postgresCredential) scan(row pghelpers.Row) error {
+	return row.Scan(
+		&c.id,
+		&c.auditCreatedAt,
+		&c.auditUpdatedAt,
+		&c.xmin,
+		&c.userId,
+		&c.type_,
+		&c.details,
+	)
+}
 
 type CredentialRepository struct {
 	db            *sql.DB
@@ -37,7 +69,7 @@ func (r *CredentialRepository) selectQuery(filter repositories.CredentialFilter)
 		"id",
 		"audit_created_at",
 		"audit_updated_at",
-		"version",
+		"xmin",
 		"user_id",
 		"type",
 		"details",
@@ -82,25 +114,15 @@ func (r *CredentialRepository) Single(ctx context.Context, filter repositories.C
 }
 
 func (r *CredentialRepository) First(ctx context.Context, filter repositories.CredentialFilter) (*repositories.Credential, error) {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
-
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return nil, fmt.Errorf("failed to open tx: %w", err)
-	}
-
 	s := r.selectQuery(filter)
 	s.Limit(1)
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
-	row := tx.QueryRowContext(ctx, query, args...)
+	row := r.db.QueryRowContext(ctx, query, args...)
 
-	credential := repositories.Credential{
-		BaseModel: repositories.NewModelBase(),
-	}
-	err = row.Scan(credential.GetScanPointers()...)
+	credential := &postgresCredential{}
+	err := credential.scan(row)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, nil
@@ -109,23 +131,15 @@ func (r *CredentialRepository) First(ctx context.Context, filter repositories.Cr
 		return nil, fmt.Errorf("scanning row: %w", err)
 	}
 
-	return &credential, nil
+	return credential.Map(), nil
 }
 
 func (r *CredentialRepository) List(ctx context.Context, filter repositories.CredentialFilter) ([]*repositories.Credential, error) {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
-
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return nil, fmt.Errorf("failed to open tx: %w", err)
-	}
-
 	s := r.selectQuery(filter)
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
-	rows, err := tx.Query(query, args...)
+	rows, err := r.db.Query(query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("querying db: %w", err)
 	}
@@ -133,70 +147,93 @@ func (r *CredentialRepository) List(ctx context.Context, filter repositories.Cre
 
 	var credentials []*repositories.Credential
 	for rows.Next() {
-		credential := repositories.Credential{
-			BaseModel: repositories.NewModelBase(),
-		}
-		err = rows.Scan(credential.GetScanPointers()...)
+		credential := &postgresCredential{}
+		err := credential.scan(rows)
 		if err != nil {
 			return nil, fmt.Errorf("scanning row: %w", err)
 		}
-		credentials = append(credentials, &credential)
+		credentials = append(credentials, credential.Map())
 	}
 
 	return credentials, nil
 }
 
-func (r *CredentialRepository) Insert(ctx context.Context, credential *repositories.Credential) error {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
+func (r *CredentialRepository) Insert(credential *repositories.Credential) {
+	r.changeTracker.Add(change.NewEntry(change.Added, r.entityType, credential))
+}
 
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return fmt.Errorf("failed to open tx: %w", err)
-	}
+func (r *CredentialRepository) ExecuteInsert(ctx context.Context, tx *sql.Tx, credential *repositories.Credential) error {
+	mapped := mapCredential(credential)
 
 	s := sqlbuilder.InsertInto("credentials").
-		Cols("user_id", "type", "details").
-		Values(credential.UserId(), credential.Type(), credential.Details()).
-		Returning("id", "audit_created_at", "audit_updated_at", "version")
+		Cols(
+			"id",
+			"audit_created_at",
+			"audit_updated_at",
+			"user_id",
+			"type",
+			"details",
+		).
+		Values(
+			mapped.id,
+			mapped.auditCreatedAt,
+			mapped.auditUpdatedAt,
+			credential.UserId(),
+			credential.Type(),
+			credential.Details(),
+		).
+		Returning("xmin")
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
 	row := tx.QueryRowContext(ctx, query, args...)
 
-	err = row.Scan(credential.InsertPointers()...)
+	var xmin uint32
+	err := row.Scan(&xmin)
 	if err != nil {
 		return fmt.Errorf("scanning row: %w", err)
 	}
 
+	credential.SetVersion(xmin)
 	credential.ClearChanges()
 	return nil
 }
 
-func (r *CredentialRepository) Update(ctx context.Context, credential *repositories.Credential) error {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
+func (r *CredentialRepository) Update(credential *repositories.Credential) {
+	r.changeTracker.Add(change.NewEntry(change.Updated, r.entityType, credential))
+}
 
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return fmt.Errorf("failed to open tx: %w", err)
+func (r *CredentialRepository) ExecuteUpdate(ctx context.Context, tx *sql.Tx, credential *repositories.Credential) error {
+	if !credential.HasChanges() {
+		return nil
 	}
+
+	mapped := mapCredential(credential)
 
 	s := sqlbuilder.Update("credentials")
-	for fieldName, value := range credential.Changes() {
-		s.SetMore(s.Assign(fieldName, value))
+	s.Where(s.Equal("id", mapped.id))
+	s.Where(s.Equal("xmin", mapped.xmin))
+
+	for _, field := range credential.GetChanges() {
+		switch field {
+		case repositories.CredentialChangeType:
+			s.SetMore(s.Assign("type", mapped.type_))
+
+		case repositories.CredentialChangeDetails:
+			s.SetMore(s.Assign("details", mapped.details))
+
+		default:
+			return fmt.Errorf("updating field %v is not supported", field)
+		}
 	}
-	s.SetMore(s.Assign("version", credential.Version()+1))
 
-	s.Where(s.Equal("id", credential.Id()))
-	s.Where(s.Equal("version", credential.Version()))
-	s.Returning("audit_updated_at", "version")
-
+	s.Returning("xmin")
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
 	row := tx.QueryRowContext(ctx, query, args...)
 
-	err = row.Scan(credential.UpdatePointers()...)
+	var xmin uint32
+	err := row.Scan(&xmin)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return fmt.Errorf("updating credential: %w", repositories.ErrVersionMismatch)
@@ -204,25 +241,22 @@ func (r *CredentialRepository) Update(ctx context.Context, credential *repositor
 		return fmt.Errorf("scanning row: %w", err)
 	}
 
+	credential.SetVersion(xmin)
 	credential.ClearChanges()
 	return nil
 }
 
-func (r *CredentialRepository) Delete(ctx context.Context, id uuid.UUID) error {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
+func (r *CredentialRepository) Delete(id uuid.UUID) {
+	r.changeTracker.Add(change.NewEntry(change.Deleted, r.entityType, id))
+}
 
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return fmt.Errorf("failed to open tx: %w", err)
-	}
-
+func (r *CredentialRepository) ExecuteDelete(ctx context.Context, tx *sql.Tx, id uuid.UUID) error {
 	s := sqlbuilder.DeleteFrom("credentials")
 	s.Where(s.Equal("id", id))
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
-	_, err = tx.ExecContext(ctx, query, args...)
+	_, err := tx.ExecContext(ctx, query, args...)
 	if err != nil {
 		return fmt.Errorf("executing sql: %w", err)
 	}

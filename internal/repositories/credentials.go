@@ -43,15 +43,9 @@ func NewCredential(userId uuid.UUID, details CredentialDetails) *Credential {
 	}
 }
 
-func (c *Credential) GetScanPointers() []any {
-	return []any{
-		&c.id,
-		&c.auditCreatedAt,
-		&c.auditUpdatedAt,
-		&c.version,
-		&c.userId,
-		&c._type,
-		&c.details,
+func NewCredentialFromDB(base BaseModel) *Credential {
+	return &Credential{
+		BaseModel: base,
 	}
 }
 
