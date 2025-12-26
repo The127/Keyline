@@ -89,7 +89,7 @@ func (r *resourceServerRepository) List(ctx context.Context, filter repositories
 	var totalCount int
 	for rows.Next() {
 		resourceServer := repositories.ResourceServer{
-			ModelBase: repositories.NewModelBase(),
+			BaseModel: repositories.NewModelBase(),
 		}
 		err = rows.Scan(append(resourceServer.GetScanPointers(), &totalCount)...)
 		if err != nil {
@@ -119,7 +119,7 @@ func (r *resourceServerRepository) First(ctx context.Context, filter repositorie
 	row := tx.QueryRowContext(ctx, query, args...)
 
 	resourceServer := repositories.ResourceServer{
-		ModelBase: repositories.NewModelBase(),
+		BaseModel: repositories.NewModelBase(),
 	}
 	err = row.Scan(resourceServer.GetScanPointers()...)
 	if err != nil {

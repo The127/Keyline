@@ -71,7 +71,7 @@ func (r *applicationUserMetadataRepository) List(ctx context.Context, filter rep
 	var totalCount int
 	for rows.Next() {
 		m := repositories.ApplicationUserMetadata{
-			ModelBase: repositories.NewModelBase(),
+			BaseModel: repositories.NewModelBase(),
 		}
 
 		err = rows.Scan(append(m.GetScanPointers(), &totalCount)...)
@@ -113,7 +113,7 @@ func (r *applicationUserMetadataRepository) First(ctx context.Context, filter re
 	row := tx.QueryRowContext(ctx, query, args...)
 
 	metadata := repositories.ApplicationUserMetadata{
-		ModelBase: repositories.NewModelBase(),
+		BaseModel: repositories.NewModelBase(),
 	}
 
 	err = row.Scan(metadata.GetScanPointers()...)

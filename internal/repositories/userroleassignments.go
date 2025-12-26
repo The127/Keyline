@@ -8,7 +8,7 @@ import (
 )
 
 type UserRoleAssignment struct {
-	ModelBase
+	BaseModel
 
 	userId  uuid.UUID
 	roleId  uuid.UUID
@@ -30,7 +30,7 @@ type UserRoleAssignmentRoleInfo struct {
 
 func NewUserRoleAssignment(userId uuid.UUID, roleId uuid.UUID, groupId *uuid.UUID) *UserRoleAssignment {
 	return &UserRoleAssignment{
-		ModelBase: NewModelBase(),
+		BaseModel: NewModelBase(),
 		userId:    userId,
 		roleId:    roleId,
 		groupId:   groupId,

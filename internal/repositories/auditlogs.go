@@ -10,7 +10,7 @@ import (
 )
 
 type AuditLog struct {
-	ModelBase
+	BaseModel
 
 	virtualServerId uuid.UUID
 	userId          *uuid.UUID
@@ -51,7 +51,7 @@ func NewAllowedAuditLog(virtualServerId uuid.UUID, userId uuid.UUID, request Req
 	allowReasonJsonString := string(allowReasonJsonBytes)
 
 	return &AuditLog{
-		ModelBase:       NewModelBase(),
+		BaseModel:       NewModelBase(),
 		virtualServerId: virtualServerId,
 		userId:          &userId,
 		requestType:     request.GetRequestName(),
@@ -70,7 +70,7 @@ func NewDeniedAuditLog(virtualServerId uuid.UUID, userId uuid.UUID, request Requ
 	}
 
 	return &AuditLog{
-		ModelBase:       NewModelBase(),
+		BaseModel:       NewModelBase(),
 		virtualServerId: virtualServerId,
 		userId:          &userId,
 		requestType:     request.GetRequestName(),

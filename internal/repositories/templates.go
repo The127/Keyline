@@ -14,7 +14,7 @@ const (
 )
 
 type Template struct {
-	ModelBase
+	BaseModel
 
 	virtualServerId uuid.UUID
 	fileId          uuid.UUID
@@ -23,7 +23,7 @@ type Template struct {
 
 func NewTemplate(virtualServerId uuid.UUID, fileId uuid.UUID, templateType TemplateType) *Template {
 	return &Template{
-		ModelBase:       NewModelBase(),
+		BaseModel:       NewModelBase(),
 		virtualServerId: virtualServerId,
 		fileId:          fileId,
 		templateType:    templateType,

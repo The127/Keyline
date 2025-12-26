@@ -17,7 +17,7 @@ const (
 )
 
 type Application struct {
-	ModelBase
+	BaseModel
 
 	virtualServerId uuid.UUID
 	projectId       uuid.UUID
@@ -38,7 +38,7 @@ type Application struct {
 
 func NewApplication(virtualServerId uuid.UUID, projectId uuid.UUID, name string, displayName string, type_ ApplicationType, redirectUris []string) *Application {
 	return &Application{
-		ModelBase:              NewModelBase(),
+		BaseModel:              NewModelBase(),
 		virtualServerId:        virtualServerId,
 		projectId:              projectId,
 		name:                   name,

@@ -8,7 +8,7 @@ import (
 )
 
 type ApplicationUserMetadata struct {
-	ModelBase
+	BaseModel
 
 	applicationId uuid.UUID
 	userId        uuid.UUID
@@ -18,7 +18,7 @@ type ApplicationUserMetadata struct {
 
 func NewApplicationUserMetadata(applicationId uuid.UUID, userId uuid.UUID, metadata string) *ApplicationUserMetadata {
 	return &ApplicationUserMetadata{
-		ModelBase:     NewModelBase(),
+		BaseModel:     NewModelBase(),
 		applicationId: applicationId,
 		userId:        userId,
 		metadata:      metadata,

@@ -87,7 +87,7 @@ func (r *userRoleAssignmentRepository) List(ctx context.Context, filter reposito
 	var totalCount int
 	for rows.Next() {
 		userRoleAssignment := repositories.UserRoleAssignment{
-			ModelBase: repositories.NewModelBase(),
+			BaseModel: repositories.NewModelBase(),
 		}
 		err = rows.Scan(append(userRoleAssignment.GetScanPointers(filter), &totalCount)...)
 		if err != nil {

@@ -16,7 +16,7 @@ var (
 )
 
 type Credential struct {
-	ModelBase
+	BaseModel
 
 	userId uuid.UUID
 
@@ -26,7 +26,7 @@ type Credential struct {
 
 func NewCredential(userId uuid.UUID, details CredentialDetails) *Credential {
 	return &Credential{
-		ModelBase: NewModelBase(),
+		BaseModel: NewModelBase(),
 		userId:    userId,
 		_type:     details.CredentialDetailType(),
 		details:   details,

@@ -8,7 +8,7 @@ import (
 )
 
 type User struct {
-	ModelBase
+	BaseModel
 
 	virtualServerId uuid.UUID
 
@@ -25,7 +25,7 @@ type User struct {
 
 func NewUser(username string, displayName string, primaryEmail string, virtualServerId uuid.UUID) *User {
 	return &User{
-		ModelBase:       NewModelBase(),
+		BaseModel:       NewModelBase(),
 		virtualServerId: virtualServerId,
 		username:        username,
 		displayName:     displayName,
@@ -37,7 +37,7 @@ func NewUser(username string, displayName string, primaryEmail string, virtualSe
 
 func NewSystemUser(username string) *User {
 	return &User{
-		ModelBase:   NewModelBase(),
+		BaseModel:   NewModelBase(),
 		username:    username,
 		displayName: username,
 		serviceUser: true,
@@ -47,7 +47,7 @@ func NewSystemUser(username string) *User {
 
 func NewServiceUser(username string, virtualServerId uuid.UUID) *User {
 	return &User{
-		ModelBase:       NewModelBase(),
+		BaseModel:       NewModelBase(),
 		virtualServerId: virtualServerId,
 		username:        username,
 		displayName:     username,

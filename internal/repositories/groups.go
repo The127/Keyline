@@ -8,7 +8,7 @@ import (
 )
 
 type Group struct {
-	ModelBase
+	BaseModel
 
 	virtualServerId uuid.UUID
 
@@ -18,7 +18,7 @@ type Group struct {
 
 func NewGroup(virtualServerId uuid.UUID, name string, description string) *Group {
 	return &Group{
-		ModelBase:       NewModelBase(),
+		BaseModel:       NewModelBase(),
 		virtualServerId: virtualServerId,
 		name:            name,
 		description:     description,

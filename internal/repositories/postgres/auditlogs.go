@@ -78,7 +78,7 @@ func (r *auditLogRepository) List(ctx context.Context, filter repositories.Audit
 	var totalCount int
 	for rows.Next() {
 		auditLog := repositories.AuditLog{
-			ModelBase: repositories.NewModelBase(),
+			BaseModel: repositories.NewModelBase(),
 		}
 		err = rows.Scan(append(auditLog.GetScanPointers(), &totalCount)...)
 		if err != nil {

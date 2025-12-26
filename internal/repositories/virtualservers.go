@@ -9,7 +9,7 @@ import (
 )
 
 type VirtualServer struct {
-	ModelBase
+	BaseModel
 
 	name        string
 	displayName string
@@ -23,7 +23,7 @@ type VirtualServer struct {
 
 func NewVirtualServer(name string, displayName string) *VirtualServer {
 	return &VirtualServer{
-		ModelBase:          NewModelBase(),
+		BaseModel:          NewModelBase(),
 		name:               name,
 		displayName:        displayName,
 		enableRegistration: false,

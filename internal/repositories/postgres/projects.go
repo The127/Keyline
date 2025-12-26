@@ -92,7 +92,7 @@ func (r *projectRepository) List(ctx context.Context, filter repositories.Projec
 	var totalCount int
 	for rows.Next() {
 		project := repositories.Project{
-			ModelBase: repositories.NewModelBase(),
+			BaseModel: repositories.NewModelBase(),
 		}
 
 		err = rows.Scan(append(project.GetScanPointers(), &totalCount)...)
@@ -123,7 +123,7 @@ func (r *projectRepository) First(ctx context.Context, filter repositories.Proje
 	row := tx.QueryRowContext(ctx, query, args...)
 
 	project := repositories.Project{
-		ModelBase: repositories.NewModelBase(),
+		BaseModel: repositories.NewModelBase(),
 	}
 
 	err = row.Scan(project.GetScanPointers()...)

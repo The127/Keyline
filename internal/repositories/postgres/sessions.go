@@ -79,7 +79,7 @@ func (r *sessionRepository) First(ctx context.Context, filter repositories.Sessi
 	row := tx.QueryRowContext(ctx, query, args...)
 
 	session := repositories.Session{
-		ModelBase: repositories.NewModelBase(),
+		BaseModel: repositories.NewModelBase(),
 	}
 	err = row.Scan(session.GetScanPointers()...)
 	switch {

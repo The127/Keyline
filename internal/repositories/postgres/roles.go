@@ -93,7 +93,7 @@ func (r *roleRepository) List(ctx context.Context, filter repositories.RoleFilte
 	var totalCount int
 	for rows.Next() {
 		role := repositories.Role{
-			ModelBase: repositories.NewModelBase(),
+			BaseModel: repositories.NewModelBase(),
 		}
 		err = rows.Scan(append(role.GetScanPointers(), &totalCount)...)
 		if err != nil {
@@ -135,7 +135,7 @@ func (r *roleRepository) First(ctx context.Context, filter repositories.RoleFilt
 	row := tx.QueryRowContext(ctx, query, args...)
 
 	role := repositories.Role{
-		ModelBase: repositories.NewModelBase(),
+		BaseModel: repositories.NewModelBase(),
 	}
 	err = row.Scan(role.GetScanPointers()...)
 	switch {

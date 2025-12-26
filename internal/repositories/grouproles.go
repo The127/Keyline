@@ -7,7 +7,7 @@ import (
 )
 
 type GroupRole struct {
-	ModelBase
+	BaseModel
 
 	groupId uuid.UUID
 	roleId  uuid.UUID
@@ -15,7 +15,7 @@ type GroupRole struct {
 
 func NewGroupRole(groupId uuid.UUID, roleId uuid.UUID) *GroupRole {
 	return &GroupRole{
-		ModelBase: NewModelBase(),
+		BaseModel: NewModelBase(),
 		groupId:   groupId,
 		roleId:    roleId,
 	}

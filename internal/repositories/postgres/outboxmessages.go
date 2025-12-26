@@ -60,7 +60,7 @@ func (r *outboxMessageRepository) List(ctx context.Context, filter repositories.
 	var outboxMessages []*repositories.OutboxMessage
 	for rows.Next() {
 		outboxMessage := repositories.OutboxMessage{
-			ModelBase: repositories.NewModelBase(),
+			BaseModel: repositories.NewModelBase(),
 		}
 		err = rows.Scan(outboxMessage.GetScanPointers()...)
 		if err != nil {

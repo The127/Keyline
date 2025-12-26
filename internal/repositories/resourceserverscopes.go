@@ -8,7 +8,7 @@ import (
 )
 
 type ResourceServerScope struct {
-	ModelBase
+	BaseModel
 	virtualServerId  uuid.UUID
 	projectId        uuid.UUID
 	resourceServerId uuid.UUID
@@ -20,7 +20,7 @@ type ResourceServerScope struct {
 
 func NewResourceServerScope(virtualServerId uuid.UUID, projectId uuid.UUID, resourceServerId uuid.UUID, scope string, name string) *ResourceServerScope {
 	return &ResourceServerScope{
-		ModelBase:        NewModelBase(),
+		BaseModel:        NewModelBase(),
 		virtualServerId:  virtualServerId,
 		projectId:        projectId,
 		resourceServerId: resourceServerId,

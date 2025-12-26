@@ -90,7 +90,7 @@ func (r *credentialRepository) First(ctx context.Context, filter repositories.Cr
 	row := tx.QueryRowContext(ctx, query, args...)
 
 	credential := repositories.Credential{
-		ModelBase: repositories.NewModelBase(),
+		BaseModel: repositories.NewModelBase(),
 	}
 	err = row.Scan(credential.GetScanPointers()...)
 	switch {
@@ -126,7 +126,7 @@ func (r *credentialRepository) List(ctx context.Context, filter repositories.Cre
 	var credentials []*repositories.Credential
 	for rows.Next() {
 		credential := repositories.Credential{
-			ModelBase: repositories.NewModelBase(),
+			BaseModel: repositories.NewModelBase(),
 		}
 		err = rows.Scan(credential.GetScanPointers()...)
 		if err != nil {

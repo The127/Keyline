@@ -127,7 +127,7 @@ func (r *groupRepository) First(ctx context.Context, filter repositories.GroupFi
 	row := tx.QueryRowContext(ctx, query, args...)
 
 	group := repositories.Group{
-		ModelBase: repositories.NewModelBase(),
+		BaseModel: repositories.NewModelBase(),
 	}
 	err = row.Scan(group.GetScanPointers()...)
 	switch {
@@ -165,7 +165,7 @@ func (r *groupRepository) List(ctx context.Context, filter repositories.GroupFil
 	var totalCount int
 	for rows.Next() {
 		group := repositories.Group{
-			ModelBase: repositories.NewModelBase(),
+			BaseModel: repositories.NewModelBase(),
 		}
 
 		err = rows.Scan(append(group.GetScanPointers(), &totalCount)...)

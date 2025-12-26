@@ -20,7 +20,7 @@ type OutboxMessageDetails interface {
 }
 
 type OutboxMessage struct {
-	ModelBase
+	BaseModel
 
 	_type   OutboxMessageType
 	details []byte
@@ -52,7 +52,7 @@ func NewOutboxMessage(details OutboxMessageDetails) (*OutboxMessage, error) {
 	}
 
 	return &OutboxMessage{
-		ModelBase: NewModelBase(),
+		BaseModel: NewModelBase(),
 		_type:     details.OutboxMessageType(),
 		details:   serializedDetails,
 	}, nil

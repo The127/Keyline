@@ -10,7 +10,7 @@ import (
 )
 
 type Session struct {
-	ModelBase
+	BaseModel
 	virtualServerId uuid.UUID
 	userId          uuid.UUID
 	hashedToken     string

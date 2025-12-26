@@ -8,7 +8,7 @@ import (
 )
 
 type Role struct {
-	ModelBase
+	BaseModel
 
 	virtualServerId uuid.UUID
 	projectId       uuid.UUID
@@ -19,7 +19,7 @@ type Role struct {
 
 func NewRole(virtualServerId uuid.UUID, projectId uuid.UUID, name string, description string) *Role {
 	return &Role{
-		ModelBase:       NewModelBase(),
+		BaseModel:       NewModelBase(),
 		virtualServerId: virtualServerId,
 		projectId:       projectId,
 		name:            name,

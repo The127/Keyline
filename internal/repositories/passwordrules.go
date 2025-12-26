@@ -9,7 +9,7 @@ import (
 )
 
 type PasswordRule struct {
-	ModelBase
+	BaseModel
 
 	virtualServerId uuid.UUID
 
@@ -40,7 +40,7 @@ func NewPasswordRule(virtualServerId uuid.UUID, details PasswordRuleDetails) (*P
 	}
 
 	return &PasswordRule{
-		ModelBase:       NewModelBase(),
+		BaseModel:       NewModelBase(),
 		virtualServerId: virtualServerId,
 		_type:           details.GetPasswordRuleType(),
 		details:         serializedDetails,

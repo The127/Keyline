@@ -124,7 +124,7 @@ func (r *virtualServerRepository) First(ctx context.Context, filter repositories
 	row := tx.QueryRowContext(ctx, query, args...)
 
 	virtualServer := repositories.VirtualServer{
-		ModelBase: repositories.NewModelBase(),
+		BaseModel: repositories.NewModelBase(),
 	}
 	err = row.Scan(virtualServer.GetScanPointers()...)
 	switch {
@@ -203,7 +203,7 @@ func (r *virtualServerRepository) List(ctx context.Context, filter repositories.
 	var totalCount int
 	for rows.Next() {
 		virtualServer := repositories.VirtualServer{
-			ModelBase: repositories.NewModelBase(),
+			BaseModel: repositories.NewModelBase(),
 		}
 
 		err = rows.Scan(append(virtualServer.GetScanPointers(), &totalCount)...)

@@ -66,7 +66,7 @@ func (r *passwordRuleRepository) List(ctx context.Context, filter repositories.P
 	var result []*repositories.PasswordRule
 	for rows.Next() {
 		passwordRule := repositories.PasswordRule{
-			ModelBase: repositories.NewModelBase(),
+			BaseModel: repositories.NewModelBase(),
 		}
 		err = rows.Scan(passwordRule.GetScanPointers()...)
 		if err != nil {
@@ -178,7 +178,7 @@ func (r *passwordRuleRepository) First(ctx context.Context, filter repositories.
 	row := tx.QueryRowContext(ctx, query, args...)
 
 	passwordRule := repositories.PasswordRule{
-		ModelBase: repositories.NewModelBase(),
+		BaseModel: repositories.NewModelBase(),
 	}
 	err = row.Scan(passwordRule.GetScanPointers()...)
 	switch {

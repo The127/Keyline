@@ -10,19 +10,17 @@ import (
 
 var ErrVersionMismatch = fmt.Errorf("version mismatch: %w", utils.ErrHttpConflict)
 
-type ModelBase struct {
+type BaseModel struct {
 	id uuid.UUID
 
 	auditCreatedAt time.Time
 	auditUpdatedAt time.Time
 
-	version int64
-
-	changes map[string]any
+	version any
 }
 
 // InsertPointers is an internal function that returns the pointers to the id, auditCreatedAt, auditUpdatedAt and version fields (in that order).
-func (m *ModelBase) InsertPointers() []any {
+func (m *BaseModel) InsertPointers() []any {
 	return []any{
 		&m.id,
 		&m.auditCreatedAt,
@@ -32,53 +30,44 @@ func (m *ModelBase) InsertPointers() []any {
 }
 
 // UpdatePointers is an internal function that returns the pointers to the auditUpdatedAt and version fields (in that order).
-func (m *ModelBase) UpdatePointers() []any {
+func (m *BaseModel) UpdatePointers() []any {
 	return []any{
 		&m.auditUpdatedAt,
 		&m.version,
 	}
 }
 
-func NewModelBase() ModelBase {
-	return ModelBase{
-		changes: make(map[string]any),
+func NewModelBase() BaseModel {
+	return BaseModel{
+		version: nil,
 	}
 }
 
-// Changes is an internal function that returns the changes made to the model.
-// The map is empty if no changes have been made.
-func (m *ModelBase) Changes() map[string]any {
-	return m.changes
-}
-
-// TrackChange is an internal function that needs to be called when a field is changed.
-func (m *ModelBase) TrackChange(fieldName string, value any) {
-	m.changes[fieldName] = value
-}
-
-// ClearChanges is an internal function that needs to be called when a model is inserted or updated.
-func (m *ModelBase) ClearChanges() {
-	m.changes = make(map[string]any)
-}
-
-func (m *ModelBase) Id() uuid.UUID {
+func (m *BaseModel) Id() uuid.UUID {
 	return m.id
 }
 
-func (m *ModelBase) AuditCreatedAt() time.Time {
+func (m *BaseModel) AuditCreatedAt() time.Time {
 	return m.auditCreatedAt
 }
 
-func (m *ModelBase) AuditUpdatedAt() time.Time {
+func (m *BaseModel) AuditUpdatedAt() time.Time {
 	return m.auditUpdatedAt
 }
 
-func (m *ModelBase) Version() int64 {
-	return m.version
+func (b *BaseModel) GetVersion() any {
+	return b.version
+}
+
+// SetVersion is used to update the version of the model.
+// This is used to prevent concurrent updates.
+// This function should only be called by the repositories.
+func (b *BaseModel) SetVersion(version any) {
+	b.version = version
 }
 
 // Mock is a test helper function that sets the model to a mock state.
-func (m *ModelBase) Mock(now time.Time) {
+func (m *BaseModel) Mock(now time.Time) {
 	m.id = uuid.New()
 	m.auditCreatedAt = now
 	m.auditUpdatedAt = now

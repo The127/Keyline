@@ -8,7 +8,7 @@ import (
 )
 
 type ResourceServer struct {
-	ModelBase
+	BaseModel
 
 	virtualServerId uuid.UUID
 	projectId       uuid.UUID
@@ -20,7 +20,7 @@ type ResourceServer struct {
 
 func NewResourceServer(virtualServerId uuid.UUID, projectId uuid.UUID, slug string, name string, description string) *ResourceServer {
 	return &ResourceServer{
-		ModelBase:       NewModelBase(),
+		BaseModel:       NewModelBase(),
 		virtualServerId: virtualServerId,
 		projectId:       projectId,
 		slug:            slug,

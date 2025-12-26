@@ -69,7 +69,7 @@ func (r *fileRepository) First(ctx context.Context, filter repositories.FileFilt
 	row := tx.QueryRowContext(ctx, query, args...)
 
 	file := repositories.File{
-		ModelBase: repositories.NewModelBase(),
+		BaseModel: repositories.NewModelBase(),
 	}
 	err = row.Scan(file.GetScanPointers()...)
 	switch {

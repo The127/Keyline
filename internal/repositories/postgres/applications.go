@@ -144,7 +144,7 @@ func (r *applicationRepository) First(ctx context.Context, filter repositories.A
 	row := tx.QueryRowContext(ctx, query, args...)
 
 	application := repositories.Application{
-		ModelBase: repositories.NewModelBase(),
+		BaseModel: repositories.NewModelBase(),
 	}
 	err = row.Scan(application.GetScanPointers()...)
 	switch {
@@ -220,7 +220,7 @@ func (r *applicationRepository) List(ctx context.Context, filter repositories.Ap
 	var totalCount int
 	for rows.Next() {
 		application := repositories.Application{
-			ModelBase: repositories.NewModelBase(),
+			BaseModel: repositories.NewModelBase(),
 		}
 
 		err = rows.Scan(append(application.GetScanPointers(), &totalCount)...)

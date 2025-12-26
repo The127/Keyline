@@ -8,7 +8,7 @@ import (
 )
 
 type Project struct {
-	ModelBase
+	BaseModel
 
 	virtualServerId uuid.UUID
 
@@ -21,7 +21,7 @@ type Project struct {
 
 func NewProject(virtualServerId uuid.UUID, slug string, name string, description string) *Project {
 	return &Project{
-		ModelBase:       NewModelBase(),
+		BaseModel:       NewModelBase(),
 		virtualServerId: virtualServerId,
 		slug:            slug,
 		name:            name,

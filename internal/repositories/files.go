@@ -8,7 +8,7 @@ import (
 )
 
 type File struct {
-	ModelBase
+	BaseModel
 
 	name     string
 	mimeType string
@@ -17,7 +17,7 @@ type File struct {
 
 func NewFile(name string, mimeType string, content []byte) *File {
 	return &File{
-		ModelBase: NewModelBase(),
+		BaseModel: NewModelBase(),
 		name:      name,
 		mimeType:  mimeType,
 		content:   content,

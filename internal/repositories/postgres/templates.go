@@ -87,7 +87,7 @@ func (r *templateRepository) First(ctx context.Context, filter repositories.Temp
 	row := tx.QueryRowContext(ctx, query, args...)
 
 	template := repositories.Template{
-		ModelBase: repositories.NewModelBase(),
+		BaseModel: repositories.NewModelBase(),
 	}
 	err = row.Scan(template.GetScanPointers()...)
 
@@ -160,7 +160,7 @@ func (r *templateRepository) List(ctx context.Context, filter repositories.Templ
 	var totalCount int
 	for rows.Next() {
 		template := repositories.Template{
-			ModelBase: repositories.NewModelBase(),
+			BaseModel: repositories.NewModelBase(),
 		}
 		err = rows.Scan(append(template.GetScanPointers(), &totalCount)...)
 		if err != nil {

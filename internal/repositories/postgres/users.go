@@ -101,7 +101,7 @@ func (r *userRepository) List(ctx context.Context, filter repositories.UserFilte
 	var totalCount int
 	for rows.Next() {
 		user := repositories.User{
-			ModelBase: repositories.NewModelBase(),
+			BaseModel: repositories.NewModelBase(),
 		}
 
 		err = rows.Scan(append(user.GetScanPointers(filter), &totalCount)...)
@@ -143,7 +143,7 @@ func (r *userRepository) First(ctx context.Context, filter repositories.UserFilt
 	row := tx.QueryRowContext(ctx, query, args...)
 
 	user := repositories.User{
-		ModelBase: repositories.NewModelBase(),
+		BaseModel: repositories.NewModelBase(),
 	}
 	err = row.Scan(user.GetScanPointers(filter)...)
 	switch {
