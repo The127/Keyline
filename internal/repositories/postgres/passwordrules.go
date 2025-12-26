@@ -6,16 +6,54 @@ import (
 	"Keyline/internal/logging"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
+	"Keyline/internal/repositories/postgres/pghelpers"
 	"Keyline/utils"
 	"context"
 	"database/sql"
 	"errors"
 	"fmt"
+
 	"github.com/The127/ioc"
 
 	"github.com/google/uuid"
 	"github.com/huandu/go-sqlbuilder"
 )
+
+type postgresPasswordRule struct {
+	postgresBaseModel
+	virtualServerId uuid.UUID
+	type_           string
+	details         []byte
+}
+
+func mapPasswordRule(rule *repositories.PasswordRule) *postgresPasswordRule {
+	return &postgresPasswordRule{
+		postgresBaseModel: mapBase(rule.BaseModel),
+		virtualServerId:   rule.VirtualServerId(),
+		type_:             string(rule.Type()),
+		details:           rule.Details(),
+	}
+}
+
+func (r *postgresPasswordRule) Map() *repositories.PasswordRule {
+	return repositories.NewPasswordRuleFromDB(
+		r.MapBase(),
+		r.virtualServerId,
+		repositories.PasswordRuleType(r.type_),
+		r.details,
+	)
+}
+
+func (r *postgresPasswordRule) scan(row pghelpers.Row) error {
+	return row.Scan(
+		&r.id,
+		&r.auditCreatedAt,
+		&r.auditUpdatedAt,
+		&r.xmin,
+		&r.virtualServerId,
+		&r.type_,
+	)
+}
 
 type PasswordRuleRepository struct {
 	db            *sql.DB
@@ -36,7 +74,7 @@ func (r *PasswordRuleRepository) selectQuery(filter repositories.PasswordRuleFil
 		"id",
 		"audit_created_at",
 		"audit_updated_at",
-		"version",
+		"xmin",
 		"virtual_server_id",
 		"type",
 		"details",
@@ -54,19 +92,11 @@ func (r *PasswordRuleRepository) selectQuery(filter repositories.PasswordRuleFil
 }
 
 func (r *PasswordRuleRepository) List(ctx context.Context, filter repositories.PasswordRuleFilter) ([]*repositories.PasswordRule, error) {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
-
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return nil, fmt.Errorf("failed to open tx: %w", err)
-	}
-
 	s := r.selectQuery(filter)
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
-	rows, err := tx.Query(query, args...)
+	rows, err := r.db.Query(query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("querying db: %w", err)
 	}
@@ -74,100 +104,15 @@ func (r *PasswordRuleRepository) List(ctx context.Context, filter repositories.P
 
 	var result []*repositories.PasswordRule
 	for rows.Next() {
-		passwordRule := repositories.PasswordRule{
-			BaseModel: repositories.NewModelBase(),
-		}
-		err = rows.Scan(passwordRule.GetScanPointers()...)
+		passwordRule := &postgresPasswordRule{}
+		err := passwordRule.scan(rows)
 		if err != nil {
 			return nil, fmt.Errorf("scanning row: %w", err)
 		}
-		result = append(result, &passwordRule)
+		result = append(result, passwordRule.Map())
 	}
 
 	return result, nil
-}
-
-func (r *PasswordRuleRepository) Insert(ctx context.Context, passwordRule *repositories.PasswordRule) error {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
-
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return fmt.Errorf("failed to open tx: %w", err)
-	}
-
-	s := sqlbuilder.InsertInto("password_rules").
-		Cols("virtual_server_id", "type", "details").
-		Values(
-			passwordRule.VirtualServerId(),
-			passwordRule.Type(),
-			passwordRule.Details(),
-		).
-		Returning("id", "audit_created_at", "audit_updated_at", "version")
-
-	query, args := s.Build()
-	logging.Logger.Debug("executing sql: ", query)
-	row := tx.QueryRowContext(ctx, query, args...)
-
-	err = row.Scan(passwordRule.InsertPointers()...)
-	if err != nil {
-		return fmt.Errorf("scanning row: %w", err)
-	}
-
-	return nil
-}
-
-func (r *PasswordRuleRepository) Update(ctx context.Context, passwordRule *repositories.PasswordRule) error {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
-
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return fmt.Errorf("failed to open tx: %w", err)
-	}
-
-	s := sqlbuilder.Update("password_rules")
-	for fieldName, value := range passwordRule.Changes() {
-		s.SetMore(s.Assign(fieldName, value))
-	}
-	s.SetMore(s.Assign("version", passwordRule.Version()+1))
-
-	s.Where(s.Equal("id", passwordRule.Id()))
-	s.Where(s.Equal("version", passwordRule.Version()))
-	s.Returning("audit_updated_at", "version")
-
-	query, args := s.Build()
-	logging.Logger.Debug("executing sql: ", query)
-	row := tx.QueryRowContext(ctx, query, args...)
-
-	err = row.Scan(passwordRule.UpdatePointers()...)
-	if err != nil {
-		return fmt.Errorf("scanning row: %w", err)
-	}
-
-	return nil
-}
-
-func (r *PasswordRuleRepository) Delete(ctx context.Context, id uuid.UUID) error {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
-
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return fmt.Errorf("failed to open tx: %w", err)
-	}
-
-	s := sqlbuilder.DeleteFrom("password_rules")
-	s.Where(s.Equal("id", id))
-
-	query, args := s.Build()
-	logging.Logger.Debug("executing sql: ", query)
-	_, err = tx.ExecContext(ctx, query, args...)
-	if err != nil {
-		return fmt.Errorf("executing delete: %w", err)
-	}
-
-	return nil
 }
 
 func (r *PasswordRuleRepository) First(ctx context.Context, filter repositories.PasswordRuleFilter) (*repositories.PasswordRule, error) {
@@ -186,10 +131,8 @@ func (r *PasswordRuleRepository) First(ctx context.Context, filter repositories.
 	logging.Logger.Debug("executing sql: ", query)
 	row := tx.QueryRowContext(ctx, query, args...)
 
-	passwordRule := repositories.PasswordRule{
-		BaseModel: repositories.NewModelBase(),
-	}
-	err = row.Scan(passwordRule.GetScanPointers()...)
+	passwordRule := &postgresPasswordRule{}
+	err = passwordRule.scan(row)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, nil
@@ -197,7 +140,7 @@ func (r *PasswordRuleRepository) First(ctx context.Context, filter repositories.
 		return nil, fmt.Errorf("scanning row: %w", err)
 	}
 
-	return &passwordRule, nil
+	return passwordRule.Map(), nil
 }
 
 func (r *PasswordRuleRepository) Single(ctx context.Context, filter repositories.PasswordRuleFilter) (*repositories.PasswordRule, error) {
@@ -209,4 +152,104 @@ func (r *PasswordRuleRepository) Single(ctx context.Context, filter repositories
 		return nil, utils.ErrPasswordRuleNotFound
 	}
 	return rule, nil
+}
+
+func (r *PasswordRuleRepository) Insert(passwordRule *repositories.PasswordRule) {
+	r.changeTracker.Add(change.NewEntry(change.Added, r.entityType, passwordRule))
+}
+
+func (r *PasswordRuleRepository) ExecuteInsert(ctx context.Context, tx *sql.Tx, passwordRule *repositories.PasswordRule) error {
+	mapped := mapPasswordRule(passwordRule)
+
+	s := sqlbuilder.InsertInto("password_rules").
+		Cols(
+			"id",
+			"audit_created_at",
+			"audit_updated_at",
+			"virtual_server_id",
+			"type",
+			"details",
+		).
+		Values(
+			mapped.id,
+			mapped.auditCreatedAt,
+			mapped.auditUpdatedAt,
+			mapped.virtualServerId,
+			mapped.type_,
+			mapped.details,
+		).
+		Returning("xmin")
+
+	query, args := s.Build()
+	logging.Logger.Debug("executing sql: ", query)
+	row := tx.QueryRowContext(ctx, query, args...)
+
+	var xmin uint32
+	err := row.Scan(&xmin)
+	if err != nil {
+		return fmt.Errorf("scanning row: %w", err)
+	}
+
+	passwordRule.SetVersion(xmin)
+	passwordRule.ClearChanges()
+	return nil
+}
+
+func (r *PasswordRuleRepository) Update(passwordRule *repositories.PasswordRule) {
+	r.changeTracker.Add(change.NewEntry(change.Updated, r.entityType, passwordRule))
+}
+
+func (r *PasswordRuleRepository) ExecuteUpdate(ctx context.Context, tx *sql.Tx, passwordRule *repositories.PasswordRule) error {
+	if !passwordRule.HasChanges() {
+		return nil
+	}
+
+	mapped := mapPasswordRule(passwordRule)
+
+	s := sqlbuilder.Update("password_rules")
+	s.Where(s.Equal("id", mapped.id))
+	s.Where(s.Equal("xmin", mapped.xmin))
+
+	for _, field := range passwordRule.GetChanges() {
+		switch field {
+		case repositories.PasswordRuleChangeDetails:
+			s.SetMore(s.Assign("details", mapped.details))
+
+		default:
+			return fmt.Errorf("updating field %v is not supported", field)
+		}
+	}
+
+	s.Returning("xmin")
+	query, args := s.Build()
+	logging.Logger.Debug("executing sql: ", query)
+	row := tx.QueryRowContext(ctx, query, args...)
+
+	var xmin uint32
+	err := row.Scan(&xmin)
+	if err != nil {
+		return fmt.Errorf("scanning row: %w", err)
+	}
+
+	passwordRule.SetVersion(xmin)
+	passwordRule.ClearChanges()
+	return nil
+}
+
+func (r *PasswordRuleRepository) Delete(id uuid.UUID) {
+	r.changeTracker.Add(change.NewEntry(change.Deleted, r.entityType, id))
+}
+
+func (r *PasswordRuleRepository) ExecuteDelete(ctx context.Context, tx *sql.Tx, id uuid.UUID) error {
+	s := sqlbuilder.DeleteFrom("password_rules")
+	s.Where(s.Equal("id", id))
+
+	query, args := s.Build()
+	logging.Logger.Debug("executing sql: ", query)
+	_, err := tx.ExecContext(ctx, query, args...)
+	if err != nil {
+		return fmt.Errorf("executing delete: %w", err)
+	}
+
+	return nil
 }

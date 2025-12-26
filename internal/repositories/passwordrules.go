@@ -55,15 +55,12 @@ func NewPasswordRule(virtualServerId uuid.UUID, details PasswordRuleDetails) (*P
 	}, nil
 }
 
-func (p *PasswordRule) GetScanPointers() []any {
-	return []any{
-		&p.id,
-		&p.auditCreatedAt,
-		&p.auditUpdatedAt,
-		&p.version,
-		&p.virtualServerId,
-		&p._type,
-		&p.details,
+func NewPasswordRuleFromDB(base BaseModel, virtualServerId uuid.UUID, _type PasswordRuleType, details []byte) *PasswordRule {
+	return &PasswordRule{
+		BaseModel:       base,
+		virtualServerId: virtualServerId,
+		_type:           _type,
+		details:         details,
 	}
 }
 
