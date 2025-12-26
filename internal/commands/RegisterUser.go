@@ -61,12 +61,11 @@ func HandleRegisterUser(ctx context.Context, command RegisterUser) (*RegisterUse
 
 	hashedPassword := utils.HashPassword(command.Password)
 
-	credentialRepository := ioc.GetDependency[repositories.CredentialRepository](scope)
 	credential := repositories.NewCredential(user.Id(), &repositories.CredentialPasswordDetails{
 		HashedPassword: hashedPassword,
 		Temporary:      false,
 	})
-	credentialRepository.Insert(credential)
+	dbContext.Credentials().Insert(credential)
 
 	m := ioc.GetDependency[mediatr.Mediator](scope)
 	err = mediatr.SendEvent(ctx, m, events.UserCreatedEvent{

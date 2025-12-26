@@ -4,11 +4,13 @@ import (
 	"Keyline/internal/authentication"
 	"Keyline/internal/authentication/permissions"
 	"Keyline/internal/authentication/roles"
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/utils"
 	"context"
 	"fmt"
+
 	"github.com/The127/ioc"
 
 	"github.com/The127/mediatr"
@@ -187,10 +189,10 @@ func evaluatePolicy(ctx context.Context, request Policy) (PolicyResult, error) {
 	// cron jobs and other internal requests should ensure that the virtual server is set in the context
 	if virtualServerName != "" {
 		scope := middlewares.GetScope(ctx)
+		dbContext := ioc.GetDependency[database.Context](scope)
 
-		virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
 		virtualServerFilter := repositories.NewVirtualServerFilter().Name(virtualServerName)
-		virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
+		virtualServer, err := dbContext.VirtualServers().Single(ctx, virtualServerFilter)
 		if err != nil {
 			return PolicyResult{}, fmt.Errorf("getting virtual server: %w", err)
 		}
@@ -222,10 +224,10 @@ func PermissionBasedPolicy(ctx context.Context, permission permissions.Permissio
 
 	if virtualServerName != "" {
 		scope := middlewares.GetScope(ctx)
+		dbContext := ioc.GetDependency[database.Context](scope)
 
-		virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
 		virtualServerFilter := repositories.NewVirtualServerFilter().Name(virtualServerName)
-		virtualServer, err := virtualServerRepository.First(ctx, virtualServerFilter)
+		virtualServer, err := dbContext.VirtualServers().First(ctx, virtualServerFilter)
 		if err != nil {
 			return PolicyResult{}, fmt.Errorf("getting virtual server: %w", err)
 		}

@@ -120,6 +120,9 @@ func main() {
 // It creates an initial virtual server and other necessary defaults if none exist.
 func initApplication(dp *ioc.DependencyProvider) {
 	scope := dp.NewScope()
+	defer utils.PanicOnError(scope.Close, "failed creating scope to init application")
+
+	dbContext := ioc.GetDependency[database.Context](scope)
 
 	ctx := middlewares.ContextWithScope(context.Background(), scope)
 	ctx = authentication.ContextWithCurrentUser(ctx, authentication.SystemUser())
@@ -136,12 +139,8 @@ func initApplication(dp *ioc.DependencyProvider) {
 	}
 
 	logging.Logger.Info("Creating system user")
-	userRepository := ioc.GetDependency[repositories.UserRepository](scope)
 	systemUser := repositories.NewSystemUser("system-user")
-	err = userRepository.Insert(ctx, systemUser)
-	if err != nil {
-		logging.Logger.Fatalf("failed to create system user: %v", err)
-	}
+	dbContext.Users().Insert(systemUser)
 
 	logging.Logger.Infof("Creating initial virtual server")
 
@@ -227,8 +226,6 @@ func initApplication(dp *ioc.DependencyProvider) {
 	if err != nil {
 		logging.Logger.Fatalf("failed to create initial virtual server: %v", err)
 	}
-
-	utils.PanicOnError(scope.Close, "failed creating scope to init application")
 }
 
 func configureSwaggerFromConfig() {
