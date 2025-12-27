@@ -1,8 +1,10 @@
 package commands
 
 import (
+	"Keyline/internal/database"
 	"Keyline/internal/events"
 	"Keyline/internal/middlewares"
+	mocks2 "Keyline/internal/mocks"
 	"Keyline/internal/repositories"
 	"Keyline/internal/repositories/mocks"
 	"Keyline/utils"
@@ -29,6 +31,7 @@ func TestCreateRoleCommandSuite(t *testing.T) {
 }
 
 func (s *CreateRoleCommandSuite) createContext(
+	ctrl *gomock.Controller,
 	vsr repositories.VirtualServerRepository,
 	pr repositories.ProjectRepository,
 	rr repositories.RoleRepository,
@@ -36,22 +39,21 @@ func (s *CreateRoleCommandSuite) createContext(
 ) context.Context {
 	dc := ioc.NewDependencyCollection()
 
+	dbContext := mocks2.NewMockContext(ctrl)
+	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) database.Context {
+		return dbContext
+	})
+
 	if vsr != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.VirtualServerRepository {
-			return vsr
-		})
+		dbContext.EXPECT().VirtualServers().Return(vsr).AnyTimes()
 	}
 
 	if pr != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.ProjectRepository {
-			return pr
-		})
+		dbContext.EXPECT().Projects().Return(pr).AnyTimes()
 	}
 
 	if rr != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.RoleRepository {
-			return rr
-		})
+		dbContext.EXPECT().Roles().Return(rr).AnyTimes()
 	}
 
 	if m != nil {
@@ -77,7 +79,7 @@ func (s *CreateRoleCommandSuite) TestVirtualServerError() {
 	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).
 		Return(nil, errors.New("error"))
 
-	ctx := s.createContext(virtualServerRepository, nil, nil, nil)
+	ctx := s.createContext(ctrl, virtualServerRepository, nil, nil, nil)
 	cmd := CreateRole{}
 
 	// act
@@ -100,7 +102,7 @@ func (s *CreateRoleCommandSuite) TestProjectError() {
 	projectRepository.EXPECT().Single(gomock.Any(), gomock.Any()).
 		Return(nil, errors.New("error"))
 
-	ctx := s.createContext(virtualServerRepository, projectRepository, nil, nil)
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, nil, nil)
 	cmd := CreateRole{}
 
 	// act
@@ -137,7 +139,7 @@ func (s *CreateRoleCommandSuite) TestHappyPath() {
 	m := mediatorMocks.NewMockMediator(ctrl)
 	m.EXPECT().SendEvent(gomock.Any(), gomock.AssignableToTypeOf(events.RoleCreatedEvent{}), gomock.Any())
 
-	ctx := s.createContext(virtualServerRepository, projectRepository, roleRepository, m)
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, roleRepository, m)
 	cmd := CreateRole{
 		VirtualServerName: virtualServer.Name(),
 		ProjectSlug:       project.Slug(),

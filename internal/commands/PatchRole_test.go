@@ -1,7 +1,9 @@
 package commands
 
 import (
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
+	mocks2 "Keyline/internal/mocks"
 	"Keyline/internal/repositories"
 	"Keyline/internal/repositories/mocks"
 	"Keyline/utils"
@@ -26,28 +28,28 @@ func TestPatchRoleCommandSuite(t *testing.T) {
 }
 
 func (s *PatchRoleCommandSuite) createContext(
+	ctrl *gomock.Controller,
 	virtualServerRepository repositories.VirtualServerRepository,
 	projectRepository repositories.ProjectRepository,
 	roleRepository repositories.RoleRepository,
 ) context.Context {
 	dc := ioc.NewDependencyCollection()
 
+	dbContext := mocks2.NewMockContext(ctrl)
+	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) database.Context {
+		return dbContext
+	})
+
 	if virtualServerRepository != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.VirtualServerRepository {
-			return virtualServerRepository
-		})
+		dbContext.EXPECT().VirtualServers().Return(virtualServerRepository).AnyTimes()
 	}
 
 	if projectRepository != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.ProjectRepository {
-			return projectRepository
-		})
+		dbContext.EXPECT().Projects().Return(projectRepository).AnyTimes()
 	}
 
 	if roleRepository != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.RoleRepository {
-			return roleRepository
-		})
+		dbContext.EXPECT().Roles().Return(roleRepository).AnyTimes()
 	}
 
 	scope := dc.BuildProvider()
@@ -89,7 +91,7 @@ func (s *PatchRoleCommandSuite) TestHappyPath() {
 		return x.Name() == "new name" && x.Description() == "new description"
 	}))
 
-	ctx := s.createContext(virtualServerRepository, projectRepository, roleRepository)
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, roleRepository)
 	cmd := PatchRole{
 		VirtualServerName: virtualServer.Name(),
 		ProjectSlug:       project.Slug(),
@@ -122,7 +124,7 @@ func (s *PatchRoleCommandSuite) TestRoleError() {
 	roleRepository := mocks.NewMockRoleRepository(ctrl)
 	roleRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
 
-	ctx := s.createContext(virtualServerRepository, projectRepository, roleRepository)
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, roleRepository)
 	cmd := PatchRole{}
 
 	// act
@@ -145,7 +147,7 @@ func (s *PatchRoleCommandSuite) TestProjectError() {
 	projectRepository := mocks.NewMockProjectRepository(ctrl)
 	projectRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
 
-	ctx := s.createContext(virtualServerRepository, projectRepository, nil)
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, nil)
 	cmd := PatchRole{}
 
 	// act
@@ -164,7 +166,7 @@ func (s *PatchRoleCommandSuite) TestVirtualServerError() {
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
 	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
 
-	ctx := s.createContext(virtualServerRepository, nil, nil)
+	ctx := s.createContext(ctrl, virtualServerRepository, nil, nil)
 	cmd := PatchRole{}
 
 	// act

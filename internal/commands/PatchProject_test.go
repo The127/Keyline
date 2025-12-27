@@ -1,7 +1,9 @@
 package commands
 
 import (
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
+	mocks2 "Keyline/internal/mocks"
 	"Keyline/internal/repositories"
 	"Keyline/internal/repositories/mocks"
 	"Keyline/utils"
@@ -26,10 +28,16 @@ func TestPatchProjectCommandSuite(t *testing.T) {
 }
 
 func (s *PatchProjectCommandSuite) createContext(
+	ctrl *gomock.Controller,
 	virtualServerRepository repositories.VirtualServerRepository,
 	projectRepository repositories.ProjectRepository,
 ) context.Context {
 	dc := ioc.NewDependencyCollection()
+
+	dbContext := mocks2.NewMockContext(ctrl)
+	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) database.Context {
+		return dbContext
+	})
 
 	if virtualServerRepository != nil {
 		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.VirtualServerRepository {
@@ -75,7 +83,7 @@ func (s *PatchProjectCommandSuite) TestHappyPath() {
 		return x.Name() == "New Name" && x.Description() == "New Description"
 	}))
 
-	ctx := s.createContext(virtualServerRepository, projectRepository)
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository)
 	cmd := PatchProject{
 		VirtualServerName: virtualServer.Name(),
 		Slug:              project.Slug(),
@@ -103,7 +111,7 @@ func (s *PatchProjectCommandSuite) TestProjectError() {
 	projectRepository := mocks.NewMockProjectRepository(ctrl)
 	projectRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
 
-	ctx := s.createContext(virtualServerRepository, projectRepository)
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository)
 	cmd := PatchProject{}
 
 	// act
@@ -122,7 +130,7 @@ func (s *PatchProjectCommandSuite) TestVirtualServerError() {
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
 	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
 
-	ctx := s.createContext(virtualServerRepository, nil)
+	ctx := s.createContext(ctrl, virtualServerRepository, nil)
 	cmd := PatchProject{}
 
 	// act

@@ -1,7 +1,9 @@
 package commands
 
 import (
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
+	mocks2 "Keyline/internal/mocks"
 	"Keyline/internal/repositories"
 	"Keyline/internal/repositories/mocks"
 	"Keyline/utils"
@@ -26,21 +28,23 @@ func TestPatchUserCommandSuite(t *testing.T) {
 }
 
 func (s *PatchUserCommandSuite) createContext(
+	ctrl *gomock.Controller,
 	virtualServerRepository repositories.VirtualServerRepository,
 	userRepository repositories.UserRepository,
 ) context.Context {
 	dc := ioc.NewDependencyCollection()
 
+	dbContext := mocks2.NewMockContext(ctrl)
+	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) database.Context {
+		return dbContext
+	})
+
 	if virtualServerRepository != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.VirtualServerRepository {
-			return virtualServerRepository
-		})
+		dbContext.EXPECT().VirtualServers().Return(virtualServerRepository).AnyTimes()
 	}
 
 	if userRepository != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.UserRepository {
-			return userRepository
-		})
+		dbContext.EXPECT().Users().Return(userRepository).AnyTimes()
 	}
 
 	scope := dc.BuildProvider()
@@ -74,7 +78,7 @@ func (s *PatchUserCommandSuite) TestHappyPath() {
 	})).Return(user, nil)
 	userRepository.EXPECT().Update(gomock.Any())
 
-	ctx := s.createContext(virtualServerRepository, userRepository)
+	ctx := s.createContext(ctrl, virtualServerRepository, userRepository)
 	cmd := PatchUser{
 		VirtualServerName: virtualServer.Name(),
 		UserId:            user.Id(),
@@ -101,7 +105,7 @@ func (s *PatchUserCommandSuite) TestUserError() {
 	userRepository := mocks.NewMockUserRepository(ctrl)
 	userRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
 
-	ctx := s.createContext(virtualServerRepository, userRepository)
+	ctx := s.createContext(ctrl, virtualServerRepository, userRepository)
 	cmd := PatchUser{}
 
 	// act
@@ -120,7 +124,7 @@ func (s *PatchUserCommandSuite) TestVirtualServerError() {
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
 	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
 
-	ctx := s.createContext(virtualServerRepository, nil)
+	ctx := s.createContext(ctrl, virtualServerRepository, nil)
 	cmd := PatchUser{}
 
 	// act

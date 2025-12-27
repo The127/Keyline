@@ -1,14 +1,15 @@
 package commands
 
 import (
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
+	mocks2 "Keyline/internal/mocks"
 	"Keyline/internal/repositories"
 	"Keyline/internal/repositories/mocks"
 	"Keyline/internal/services"
 	serviceMocks "Keyline/internal/services/mocks"
 	"Keyline/utils"
 	"context"
-	"errors"
 	"testing"
 	"time"
 
@@ -32,6 +33,7 @@ func TestCreateVirtualServerCommandSuite(t *testing.T) {
 }
 
 func (s *CreateVirtualServerCommandSuite) createContext(
+	ctrl *gomock.Controller,
 	virtualServerRepository repositories.VirtualServerRepository,
 	templateRepository repositories.TemplateRepository,
 	fileRepository repositories.FileRepository,
@@ -43,28 +45,25 @@ func (s *CreateVirtualServerCommandSuite) createContext(
 ) context.Context {
 	dc := ioc.NewDependencyCollection()
 
+	dbContext := mocks2.NewMockContext(ctrl)
+	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) database.Context {
+		return dbContext
+	})
+
 	if virtualServerRepository != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.VirtualServerRepository {
-			return virtualServerRepository
-		})
+		dbContext.EXPECT().VirtualServers().Return(virtualServerRepository).AnyTimes()
 	}
 
 	if templateRepository != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.TemplateRepository {
-			return templateRepository
-		})
+		dbContext.EXPECT().Templates().Return(templateRepository).AnyTimes()
 	}
 
 	if fileRepository != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.FileRepository {
-			return fileRepository
-		})
+		dbContext.EXPECT().Files().Return(fileRepository).AnyTimes()
 	}
 
 	if roleRepository != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.RoleRepository {
-			return roleRepository
-		})
+		dbContext.EXPECT().Roles().Return(roleRepository).AnyTimes()
 	}
 
 	if keyService != nil {
@@ -74,15 +73,11 @@ func (s *CreateVirtualServerCommandSuite) createContext(
 	}
 
 	if applicationRepository != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.ApplicationRepository {
-			return applicationRepository
-		})
+		dbContext.EXPECT().Applications().Return(applicationRepository).AnyTimes()
 	}
 
 	if projectRepository != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.ProjectRepository {
-			return projectRepository
-		})
+		dbContext.EXPECT().Projects().Return(projectRepository).AnyTimes()
 	}
 
 	if mediator != nil {
@@ -104,87 +99,22 @@ func (s *CreateVirtualServerCommandSuite) createContext(
 	return middlewares.ContextWithScope(s.T().Context(), scope)
 }
 
-func (s *CreateVirtualServerCommandSuite) TestApplicationError() {
-	// arrange
-	ctrl := gomock.NewController(s.T())
-	defer ctrl.Finish()
-
-	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().
-		Insert(gomock.Any(), gomock.Any()).
-		Return(nil)
-
-	templateRepository := mocks.NewMockTemplateRepository(ctrl)
-	templateRepository.EXPECT().
-		Insert(gomock.Any(), gomock.Any()).
-		Return(nil).
-		AnyTimes()
-
-	fileRepository := mocks.NewMockFileRepository(ctrl)
-	fileRepository.EXPECT().
-		Insert(gomock.Any(), gomock.Any()).
-		Return(nil).
-		AnyTimes()
-
-	roleRepository := mocks.NewMockRoleRepository(ctrl)
-	roleRepository.EXPECT().
-		Insert(gomock.Any(), gomock.Any()).
-		Return(nil).
-		AnyTimes()
-
-	keyService := serviceMocks.NewMockKeyService(ctrl)
-	keyService.EXPECT().
-		Generate(gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(services.KeyPair{}, nil)
-
-	projectRepository := mocks.NewMockProjectRepository(ctrl)
-	projectRepository.EXPECT().
-		Insert(gomock.Any(), gomock.Any()).
-		Return(nil).
-		AnyTimes()
-
-	applicationRepository := mocks.NewMockApplicationRepository(ctrl)
-	applicationRepository.EXPECT().
-		Insert(gomock.Any(), gomock.Any()).
-		Return(errors.New("error"))
-
-	ctx := s.createContext(virtualServerRepository, templateRepository, fileRepository, roleRepository, keyService, applicationRepository, projectRepository, nil)
-	cmd := CreateVirtualServer{}
-
-	// act
-	_, err := HandleCreateVirtualServer(ctx, cmd)
-
-	// assert
-	s.Require().Error(err)
-}
-
 func (s *CreateVirtualServerCommandSuite) TestHappyPath() {
 	// arrange
 	ctrl := gomock.NewController(s.T())
 	defer ctrl.Finish()
 
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().
-		Insert(gomock.Any(), gomock.Any()).
-		Return(nil)
+	virtualServerRepository.EXPECT().Insert(gomock.Any())
 
 	templateRepository := mocks.NewMockTemplateRepository(ctrl)
-	templateRepository.EXPECT().
-		Insert(gomock.Any(), gomock.Any()).
-		Return(nil).
-		AnyTimes()
+	templateRepository.EXPECT().Insert(gomock.Any()).AnyTimes()
 
 	fileRepository := mocks.NewMockFileRepository(ctrl)
-	fileRepository.EXPECT().
-		Insert(gomock.Any(), gomock.Any()).
-		Return(nil).
-		AnyTimes()
+	fileRepository.EXPECT().Insert(gomock.Any()).AnyTimes()
 
 	roleRepository := mocks.NewMockRoleRepository(ctrl)
-	roleRepository.EXPECT().
-		Insert(gomock.Any(), gomock.Any()).
-		Return(nil).
-		AnyTimes()
+	roleRepository.EXPECT().Insert(gomock.Any()).AnyTimes()
 
 	keyService := serviceMocks.NewMockKeyService(ctrl)
 	keyService.EXPECT().
@@ -192,20 +122,14 @@ func (s *CreateVirtualServerCommandSuite) TestHappyPath() {
 		Return(services.KeyPair{}, nil)
 
 	applicationRepository := mocks.NewMockApplicationRepository(ctrl)
-	applicationRepository.EXPECT().
-		Insert(gomock.Any(), gomock.Any()).
-		Return(nil).
-		AnyTimes()
+	applicationRepository.EXPECT().Insert(gomock.Any()).AnyTimes()
 
 	projectRepository := mocks.NewMockProjectRepository(ctrl)
-	projectRepository.EXPECT().
-		Insert(gomock.Any(), gomock.Any()).
-		Return(nil).
-		AnyTimes()
+	projectRepository.EXPECT().Insert(gomock.Any()).AnyTimes()
 
 	mediator := mediatorMock.NewMockMediator(ctrl)
 
-	ctx := s.createContext(virtualServerRepository, templateRepository, fileRepository, roleRepository, keyService, applicationRepository, projectRepository, mediator)
+	ctx := s.createContext(ctrl, virtualServerRepository, templateRepository, fileRepository, roleRepository, keyService, applicationRepository, projectRepository, mediator)
 	cmd := CreateVirtualServer{
 		Name:               "virtualServer",
 		DisplayName:        "Virtual Server",

@@ -1,7 +1,9 @@
 package commands
 
 import (
+	db "Keyline/internal/database"
 	"Keyline/internal/middlewares"
+	mocks2 "Keyline/internal/mocks"
 	"Keyline/internal/repositories"
 	"Keyline/internal/repositories/mocks"
 	"Keyline/utils"
@@ -26,11 +28,17 @@ func TestPatchApplicationCommandSuite(t *testing.T) {
 }
 
 func (s *PatchApplicationCommandSuite) createContext(
+	ctrl *gomock.Controller,
 	virtualServerRepository repositories.VirtualServerRepository,
 	projectRepository repositories.ProjectRepository,
 	applicationRepository repositories.ApplicationRepository,
 ) context.Context {
 	dc := ioc.NewDependencyCollection()
+
+	dbContext := mocks2.NewMockContext(ctrl)
+	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) db.Context {
+		return dbContext
+	})
 
 	if virtualServerRepository != nil {
 		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.VirtualServerRepository {
@@ -89,7 +97,7 @@ func (s *PatchApplicationCommandSuite) TestHappyPath() {
 	})).Return(application, nil)
 	applicationRepository.EXPECT().Update(gomock.Any())
 
-	ctx := s.createContext(virtualServerRepository, projectRepository, applicationRepository)
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, applicationRepository)
 	cmd := PatchApplication{
 		VirtualServerName:     virtualServer.Name(),
 		ProjectSlug:           project.Slug(),
@@ -122,7 +130,7 @@ func (s *PatchApplicationCommandSuite) TestApplicationError() {
 	applicationRepository := mocks.NewMockApplicationRepository(ctrl)
 	applicationRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
 
-	ctx := s.createContext(virtualServerRepository, projectRepository, applicationRepository)
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, applicationRepository)
 	cmd := PatchApplication{}
 
 	// act
@@ -145,7 +153,7 @@ func (s *PatchApplicationCommandSuite) TestProjectError() {
 	projectRepository := mocks.NewMockProjectRepository(ctrl)
 	projectRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
 
-	ctx := s.createContext(virtualServerRepository, projectRepository, nil)
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, nil)
 	cmd := PatchApplication{}
 
 	// act
@@ -164,7 +172,7 @@ func (s *PatchApplicationCommandSuite) TestVirtualServerError() {
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
 	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
 
-	ctx := s.createContext(virtualServerRepository, nil, nil)
+	ctx := s.createContext(ctrl, virtualServerRepository, nil, nil)
 	cmd := PatchApplication{}
 
 	// act

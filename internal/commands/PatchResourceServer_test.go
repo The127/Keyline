@@ -1,7 +1,9 @@
 package commands
 
 import (
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
+	mocks2 "Keyline/internal/mocks"
 	"Keyline/internal/repositories"
 	"Keyline/internal/repositories/mocks"
 	"Keyline/utils"
@@ -26,28 +28,28 @@ func TestPatchResourceServerCommandSuite(t *testing.T) {
 }
 
 func (s *PatchResourceServerCommandSuite) createContext(
+	ctrl *gomock.Controller,
 	virtualServerRepository repositories.VirtualServerRepository,
 	projectRepository repositories.ProjectRepository,
 	resourceServerRepository repositories.ResourceServerRepository,
 ) context.Context {
 	dc := ioc.NewDependencyCollection()
 
+	dbContext := mocks2.NewMockContext(ctrl)
+	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) database.Context {
+		return dbContext
+	})
+
 	if virtualServerRepository != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.VirtualServerRepository {
-			return virtualServerRepository
-		})
+		dbContext.EXPECT().VirtualServers().Return(virtualServerRepository).AnyTimes()
 	}
 
 	if projectRepository != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.ProjectRepository {
-			return projectRepository
-		})
+		dbContext.EXPECT().Projects().Return(projectRepository).AnyTimes()
 	}
 
 	if resourceServerRepository != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.ResourceServerRepository {
-			return resourceServerRepository
-		})
+		dbContext.EXPECT().ResourceServers().Return(resourceServerRepository).AnyTimes()
 	}
 
 	scope := dc.BuildProvider()
@@ -91,7 +93,7 @@ func (s *PatchResourceServerCommandSuite) TestHappyPath() {
 		return x.Name() == "new name" && x.Description() == "new description"
 	}))
 
-	ctx := s.createContext(virtualServerRepository, projectRepository, resourceServerRepository)
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, resourceServerRepository)
 	cmd := PatchResourceServer{
 		VirtualServerName: "virtualServer",
 		ProjectSlug:       "project",
@@ -124,7 +126,7 @@ func (s *PatchResourceServerCommandSuite) TestResourceServerError() {
 	resourceServerRepository := mocks.NewMockResourceServerRepository(ctrl)
 	resourceServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
 
-	ctx := s.createContext(virtualServerRepository, projectRepository, resourceServerRepository)
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, resourceServerRepository)
 	cmd := PatchResourceServer{}
 
 	// act
@@ -147,7 +149,7 @@ func (s *PatchResourceServerCommandSuite) TestProjectError() {
 	projectRepository := mocks.NewMockProjectRepository(ctrl)
 	projectRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
 
-	ctx := s.createContext(virtualServerRepository, projectRepository, nil)
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, nil)
 	cmd := PatchResourceServer{}
 
 	// act
@@ -166,7 +168,7 @@ func (s *PatchResourceServerCommandSuite) TestVirtualServerError() {
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
 	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
 
-	ctx := s.createContext(virtualServerRepository, nil, nil)
+	ctx := s.createContext(ctrl, virtualServerRepository, nil, nil)
 	cmd := PatchResourceServer{}
 
 	// act

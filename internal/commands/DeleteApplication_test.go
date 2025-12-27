@@ -1,7 +1,9 @@
 package commands
 
 import (
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
+	mocks2 "Keyline/internal/mocks"
 	"Keyline/internal/repositories"
 	"Keyline/internal/repositories/mocks"
 	"Keyline/utils"
@@ -26,28 +28,28 @@ func TestDeleteApplicationCommandSuite(t *testing.T) {
 }
 
 func (s *DeleteApplicationCommandSuite) createContext(
+	ctrl *gomock.Controller,
 	virtualServerRepository repositories.VirtualServerRepository,
 	projectRepository repositories.ProjectRepository,
 	applicationRepository repositories.ApplicationRepository,
 ) context.Context {
 	dc := ioc.NewDependencyCollection()
 
+	dbContext := mocks2.NewMockContext(ctrl)
+	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) database.Context {
+		return dbContext
+	})
+
 	if virtualServerRepository != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.VirtualServerRepository {
-			return virtualServerRepository
-		})
+		dbContext.EXPECT().VirtualServers().Return(virtualServerRepository).AnyTimes()
 	}
 
 	if projectRepository != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.ProjectRepository {
-			return projectRepository
-		})
+		dbContext.EXPECT().Projects().Return(projectRepository).AnyTimes()
 	}
 
 	if applicationRepository != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.ApplicationRepository {
-			return applicationRepository
-		})
+		dbContext.EXPECT().Applications().Return(applicationRepository).AnyTimes()
 	}
 
 	scope := dc.BuildProvider()
@@ -81,7 +83,7 @@ func (s *DeleteApplicationCommandSuite) TestTryingToDeleteSystemApplication() {
 	applicationRepository := mocks.NewMockApplicationRepository(ctrl)
 	applicationRepository.EXPECT().First(gomock.Any(), gomock.Any()).Return(application, nil)
 
-	ctx := s.createContext(virtualServerRepository, projectRepository, applicationRepository)
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, applicationRepository)
 	cmd := DeleteApplication{}
 
 	// act
@@ -107,7 +109,7 @@ func (s *DeleteApplicationCommandSuite) TestProjectError() {
 	projectRepository.EXPECT().Single(gomock.Any(), gomock.Any()).
 		Return(nil, errors.New("error"))
 
-	ctx := s.createContext(virtualServerRepository, projectRepository, nil)
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, nil)
 	cmd := DeleteApplication{}
 
 	// act
@@ -138,7 +140,7 @@ func (s *DeleteApplicationCommandSuite) TestApplicationError() {
 	applicationRepository.EXPECT().First(gomock.Any(), gomock.Any()).
 		Return(nil, errors.New("error"))
 
-	ctx := s.createContext(virtualServerRepository, projectRepository, applicationRepository)
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, applicationRepository)
 	cmd := DeleteApplication{}
 
 	// act
@@ -157,7 +159,7 @@ func (s *DeleteApplicationCommandSuite) TestVirtualServerError() {
 	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).
 		Return(nil, errors.New("error"))
 
-	ctx := s.createContext(virtualServerRepository, nil, nil)
+	ctx := s.createContext(ctrl, virtualServerRepository, nil, nil)
 	cmd := DeleteApplication{}
 
 	// act
@@ -196,7 +198,7 @@ func (s *DeleteApplicationCommandSuite) TestHappyPath() {
 	})).Return(application, nil)
 	applicationRepository.EXPECT().Delete(application.Id())
 
-	ctx := s.createContext(virtualServerRepository, projectRepository, applicationRepository)
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, applicationRepository)
 	cmd := DeleteApplication{
 		VirtualServerName: "virtualServer",
 		ProjectSlug:       "project",

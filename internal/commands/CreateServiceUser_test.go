@@ -1,7 +1,9 @@
 package commands
 
 import (
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
+	mocks2 "Keyline/internal/mocks"
 	"Keyline/internal/repositories"
 	"Keyline/internal/repositories/mocks"
 	"Keyline/utils"
@@ -26,21 +28,23 @@ func TestCreateServiceUserCommandSuite(t *testing.T) {
 }
 
 func (s *CreateServiceUserCommandSuite) createContext(
+	ctrl *gomock.Controller,
 	vsr repositories.VirtualServerRepository,
 	ur repositories.UserRepository,
 ) context.Context {
 	dc := ioc.NewDependencyCollection()
 
+	dbContext := mocks2.NewMockContext(ctrl)
+	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) database.Context {
+		return dbContext
+	})
+
 	if vsr != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.VirtualServerRepository {
-			return vsr
-		})
+		dbContext.EXPECT().VirtualServers().Return(vsr).AnyTimes()
 	}
 
 	if ur != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.UserRepository {
-			return ur
-		})
+		dbContext.EXPECT().Users().Return(ur).AnyTimes()
 	}
 
 	scope := dc.BuildProvider()
@@ -60,7 +64,7 @@ func (s *CreateServiceUserCommandSuite) TestVirtualServerError() {
 	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).
 		Return(nil, errors.New("error"))
 
-	ctx := s.createContext(virtualServerRepository, nil)
+	ctx := s.createContext(ctrl, virtualServerRepository, nil)
 	cmd := CreateServiceUser{}
 
 	// act
@@ -90,7 +94,7 @@ func (s *CreateServiceUserCommandSuite) TestHappyPath() {
 			x.VirtualServerId() == virtualServer.Id()
 	}))
 
-	ctx := s.createContext(virtualServerRepository, userRepository)
+	ctx := s.createContext(ctrl, virtualServerRepository, userRepository)
 	cmd := CreateServiceUser{
 		VirtualServerName: virtualServer.Name(),
 		Username:          "username",

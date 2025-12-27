@@ -26,6 +26,7 @@ const (
 	VirtualServerEntityType
 )
 
+//go:generate mockgen -destination=../mocks/mock_context.go -package=mocks Keyline/internal/database Context
 type Context interface {
 	Applications() repositories.ApplicationRepository
 	ApplicationUserMetadata() repositories.ApplicationUserMetadataRepository

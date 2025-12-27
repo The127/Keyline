@@ -1,7 +1,9 @@
 package commands
 
 import (
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
+	mocks2 "Keyline/internal/mocks"
 	"Keyline/internal/repositories"
 	"Keyline/internal/repositories/mocks"
 	"Keyline/utils"
@@ -26,28 +28,28 @@ func TestRemoveServiceUserPublicKeyCommandSuite(t *testing.T) {
 }
 
 func (s *RemoveServiceUserPublicKeyCommandSuite) createContext(
+	ctrl *gomock.Controller,
 	virtualServerRepository repositories.VirtualServerRepository,
 	userRepository repositories.UserRepository,
 	credentialRepository repositories.CredentialRepository,
 ) context.Context {
 	dc := ioc.NewDependencyCollection()
 
+	dbContext := mocks2.NewMockContext(ctrl)
+	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) database.Context {
+		return dbContext
+	})
+
 	if virtualServerRepository != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.VirtualServerRepository {
-			return virtualServerRepository
-		})
+		dbContext.EXPECT().VirtualServers().Return(virtualServerRepository).AnyTimes()
 	}
 
 	if userRepository != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.UserRepository {
-			return userRepository
-		})
+		dbContext.EXPECT().Users().Return(userRepository).AnyTimes()
 	}
 
 	if credentialRepository != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.CredentialRepository {
-			return credentialRepository
-		})
+		dbContext.EXPECT().Credentials().Return(credentialRepository).AnyTimes()
 	}
 
 	scope := dc.BuildProvider()
@@ -91,7 +93,7 @@ func (s *RemoveServiceUserPublicKeyCommandSuite) TestHappyPath() {
 	})).Return(credential, nil)
 	credentialRepository.EXPECT().Delete(gomock.Any())
 
-	ctx := s.createContext(virtualServerRepository, userRepository, credentialRepository)
+	ctx := s.createContext(ctrl, virtualServerRepository, userRepository, credentialRepository)
 	cmd := RemoveServiceUserPublicKey{
 		VirtualServerName: "virtualServer",
 		ServiceUserId:     serviceUser.Id(),
@@ -122,7 +124,7 @@ func (s *RemoveServiceUserPublicKeyCommandSuite) TestCredentialError() {
 	credentialRepository := mocks.NewMockCredentialRepository(ctrl)
 	credentialRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
 
-	ctx := s.createContext(virtualServerRepository, userRepository, credentialRepository)
+	ctx := s.createContext(ctrl, virtualServerRepository, userRepository, credentialRepository)
 	cmd := RemoveServiceUserPublicKey{}
 
 	// act
@@ -145,7 +147,7 @@ func (s *RemoveServiceUserPublicKeyCommandSuite) TestUserError() {
 	userRepository := mocks.NewMockUserRepository(ctrl)
 	userRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
 
-	ctx := s.createContext(virtualServerRepository, userRepository, nil)
+	ctx := s.createContext(ctrl, virtualServerRepository, userRepository, nil)
 	cmd := RemoveServiceUserPublicKey{}
 
 	// act
@@ -164,7 +166,7 @@ func (s *RemoveServiceUserPublicKeyCommandSuite) TestVirtualServerError() {
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
 	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
 
-	ctx := s.createContext(virtualServerRepository, nil, nil)
+	ctx := s.createContext(ctrl, virtualServerRepository, nil, nil)
 	cmd := RemoveServiceUserPublicKey{}
 
 	// act

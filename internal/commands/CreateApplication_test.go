@@ -1,7 +1,9 @@
 package commands
 
 import (
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
+	mocks2 "Keyline/internal/mocks"
 	"Keyline/internal/repositories"
 	"Keyline/internal/repositories/mocks"
 	"Keyline/utils"
@@ -26,28 +28,28 @@ func TestCreateApplicationCommandSuite(t *testing.T) {
 }
 
 func (s *CreateApplicationCommandSuite) createContext(
+	ctrl *gomock.Controller,
 	vsr repositories.VirtualServerRepository,
 	pr repositories.ProjectRepository,
 	ar repositories.ApplicationRepository,
 ) context.Context {
 	dc := ioc.NewDependencyCollection()
 
+	dbContext := mocks2.NewMockContext(ctrl)
+	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) database.Context {
+		return dbContext
+	})
+
 	if vsr != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.VirtualServerRepository {
-			return vsr
-		})
+		dbContext.EXPECT().VirtualServers().Return(vsr).AnyTimes()
 	}
 
 	if pr != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.ProjectRepository {
-			return pr
-		})
+		dbContext.EXPECT().Projects().Return(pr).AnyTimes()
 	}
 
 	if ar != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.ApplicationRepository {
-			return ar
-		})
+		dbContext.EXPECT().Applications().Return(ar).AnyTimes()
 	}
 
 	scope := dc.BuildProvider()
@@ -68,41 +70,7 @@ func (s *CreateApplicationCommandSuite) TestVirtualServerError() {
 		EXPECT().Single(gomock.Any(), gomock.Any()).
 		Return(nil, errors.New("error"))
 
-	ctx := s.createContext(virtualServerRepository, nil, nil)
-	cmd := CreateApplication{}
-
-	// act
-	_, err := HandleCreateApplication(ctx, cmd)
-
-	// assert
-	s.Error(err)
-}
-
-func (s *CreateApplicationCommandSuite) TestApplicationError() {
-	// arrange
-	ctrl := gomock.NewController(s.T())
-	defer ctrl.Finish()
-
-	now := time.Now()
-
-	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
-	virtualServer.Mock(now)
-	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.
-		EXPECT().Single(gomock.Any(), gomock.Any()).
-		Return(virtualServer, nil)
-
-	project := repositories.NewProject(virtualServer.Id(), "project", "Project", "Test Project")
-	project.Mock(now)
-	projectRepository := mocks.NewMockProjectRepository(ctrl)
-	projectRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(project, nil)
-
-	applicationRepository := mocks.NewMockApplicationRepository(ctrl)
-	applicationRepository.EXPECT().
-		Insert(gomock.Any(), gomock.Any()).
-		Return(errors.New("error"))
-
-	ctx := s.createContext(virtualServerRepository, projectRepository, applicationRepository)
+	ctx := s.createContext(ctrl, virtualServerRepository, nil, nil)
 	cmd := CreateApplication{}
 
 	// act
@@ -143,7 +111,7 @@ func (s *CreateApplicationCommandSuite) TestPublicApplicationHappyPath() {
 			x.RedirectUris()[1] == "redirectUri2"
 	}))
 
-	ctx := s.createContext(virtualServerRepository, projectRepository, applicationRepository)
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, applicationRepository)
 	cmd := CreateApplication{
 		VirtualServerName: virtualServer.Name(),
 		ProjectSlug:       "project",
@@ -195,7 +163,7 @@ func (s *CreateApplicationCommandSuite) TestConfidentialApplicationHappyPath() {
 			x.RedirectUris()[1] == "redirectUri2"
 	}))
 
-	ctx := s.createContext(virtualServerRepository, projectRepository, applicationRepository)
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, applicationRepository)
 	cmd := CreateApplication{
 		VirtualServerName: virtualServer.Name(),
 		ProjectSlug:       "project",

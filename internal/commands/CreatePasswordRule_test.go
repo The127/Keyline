@@ -1,7 +1,9 @@
 package commands
 
 import (
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
+	mocks2 "Keyline/internal/mocks"
 	"Keyline/internal/repositories"
 	"Keyline/internal/repositories/mocks"
 	"Keyline/utils"
@@ -26,21 +28,23 @@ func TestCreatePasswordRuleCommandSuite(t *testing.T) {
 }
 
 func (s *CreatePasswordRuleCommandSuite) createContext(
+	ctrl *gomock.Controller,
 	vsr repositories.VirtualServerRepository,
 	prr repositories.PasswordRuleRepository,
 ) context.Context {
 	dc := ioc.NewDependencyCollection()
 
+	dbContext := mocks2.NewMockContext(ctrl)
+	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) database.Context {
+		return dbContext
+	})
+
 	if vsr != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.VirtualServerRepository {
-			return vsr
-		})
+		dbContext.EXPECT().VirtualServers().Return(vsr).AnyTimes()
 	}
 
 	if prr != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.PasswordRuleRepository {
-			return prr
-		})
+		dbContext.EXPECT().PasswordRules().Return(prr).AnyTimes()
 	}
 
 	scope := dc.BuildProvider()
@@ -78,7 +82,7 @@ func (s *CreatePasswordRuleCommandSuite) QueryingExistingError() {
 	passwordRuleRepository := mocks.NewMockPasswordRuleRepository(ctrl)
 	passwordRuleRepository.EXPECT().First(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
 
-	ctx := s.createContext(virtualServerRepository, passwordRuleRepository)
+	ctx := s.createContext(ctrl, virtualServerRepository, passwordRuleRepository)
 	cmd := CreatePasswordRule{}
 
 	// act
@@ -97,7 +101,7 @@ func (s *CreatePasswordRuleCommandSuite) VirtualServerError() {
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
 	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
 
-	ctx := s.createContext(virtualServerRepository, nil)
+	ctx := s.createContext(ctrl, virtualServerRepository, nil)
 	cmd := CreatePasswordRule{}
 
 	// act
@@ -130,7 +134,7 @@ func (s *CreatePasswordRuleCommandSuite) TestAlreadyExists() {
 		return x.GetVirtualServerId() == virtualServer.Id() && x.GetType() == repositories.PasswordRuleTypeSpecial
 	})).Return(passwordRule, nil)
 
-	ctx := s.createContext(virtualServerRepository, passwordRuleRepository)
+	ctx := s.createContext(ctrl, virtualServerRepository, passwordRuleRepository)
 	cmd := CreatePasswordRule{
 		VirtualServerName: "virtualServer",
 		Type:              repositories.PasswordRuleTypeSpecial,
@@ -163,9 +167,9 @@ func (s *CreatePasswordRuleCommandSuite) TestHappyPath() {
 	passwordRuleRepository.EXPECT().First(gomock.Any(), gomock.Cond(func(x repositories.PasswordRuleFilter) bool {
 		return x.GetVirtualServerId() == virtualServer.Id() && x.GetType() == repositories.PasswordRuleTypeSpecial
 	})).Return(nil, nil)
-	passwordRuleRepository.EXPECT().Insert(gomock.Any()).Return(nil)
+	passwordRuleRepository.EXPECT().Insert(gomock.Any())
 
-	ctx := s.createContext(virtualServerRepository, passwordRuleRepository)
+	ctx := s.createContext(ctrl, virtualServerRepository, passwordRuleRepository)
 	cmd := CreatePasswordRule{
 		VirtualServerName: "virtualServer",
 		Type:              repositories.PasswordRuleTypeSpecial,

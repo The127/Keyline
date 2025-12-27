@@ -1,8 +1,10 @@
 package commands
 
 import (
+	"Keyline/internal/database"
 	"Keyline/internal/events"
 	"Keyline/internal/middlewares"
+	mocks3 "Keyline/internal/mocks"
 	"Keyline/internal/repositories"
 	"Keyline/internal/repositories/mocks"
 	"Keyline/utils"
@@ -29,19 +31,25 @@ func TestCreateUserCommandSuite(t *testing.T) {
 	suite.Run(t, new(CreateUserCommandSuite))
 }
 
-func (s *CreateUserCommandSuite) createContext(virtualServerRepository repositories.VirtualServerRepository, userRepository repositories.UserRepository, m *mocks2.MockMediator) context.Context {
+func (s *CreateUserCommandSuite) createContext(
+	ctrl *gomock.Controller,
+	virtualServerRepository repositories.VirtualServerRepository,
+	userRepository repositories.UserRepository,
+	m *mocks2.MockMediator,
+) context.Context {
 	dc := ioc.NewDependencyCollection()
 
+	dbContext := mocks3.NewMockContext(ctrl)
+	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) database.Context {
+		return dbContext
+	})
+
 	if virtualServerRepository != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.VirtualServerRepository {
-			return virtualServerRepository
-		})
+		dbContext.EXPECT().VirtualServers().Return(virtualServerRepository).AnyTimes()
 	}
 
 	if userRepository != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.UserRepository {
-			return userRepository
-		})
+		dbContext.EXPECT().Users().Return(userRepository).AnyTimes()
 	}
 
 	if m != nil {
@@ -67,7 +75,7 @@ func (s *CreateUserCommandSuite) TestVirtualServerError() {
 	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).
 		Return(nil, errors.New("error"))
 
-	ctx := s.createContext(virtualServerRepository, nil, nil)
+	ctx := s.createContext(ctrl, virtualServerRepository, nil, nil)
 	cmd := CreateUser{}
 
 	// act
@@ -97,7 +105,7 @@ func (s *CreateUserCommandSuite) TestHappyPath() {
 	m := mocks2.NewMockMediator(ctrl)
 	m.EXPECT().SendEvent(gomock.Any(), gomock.AssignableToTypeOf(events.UserCreatedEvent{}), gomock.Any())
 
-	ctx := s.createContext(virtualServerRepository, userRepository, m)
+	ctx := s.createContext(ctrl, virtualServerRepository, userRepository, m)
 	cmd := CreateUser{
 		VirtualServerName: virtualServer.Name(),
 		Username:          "username",

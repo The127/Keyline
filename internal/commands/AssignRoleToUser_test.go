@@ -1,7 +1,9 @@
 package commands
 
 import (
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
+	"Keyline/internal/mocks"
 	"Keyline/internal/repositories"
 	repoMocks "Keyline/internal/repositories/mocks"
 	"Keyline/utils"
@@ -25,43 +27,32 @@ func TestAssignRoleToUserCommandSuite(t *testing.T) {
 	suite.Run(t, new(AssignRoleToUserCommandSuite))
 }
 
-func (s *AssignRoleToUserCommandSuite) createContext(
-	vsr repositories.VirtualServerRepository,
-	pr repositories.ProjectRepository,
-	rr repositories.RoleRepository,
-	ur repositories.UserRepository,
-	usr repositories.UserRoleAssignmentRepository,
-) context.Context {
+func (s *AssignRoleToUserCommandSuite) createContext(ctrl *gomock.Controller, vsr repositories.VirtualServerRepository, pr repositories.ProjectRepository, rr repositories.RoleRepository, ur repositories.UserRepository, usr repositories.UserRoleAssignmentRepository) context.Context {
 	dc := ioc.NewDependencyCollection()
 
+	dbContext := mocks.NewMockContext(ctrl)
+	ioc.RegisterScoped(dc, func(_ *ioc.DependencyProvider) database.Context {
+		return dbContext
+	})
+
 	if vsr != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.VirtualServerRepository {
-			return vsr
-		})
+		dbContext.EXPECT().VirtualServers().Return(vsr).AnyTimes()
 	}
 
 	if pr != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.ProjectRepository {
-			return pr
-		})
+		dbContext.EXPECT().Projects().Return(pr).AnyTimes()
 	}
 
 	if ur != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.UserRepository {
-			return ur
-		})
+		dbContext.EXPECT().Users().Return(ur).AnyTimes()
 	}
 
 	if rr != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.RoleRepository {
-			return rr
-		})
+		dbContext.EXPECT().Roles().Return(rr).AnyTimes()
 	}
 
 	if usr != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.UserRoleAssignmentRepository {
-			return usr
-		})
+		dbContext.EXPECT().UserRoleAssignments().Return(usr).AnyTimes()
 	}
 
 	scope := dc.BuildProvider()
@@ -81,7 +72,7 @@ func (s *AssignRoleToUserCommandSuite) TestVirtualServerError() {
 	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).
 		Return(nil, errors.New("error"))
 
-	ctx := s.createContext(virtualServerRepository, nil, nil, nil, nil)
+	ctx := s.createContext(ctrl, virtualServerRepository, nil, nil, nil, nil)
 	cmd := AssignRoleToUser{}
 
 	// act
@@ -107,7 +98,7 @@ func (s *AssignRoleToUserCommandSuite) TestProjectError() {
 	projectRepository.EXPECT().Single(gomock.Any(), gomock.Any()).
 		Return(nil, errors.New("error"))
 
-	ctx := s.createContext(virtualServerRepository, projectRepository, nil, nil, nil)
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, nil, nil, nil)
 	cmd := AssignRoleToUser{}
 
 	// act
@@ -138,7 +129,7 @@ func (s *AssignRoleToUserCommandSuite) TestRoleError() {
 	roleRepository.EXPECT().Single(gomock.Any(), gomock.Any()).
 		Return(nil, errors.New("error"))
 
-	ctx := s.createContext(virtualServerRepository, projectRepository, roleRepository, nil, nil)
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, roleRepository, nil, nil)
 	cmd := AssignRoleToUser{}
 
 	// act
@@ -174,7 +165,7 @@ func (s *AssignRoleToUserCommandSuite) TestUserError() {
 	userRepository.EXPECT().Single(gomock.Any(), gomock.Any()).
 		Return(nil, errors.New("error"))
 
-	ctx := s.createContext(virtualServerRepository, projectRepository, roleRepository, userRepository, nil)
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, roleRepository, userRepository, nil)
 	cmd := AssignRoleToUser{}
 
 	// act
@@ -214,7 +205,7 @@ func (s *AssignRoleToUserCommandSuite) TestUserRoleAssignmentError() {
 	userRoleAssignmentRepository := repoMocks.NewMockUserRoleAssignmentRepository(ctrl)
 	userRoleAssignmentRepository.EXPECT().Insert(gomock.Any())
 
-	ctx := s.createContext(virtualServerRepository, projectRepository, roleRepository, userRepository, userRoleAssignmentRepository)
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, roleRepository, userRepository, userRoleAssignmentRepository)
 	cmd := AssignRoleToUser{}
 
 	// act
@@ -264,7 +255,7 @@ func (s *AssignRoleToUserCommandSuite) TestHappyPath() {
 		return x.RoleId() == role.Id() && x.UserId() == user.Id()
 	}))
 
-	ctx := s.createContext(virtualServerRepository, projectRepository, roleRepository, userRepository, userRoleAssignmentRepository)
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, roleRepository, userRepository, userRoleAssignmentRepository)
 	cmd := AssignRoleToUser{
 		VirtualServerName: virtualServer.Name(),
 		ProjectSlug:       project.Slug(),
