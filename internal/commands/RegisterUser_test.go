@@ -87,7 +87,7 @@ func (s *RegisterUserCommandSuite) TestHandleRegisterUser() {
 	virtualServer.Mock(now)
 	virtualServer.SetEnableRegistration(true)
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x *repositories.VirtualServerFilter) bool {
+	virtualServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Cond(func(x *repositories.VirtualServerFilter) bool {
 		return x.GetName() == virtualServer.Name()
 	})).Return(virtualServer, nil)
 
@@ -130,7 +130,7 @@ func (s *RegisterUserCommandSuite) TestRegistrationNotEnabled() {
 	virtualServer.Mock(now)
 	virtualServer.SetEnableRegistration(false)
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x *repositories.VirtualServerFilter) bool {
+	virtualServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Cond(func(x *repositories.VirtualServerFilter) bool {
 		return x.GetName() == virtualServer.Name()
 	})).Return(virtualServer, nil)
 

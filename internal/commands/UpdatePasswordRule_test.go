@@ -61,7 +61,7 @@ func (s *UpdatePasswordRuleCommandSuite) TestVirtualServerError() {
 	defer ctrl.Finish()
 
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
+	virtualServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
 
 	ctx := s.createContext(ctrl, virtualServerRepository, nil)
 	cmd := UpdatePasswordRule{
@@ -88,10 +88,10 @@ func (s *UpdatePasswordRuleCommandSuite) TestPasswordRuleError() {
 	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
 	virtualServer.Mock(now)
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
+	virtualServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
 
 	passwordRuleRepository := mocks.NewMockPasswordRuleRepository(ctrl)
-	passwordRuleRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
+	passwordRuleRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
 
 	ctx := s.createContext(ctrl, virtualServerRepository, passwordRuleRepository)
 	cmd := UpdatePasswordRule{
@@ -118,7 +118,7 @@ func (s *UpdatePasswordRuleCommandSuite) TestHappyPath() {
 	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
 	virtualServer.Mock(now)
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x *repositories.VirtualServerFilter) bool {
+	virtualServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Cond(func(x *repositories.VirtualServerFilter) bool {
 		return x.GetName() == virtualServer.Name()
 	})).Return(virtualServer, nil)
 
@@ -126,7 +126,7 @@ func (s *UpdatePasswordRuleCommandSuite) TestHappyPath() {
 	s.Require().NoError(err)
 	passwordRule.Mock(now)
 	passwordRuleRepository := mocks.NewMockPasswordRuleRepository(ctrl)
-	passwordRuleRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x *repositories.PasswordRuleFilter) bool {
+	passwordRuleRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Cond(func(x *repositories.PasswordRuleFilter) bool {
 		return x.GetVirtualServerId() == virtualServer.Id() && x.GetType() == repositories.PasswordRuleTypeSpecial
 	})).Return(passwordRule, nil)
 	passwordRuleRepository.EXPECT().Update(gomock.Any())

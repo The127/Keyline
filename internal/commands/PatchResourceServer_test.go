@@ -70,21 +70,21 @@ func (s *PatchResourceServerCommandSuite) TestHappyPath() {
 	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
 	virtualServer.Mock(now)
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x *repositories.VirtualServerFilter) bool {
+	virtualServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Cond(func(x *repositories.VirtualServerFilter) bool {
 		return x.GetName() == "virtualServer"
 	})).Return(virtualServer, nil)
 
 	project := repositories.NewProject(virtualServer.Id(), "project", "Project", "Test Project")
 	project.Mock(now)
 	projectRepository := mocks.NewMockProjectRepository(ctrl)
-	projectRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x *repositories.ProjectFilter) bool {
+	projectRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Cond(func(x *repositories.ProjectFilter) bool {
 		return x.GetSlug() == "project" && x.GetVirtualServerId() == virtualServer.Id()
 	})).Return(project, nil)
 
 	resourceServer := repositories.NewResourceServer(virtualServer.Id(), project.Id(), "slug", "resourceServer", "Resource Server")
 	resourceServer.Mock(now)
 	resourceServerRepository := mocks.NewMockResourceServerRepository(ctrl)
-	resourceServerRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x *repositories.ResourceServerFilter) bool {
+	resourceServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Cond(func(x *repositories.ResourceServerFilter) bool {
 		return x.GetVirtualServerId() == virtualServer.Id() &&
 			x.GetProjectId() == project.Id() &&
 			x.GetId() == resourceServer.Id()
@@ -117,14 +117,14 @@ func (s *PatchResourceServerCommandSuite) TestResourceServerError() {
 
 	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
+	virtualServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
 
 	project := repositories.NewProject(virtualServer.Id(), "project", "Project", "Test Project")
 	projectRepository := mocks.NewMockProjectRepository(ctrl)
-	projectRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(project, nil)
+	projectRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(project, nil)
 
 	resourceServerRepository := mocks.NewMockResourceServerRepository(ctrl)
-	resourceServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
+	resourceServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
 
 	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, resourceServerRepository)
 	cmd := PatchResourceServer{}
@@ -144,10 +144,10 @@ func (s *PatchResourceServerCommandSuite) TestProjectError() {
 
 	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
+	virtualServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
 
 	projectRepository := mocks.NewMockProjectRepository(ctrl)
-	projectRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
+	projectRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
 
 	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, nil)
 	cmd := PatchResourceServer{}
@@ -166,7 +166,7 @@ func (s *PatchResourceServerCommandSuite) TestVirtualServerError() {
 	defer ctrl.Finish()
 
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
+	virtualServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
 
 	ctx := s.createContext(ctrl, virtualServerRepository, nil, nil)
 	cmd := PatchResourceServer{}

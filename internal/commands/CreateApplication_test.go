@@ -67,7 +67,7 @@ func (s *CreateApplicationCommandSuite) TestVirtualServerError() {
 
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
 	virtualServerRepository.
-		EXPECT().Single(gomock.Any(), gomock.Any()).
+		EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).
 		Return(nil, errors.New("error"))
 
 	ctx := s.createContext(ctrl, virtualServerRepository, nil, nil)
@@ -90,14 +90,14 @@ func (s *CreateApplicationCommandSuite) TestPublicApplicationHappyPath() {
 	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
 	virtualServer.Mock(now)
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x *repositories.VirtualServerFilter) bool {
+	virtualServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Cond(func(x *repositories.VirtualServerFilter) bool {
 		return x.GetName() == virtualServer.Name()
 	})).Return(virtualServer, nil)
 
 	project := repositories.NewProject(virtualServer.Id(), "project", "Project", "Test Project")
 	project.Mock(now)
 	projectRepository := mocks.NewMockProjectRepository(ctrl)
-	projectRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x *repositories.ProjectFilter) bool {
+	projectRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Cond(func(x *repositories.ProjectFilter) bool {
 		return x.GetSlug() == "project"
 	})).Return(project, nil)
 
@@ -142,14 +142,14 @@ func (s *CreateApplicationCommandSuite) TestConfidentialApplicationHappyPath() {
 	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
 	virtualServer.Mock(now)
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x *repositories.VirtualServerFilter) bool {
+	virtualServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Cond(func(x *repositories.VirtualServerFilter) bool {
 		return x.GetName() == virtualServer.Name()
 	})).Return(virtualServer, nil)
 
 	project := repositories.NewProject(virtualServer.Id(), "project", "Project", "Test Project")
 	project.Mock(now)
 	projectRepository := mocks.NewMockProjectRepository(ctrl)
-	projectRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x *repositories.ProjectFilter) bool {
+	projectRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Cond(func(x *repositories.ProjectFilter) bool {
 		return x.GetSlug() == "project"
 	})).Return(project, nil)
 

@@ -38,7 +38,7 @@ func newTestContext(t *testing.T) context.Context {
 	userRepository := repoMocks.NewMockUserRepository(ctrl)
 	user := repositories.NewUser("user", "User", "user@mail", uuid.New())
 	user.Mock(time.Now())
-	userRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(user, nil)
+	userRepository.EXPECT().FirstOrNil(gomock.Any(), gomock.Any()).Return(user, nil)
 	dbContext.EXPECT().Users().Return(userRepository).AnyTimes()
 
 	userRoleAssignmentRepository := repoMocks.NewMockUserRoleAssignmentRepository(ctrl)
@@ -47,7 +47,7 @@ func newTestContext(t *testing.T) context.Context {
 
 	applicationUserMetadata := repositories.NewApplicationUserMetadata(uuid.New(), user.Id(), "{\"foo\": \"bar\"}")
 	applicationUserMetadataRepository := repoMocks.NewMockApplicationUserMetadataRepository(ctrl)
-	applicationUserMetadataRepository.EXPECT().First(gomock.Any(), gomock.Any()).Return(applicationUserMetadata, nil).AnyTimes()
+	applicationUserMetadataRepository.EXPECT().FirstOrNil(gomock.Any(), gomock.Any()).Return(applicationUserMetadata, nil).AnyTimes()
 	dbContext.EXPECT().ApplicationUserMetadata().Return(applicationUserMetadataRepository).AnyTimes()
 
 	claimsMapper := serviceMocks.NewMockClaimsMapper(ctrl)

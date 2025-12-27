@@ -206,7 +206,7 @@ func (s *CreateUserCommandSuite) TestCreateUser_Success() {
     virtualServer := repositories.NewVirtualServer("vs-name", "VS Display")
     
     mockVsRepo := mocks.NewMockVirtualServerRepository(ctrl)
-    mockVsRepo.EXPECT().Single(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
+    mockVsRepo.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
     
     mockUserRepo := mocks.NewMockUserRepository(ctrl)
     mockUserRepo.EXPECT().Insert(gomock.Any())
@@ -235,7 +235,7 @@ func (s *CreateUserCommandSuite) TestCreateUser_VirtualServerError() {
     defer ctrl.Finish()
     
     mockVsRepo := mocks.NewMockVirtualServerRepository(ctrl)
-    mockVsRepo.EXPECT().Single(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
+    mockVsRepo.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
     
     ctx := s.createContext(mockVsRepo, nil, nil)
     cmd := CreateUser{}
@@ -305,7 +305,7 @@ func (s *GetUserQuerySuite) TestGetUser_Success() {
 	user := repositories.NewUser("testuser", "Test User", "test@example.com", uuid.New())
 
 	mockUserRepo := mocks.NewMockUserRepository(ctrl)
-	mockUserRepo.EXPECT().First(gomock.Any(), gomock.Any()).Return(user, nil)
+	mockUserRepo.EXPECT().FirstOrNil(gomock.Any(), gomock.Any()).Return(user, nil)
 
 	ctx := s.createContext(mockUserRepo)
 	query := GetUser{UserID: user.Id()}
@@ -325,7 +325,7 @@ func (s *GetUserQuerySuite) TestGetUser_NotFound() {
 	defer ctrl.Finish()
 
 	mockUserRepo := mocks.NewMockUserRepository(ctrl)
-	mockUserRepo.EXPECT().First(gomock.Any(), gomock.Any()).Return(nil, errors.New("not found"))
+	mockUserRepo.EXPECT().FirstOrNil(gomock.Any(), gomock.Any()).Return(nil, errors.New("not found"))
 
 	ctx := s.createContext(mockUserRepo)
 	query := GetUser{UserID: uuid.New()}

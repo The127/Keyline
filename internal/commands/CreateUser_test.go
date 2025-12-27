@@ -72,7 +72,7 @@ func (s *CreateUserCommandSuite) TestVirtualServerError() {
 	defer ctrl.Finish()
 
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).
+	virtualServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).
 		Return(nil, errors.New("error"))
 
 	ctx := s.createContext(ctrl, virtualServerRepository, nil, nil)
@@ -95,7 +95,7 @@ func (s *CreateUserCommandSuite) TestHappyPath() {
 	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
 	virtualServer.Mock(now)
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x *repositories.VirtualServerFilter) bool {
+	virtualServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Cond(func(x *repositories.VirtualServerFilter) bool {
 		return x.GetName() == virtualServer.Name()
 	})).Return(virtualServer, nil)
 

@@ -70,14 +70,14 @@ func (s *RemoveServiceUserPublicKeyCommandSuite) TestHappyPath() {
 	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
 	virtualServer.Mock(now)
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x *repositories.VirtualServerFilter) bool {
+	virtualServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Cond(func(x *repositories.VirtualServerFilter) bool {
 		return x.GetName() == "virtualServer"
 	})).Return(virtualServer, nil)
 
 	serviceUser := repositories.NewServiceUser("service-user", virtualServer.Id())
 	serviceUser.Mock(now)
 	userRepository := mocks.NewMockUserRepository(ctrl)
-	userRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x *repositories.UserFilter) bool {
+	userRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Cond(func(x *repositories.UserFilter) bool {
 		return x.GetId() == serviceUser.Id() && x.GetVirtualServerId() == virtualServer.Id() && x.GetServiceUser() == true
 	})).Return(serviceUser, nil)
 
@@ -86,7 +86,7 @@ func (s *RemoveServiceUserPublicKeyCommandSuite) TestHappyPath() {
 	})
 	credential.Mock(now)
 	credentialRepository := mocks.NewMockCredentialRepository(ctrl)
-	credentialRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x *repositories.CredentialFilter) bool {
+	credentialRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Cond(func(x *repositories.CredentialFilter) bool {
 		return x.GetDetailPublicKey() == "publicKey" &&
 			x.GetUserId() == serviceUser.Id() &&
 			x.GetType() == repositories.CredentialTypeServiceUserKey
@@ -115,14 +115,14 @@ func (s *RemoveServiceUserPublicKeyCommandSuite) TestCredentialError() {
 
 	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
+	virtualServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
 
 	serviceUser := repositories.NewServiceUser("service-user", virtualServer.Id())
 	userRepository := mocks.NewMockUserRepository(ctrl)
-	userRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(serviceUser, nil)
+	userRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(serviceUser, nil)
 
 	credentialRepository := mocks.NewMockCredentialRepository(ctrl)
-	credentialRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
+	credentialRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
 
 	ctx := s.createContext(ctrl, virtualServerRepository, userRepository, credentialRepository)
 	cmd := RemoveServiceUserPublicKey{}
@@ -142,10 +142,10 @@ func (s *RemoveServiceUserPublicKeyCommandSuite) TestUserError() {
 
 	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
+	virtualServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
 
 	userRepository := mocks.NewMockUserRepository(ctrl)
-	userRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
+	userRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
 
 	ctx := s.createContext(ctrl, virtualServerRepository, userRepository, nil)
 	cmd := RemoveServiceUserPublicKey{}
@@ -164,7 +164,7 @@ func (s *RemoveServiceUserPublicKeyCommandSuite) TestVirtualServerError() {
 	defer ctrl.Finish()
 
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
+	virtualServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
 
 	ctx := s.createContext(ctrl, virtualServerRepository, nil, nil)
 	cmd := RemoveServiceUserPublicKey{}

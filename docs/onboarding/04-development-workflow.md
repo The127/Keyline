@@ -231,7 +231,7 @@ func HandleDeactivateUser(
     
     // Get user
     filter := repositories.NewUserFilter().Id(cmd.UserID)
-    user, err := userRepo.First(ctx, filter)
+    user, err := userRepo.FirstOrNil(ctx, filter)
     if err != nil {
         return nil, fmt.Errorf("getting user: %w", err)
     }
@@ -348,7 +348,7 @@ func (s *DeactivateUserCommandSuite) TestDeactivateUser_Success() {
 	user := repositories.NewUser("testuser", "Test User", "test@example.com", uuid.New())
 
 	mockRepo := mocks.NewMockUserRepository(ctrl)
-	mockRepo.EXPECT().First(gomock.Any(), gomock.Any()).Return(user, nil)
+	mockRepo.EXPECT().FirstOrNil(gomock.Any(), gomock.Any()).Return(user, nil)
 	mockRepo.EXPECT().Update(gomock.Any())
 
 	mockMediator := mediatormocks.NewMockMediator(ctrl)
@@ -558,7 +558,7 @@ go test -v -tags=e2e ./tests/e2e/...
    defer ctrl.Finish()
    
    mockRepo := mocks.NewMockUserRepository(ctrl)
-   mockRepo.EXPECT().First(gomock.Any(), gomock.Any()).Return(user, nil)
+   mockRepo.EXPECT().FirstOrNil(gomock.Any(), gomock.Any()).Return(user, nil)
    ```
 
 ## Linting and Formatting

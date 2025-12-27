@@ -75,17 +75,17 @@ func (s *CreateResourceServerScopeCommandSuite) TestHappyPath() {
 	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
 	virtualServer.Mock(now)
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
+	virtualServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
 
 	project := repositories.NewProject(virtualServer.Id(), "project", "Project", "Test Project")
 	project.Mock(now)
 	projectRepository := mocks.NewMockProjectRepository(ctrl)
-	projectRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(project, nil)
+	projectRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(project, nil)
 
 	resourceServer := repositories.NewResourceServer(virtualServer.Id(), project.Id(), "slug", "resourceServer", "Resource Server")
 	resourceServer.Mock(now)
 	resourceServerRepository := mocks.NewMockResourceServerRepository(ctrl)
-	resourceServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(resourceServer, nil)
+	resourceServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(resourceServer, nil)
 
 	resourceServerScopeRepository := mocks.NewMockResourceServerScopeRepository(ctrl)
 	resourceServerScopeRepository.EXPECT().Insert(gomock.Any())
@@ -115,14 +115,14 @@ func (s *CreateResourceServerScopeCommandSuite) TestResourceServerError() {
 
 	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
+	virtualServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
 
 	project := repositories.NewProject(virtualServer.Id(), "project", "Project", "Test Project")
 	projectRepository := mocks.NewMockProjectRepository(ctrl)
-	projectRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(project, nil)
+	projectRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(project, nil)
 
 	resourceServerRepository := mocks.NewMockResourceServerRepository(ctrl)
-	resourceServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
+	resourceServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
 
 	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, resourceServerRepository, nil)
 	cmd := CreateResourceServerScope{}
@@ -142,10 +142,10 @@ func (s *CreateResourceServerScopeCommandSuite) TestProjectError() {
 
 	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
+	virtualServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
 
 	projectRepository := mocks.NewMockProjectRepository(ctrl)
-	projectRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
+	projectRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
 
 	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, nil, nil)
 	cmd := CreateResourceServerScope{}
@@ -164,7 +164,7 @@ func (s *CreateResourceServerScopeCommandSuite) TestVirtualServerError() {
 	defer ctrl.Finish()
 
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
+	virtualServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
 
 	ctx := s.createContext(ctrl, virtualServerRepository, nil, nil, nil)
 	cmd := CreateResourceServerScope{}

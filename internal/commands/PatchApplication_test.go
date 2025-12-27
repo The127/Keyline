@@ -70,21 +70,21 @@ func (s *PatchApplicationCommandSuite) TestHappyPath() {
 	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
 	virtualServer.Mock(now)
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x *repositories.VirtualServerFilter) bool {
+	virtualServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Cond(func(x *repositories.VirtualServerFilter) bool {
 		return x.GetName() == "virtualServer"
 	})).Return(virtualServer, nil)
 
 	project := repositories.NewProject(virtualServer.Id(), "project", "Project", "Test Project")
 	project.Mock(now)
 	projectRepository := mocks.NewMockProjectRepository(ctrl)
-	projectRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x *repositories.ProjectFilter) bool {
+	projectRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Cond(func(x *repositories.ProjectFilter) bool {
 		return x.GetSlug() == "project"
 	})).Return(project, nil)
 
 	application := repositories.NewApplication(virtualServer.Id(), project.Id(), "application", "Application", repositories.ApplicationTypePublic, []string{})
 	application.Mock(now)
 	applicationRepository := mocks.NewMockApplicationRepository(ctrl)
-	applicationRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x *repositories.ApplicationFilter) bool {
+	applicationRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Cond(func(x *repositories.ApplicationFilter) bool {
 		return x.GetId() == application.Id() &&
 			x.GetProjectId() == project.Id() &&
 			x.GetVirtualServerId() == virtualServer.Id()
@@ -115,14 +115,14 @@ func (s *PatchApplicationCommandSuite) TestApplicationError() {
 
 	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
+	virtualServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
 
 	project := repositories.NewProject(virtualServer.Id(), "project", "Project", "Test Project")
 	projectRepository := mocks.NewMockProjectRepository(ctrl)
-	projectRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(project, nil)
+	projectRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(project, nil)
 
 	applicationRepository := mocks.NewMockApplicationRepository(ctrl)
-	applicationRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
+	applicationRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
 
 	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, applicationRepository)
 	cmd := PatchApplication{}
@@ -142,10 +142,10 @@ func (s *PatchApplicationCommandSuite) TestProjectError() {
 
 	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
+	virtualServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
 
 	projectRepository := mocks.NewMockProjectRepository(ctrl)
-	projectRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
+	projectRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
 
 	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, nil)
 	cmd := PatchApplication{}
@@ -164,7 +164,7 @@ func (s *PatchApplicationCommandSuite) TestVirtualServerError() {
 	defer ctrl.Finish()
 
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
+	virtualServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
 
 	ctx := s.createContext(ctrl, virtualServerRepository, nil, nil)
 	cmd := PatchApplication{}
