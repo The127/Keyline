@@ -56,10 +56,10 @@ type CredentialRepository struct {
 	entityType    int
 }
 
-func NewCredentialRepository(db *sql.DB, changeTracker change.Tracker, entityType int) repositories.CredentialRepository {
+func NewCredentialRepository(db *sql.DB, changeTracker *change.Tracker, entityType int) *CredentialRepository {
 	return &CredentialRepository{
 		db:            db,
-		changeTracker: &changeTracker,
+		changeTracker: changeTracker,
 		entityType:    entityType,
 	}
 }

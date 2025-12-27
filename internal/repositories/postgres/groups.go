@@ -58,10 +58,10 @@ type GroupRepository struct {
 	entityType    int
 }
 
-func NewGroupRepository(db *sql.DB, changeTracker change.Tracker, entityType int) repositories.GroupRepository {
+func NewGroupRepository(db *sql.DB, changeTracker *change.Tracker, entityType int) *GroupRepository {
 	return &GroupRepository{
 		db:            db,
-		changeTracker: &changeTracker,
+		changeTracker: changeTracker,
 		entityType:    entityType,
 	}
 }

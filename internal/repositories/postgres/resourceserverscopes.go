@@ -69,10 +69,10 @@ type ResourceServerScopeRepository struct {
 	entityType    int
 }
 
-func NewResourceServerScopeRepository(db *sql.DB, changeTracker change.Tracker, entityType int) repositories.ResourceServerScopeRepository {
+func NewResourceServerScopeRepository(db *sql.DB, changeTracker *change.Tracker, entityType int) *ResourceServerScopeRepository {
 	return &ResourceServerScopeRepository{
 		db:            db,
-		changeTracker: &changeTracker,
+		changeTracker: changeTracker,
 		entityType:    entityType,
 	}
 }

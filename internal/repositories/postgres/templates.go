@@ -59,10 +59,10 @@ type TemplateRepository struct {
 	entityType    int
 }
 
-func NewTemplateRepository(db *sql.DB, changeTracker change.Tracker, entityType int) repositories.TemplateRepository {
+func NewTemplateRepository(db *sql.DB, changeTracker *change.Tracker, entityType int) *TemplateRepository {
 	return &TemplateRepository{
 		db:            db,
-		changeTracker: &changeTracker,
+		changeTracker: changeTracker,
 		entityType:    entityType,
 	}
 }

@@ -106,10 +106,10 @@ type UserRoleAssignmentRepository struct {
 	entityType    int
 }
 
-func NewUserRoleAssignmentRepository(db *sql.DB, changeTracker change.Tracker, entityType int) repositories.UserRoleAssignmentRepository {
+func NewUserRoleAssignmentRepository(db *sql.DB, changeTracker *change.Tracker, entityType int) *UserRoleAssignmentRepository {
 	return &UserRoleAssignmentRepository{
 		db:            db,
-		changeTracker: &changeTracker,
+		changeTracker: changeTracker,
 		entityType:    entityType,
 	}
 }

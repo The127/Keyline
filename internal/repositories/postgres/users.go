@@ -80,10 +80,10 @@ type UserRepository struct {
 	entityType    int
 }
 
-func NewUserRepository(db *sql.DB, changeTracker change.Tracker, entityType int) repositories.UserRepository {
+func NewUserRepository(db *sql.DB, changeTracker *change.Tracker, entityType int) *UserRepository {
 	return &UserRepository{
 		db:            db,
-		changeTracker: &changeTracker,
+		changeTracker: changeTracker,
 		entityType:    entityType,
 	}
 }

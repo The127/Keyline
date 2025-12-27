@@ -57,10 +57,10 @@ type PasswordRuleRepository struct {
 	entityType    int
 }
 
-func NewPasswordRuleRepository(db *sql.DB, changeTracker change.Tracker, entityType int) repositories.PasswordRuleRepository {
+func NewPasswordRuleRepository(db *sql.DB, changeTracker *change.Tracker, entityType int) *PasswordRuleRepository {
 	return &PasswordRuleRepository{
 		db:            db,
-		changeTracker: &changeTracker,
+		changeTracker: changeTracker,
 		entityType:    entityType,
 	}
 }

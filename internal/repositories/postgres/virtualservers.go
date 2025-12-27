@@ -74,11 +74,11 @@ type VirtualServerRepository struct {
 	entityType    int
 }
 
-func NewVirtualServerRepository(db *sql.DB, changeTracker change.Tracker, entityType int) repositories.VirtualServerRepository {
+func NewVirtualServerRepository(db *sql.DB, changeTracker *change.Tracker, entityType int) *VirtualServerRepository {
 	return &VirtualServerRepository{
 		cache:         caching.NewMemoryCache[repositories.VirtualServerFilterCacheKey, *repositories.VirtualServer](),
 		db:            db,
-		changeTracker: &changeTracker,
+		changeTracker: changeTracker,
 		entityType:    entityType,
 	}
 }

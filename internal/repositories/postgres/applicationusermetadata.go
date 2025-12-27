@@ -59,10 +59,10 @@ type ApplicationUserMetadataRepository struct {
 	entityType    int
 }
 
-func NewApplicationUserMetadataRepository(db *sql.DB, changeTracker change.Tracker, entityType int) repositories.ApplicationUserMetadataRepository {
+func NewApplicationUserMetadataRepository(db *sql.DB, changeTracker *change.Tracker, entityType int) *ApplicationUserMetadataRepository {
 	return &ApplicationUserMetadataRepository{
 		db:            db,
-		changeTracker: &changeTracker,
+		changeTracker: changeTracker,
 		entityType:    entityType,
 	}
 }

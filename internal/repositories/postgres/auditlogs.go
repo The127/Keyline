@@ -71,10 +71,10 @@ type AuditLogRepository struct {
 	entityType    int
 }
 
-func NewAuditLogRepository(db *sql.DB, changeTracker change.Tracker, entityType int) repositories.AuditLogRepository {
+func NewAuditLogRepository(db *sql.DB, changeTracker *change.Tracker, entityType int) *AuditLogRepository {
 	return &AuditLogRepository{
 		db:            db,
-		changeTracker: &changeTracker,
+		changeTracker: changeTracker,
 		entityType:    entityType,
 	}
 }

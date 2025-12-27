@@ -60,10 +60,10 @@ type RoleRepository struct {
 	entityType    int
 }
 
-func NewRoleRepository(db *sql.DB, changeTracker change.Tracker, entityType int) repositories.RoleRepository {
+func NewRoleRepository(db *sql.DB, changeTracker *change.Tracker, entityType int) *RoleRepository {
 	return &RoleRepository{
 		db:            db,
-		changeTracker: &changeTracker,
+		changeTracker: changeTracker,
 		entityType:    entityType,
 	}
 }

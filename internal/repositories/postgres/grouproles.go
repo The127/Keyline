@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"Keyline/internal/change"
-	"Keyline/internal/repositories"
 	"database/sql"
 )
 
@@ -12,10 +11,10 @@ type GroupRoleRepository struct {
 	entityType    int
 }
 
-func NewGroupRoleRepository(db *sql.DB, changeTracker change.Tracker, entityType int) repositories.GroupRoleRepository {
+func NewGroupRoleRepository(db *sql.DB, changeTracker *change.Tracker, entityType int) *GroupRoleRepository {
 	return &GroupRoleRepository{
 		db:            db,
-		changeTracker: &changeTracker,
+		changeTracker: changeTracker,
 		entityType:    entityType,
 	}
 }

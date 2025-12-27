@@ -65,10 +65,10 @@ type ProjectRepository struct {
 	entityType    int
 }
 
-func NewProjectRepository(db *sql.DB, changeTracker change.Tracker, entityType int) repositories.ProjectRepository {
+func NewProjectRepository(db *sql.DB, changeTracker *change.Tracker, entityType int) *ProjectRepository {
 	return &ProjectRepository{
 		db:            db,
-		changeTracker: &changeTracker,
+		changeTracker: changeTracker,
 		entityType:    entityType,
 	}
 }

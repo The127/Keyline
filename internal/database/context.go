@@ -5,6 +5,27 @@ import (
 	"context"
 )
 
+const (
+	ApplicationEntityType = iota
+	ApplicationUserMetadataEntityType
+	AuditLogEntityType
+	CredentialEntityType
+	FileEntityType
+	GroupRoleEntityType
+	GroupEntityType
+	OutboxMessageEntityType
+	PasswordRuleEntityType
+	ProjectEntityType
+	ResourceServerEntityType
+	ResourceServerScopeEntityType
+	RoleEntityType
+	SessionEntityType
+	TemplateEntityType
+	UserRoleAssignmentEntityType
+	UserEntityType
+	VirtualServerEntityType
+)
+
 type Context interface {
 	Applications() repositories.ApplicationRepository
 	ApplicationUserMetadata() repositories.ApplicationUserMetadataRepository

@@ -67,10 +67,10 @@ type SessionRepository struct {
 	entityType    int
 }
 
-func NewSessionRepository(db *sql.DB, changeTracker change.Tracker, entityType int) repositories.SessionRepository {
+func NewSessionRepository(db *sql.DB, changeTracker *change.Tracker, entityType int) *SessionRepository {
 	return &SessionRepository{
 		db:            db,
-		changeTracker: &changeTracker,
+		changeTracker: changeTracker,
 		entityType:    entityType,
 	}
 }

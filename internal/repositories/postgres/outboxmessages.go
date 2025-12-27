@@ -53,10 +53,10 @@ type OutboxMessageRepository struct {
 	entityType    int
 }
 
-func NewOutboxMessageRepository(db *sql.DB, changeTracker change.Tracker, entityType int) repositories.OutboxMessageRepository {
+func NewOutboxMessageRepository(db *sql.DB, changeTracker *change.Tracker, entityType int) *OutboxMessageRepository {
 	return &OutboxMessageRepository{
 		db:            db,
-		changeTracker: &changeTracker,
+		changeTracker: changeTracker,
 		entityType:    entityType,
 	}
 }

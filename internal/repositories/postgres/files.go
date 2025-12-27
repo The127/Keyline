@@ -57,10 +57,10 @@ type FileRepository struct {
 	entityType    int
 }
 
-func NewFileRepository(db *sql.DB, changeTracker change.Tracker, entityType int) repositories.FileRepository {
+func NewFileRepository(db *sql.DB, changeTracker *change.Tracker, entityType int) *FileRepository {
 	return &FileRepository{
 		db:            db,
-		changeTracker: &changeTracker,
+		changeTracker: changeTracker,
 		entityType:    entityType,
 	}
 }

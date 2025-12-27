@@ -91,10 +91,10 @@ type ApplicationRepository struct {
 	entityType    int
 }
 
-func NewApplicationRepository(db *sql.DB, changeTracker change.Tracker, entityType int) repositories.ApplicationRepository {
+func NewApplicationRepository(db *sql.DB, changeTracker *change.Tracker, entityType int) *ApplicationRepository {
 	return &ApplicationRepository{
 		db:            db,
-		changeTracker: &changeTracker,
+		changeTracker: changeTracker,
 		entityType:    entityType,
 	}
 }
