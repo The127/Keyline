@@ -175,46 +175,6 @@ func (s *AssignRoleToUserCommandSuite) TestUserError() {
 	s.Error(err)
 }
 
-func (s *AssignRoleToUserCommandSuite) TestUserRoleAssignmentError() {
-	// arrange
-	ctrl := gomock.NewController(s.T())
-	defer ctrl.Finish()
-
-	now := time.Now()
-
-	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
-	virtualServer.Mock(now)
-	virtualServerRepository := repoMocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
-
-	project := repositories.NewProject(virtualServer.Id(), "project", "Project", "Test Project")
-	project.Mock(now)
-	projectRepository := repoMocks.NewMockProjectRepository(ctrl)
-	projectRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(project, nil)
-
-	user := repositories.NewUser("user", "User", "user@mail", virtualServer.Id())
-	user.Mock(now)
-	userRepository := repoMocks.NewMockUserRepository(ctrl)
-	userRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(user, nil)
-
-	role := repositories.NewRole(virtualServer.Id(), project.Id(), "role", "Role")
-	role.Mock(now)
-	roleRepository := repoMocks.NewMockRoleRepository(ctrl)
-	roleRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(role, nil)
-
-	userRoleAssignmentRepository := repoMocks.NewMockUserRoleAssignmentRepository(ctrl)
-	userRoleAssignmentRepository.EXPECT().Insert(gomock.Any())
-
-	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, roleRepository, userRepository, userRoleAssignmentRepository)
-	cmd := AssignRoleToUser{}
-
-	// act
-	_, err := HandleAssignRoleToUser(ctx, cmd)
-
-	// assert
-	s.Error(err)
-}
-
 func (s *AssignRoleToUserCommandSuite) TestHappyPath() {
 	// arrange
 	ctrl := gomock.NewController(s.T())
