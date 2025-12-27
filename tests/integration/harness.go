@@ -4,7 +4,8 @@ import (
 	"Keyline/internal/authentication"
 	"Keyline/internal/commands"
 	"Keyline/internal/config"
-	"Keyline/internal/database"
+	db2 "Keyline/internal/database"
+	"Keyline/internal/database/postgres"
 	"Keyline/internal/logging"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/setup"
@@ -45,9 +46,14 @@ func (h *harness) Close() {
 		SslMode:  "disable",
 	}
 
-	db := database.ConnectToDatabase(pc)
+	db, err := postgres.ConnectToDatabase(pc)
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
 	createQuery := fmt.Sprintf("drop database %s;", h.dbName)
-	_, err := db.Exec(createQuery)
+	_, err = db.Exec(createQuery)
 	if err != nil {
 		panic(err)
 	}
@@ -79,25 +85,37 @@ func newIntegrationTestHarness() *harness {
 	sqlbuilder.DefaultFlavor = sqlbuilder.PostgreSQL
 
 	dbName := strings.ReplaceAll("keyline_test_"+uuid.New().String(), "-", "")
-	pc := config.PostgresConfig{
-		Database: "postgres",
-		Host:     "localhost",
-		Port:     5732,
-		Username: "user",
-		Password: "password",
-		SslMode:  "disable",
+	dbc := config.DatabaseConfig{
+		Mode: config.DatabaseModePostgres,
+		Postgres: config.PostgresConfig{
+			Database: "postgres",
+			Host:     "localhost",
+			Port:     5732,
+			Username: "user",
+			Password: "password",
+			SslMode:  "disable",
+		},
 	}
 
-	db := database.ConnectToDatabase(pc)
-	createQuery := fmt.Sprintf("create database %s;", dbName)
-	_, err := db.Exec(createQuery)
+	initDb, err := postgres.ConnectToDatabase(dbc.Postgres)
 	if err != nil {
 		panic(err)
 	}
-	utils.PanicOnError(db.Close, "closing initial db connection in test")
 
-	pc.Database = dbName
-	err = database.Migrate(pc)
+	createQuery := fmt.Sprintf("create database %s;", dbName)
+	_, err = initDb.Exec(createQuery)
+	if err != nil {
+		panic(err)
+	}
+	utils.PanicOnError(initDb.Close, "closing initial db connection in test")
+
+	db, err := setup.Database(dc, dbc)
+	if err != nil {
+		panic(fmt.Errorf("failed to create test database: %w", err))
+	}
+
+	dbc.Postgres.Database = dbName
+	err = db.Migrate(ctx)
 	if err != nil {
 		panic(fmt.Errorf("failed to create test database: %w", err))
 	}
@@ -111,7 +129,6 @@ func newIntegrationTestHarness() *harness {
 	})
 	setup.Caching(dc, config.CacheModeMemory)
 	setup.Services(dc)
-	setup.Database(dc, config.DatabaseModePostgres, pc)
 	setup.Mediator(dc)
 
 	scope := dc.BuildProvider()
@@ -128,6 +145,12 @@ func newIntegrationTestHarness() *harness {
 	})
 	if err != nil {
 		logging.Logger.Fatalf("failed to create initial virtual server: %v", err)
+	}
+
+	dbContext := ioc.GetDependency[db2.Context](scope)
+	err = dbContext.SaveChanges(ctx)
+	if err != nil {
+		panic(err)
 	}
 
 	return &harness{
