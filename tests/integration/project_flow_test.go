@@ -37,6 +37,8 @@ var _ = Describe("Project flow", Ordered, func() {
 		response, err := mediatr.Send[*commands.CreateProjectResponse](h.Ctx(), h.Mediator(), req)
 		Expect(err).ToNot(HaveOccurred())
 		projectId = response.Id
+
+		Expect(h.dbContext.SaveChanges(h.ctx)).ToNot(HaveOccurred())
 	})
 
 	It("should list the project successfully", func() {
@@ -61,6 +63,8 @@ var _ = Describe("Project flow", Ordered, func() {
 		}
 		_, err := mediatr.Send[*commands.PatchProjectResponse](h.Ctx(), h.Mediator(), req)
 		Expect(err).ToNot(HaveOccurred())
+
+		Expect(h.dbContext.SaveChanges(h.ctx)).ToNot(HaveOccurred())
 	})
 
 	It("should reflect the updated values", func() {

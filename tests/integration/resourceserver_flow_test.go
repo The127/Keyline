@@ -47,6 +47,8 @@ var _ = Describe("ResourceServer flow", Ordered, func() {
 		response, err := mediatr.Send[*commands.CreateResourceServerResponse](h.Ctx(), h.Mediator(), req)
 		Expect(err).ToNot(HaveOccurred())
 		resourceServerId = response.Id
+
+		Expect(h.dbContext.SaveChanges(h.ctx)).ToNot(HaveOccurred())
 	})
 
 	It("should list resource servers successfully", func() {
@@ -73,6 +75,8 @@ var _ = Describe("ResourceServer flow", Ordered, func() {
 		}
 		_, err := mediatr.Send[*commands.PatchResourceServerResponse](h.Ctx(), h.Mediator(), req)
 		Expect(err).ToNot(HaveOccurred())
+
+		Expect(h.dbContext.SaveChanges(h.ctx)).ToNot(HaveOccurred())
 	})
 
 	It("should reflect updated values", func() {
