@@ -38,8 +38,8 @@ func (c *postgresCredential) Map() *repositories.Credential {
 	)
 }
 
-func (c *postgresCredential) scan(row pghelpers.Row) error {
-	return row.Scan(
+func (c *postgresCredential) scan(row pghelpers.Row, additionalPtrs ...any) error {
+	ptrs := []any{
 		&c.id,
 		&c.auditCreatedAt,
 		&c.auditUpdatedAt,
@@ -47,7 +47,11 @@ func (c *postgresCredential) scan(row pghelpers.Row) error {
 		&c.userId,
 		&c.type_,
 		&c.details,
-	)
+	}
+
+	ptrs = append(ptrs, additionalPtrs...)
+
+	return row.Scan(ptrs...)
 }
 
 type CredentialRepository struct {

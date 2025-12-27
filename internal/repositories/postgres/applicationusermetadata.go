@@ -41,8 +41,8 @@ func (m *postgresApplicationUserMetadata) Map() *repositories.ApplicationUserMet
 	)
 }
 
-func (m *postgresApplicationUserMetadata) scan(row pghelpers.Row) error {
-	return row.Scan(
+func (m *postgresApplicationUserMetadata) scan(row pghelpers.Row, additionalPtrs ...any) error {
+	ptrs := []any{
 		&m.id,
 		&m.auditCreatedAt,
 		&m.auditUpdatedAt,
@@ -50,7 +50,11 @@ func (m *postgresApplicationUserMetadata) scan(row pghelpers.Row) error {
 		&m.applicationId,
 		&m.userId,
 		&m.metadata,
-	)
+	}
+
+	ptrs = append(ptrs, additionalPtrs...)
+
+	return row.Scan(ptrs...)
 }
 
 type ApplicationUserMetadataRepository struct {
@@ -109,7 +113,7 @@ func (r *ApplicationUserMetadataRepository) List(ctx context.Context, filter *re
 	var totalCount int
 	for rows.Next() {
 		m := &postgresApplicationUserMetadata{}
-		err := m.scan(rows)
+		err := m.scan(rows, &totalCount)
 		if err != nil {
 			return nil, 0, fmt.Errorf("scanning row: %w", err)
 		}

@@ -70,7 +70,7 @@ func (a *postgresUserRoleAssignment) Map() *repositories.UserRoleAssignment {
 	)
 }
 
-func (a *postgresUserRoleAssignment) scan(row pghelpers.Row, filter *repositories.UserRoleAssignmentFilter) error {
+func (a *postgresUserRoleAssignment) scan(row pghelpers.Row, filter *repositories.UserRoleAssignmentFilter, additionalPtrs ...any) error {
 	ptrs := []any{
 		&a.id,
 		&a.auditCreatedAt,
@@ -96,6 +96,8 @@ func (a *postgresUserRoleAssignment) scan(row pghelpers.Row, filter *repositorie
 			&a.roleInfo.ProjectSlug,
 		)
 	}
+
+	ptrs = append(ptrs, additionalPtrs...)
 
 	return row.Scan(ptrs...)
 }
@@ -172,7 +174,7 @@ func (r *UserRoleAssignmentRepository) List(ctx context.Context, filter *reposit
 	var totalCount int
 	for rows.Next() {
 		userRoleAssignment := &postgresUserRoleAssignment{}
-		err := userRoleAssignment.scan(rows, filter)
+		err := userRoleAssignment.scan(rows, filter, &totalCount)
 		if err != nil {
 			return nil, 0, fmt.Errorf("scanning row: %w", err)
 		}

@@ -52,8 +52,8 @@ func (u *postgresUser) Map() *repositories.User {
 	)
 }
 
-func (u *postgresUser) scan(row pghelpers.Row, filter *repositories.UserFilter) error {
-	pointers := []any{
+func (u *postgresUser) scan(row pghelpers.Row, filter *repositories.UserFilter, additionalPtrs ...any) error {
+	ptrs := []any{
 		&u.id,
 		&u.auditCreatedAt,
 		&u.auditUpdatedAt,
@@ -68,10 +68,12 @@ func (u *postgresUser) scan(row pghelpers.Row, filter *repositories.UserFilter) 
 	}
 
 	if filter.GetIncludeMetadata() {
-		pointers = append(pointers, &u.metadata)
+		ptrs = append(ptrs, &u.metadata)
 	}
 
-	return row.Scan(pointers...)
+	ptrs = append(ptrs, additionalPtrs...)
+
+	return row.Scan(ptrs...)
 }
 
 type UserRepository struct {
@@ -158,7 +160,7 @@ func (r *UserRepository) List(ctx context.Context, filter *repositories.UserFilt
 	var totalCount int
 	for rows.Next() {
 		user := &postgresUser{}
-		err := user.scan(rows, filter)
+		err := user.scan(rows, filter, &totalCount)
 		if err != nil {
 			return nil, 0, fmt.Errorf("scanning row: %w", err)
 		}

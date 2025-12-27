@@ -48,8 +48,8 @@ func (a *postgresAuditLog) Map() *repositories.AuditLog {
 	)
 }
 
-func (a *postgresAuditLog) scan(row pghelpers.Row) error {
-	return row.Scan(
+func (a *postgresAuditLog) scan(row pghelpers.Row, additionalPtrs ...any) error {
+	ptrs := []any{
 		&a.id,
 		&a.auditCreatedAt,
 		&a.auditUpdatedAt,
@@ -62,7 +62,11 @@ func (a *postgresAuditLog) scan(row pghelpers.Row) error {
 		&a.allowed,
 		&a.allowReasonType,
 		&a.allowReason,
-	)
+	}
+
+	ptrs = append(ptrs, additionalPtrs...)
+
+	return row.Scan(ptrs...)
 }
 
 type AuditLogRepository struct {
@@ -130,7 +134,7 @@ func (r *AuditLogRepository) List(ctx context.Context, filter *repositories.Audi
 	var totalCount int
 	for rows.Next() {
 		auditLog := &postgresAuditLog{}
-		err := auditLog.scan(rows)
+		err := auditLog.scan(rows, &totalCount)
 		if err != nil {
 			return nil, 0, fmt.Errorf("scanning row: %w", err)
 		}

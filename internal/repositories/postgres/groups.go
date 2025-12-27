@@ -40,8 +40,8 @@ func (g *postgresGroup) Map() *repositories.Group {
 	)
 }
 
-func (g *postgresGroup) scan(row pghelpers.Row) error {
-	return row.Scan(
+func (g *postgresGroup) scan(row pghelpers.Row, additionalPtrs ...any) error {
+	ptrs := []any{
 		&g.id,
 		&g.auditCreatedAt,
 		&g.auditUpdatedAt,
@@ -49,7 +49,11 @@ func (g *postgresGroup) scan(row pghelpers.Row) error {
 		&g.virtualServerId,
 		&g.name,
 		&g.description,
-	)
+	}
+
+	ptrs = append(ptrs, additionalPtrs...)
+
+	return row.Scan(ptrs...)
 }
 
 type GroupRepository struct {
@@ -155,7 +159,7 @@ func (r *GroupRepository) List(ctx context.Context, filter *repositories.GroupFi
 	var totalCount int
 	for rows.Next() {
 		group := &postgresGroup{}
-		err := group.scan(rows)
+		err := group.scan(rows, &totalCount)
 		if err != nil {
 			return nil, 0, fmt.Errorf("scanning row: %w", err)
 		}

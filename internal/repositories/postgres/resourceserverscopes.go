@@ -49,8 +49,8 @@ func (s *postgresResourceServerScope) Map() *repositories.ResourceServerScope {
 	)
 }
 
-func (s *postgresResourceServerScope) scan(row pghelpers.Row) error {
-	return row.Scan(
+func (s *postgresResourceServerScope) scan(row pghelpers.Row, additionalPtrs ...any) error {
+	ptrs := []any{
 		&s.id,
 		&s.auditCreatedAt,
 		&s.auditUpdatedAt,
@@ -60,7 +60,11 @@ func (s *postgresResourceServerScope) scan(row pghelpers.Row) error {
 		&s.resourceServerId,
 		&s.scope,
 		&s.name,
-	)
+	}
+
+	ptrs = append(ptrs, additionalPtrs...)
+
+	return row.Scan(ptrs...)
 }
 
 type ResourceServerScopeRepository struct {
@@ -141,7 +145,7 @@ func (r *ResourceServerScopeRepository) List(ctx context.Context, filter *reposi
 	var totalCount int
 	for rows.Next() {
 		resourceServerScope := &postgresResourceServerScope{}
-		err := resourceServerScope.scan(rows)
+		err := resourceServerScope.scan(rows, &totalCount)
 		if err != nil {
 			return nil, 0, fmt.Errorf("scanning row: %w", err)
 		}

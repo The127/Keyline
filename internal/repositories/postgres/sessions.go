@@ -47,8 +47,8 @@ func (s *postgresSession) Map() *repositories.Session {
 	)
 }
 
-func (s *postgresSession) scan(row pghelpers.Row) error {
-	return row.Scan(
+func (s *postgresSession) scan(row pghelpers.Row, additionalPtrs ...any) error {
+	ptrs := []any{
 		&s.id,
 		&s.auditCreatedAt,
 		&s.auditUpdatedAt,
@@ -58,7 +58,11 @@ func (s *postgresSession) scan(row pghelpers.Row) error {
 		&s.hashedToken,
 		&s.expiresAt,
 		&s.lastUsedAt,
-	)
+	}
+
+	ptrs = append(ptrs, additionalPtrs...)
+
+	return row.Scan(ptrs...)
 }
 
 type SessionRepository struct {

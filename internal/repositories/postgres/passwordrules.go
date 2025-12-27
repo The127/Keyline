@@ -40,15 +40,19 @@ func (r *postgresPasswordRule) Map() *repositories.PasswordRule {
 	)
 }
 
-func (r *postgresPasswordRule) scan(row pghelpers.Row) error {
-	return row.Scan(
+func (r *postgresPasswordRule) scan(row pghelpers.Row, additionalPtrs ...any) error {
+	ptrs := []any{
 		&r.id,
 		&r.auditCreatedAt,
 		&r.auditUpdatedAt,
 		&r.xmin,
 		&r.virtualServerId,
 		&r.type_,
-	)
+	}
+
+	ptrs = append(ptrs, additionalPtrs...)
+
+	return row.Scan(ptrs...)
 }
 
 type PasswordRuleRepository struct {

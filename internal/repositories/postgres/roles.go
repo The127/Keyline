@@ -43,15 +43,21 @@ func (r *postgresRole) Map() *repositories.Role {
 	)
 }
 
-func (r *postgresRole) scan(row pghelpers.Row) error {
-	return row.Scan(
+func (r *postgresRole) scan(row pghelpers.Row, additionalPtrs ...any) error {
+	prts := []any{
 		&r.id,
 		&r.auditCreatedAt,
 		&r.auditUpdatedAt,
 		&r.xmin,
 		&r.virtualServerId,
 		&r.projectId,
-	)
+		&r.name,
+		&r.description,
+	}
+
+	prts = append(prts, additionalPtrs...)
+
+	return row.Scan(prts...)
 }
 
 type RoleRepository struct {
@@ -130,7 +136,7 @@ func (r *RoleRepository) List(ctx context.Context, filter *repositories.RoleFilt
 	var totalCount int
 	for rows.Next() {
 		role := &postgresRole{}
-		err := role.scan(rows)
+		err := role.scan(rows, &totalCount)
 		if err != nil {
 			return nil, 0, fmt.Errorf("scanning row: %w", err)
 		}

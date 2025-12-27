@@ -46,8 +46,8 @@ func (r *postgresResourceServer) Map() *repositories.ResourceServer {
 	)
 }
 
-func (r *postgresResourceServer) scan(row pghelpers.Row) error {
-	return row.Scan(
+func (r *postgresResourceServer) scan(row pghelpers.Row, additionalPtrs ...any) error {
+	ptrs := []any{
 		&r.id,
 		&r.auditCreatedAt,
 		&r.auditUpdatedAt,
@@ -57,7 +57,11 @@ func (r *postgresResourceServer) scan(row pghelpers.Row) error {
 		&r.slug,
 		&r.name,
 		&r.description,
-	)
+	}
+
+	ptrs = append(ptrs, additionalPtrs...)
+
+	return row.Scan(ptrs...)
 }
 
 type ResourceServerRepository struct {
@@ -133,7 +137,7 @@ func (r *ResourceServerRepository) List(ctx context.Context, filter *repositorie
 	var totalCount int
 	for rows.Next() {
 		resourceServer := &postgresResourceServer{}
-		err := resourceServer.scan(rows)
+		err := resourceServer.scan(rows, &totalCount)
 		if err != nil {
 			return nil, 0, fmt.Errorf("scanning row: %w", err)
 		}

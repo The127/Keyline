@@ -41,8 +41,8 @@ func (t *postgresTemplate) Map() *repositories.Template {
 	)
 }
 
-func (t *postgresTemplate) scan(row pghelpers.Row) error {
-	return row.Scan(
+func (t *postgresTemplate) scan(row pghelpers.Row, additionalPtrs ...any) error {
+	ptrs := []any{
 		&t.id,
 		&t.auditCreatedAt,
 		&t.auditUpdatedAt,
@@ -50,7 +50,11 @@ func (t *postgresTemplate) scan(row pghelpers.Row) error {
 		&t.virtualServerId,
 		&t.fileId,
 		&t.type_,
-	)
+	}
+
+	ptrs = append(ptrs, additionalPtrs...)
+
+	return row.Scan(ptrs...)
 }
 
 type TemplateRepository struct {
@@ -153,7 +157,7 @@ func (r *TemplateRepository) List(ctx context.Context, filter *repositories.Temp
 	var totalCount int
 	for rows.Next() {
 		template := &postgresTemplate{}
-		err := template.scan(rows)
+		err := template.scan(rows, &totalCount)
 		if err != nil {
 			return nil, 0, fmt.Errorf("scanning row: %w", err)
 		}

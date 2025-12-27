@@ -65,8 +65,9 @@ func (a *postgresApplication) Map() *repositories.Application {
 	)
 }
 
-func (a *postgresApplication) scan(row pghelpers.Row) error {
-	return row.Scan(
+func (a *postgresApplication) scan(row pghelpers.Row, additionalPtrs ...any) error {
+	ptrs := []any{
+
 		&a.id,
 		&a.auditCreatedAt,
 		&a.auditUpdatedAt,
@@ -82,7 +83,11 @@ func (a *postgresApplication) scan(row pghelpers.Row) error {
 		&a.systemApplication,
 		&a.claimsMappingScript,
 		&a.accessTokenHeaderType,
-	)
+	}
+
+	ptrs = append(ptrs, additionalPtrs...)
+
+	return row.Scan(ptrs...)
 }
 
 type ApplicationRepository struct {
@@ -205,7 +210,7 @@ func (r *ApplicationRepository) List(ctx context.Context, filter *repositories.A
 	var totalCount int
 	for rows.Next() {
 		application := &postgresApplication{}
-		err = application.scan(rows)
+		err = application.scan(rows, &totalCount)
 		if err != nil {
 			return nil, 0, fmt.Errorf("scanning row: %w", err)
 		}

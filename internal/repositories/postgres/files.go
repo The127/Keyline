@@ -39,8 +39,8 @@ func (f *postgresFile) Map() *repositories.File {
 	)
 }
 
-func (f *postgresFile) scan(row pghelpers.Row) error {
-	return row.Scan(
+func (f *postgresFile) scan(row pghelpers.Row, additionalPtrs ...any) error {
+	ptrs := []any{
 		&f.id,
 		&f.auditCreatedAt,
 		&f.auditUpdatedAt,
@@ -48,7 +48,11 @@ func (f *postgresFile) scan(row pghelpers.Row) error {
 		&f.name,
 		&f.mimeType,
 		&f.content,
-	)
+	}
+
+	ptrs = append(ptrs, additionalPtrs...)
+
+	return row.Scan(ptrs...)
 }
 
 type FileRepository struct {

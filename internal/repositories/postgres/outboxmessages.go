@@ -36,15 +36,19 @@ func (m *postgresOutboxMessage) Map() *repositories.OutboxMessage {
 	)
 }
 
-func (m *postgresOutboxMessage) scan(row pghelpers.Row) error {
-	return row.Scan(
+func (m *postgresOutboxMessage) scan(row pghelpers.Row, additionalPtrs ...any) error {
+	ptrs := []any{
 		&m.id,
 		&m.auditCreatedAt,
 		&m.auditUpdatedAt,
 		&m.xmin,
 		&m.type_,
 		&m.details,
-	)
+	}
+
+	ptrs = append(ptrs, additionalPtrs...)
+
+	return row.Scan(ptrs...)
 }
 
 type OutboxMessageRepository struct {

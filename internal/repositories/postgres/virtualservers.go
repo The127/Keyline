@@ -49,8 +49,8 @@ func (s *postgresVirtualServer) Map() *repositories.VirtualServer {
 	)
 }
 
-func (s *postgresVirtualServer) scan(row pghelpers.Row) error {
-	return row.Scan(
+func (s *postgresVirtualServer) scan(row pghelpers.Row, additionalPtrs ...any) error {
+	ptrs := []any{
 		&s.id,
 		&s.auditCreatedAt,
 		&s.auditUpdatedAt,
@@ -61,7 +61,11 @@ func (s *postgresVirtualServer) scan(row pghelpers.Row) error {
 		&s.require2fa,
 		&s.requireEmailVerification,
 		&s.signingAlgorithm,
-	)
+	}
+
+	ptrs = append(ptrs, additionalPtrs...)
+
+	return row.Scan(ptrs...)
 }
 
 type virtualServerCache caching.Cache[repositories.VirtualServerFilterCacheKey, *repositories.VirtualServer]
@@ -167,7 +171,7 @@ func (r *VirtualServerRepository) List(ctx context.Context, filter *repositories
 	var totalCount int
 	for rows.Next() {
 		virtualServer := &postgresVirtualServer{}
-		err := virtualServer.scan(rows)
+		err := virtualServer.scan(rows, &totalCount)
 		if err != nil {
 			return nil, 0, fmt.Errorf("scanning row: %w", err)
 		}
