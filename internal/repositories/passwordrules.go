@@ -49,6 +49,7 @@ func NewPasswordRule(virtualServerId uuid.UUID, details PasswordRuleDetails) (*P
 
 	return &PasswordRule{
 		BaseModel:       NewBaseModel(),
+		List:            change.NewChanges[PasswordRuleChange](),
 		virtualServerId: virtualServerId,
 		_type:           details.GetPasswordRuleType(),
 		details:         serializedDetails,
@@ -58,6 +59,7 @@ func NewPasswordRule(virtualServerId uuid.UUID, details PasswordRuleDetails) (*P
 func NewPasswordRuleFromDB(base BaseModel, virtualServerId uuid.UUID, _type PasswordRuleType, details []byte) *PasswordRule {
 	return &PasswordRule{
 		BaseModel:       base,
+		List:            change.NewChanges[PasswordRuleChange](),
 		virtualServerId: virtualServerId,
 		_type:           _type,
 		details:         details,
