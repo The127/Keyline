@@ -40,15 +40,11 @@ func (s *PatchProjectCommandSuite) createContext(
 	})
 
 	if virtualServerRepository != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.VirtualServerRepository {
-			return virtualServerRepository
-		})
+		dbContext.EXPECT().VirtualServers().Return(virtualServerRepository).AnyTimes()
 	}
 
 	if projectRepository != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.ProjectRepository {
-			return projectRepository
-		})
+		dbContext.EXPECT().Projects().Return(projectRepository).AnyTimes()
 	}
 
 	scope := dc.BuildProvider()
