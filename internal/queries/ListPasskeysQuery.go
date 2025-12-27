@@ -57,7 +57,7 @@ func HandleListPasskeys(ctx context.Context, query ListPasskeys) (*ListPasskeysR
 	userFilter := repositories.NewUserFilter().
 		VirtualServerId(virtualServer.Id()).
 		Id(query.UserId)
-	user, err := dbContext.Users().Single(ctx, userFilter)
+	user, err := dbContext.Users().FirstOrErr(ctx, userFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting user: %w", err)
 	}

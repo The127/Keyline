@@ -52,7 +52,7 @@ func HandlePatchUserAppMetadata(ctx context.Context, command PatchUserAppMetadat
 	}
 
 	userFilter := repositories.NewUserFilter().Id(command.UserId).VirtualServerId(virtualServer.Id())
-	user, err := dbContext.Users().Single(ctx, userFilter)
+	user, err := dbContext.Users().FirstOrErr(ctx, userFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting user: %w", err)
 	}
@@ -66,7 +66,7 @@ func HandlePatchUserAppMetadata(ctx context.Context, command PatchUserAppMetadat
 	applicationUserMetadataFilter := repositories.NewApplicationUserMetadataFilter().
 		ApplicationId(application.Id()).
 		UserId(user.Id())
-	applicationUserMetadata, err := dbContext.ApplicationUserMetadata().Single(ctx, applicationUserMetadataFilter)
+	applicationUserMetadata, err := dbContext.ApplicationUserMetadata().FirstOrErr(ctx, applicationUserMetadataFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting application user metadata: %w", err)
 	}

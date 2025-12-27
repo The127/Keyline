@@ -1198,7 +1198,7 @@ func mapClaims(ctx context.Context, params AccessTokenGenerationParams) (jwt.Map
 	dbContext := ioc.GetDependency[database.Context](scope)
 
 	userFilter := repositories.NewUserFilter().Id(params.UserId)
-	user, err := dbContext.Users().Single(ctx, userFilter)
+	user, err := dbContext.Users().FirstOrNil(ctx, userFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting user: %w", err)
 	}

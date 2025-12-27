@@ -42,7 +42,7 @@ func HandleVerifyEmail(ctx context.Context, command VerifyEmail) (*VerifyEmailRe
 		return nil, fmt.Errorf("parsing value: %w", err)
 	}
 
-	user, err := dbContext.Users().Single(ctx, repositories.NewUserFilter().Id(userId))
+	user, err := dbContext.Users().FirstOrNil(ctx, repositories.NewUserFilter().Id(userId))
 	if err != nil {
 		return nil, fmt.Errorf("getting user: %w", err)
 	}

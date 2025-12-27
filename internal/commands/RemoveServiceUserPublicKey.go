@@ -52,7 +52,7 @@ func HandleRemoveServiceUserPublicKey(ctx context.Context, command RemoveService
 		VirtualServerId(virtualServer.Id()).
 		ServiceUser(true).
 		Id(command.ServiceUserId)
-	user, err := dbContext.Users().Single(ctx, userFilter)
+	user, err := dbContext.Users().FirstOrErr(ctx, userFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting user: %w", err)
 	}
@@ -61,7 +61,7 @@ func HandleRemoveServiceUserPublicKey(ctx context.Context, command RemoveService
 		UserId(user.Id()).
 		Type(repositories.CredentialTypeServiceUserKey).
 		DetailPublicKey(command.PublicKey)
-	credential, err := dbContext.Credentials().Single(ctx, credentialFilter)
+	credential, err := dbContext.Credentials().FirstOrErr(ctx, credentialFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting credential: %w", err)
 	}

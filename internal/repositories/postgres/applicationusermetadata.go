@@ -124,7 +124,7 @@ func (r *ApplicationUserMetadataRepository) List(ctx context.Context, filter *re
 	return metadata, totalCount, nil
 }
 
-func (r *ApplicationUserMetadataRepository) Single(ctx context.Context, filter *repositories.ApplicationUserMetadataFilter) (*repositories.ApplicationUserMetadata, error) {
+func (r *ApplicationUserMetadataRepository) FirstOrErr(ctx context.Context, filter *repositories.ApplicationUserMetadataFilter) (*repositories.ApplicationUserMetadata, error) {
 	result, err := r.FirstOrNil(ctx, filter)
 	if err != nil {
 		return nil, err

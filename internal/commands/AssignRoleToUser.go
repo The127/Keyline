@@ -65,7 +65,7 @@ func HandleAssignRoleToUser(ctx context.Context, command AssignRoleToUser) (*Ass
 		return nil, fmt.Errorf("getting role: %w", err)
 	}
 
-	_, err = dbContext.Users().Single(ctx, repositories.NewUserFilter().Id(command.UserId).VirtualServerId(virtualServer.Id()))
+	_, err = dbContext.Users().FirstOrErr(ctx, repositories.NewUserFilter().Id(command.UserId).VirtualServerId(virtualServer.Id()))
 	if err != nil {
 		return nil, fmt.Errorf("getting user: %w", err)
 	}

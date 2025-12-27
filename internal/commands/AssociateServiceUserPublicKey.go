@@ -56,7 +56,7 @@ func HandleAssociateServiceUserPublicKey(ctx context.Context, command AssociateS
 		VirtualServerId(virtualServer.Id()).
 		Id(command.ServiceUserId).
 		ServiceUser(true)
-	user, err := dbContext.Users().Single(ctx, userFilter)
+	user, err := dbContext.Users().FirstOrErr(ctx, userFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting user: %w", err)
 	}

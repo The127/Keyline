@@ -102,13 +102,13 @@ func DetermineNextLoginStep(
 	}
 
 	userFilter := repositories.NewUserFilter().VirtualServerId(loginInfo.VirtualServerId).Id(loginInfo.UserId)
-	user, err := dbContext.Users().Single(ctx, userFilter)
+	user, err := dbContext.Users().FirstOrErr(ctx, userFilter)
 	if err != nil {
 		return "", err
 	}
 
 	passwordFilter := repositories.NewCredentialFilter().UserId(user.Id()).Type(repositories.CredentialTypePassword)
-	passwordCredential, err := dbContext.Credentials().Single(ctx, passwordFilter)
+	passwordCredential, err := dbContext.Credentials().FirstOrNil(ctx, passwordFilter)
 	if err != nil {
 		return "", err
 	}
@@ -276,7 +276,7 @@ func VerifyPassword(w http.ResponseWriter, r *http.Request) {
 		credentialFilter := repositories.NewCredentialFilter().
 			UserId(user.Id()).
 			Type(repositories.CredentialTypePassword)
-		credential, err := dbContext.Credentials().Single(ctx, credentialFilter)
+		credential, err := dbContext.Credentials().FirstOrNil(ctx, credentialFilter)
 		if err != nil {
 			return utils.ErrHttpUnauthorized
 		}
@@ -325,7 +325,7 @@ func VerifyEmailToken(w http.ResponseWriter, r *http.Request) {
 		dbContext := ioc.GetDependency[database.Context](scope)
 
 		userFilter := repositories.NewUserFilter().Id(loginInfo.UserId)
-		user, err := dbContext.Users().Single(ctx, userFilter)
+		user, err := dbContext.Users().FirstOrNil(ctx, userFilter)
 		if err != nil {
 			return err
 		}
@@ -671,7 +671,7 @@ func ResendEmailVerification(w http.ResponseWriter, r *http.Request) {
 	dbContext := ioc.GetDependency[database.Context](scope)
 
 	userFilter := repositories.NewUserFilter().Id(loginInfo.UserId)
-	user, err := dbContext.Users().Single(ctx, userFilter)
+	user, err := dbContext.Users().FirstOrNil(ctx, userFilter)
 	if err != nil {
 		utils.HandleHttpError(w, fmt.Errorf("getting user: %w", err))
 		return
@@ -847,7 +847,7 @@ func FinishPasskeyLogin(w http.ResponseWriter, r *http.Request) {
 	credentialFilter := repositories.NewCredentialFilter().
 		DetailsId(dto.WebauthnResponse.RawId).
 		Type(repositories.CredentialTypeWebauthn)
-	credential, err := dbContext.Credentials().Single(ctx, credentialFilter)
+	credential, err := dbContext.Credentials().FirstOrErr(ctx, credentialFilter)
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return

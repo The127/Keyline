@@ -51,7 +51,7 @@ func HandleUpdateUserAppMetadata(ctx context.Context, command UpdateUserAppMetad
 	}
 
 	userFilter := repositories.NewUserFilter().Id(command.UserId).VirtualServerId(virtualServer.Id())
-	user, err := dbContext.Users().Single(ctx, userFilter)
+	user, err := dbContext.Users().FirstOrNil(ctx, userFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting user: %w", err)
 	}

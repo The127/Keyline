@@ -54,7 +54,7 @@ func HandlePatchUserMetadata(ctx context.Context, command PatchUserMetadata) (*P
 		Id(command.UserId).
 		VirtualServerId(virtualServer.Id()).
 		IncludeMetadata()
-	user, err := dbContext.Users().Single(ctx, userFilter)
+	user, err := dbContext.Users().FirstOrErr(ctx, userFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting user: %w", err)
 	}

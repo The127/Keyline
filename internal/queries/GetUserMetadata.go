@@ -57,7 +57,7 @@ func HandleGetUserMetadata(ctx context.Context, query GetUserMetadata) (*GetUser
 		VirtualServerId(virtualServer.Id()).
 		Id(query.UserId).
 		IncludeMetadata()
-	user, err := dbContext.Users().Single(ctx, userFilter)
+	user, err := dbContext.Users().FirstOrErr(ctx, userFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting user: %w", err)
 	}

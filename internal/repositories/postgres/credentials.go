@@ -106,7 +106,7 @@ func (r *CredentialRepository) selectQuery(filter *repositories.CredentialFilter
 	return s
 }
 
-func (r *CredentialRepository) Single(ctx context.Context, filter *repositories.CredentialFilter) (*repositories.Credential, error) {
+func (r *CredentialRepository) FirstOrErr(ctx context.Context, filter *repositories.CredentialFilter) (*repositories.Credential, error) {
 	credential, err := r.FirstOrNil(ctx, filter)
 	if err != nil {
 		return nil, err
