@@ -210,6 +210,10 @@ func initTest(dp *ioc.DependencyProvider) error {
 	if err != nil {
 		return fmt.Errorf("failed to create initial virtual server: %v", err)
 	}
+	err = dbContext.SaveChanges(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to save changes to database: %v", err)
+	}
 
 	initialAdminUserInfo, err := mediatr.Send[*commands.CreateUserResponse](ctx, m, commands.CreateUser{
 		VirtualServerName: "test-vs",
@@ -221,12 +225,20 @@ func initTest(dp *ioc.DependencyProvider) error {
 	if err != nil {
 		return fmt.Errorf("failed to create initial admin user: %v", err)
 	}
+	err = dbContext.SaveChanges(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to save changes to database: %v", err)
+	}
 
 	initialAdminCredential := repositories.NewCredential(initialAdminUserInfo.Id, &repositories.CredentialPasswordDetails{
 		HashedPassword: config.C.InitialVirtualServer.Admin.PasswordHash,
 		Temporary:      false,
 	})
 	dbContext.Credentials().Insert(initialAdminCredential)
+	err = dbContext.SaveChanges(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to save changes to database: %v", err)
+	}
 
 	_, err = mediatr.Send[*commands.AssignRoleToUserResponse](ctx, m, commands.AssignRoleToUser{
 		VirtualServerName: "test-vs",
@@ -237,6 +249,10 @@ func initTest(dp *ioc.DependencyProvider) error {
 	if err != nil {
 		return fmt.Errorf("failed to assign admin role to initial admin user: %v", err)
 	}
+	err = dbContext.SaveChanges(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to save changes to database: %v", err)
+	}
 
 	serviceUserResponse, err := mediatr.Send[*commands.CreateServiceUserResponse](ctx, m, commands.CreateServiceUser{
 		VirtualServerName: "test-vs",
@@ -244,6 +260,10 @@ func initTest(dp *ioc.DependencyProvider) error {
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create initial service user: %v", err)
+	}
+	err = dbContext.SaveChanges(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to save changes to database: %v", err)
 	}
 
 	_, err = mediatr.Send[*commands.AssignRoleToUserResponse](ctx, m, commands.AssignRoleToUser{
@@ -255,6 +275,10 @@ func initTest(dp *ioc.DependencyProvider) error {
 	if err != nil {
 		return fmt.Errorf("failed to assign admin role to service user: %v", err)
 	}
+	err = dbContext.SaveChanges(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to save changes to database: %v", err)
+	}
 
 	_, err = mediatr.Send[*commands.AssociateServiceUserPublicKeyResponse](ctx, m, commands.AssociateServiceUserPublicKey{
 		VirtualServerName: "test-vs",
@@ -264,6 +288,10 @@ func initTest(dp *ioc.DependencyProvider) error {
 	})
 	if err != nil {
 		return fmt.Errorf("failed to associate service user public key: %v", err)
+	}
+	err = dbContext.SaveChanges(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to save changes to database: %v", err)
 	}
 
 	return scope.Close()
