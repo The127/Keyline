@@ -104,7 +104,7 @@ func (r *ApplicationRepository) selectQuery(filter *repositories.ApplicationFilt
 		"id",
 		"audit_created_at",
 		"audit_updated_at",
-		"version",
+		"xmin",
 		"virtual_server_id",
 		"project_id",
 		"name",

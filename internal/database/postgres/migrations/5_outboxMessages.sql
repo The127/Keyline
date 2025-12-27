@@ -2,9 +2,9 @@
 
 create table "outbox_messages"
 (
-    "id" uuid not null default gen_random_uuid(),
-    "audit_created_at" timestamp not null default now(),
-    "audit_updated_at" timestamp not null default now(),
+    "id" uuid not null,
+    "audit_created_at" timestamp not null,
+    "audit_updated_at" timestamp not null,
 
     "type" text not null,
     "details" jsonb not null,
