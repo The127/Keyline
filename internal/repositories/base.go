@@ -21,7 +21,10 @@ type BaseModel struct {
 
 func NewBaseModel() BaseModel {
 	return BaseModel{
-		version: nil,
+		id:             uuid.New(),
+		auditCreatedAt: time.Now(),
+		auditUpdatedAt: time.Now(),
+		version:        nil,
 	}
 }
 
