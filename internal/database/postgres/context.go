@@ -334,11 +334,8 @@ func (c *Context) applyFileChange(ctx context.Context, tx *sql.Tx, ch *change.En
 	}
 }
 
-func (c *Context) applyGroupRoleChange(ctx context.Context, tx *sql.Tx, ch *change.Entry) error {
-	switch ch.GetChangeType() {
-	default:
-		return fmt.Errorf("unsupported change type: %v", ch.GetChangeType())
-	}
+func (c *Context) applyGroupRoleChange(_ context.Context, _ *sql.Tx, ch *change.Entry) error {
+	return fmt.Errorf("unsupported change type: %v", ch.GetChangeType())
 }
 
 func (c *Context) applyGroupChange(ctx context.Context, tx *sql.Tx, ch *change.Entry) error {

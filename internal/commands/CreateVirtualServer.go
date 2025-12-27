@@ -137,15 +137,8 @@ func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer)
 	systemProject := repositories.NewSystemProject(virtualServer.Id())
 	dbContext.Projects().Insert(systemProject)
 
-	initDefaultAppsResult, err := initializeDefaultApplications(ctx, virtualServer, systemProject)
-	if err != nil {
-		return nil, fmt.Errorf("initializing default applications: %w", err)
-	}
-
-	defaultRolesResult, err := initializeDefaultAdminRoles(ctx, virtualServer, systemProject, command.CreateSystemAdminRole)
-	if err != nil {
-		return nil, fmt.Errorf("initializing default roles: %w", err)
-	}
+	initDefaultAppsResult := initializeDefaultApplications(ctx, virtualServer, systemProject)
+	defaultRolesResult := initializeDefaultAdminRoles(ctx, virtualServer, systemProject, command.CreateSystemAdminRole)
 
 	m := ioc.GetDependency[mediatr.Mediator](scope)
 	for _, project := range command.Projects {
@@ -327,7 +320,7 @@ type createDefaultApplicationResult struct {
 	adminUidApplicationId uuid.UUID
 }
 
-func initializeDefaultApplications(ctx context.Context, virtualServer *repositories.VirtualServer, systemProject *repositories.Project) (*createDefaultApplicationResult, error) {
+func initializeDefaultApplications(ctx context.Context, virtualServer *repositories.VirtualServer, systemProject *repositories.Project) *createDefaultApplicationResult {
 	scope := middlewares.GetScope(ctx)
 	dbContext := ioc.GetDependency[database.Context](scope)
 
@@ -344,7 +337,7 @@ func initializeDefaultApplications(ctx context.Context, virtualServer *repositor
 
 	return &createDefaultApplicationResult{
 		adminUidApplicationId: adminUiApplication.Id(),
-	}, nil
+	}
 }
 
 type createDefaultAdminUiRolesResult struct {
@@ -352,7 +345,7 @@ type createDefaultAdminUiRolesResult struct {
 	systemAdminRoleId *uuid.UUID
 }
 
-func initializeDefaultAdminRoles(ctx context.Context, virtualServer *repositories.VirtualServer, project *repositories.Project, createSystemAdminRole bool) (*createDefaultAdminUiRolesResult, error) {
+func initializeDefaultAdminRoles(ctx context.Context, virtualServer *repositories.VirtualServer, project *repositories.Project, createSystemAdminRole bool) *createDefaultAdminUiRolesResult {
 	scope := middlewares.GetScope(ctx)
 	dbContext := ioc.GetDependency[database.Context](scope)
 
@@ -380,7 +373,7 @@ func initializeDefaultAdminRoles(ctx context.Context, virtualServer *repositorie
 	return &createDefaultAdminUiRolesResult{
 		adminRoleId:       adminRole.Id(),
 		systemAdminRoleId: systemAdminRoleId,
-	}, nil
+	}
 }
 
 func initializeDefaultTemplates(ctx context.Context, virtualServer *repositories.VirtualServer) {

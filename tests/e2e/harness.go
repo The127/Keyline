@@ -79,7 +79,7 @@ func (h *harness) Close() {
 	if err != nil {
 		panic(err)
 	}
-	defer db.Close()
+	defer utils.PanicOnError(db.Close, "closing initial db connection in test")
 
 	createQuery := fmt.Sprintf("drop database %s;", h.dbName)
 	_, err = db.Exec(createQuery)

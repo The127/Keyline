@@ -39,7 +39,7 @@ func mapVirtualServer(virtualServer *repositories.VirtualServer) *postgresVirtua
 
 func (s *postgresVirtualServer) Map() *repositories.VirtualServer {
 	return repositories.NewVirtualServerFromDB(
-		s.postgresBaseModel.MapBase(),
+		s.MapBase(),
 		s.name,
 		s.displayName,
 		s.enableRegistration,
