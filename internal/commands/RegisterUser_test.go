@@ -4,6 +4,7 @@ import (
 	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
 	mocks2 "Keyline/internal/mocks"
+	"Keyline/internal/password"
 	"Keyline/internal/password/mock"
 	"Keyline/internal/repositories"
 	"Keyline/internal/repositories/mocks"
@@ -33,6 +34,7 @@ func (s *RegisterUserCommandSuite) createContext(
 	virtualServerRepository repositories.VirtualServerRepository,
 	userRepository repositories.UserRepository,
 	credentialRepository repositories.CredentialRepository,
+	validator password.Validator,
 	m mediatr.Mediator,
 ) context.Context {
 	dc := ioc.NewDependencyCollection()
@@ -52,6 +54,12 @@ func (s *RegisterUserCommandSuite) createContext(
 
 	if credentialRepository != nil {
 		dbContext.EXPECT().Credentials().Return(credentialRepository).AnyTimes()
+	}
+
+	if validator != nil {
+		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) password.Validator {
+			return validator
+		})
 	}
 
 	if m != nil {
@@ -94,7 +102,7 @@ func (s *RegisterUserCommandSuite) TestHandleRegisterUser() {
 
 	m := mediatr.NewMediator()
 
-	ctx := s.createContext(ctrl, virtualServerRepository, userRepository, credentialRepository, m)
+	ctx := s.createContext(ctrl, virtualServerRepository, userRepository, credentialRepository, passwordValidator, m)
 	cmd := RegisterUser{
 		VirtualServerName: virtualServer.Name(),
 		DisplayName:       "User",
@@ -126,7 +134,7 @@ func (s *RegisterUserCommandSuite) TestRegistrationNotEnabled() {
 		return x.GetName() == virtualServer.Name()
 	})).Return(virtualServer, nil)
 
-	ctx := s.createContext(ctrl, virtualServerRepository, nil, nil, nil)
+	ctx := s.createContext(ctrl, virtualServerRepository, nil, nil, nil, nil)
 	cmd := RegisterUser{
 		VirtualServerName: virtualServer.Name(),
 		DisplayName:       "User",
