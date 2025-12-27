@@ -54,6 +54,21 @@ func (mr *MockResourceServerRepositoryMockRecorder) Delete(id any) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockResourceServerRepository)(nil).Delete), id)
 }
 
+// FirstOrErr mocks base method.
+func (m *MockResourceServerRepository) FirstOrErr(ctx context.Context, filter *repositories.ResourceServerFilter) (*repositories.ResourceServer, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FirstOrErr", ctx, filter)
+	ret0, _ := ret[0].(*repositories.ResourceServer)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FirstOrErr indicates an expected call of FirstOrErr.
+func (mr *MockResourceServerRepositoryMockRecorder) FirstOrErr(ctx, filter any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FirstOrErr", reflect.TypeOf((*MockResourceServerRepository)(nil).FirstOrErr), ctx, filter)
+}
+
 // FirstOrNil mocks base method.
 func (m *MockResourceServerRepository) FirstOrNil(ctx context.Context, filter *repositories.ResourceServerFilter) (*repositories.ResourceServer, error) {
 	m.ctrl.T.Helper()
@@ -63,8 +78,8 @@ func (m *MockResourceServerRepository) FirstOrNil(ctx context.Context, filter *r
 	return ret0, ret1
 }
 
-// First indicates an expected call of First.
-func (mr *MockResourceServerRepositoryMockRecorder) First(ctx, filter any) *gomock.Call {
+// FirstOrNil indicates an expected call of FirstOrNil.
+func (mr *MockResourceServerRepositoryMockRecorder) FirstOrNil(ctx, filter any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FirstOrNil", reflect.TypeOf((*MockResourceServerRepository)(nil).FirstOrNil), ctx, filter)
 }
@@ -95,21 +110,6 @@ func (m *MockResourceServerRepository) List(ctx context.Context, filter *reposit
 func (mr *MockResourceServerRepositoryMockRecorder) List(ctx, filter any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockResourceServerRepository)(nil).List), ctx, filter)
-}
-
-// FirstOrErr mocks base method.
-func (m *MockResourceServerRepository) FirstOrErr(ctx context.Context, filter *repositories.ResourceServerFilter) (*repositories.ResourceServer, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FirstOrErr", ctx, filter)
-	ret0, _ := ret[0].(*repositories.ResourceServer)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Single indicates an expected call of Single.
-func (mr *MockResourceServerRepositoryMockRecorder) Single(ctx, filter any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FirstOrErr", reflect.TypeOf((*MockResourceServerRepository)(nil).FirstOrErr), ctx, filter)
 }
 
 // Update mocks base method.

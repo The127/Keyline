@@ -54,6 +54,21 @@ func (mr *MockPasswordRuleRepositoryMockRecorder) Delete(id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockPasswordRuleRepository)(nil).Delete), id)
 }
 
+// FirstOrErr mocks base method.
+func (m *MockPasswordRuleRepository) FirstOrErr(ctx context.Context, filter *repositories.PasswordRuleFilter) (*repositories.PasswordRule, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FirstOrErr", ctx, filter)
+	ret0, _ := ret[0].(*repositories.PasswordRule)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FirstOrErr indicates an expected call of FirstOrErr.
+func (mr *MockPasswordRuleRepositoryMockRecorder) FirstOrErr(ctx, filter any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FirstOrErr", reflect.TypeOf((*MockPasswordRuleRepository)(nil).FirstOrErr), ctx, filter)
+}
+
 // FirstOrNil mocks base method.
 func (m *MockPasswordRuleRepository) FirstOrNil(ctx context.Context, filter *repositories.PasswordRuleFilter) (*repositories.PasswordRule, error) {
 	m.ctrl.T.Helper()
@@ -63,8 +78,8 @@ func (m *MockPasswordRuleRepository) FirstOrNil(ctx context.Context, filter *rep
 	return ret0, ret1
 }
 
-// First indicates an expected call of First.
-func (mr *MockPasswordRuleRepositoryMockRecorder) First(ctx, filter any) *gomock.Call {
+// FirstOrNil indicates an expected call of FirstOrNil.
+func (mr *MockPasswordRuleRepositoryMockRecorder) FirstOrNil(ctx, filter any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FirstOrNil", reflect.TypeOf((*MockPasswordRuleRepository)(nil).FirstOrNil), ctx, filter)
 }
@@ -94,21 +109,6 @@ func (m *MockPasswordRuleRepository) List(ctx context.Context, filter *repositor
 func (mr *MockPasswordRuleRepositoryMockRecorder) List(ctx, filter any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockPasswordRuleRepository)(nil).List), ctx, filter)
-}
-
-// FirstOrErr mocks base method.
-func (m *MockPasswordRuleRepository) FirstOrErr(ctx context.Context, filter *repositories.PasswordRuleFilter) (*repositories.PasswordRule, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FirstOrErr", ctx, filter)
-	ret0, _ := ret[0].(*repositories.PasswordRule)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Single indicates an expected call of Single.
-func (mr *MockPasswordRuleRepositoryMockRecorder) Single(ctx, filter any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FirstOrErr", reflect.TypeOf((*MockPasswordRuleRepository)(nil).FirstOrErr), ctx, filter)
 }
 
 // Update mocks base method.

@@ -54,6 +54,21 @@ func (mr *MockRoleRepositoryMockRecorder) Delete(id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockRoleRepository)(nil).Delete), id)
 }
 
+// FirstOrErr mocks base method.
+func (m *MockRoleRepository) FirstOrErr(ctx context.Context, filter *repositories.RoleFilter) (*repositories.Role, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FirstOrErr", ctx, filter)
+	ret0, _ := ret[0].(*repositories.Role)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FirstOrErr indicates an expected call of FirstOrErr.
+func (mr *MockRoleRepositoryMockRecorder) FirstOrErr(ctx, filter any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FirstOrErr", reflect.TypeOf((*MockRoleRepository)(nil).FirstOrErr), ctx, filter)
+}
+
 // FirstOrNil mocks base method.
 func (m *MockRoleRepository) FirstOrNil(ctx context.Context, filter *repositories.RoleFilter) (*repositories.Role, error) {
 	m.ctrl.T.Helper()
@@ -63,8 +78,8 @@ func (m *MockRoleRepository) FirstOrNil(ctx context.Context, filter *repositorie
 	return ret0, ret1
 }
 
-// First indicates an expected call of First.
-func (mr *MockRoleRepositoryMockRecorder) First(ctx, filter any) *gomock.Call {
+// FirstOrNil indicates an expected call of FirstOrNil.
+func (mr *MockRoleRepositoryMockRecorder) FirstOrNil(ctx, filter any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FirstOrNil", reflect.TypeOf((*MockRoleRepository)(nil).FirstOrNil), ctx, filter)
 }
@@ -95,21 +110,6 @@ func (m *MockRoleRepository) List(ctx context.Context, filter *repositories.Role
 func (mr *MockRoleRepositoryMockRecorder) List(ctx, filter any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockRoleRepository)(nil).List), ctx, filter)
-}
-
-// FirstOrErr mocks base method.
-func (m *MockRoleRepository) FirstOrErr(ctx context.Context, filter *repositories.RoleFilter) (*repositories.Role, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FirstOrErr", ctx, filter)
-	ret0, _ := ret[0].(*repositories.Role)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Single indicates an expected call of Single.
-func (mr *MockRoleRepositoryMockRecorder) Single(ctx, filter any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FirstOrErr", reflect.TypeOf((*MockRoleRepository)(nil).FirstOrErr), ctx, filter)
 }
 
 // Update mocks base method.

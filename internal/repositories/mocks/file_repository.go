@@ -41,6 +41,21 @@ func (m *MockFileRepository) EXPECT() *MockFileRepositoryMockRecorder {
 	return m.recorder
 }
 
+// FirstOrErr mocks base method.
+func (m *MockFileRepository) FirstOrErr(ctx context.Context, filter *repositories.FileFilter) (*repositories.File, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FirstOrErr", ctx, filter)
+	ret0, _ := ret[0].(*repositories.File)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FirstOrErr indicates an expected call of FirstOrErr.
+func (mr *MockFileRepositoryMockRecorder) FirstOrErr(ctx, filter any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FirstOrErr", reflect.TypeOf((*MockFileRepository)(nil).FirstOrErr), ctx, filter)
+}
+
 // FirstOrNil mocks base method.
 func (m *MockFileRepository) FirstOrNil(ctx context.Context, filter *repositories.FileFilter) (*repositories.File, error) {
 	m.ctrl.T.Helper()
@@ -50,8 +65,8 @@ func (m *MockFileRepository) FirstOrNil(ctx context.Context, filter *repositorie
 	return ret0, ret1
 }
 
-// First indicates an expected call of First.
-func (mr *MockFileRepositoryMockRecorder) First(ctx, filter any) *gomock.Call {
+// FirstOrNil indicates an expected call of FirstOrNil.
+func (mr *MockFileRepositoryMockRecorder) FirstOrNil(ctx, filter any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FirstOrNil", reflect.TypeOf((*MockFileRepository)(nil).FirstOrNil), ctx, filter)
 }
@@ -66,19 +81,4 @@ func (m *MockFileRepository) Insert(file *repositories.File) {
 func (mr *MockFileRepositoryMockRecorder) Insert(file any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockFileRepository)(nil).Insert), file)
-}
-
-// FirstOrErr mocks base method.
-func (m *MockFileRepository) FirstOrErr(ctx context.Context, filter *repositories.FileFilter) (*repositories.File, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FirstOrErr", ctx, filter)
-	ret0, _ := ret[0].(*repositories.File)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Single indicates an expected call of Single.
-func (mr *MockFileRepositoryMockRecorder) Single(ctx, filter any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FirstOrErr", reflect.TypeOf((*MockFileRepository)(nil).FirstOrErr), ctx, filter)
 }

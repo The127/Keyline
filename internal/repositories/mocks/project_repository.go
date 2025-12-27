@@ -54,6 +54,21 @@ func (mr *MockProjectRepositoryMockRecorder) Delete(id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockProjectRepository)(nil).Delete), id)
 }
 
+// FirstOrErr mocks base method.
+func (m *MockProjectRepository) FirstOrErr(ctx context.Context, filter *repositories.ProjectFilter) (*repositories.Project, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FirstOrErr", ctx, filter)
+	ret0, _ := ret[0].(*repositories.Project)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FirstOrErr indicates an expected call of FirstOrErr.
+func (mr *MockProjectRepositoryMockRecorder) FirstOrErr(ctx, filter any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FirstOrErr", reflect.TypeOf((*MockProjectRepository)(nil).FirstOrErr), ctx, filter)
+}
+
 // FirstOrNil mocks base method.
 func (m *MockProjectRepository) FirstOrNil(ctx context.Context, filter *repositories.ProjectFilter) (*repositories.Project, error) {
 	m.ctrl.T.Helper()
@@ -63,8 +78,8 @@ func (m *MockProjectRepository) FirstOrNil(ctx context.Context, filter *reposito
 	return ret0, ret1
 }
 
-// First indicates an expected call of First.
-func (mr *MockProjectRepositoryMockRecorder) First(ctx, filter any) *gomock.Call {
+// FirstOrNil indicates an expected call of FirstOrNil.
+func (mr *MockProjectRepositoryMockRecorder) FirstOrNil(ctx, filter any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FirstOrNil", reflect.TypeOf((*MockProjectRepository)(nil).FirstOrNil), ctx, filter)
 }
@@ -95,21 +110,6 @@ func (m *MockProjectRepository) List(ctx context.Context, filter *repositories.P
 func (mr *MockProjectRepositoryMockRecorder) List(ctx, filter any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockProjectRepository)(nil).List), ctx, filter)
-}
-
-// FirstOrErr mocks base method.
-func (m *MockProjectRepository) FirstOrErr(ctx context.Context, filter *repositories.ProjectFilter) (*repositories.Project, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FirstOrErr", ctx, filter)
-	ret0, _ := ret[0].(*repositories.Project)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Single indicates an expected call of Single.
-func (mr *MockProjectRepositoryMockRecorder) Single(ctx, filter any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FirstOrErr", reflect.TypeOf((*MockProjectRepository)(nil).FirstOrErr), ctx, filter)
 }
 
 // Update mocks base method.

@@ -54,6 +54,21 @@ func (mr *MockSessionRepositoryMockRecorder) Delete(id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockSessionRepository)(nil).Delete), id)
 }
 
+// FirstOrErr mocks base method.
+func (m *MockSessionRepository) FirstOrErr(ctx context.Context, filter *repositories.SessionFilter) (*repositories.Session, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FirstOrErr", ctx, filter)
+	ret0, _ := ret[0].(*repositories.Session)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FirstOrErr indicates an expected call of FirstOrErr.
+func (mr *MockSessionRepositoryMockRecorder) FirstOrErr(ctx, filter any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FirstOrErr", reflect.TypeOf((*MockSessionRepository)(nil).FirstOrErr), ctx, filter)
+}
+
 // FirstOrNil mocks base method.
 func (m *MockSessionRepository) FirstOrNil(ctx context.Context, filter *repositories.SessionFilter) (*repositories.Session, error) {
 	m.ctrl.T.Helper()
@@ -63,8 +78,8 @@ func (m *MockSessionRepository) FirstOrNil(ctx context.Context, filter *reposito
 	return ret0, ret1
 }
 
-// First indicates an expected call of First.
-func (mr *MockSessionRepositoryMockRecorder) First(ctx, filter any) *gomock.Call {
+// FirstOrNil indicates an expected call of FirstOrNil.
+func (mr *MockSessionRepositoryMockRecorder) FirstOrNil(ctx, filter any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FirstOrNil", reflect.TypeOf((*MockSessionRepository)(nil).FirstOrNil), ctx, filter)
 }
@@ -79,19 +94,4 @@ func (m *MockSessionRepository) Insert(session *repositories.Session) {
 func (mr *MockSessionRepositoryMockRecorder) Insert(session any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockSessionRepository)(nil).Insert), session)
-}
-
-// FirstOrErr mocks base method.
-func (m *MockSessionRepository) FirstOrErr(ctx context.Context, filter *repositories.SessionFilter) (*repositories.Session, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FirstOrErr", ctx, filter)
-	ret0, _ := ret[0].(*repositories.Session)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Single indicates an expected call of Single.
-func (mr *MockSessionRepositoryMockRecorder) Single(ctx, filter any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FirstOrErr", reflect.TypeOf((*MockSessionRepository)(nil).FirstOrErr), ctx, filter)
 }
