@@ -29,6 +29,10 @@ func Database(dc *ioc.DependencyCollection, c config.DatabaseConfig) (database.D
 		panic("database mode missing or not supported")
 	}
 
+	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) database.Database {
+		return db
+	})
+
 	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) database.Factory {
 		return database.NewDbFactory(db)
 	})

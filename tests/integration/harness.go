@@ -11,7 +11,6 @@ import (
 	"Keyline/internal/setup"
 	"Keyline/utils"
 	"context"
-	"database/sql"
 	"fmt"
 	"strings"
 	"time"
@@ -34,7 +33,7 @@ type harness struct {
 }
 
 func (h *harness) Close() {
-	dbConnection := ioc.GetDependency[*sql.DB](h.scope)
+	dbConnection := ioc.GetDependency[db2.Database](h.scope)
 	utils.PanicOnError(h.scope.Close, "closing scope")
 	utils.PanicOnError(dbConnection.Close, "closing db connection in test")
 

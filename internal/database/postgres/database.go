@@ -74,3 +74,7 @@ func (d *database) Migrate(ctx context.Context) error {
 func (d *database) NewDbContext(_ context.Context) (db.Context, error) {
 	return newContext(d.db), nil
 }
+
+func (d *database) Close() error {
+	return d.db.Close()
+}
