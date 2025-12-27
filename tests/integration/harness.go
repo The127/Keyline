@@ -110,12 +110,12 @@ func newIntegrationTestHarness() *harness {
 	}
 	utils.PanicOnError(initDb.Close, "closing initial db connection in test")
 
+	dbc.Postgres.Database = dbName
 	db, err := setup.Database(dc, dbc)
 	if err != nil {
 		panic(fmt.Errorf("failed to create test database: %w", err))
 	}
 
-	dbc.Postgres.Database = dbName
 	err = db.Migrate(ctx)
 	if err != nil {
 		panic(fmt.Errorf("failed to create test database: %w", err))
