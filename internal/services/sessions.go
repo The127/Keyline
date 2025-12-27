@@ -33,10 +33,10 @@ func NewSessionService() middlewares.SessionService {
 
 func (s *sessionService) NewSession(ctx context.Context, virtualServerName string, userId uuid.UUID) (*utils.SplitToken, error) {
 	scope := middlewares.GetScope(ctx)
+	dbContext := ioc.GetDependency[database.Context](scope)
 
-	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(virtualServerName)
-	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().Single(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
@@ -44,10 +44,9 @@ func (s *sessionService) NewSession(ctx context.Context, virtualServerName strin
 	clockService := ioc.GetDependency[clock.Service](scope)
 	now := clockService.Now()
 
-	sessionRepository := ioc.GetDependency[repositories.SessionRepository](scope)
 	session := repositories.NewSession(virtualServer.Id(), userId, now.Add(time.Hour*24*30))
 	token := session.GenerateToken()
-	sessionRepository.Insert(session)
+	dbContext.Sessions().Insert(session)
 
 	sessionToken := utils.NewSplitToken(session.Id().String(), token)
 	return &sessionToken, nil

@@ -178,6 +178,7 @@ func newE2eTestHarness(tokenSourceGenerator func(ctx context.Context, url string
 
 func initTest(dp *ioc.DependencyProvider) error {
 	scope := dp.NewScope()
+	dbContext := ioc.GetDependency[database.Context](scope)
 
 	ctx := middlewares.ContextWithScope(context.Background(), scope)
 	ctx = authentication.ContextWithCurrentUser(ctx, authentication.SystemUser())
@@ -204,15 +205,11 @@ func initTest(dp *ioc.DependencyProvider) error {
 		return fmt.Errorf("failed to create initial admin user: %v", err)
 	}
 
-	credentialRepository := ioc.GetDependency[repositories.CredentialRepository](scope)
 	initialAdminCredential := repositories.NewCredential(initialAdminUserInfo.Id, &repositories.CredentialPasswordDetails{
 		HashedPassword: config.C.InitialVirtualServer.Admin.PasswordHash,
 		Temporary:      false,
 	})
-	err = credentialRepository.Insert(ctx, initialAdminCredential)
-	if err != nil {
-		return fmt.Errorf("failed to create initial admin credential: %v", err)
-	}
+	dbContext.Credentials().Insert(initialAdminCredential)
 
 	_, err = mediatr.Send[*commands.AssignRoleToUserResponse](ctx, m, commands.AssignRoleToUser{
 		VirtualServerName: "test-vs",

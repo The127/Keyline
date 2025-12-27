@@ -1,13 +1,15 @@
 package services
 
 import (
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/The127/ioc"
 	"html/template"
+
+	"github.com/The127/ioc"
 
 	"github.com/google/uuid"
 )
@@ -25,10 +27,9 @@ func NewTemplateService() TemplateService {
 
 func (s templateService) Template(ctx context.Context, virtualServerId uuid.UUID, templateType repositories.TemplateType, data any) (string, error) {
 	scope := middlewares.GetScope(ctx)
-	templateRepository := ioc.GetDependency[repositories.TemplateRepository](scope)
-	fileRepository := ioc.GetDependency[repositories.FileRepository](scope)
+	dbContext := ioc.GetDependency[database.Context](scope)
 
-	dbTemplate, err := templateRepository.First(ctx, repositories.NewTemplateFilter().
+	dbTemplate, err := dbContext.Templates().First(ctx, repositories.NewTemplateFilter().
 		VirtualServerId(virtualServerId).
 		TemplateType(templateType))
 	if err != nil {
@@ -39,7 +40,7 @@ func (s templateService) Template(ctx context.Context, virtualServerId uuid.UUID
 		return "", fmt.Errorf("template not found")
 	}
 
-	dbFile, err := fileRepository.First(ctx, repositories.NewFileFilter().
+	dbFile, err := dbContext.Files().First(ctx, repositories.NewFileFilter().
 		Id(dbTemplate.FileId()))
 	if err != nil {
 		return "", fmt.Errorf("querying file: %w", err)
