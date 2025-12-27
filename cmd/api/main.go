@@ -52,21 +52,25 @@ func main() {
 	logging.Init()
 	metrics.Init()
 
-	retry.FiveTimes(func() error {
-		return database.Migrate(config.C.Database.Postgres)
-	}, "failed to migrate database")
-
 	dc := ioc.NewDependencyCollection()
 
 	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) clock.Service {
 		return clock.NewSystemClock()
 	})
 
+	db, err := setup.Database(dc, config.C.Database)
+	if err != nil {
+		logging.Logger.Fatalf("failed to connect to database: %v", err)
+	}
+
+	retry.FiveTimes(func() error {
+		return db.Migrate(context.TODO())
+	}, "failed to migrate database")
+
 	setup.OutboxDelivery(dc, config.QueueModeInProcess)
 	setup.KeyServices(dc, config.C.KeyStore)
 	setup.Caching(dc, config.C.Cache.Mode)
 	setup.Services(dc)
-	setup.Repositories(dc, config.C.Database.Mode, config.C.Database.Postgres)
 	setup.Mediator(dc)
 	dp := dc.BuildProvider()
 
@@ -104,9 +108,10 @@ func main() {
 			}
 		}).
 		Build(config.C.LeaderElection)
-	err := leaderElection.Start(middlewares.ContextWithScope(context.Background(), dp))
+
+	err = leaderElection.Start(middlewares.ContextWithScope(context.Background(), dp))
 	if err != nil {
-		panic(fmt.Errorf("failed to start leader election: %s", err.Error()))
+		logging.Logger.Panicf("failed to start leader election: %s", err.Error())
 	}
 
 	server.Serve(dp, config.C.Server)

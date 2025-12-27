@@ -1,6 +1,8 @@
 package database
 
-import "context"
+import (
+	"context"
+)
 
 type Database interface {
 	Migrate(ctx context.Context) error

@@ -111,7 +111,7 @@ func newIntegrationTestHarness() *harness {
 	})
 	setup.Caching(dc, config.CacheModeMemory)
 	setup.Services(dc)
-	setup.Repositories(dc, config.DatabaseModePostgres, pc)
+	setup.Database(dc, config.DatabaseModePostgres, pc)
 	setup.Mediator(dc)
 
 	scope := dc.BuildProvider()

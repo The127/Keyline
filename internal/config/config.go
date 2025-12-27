@@ -65,13 +65,7 @@ type Config struct {
 	Frontend struct {
 		ExternalUrl string
 	}
-	Database struct {
-		Mode     DatabaseMode
-		Postgres PostgresConfig
-		Sqlite   struct {
-			Database string
-		}
-	}
+	Database             DatabaseConfig
 	InitialVirtualServer struct {
 		Name                  string
 		DisplayName           string
@@ -186,6 +180,14 @@ type ServerConfig struct {
 	Port           int
 	ApiPort        int
 	AllowedOrigins []string
+}
+
+type DatabaseConfig struct {
+	Mode     DatabaseMode
+	Postgres PostgresConfig
+	Sqlite   struct {
+		Database string
+	}
 }
 
 type PostgresConfig struct {
