@@ -43,35 +43,31 @@ func (m *MockOutboxMessageRepository) EXPECT() *MockOutboxMessageRepositoryMockR
 }
 
 // Delete mocks base method.
-func (m *MockOutboxMessageRepository) Delete(ctx context.Context, id uuid.UUID) error {
+func (m *MockOutboxMessageRepository) Delete(id uuid.UUID) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", ctx, id)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Delete", id)
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockOutboxMessageRepositoryMockRecorder) Delete(ctx, id any) *gomock.Call {
+func (mr *MockOutboxMessageRepositoryMockRecorder) Delete(id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockOutboxMessageRepository)(nil).Delete), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockOutboxMessageRepository)(nil).Delete), id)
 }
 
 // Insert mocks base method.
-func (m *MockOutboxMessageRepository) Insert(ctx context.Context, outboxMessage *repositories.OutboxMessage) error {
+func (m *MockOutboxMessageRepository) Insert(outboxMessage *repositories.OutboxMessage) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Insert", ctx, outboxMessage)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Insert", outboxMessage)
 }
 
 // Insert indicates an expected call of Insert.
-func (mr *MockOutboxMessageRepositoryMockRecorder) Insert(ctx, outboxMessage any) *gomock.Call {
+func (mr *MockOutboxMessageRepositoryMockRecorder) Insert(outboxMessage any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockOutboxMessageRepository)(nil).Insert), ctx, outboxMessage)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockOutboxMessageRepository)(nil).Insert), outboxMessage)
 }
 
 // List mocks base method.
-func (m *MockOutboxMessageRepository) List(ctx context.Context, filter repositories.OutboxMessageFilter) ([]*repositories.OutboxMessage, error) {
+func (m *MockOutboxMessageRepository) List(ctx context.Context, filter *repositories.OutboxMessageFilter) ([]*repositories.OutboxMessage, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "List", ctx, filter)
 	ret0, _ := ret[0].([]*repositories.OutboxMessage)

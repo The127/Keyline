@@ -43,21 +43,19 @@ func (m *MockSessionRepository) EXPECT() *MockSessionRepositoryMockRecorder {
 }
 
 // Delete mocks base method.
-func (m *MockSessionRepository) Delete(ctx context.Context, id uuid.UUID) error {
+func (m *MockSessionRepository) Delete(id uuid.UUID) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", ctx, id)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Delete", id)
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockSessionRepositoryMockRecorder) Delete(ctx, id any) *gomock.Call {
+func (mr *MockSessionRepositoryMockRecorder) Delete(id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockSessionRepository)(nil).Delete), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockSessionRepository)(nil).Delete), id)
 }
 
 // First mocks base method.
-func (m *MockSessionRepository) First(ctx context.Context, filter repositories.SessionFilter) (*repositories.Session, error) {
+func (m *MockSessionRepository) First(ctx context.Context, filter *repositories.SessionFilter) (*repositories.Session, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "First", ctx, filter)
 	ret0, _ := ret[0].(*repositories.Session)
@@ -72,21 +70,19 @@ func (mr *MockSessionRepositoryMockRecorder) First(ctx, filter any) *gomock.Call
 }
 
 // Insert mocks base method.
-func (m *MockSessionRepository) Insert(ctx context.Context, session *repositories.Session) error {
+func (m *MockSessionRepository) Insert(session *repositories.Session) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Insert", ctx, session)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Insert", session)
 }
 
 // Insert indicates an expected call of Insert.
-func (mr *MockSessionRepositoryMockRecorder) Insert(ctx, session any) *gomock.Call {
+func (mr *MockSessionRepositoryMockRecorder) Insert(session any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockSessionRepository)(nil).Insert), ctx, session)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockSessionRepository)(nil).Insert), session)
 }
 
 // Single mocks base method.
-func (m *MockSessionRepository) Single(ctx context.Context, filter repositories.SessionFilter) (*repositories.Session, error) {
+func (m *MockSessionRepository) Single(ctx context.Context, filter *repositories.SessionFilter) (*repositories.Session, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Single", ctx, filter)
 	ret0, _ := ret[0].(*repositories.Session)

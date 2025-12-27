@@ -42,21 +42,19 @@ func (m *MockAuditLogRepository) EXPECT() *MockAuditLogRepositoryMockRecorder {
 }
 
 // Insert mocks base method.
-func (m *MockAuditLogRepository) Insert(ctx context.Context, auditLog *repositories.AuditLog) error {
+func (m *MockAuditLogRepository) Insert(auditLog *repositories.AuditLog) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Insert", ctx, auditLog)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Insert", auditLog)
 }
 
 // Insert indicates an expected call of Insert.
-func (mr *MockAuditLogRepositoryMockRecorder) Insert(ctx, auditLog any) *gomock.Call {
+func (mr *MockAuditLogRepositoryMockRecorder) Insert(auditLog any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockAuditLogRepository)(nil).Insert), ctx, auditLog)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockAuditLogRepository)(nil).Insert), auditLog)
 }
 
 // List mocks base method.
-func (m *MockAuditLogRepository) List(ctx context.Context, filter repositories.AuditLogFilter) ([]*repositories.AuditLog, int, error) {
+func (m *MockAuditLogRepository) List(ctx context.Context, filter *repositories.AuditLogFilter) ([]*repositories.AuditLog, int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "List", ctx, filter)
 	ret0, _ := ret[0].([]*repositories.AuditLog)

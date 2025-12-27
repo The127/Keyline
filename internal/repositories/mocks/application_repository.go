@@ -43,21 +43,19 @@ func (m *MockApplicationRepository) EXPECT() *MockApplicationRepositoryMockRecor
 }
 
 // Delete mocks base method.
-func (m *MockApplicationRepository) Delete(ctx context.Context, id uuid.UUID) error {
+func (m *MockApplicationRepository) Delete(id uuid.UUID) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", ctx, id)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Delete", id)
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockApplicationRepositoryMockRecorder) Delete(ctx, id any) *gomock.Call {
+func (mr *MockApplicationRepositoryMockRecorder) Delete(id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockApplicationRepository)(nil).Delete), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockApplicationRepository)(nil).Delete), id)
 }
 
 // First mocks base method.
-func (m *MockApplicationRepository) First(ctx context.Context, filter repositories.ApplicationFilter) (*repositories.Application, error) {
+func (m *MockApplicationRepository) First(ctx context.Context, filter *repositories.ApplicationFilter) (*repositories.Application, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "First", ctx, filter)
 	ret0, _ := ret[0].(*repositories.Application)
@@ -72,21 +70,19 @@ func (mr *MockApplicationRepositoryMockRecorder) First(ctx, filter any) *gomock.
 }
 
 // Insert mocks base method.
-func (m *MockApplicationRepository) Insert(ctx context.Context, application *repositories.Application) error {
+func (m *MockApplicationRepository) Insert(application *repositories.Application) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Insert", ctx, application)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Insert", application)
 }
 
 // Insert indicates an expected call of Insert.
-func (mr *MockApplicationRepositoryMockRecorder) Insert(ctx, application any) *gomock.Call {
+func (mr *MockApplicationRepositoryMockRecorder) Insert(application any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockApplicationRepository)(nil).Insert), ctx, application)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockApplicationRepository)(nil).Insert), application)
 }
 
 // List mocks base method.
-func (m *MockApplicationRepository) List(ctx context.Context, filter repositories.ApplicationFilter) ([]*repositories.Application, int, error) {
+func (m *MockApplicationRepository) List(ctx context.Context, filter *repositories.ApplicationFilter) ([]*repositories.Application, int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "List", ctx, filter)
 	ret0, _ := ret[0].([]*repositories.Application)
@@ -102,7 +98,7 @@ func (mr *MockApplicationRepositoryMockRecorder) List(ctx, filter any) *gomock.C
 }
 
 // Single mocks base method.
-func (m *MockApplicationRepository) Single(ctx context.Context, filter repositories.ApplicationFilter) (*repositories.Application, error) {
+func (m *MockApplicationRepository) Single(ctx context.Context, filter *repositories.ApplicationFilter) (*repositories.Application, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Single", ctx, filter)
 	ret0, _ := ret[0].(*repositories.Application)
@@ -117,15 +113,13 @@ func (mr *MockApplicationRepositoryMockRecorder) Single(ctx, filter any) *gomock
 }
 
 // Update mocks base method.
-func (m *MockApplicationRepository) Update(ctx context.Context, application *repositories.Application) error {
+func (m *MockApplicationRepository) Update(application *repositories.Application) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Update", ctx, application)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Update", application)
 }
 
 // Update indicates an expected call of Update.
-func (mr *MockApplicationRepositoryMockRecorder) Update(ctx, application any) *gomock.Call {
+func (mr *MockApplicationRepositoryMockRecorder) Update(application any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockApplicationRepository)(nil).Update), ctx, application)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockApplicationRepository)(nil).Update), application)
 }

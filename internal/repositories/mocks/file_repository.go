@@ -42,7 +42,7 @@ func (m *MockFileRepository) EXPECT() *MockFileRepositoryMockRecorder {
 }
 
 // First mocks base method.
-func (m *MockFileRepository) First(ctx context.Context, filter repositories.FileFilter) (*repositories.File, error) {
+func (m *MockFileRepository) First(ctx context.Context, filter *repositories.FileFilter) (*repositories.File, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "First", ctx, filter)
 	ret0, _ := ret[0].(*repositories.File)
@@ -57,21 +57,19 @@ func (mr *MockFileRepositoryMockRecorder) First(ctx, filter any) *gomock.Call {
 }
 
 // Insert mocks base method.
-func (m *MockFileRepository) Insert(ctx context.Context, file *repositories.File) error {
+func (m *MockFileRepository) Insert(file *repositories.File) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Insert", ctx, file)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Insert", file)
 }
 
 // Insert indicates an expected call of Insert.
-func (mr *MockFileRepositoryMockRecorder) Insert(ctx, file any) *gomock.Call {
+func (mr *MockFileRepositoryMockRecorder) Insert(file any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockFileRepository)(nil).Insert), ctx, file)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockFileRepository)(nil).Insert), file)
 }
 
 // Single mocks base method.
-func (m *MockFileRepository) Single(ctx context.Context, filter repositories.FileFilter) (*repositories.File, error) {
+func (m *MockFileRepository) Single(ctx context.Context, filter *repositories.FileFilter) (*repositories.File, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Single", ctx, filter)
 	ret0, _ := ret[0].(*repositories.File)

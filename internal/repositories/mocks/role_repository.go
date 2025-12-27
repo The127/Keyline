@@ -43,21 +43,19 @@ func (m *MockRoleRepository) EXPECT() *MockRoleRepositoryMockRecorder {
 }
 
 // Delete mocks base method.
-func (m *MockRoleRepository) Delete(ctx context.Context, id uuid.UUID) error {
+func (m *MockRoleRepository) Delete(id uuid.UUID) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", ctx, id)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Delete", id)
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockRoleRepositoryMockRecorder) Delete(ctx, id any) *gomock.Call {
+func (mr *MockRoleRepositoryMockRecorder) Delete(id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockRoleRepository)(nil).Delete), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockRoleRepository)(nil).Delete), id)
 }
 
 // First mocks base method.
-func (m *MockRoleRepository) First(ctx context.Context, filter repositories.RoleFilter) (*repositories.Role, error) {
+func (m *MockRoleRepository) First(ctx context.Context, filter *repositories.RoleFilter) (*repositories.Role, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "First", ctx, filter)
 	ret0, _ := ret[0].(*repositories.Role)
@@ -72,21 +70,19 @@ func (mr *MockRoleRepositoryMockRecorder) First(ctx, filter any) *gomock.Call {
 }
 
 // Insert mocks base method.
-func (m *MockRoleRepository) Insert(ctx context.Context, role *repositories.Role) error {
+func (m *MockRoleRepository) Insert(role *repositories.Role) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Insert", ctx, role)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Insert", role)
 }
 
 // Insert indicates an expected call of Insert.
-func (mr *MockRoleRepositoryMockRecorder) Insert(ctx, role any) *gomock.Call {
+func (mr *MockRoleRepositoryMockRecorder) Insert(role any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockRoleRepository)(nil).Insert), ctx, role)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockRoleRepository)(nil).Insert), role)
 }
 
 // List mocks base method.
-func (m *MockRoleRepository) List(ctx context.Context, filter repositories.RoleFilter) ([]*repositories.Role, int, error) {
+func (m *MockRoleRepository) List(ctx context.Context, filter *repositories.RoleFilter) ([]*repositories.Role, int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "List", ctx, filter)
 	ret0, _ := ret[0].([]*repositories.Role)
@@ -102,7 +98,7 @@ func (mr *MockRoleRepositoryMockRecorder) List(ctx, filter any) *gomock.Call {
 }
 
 // Single mocks base method.
-func (m *MockRoleRepository) Single(ctx context.Context, filter repositories.RoleFilter) (*repositories.Role, error) {
+func (m *MockRoleRepository) Single(ctx context.Context, filter *repositories.RoleFilter) (*repositories.Role, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Single", ctx, filter)
 	ret0, _ := ret[0].(*repositories.Role)
@@ -117,15 +113,13 @@ func (mr *MockRoleRepositoryMockRecorder) Single(ctx, filter any) *gomock.Call {
 }
 
 // Update mocks base method.
-func (m *MockRoleRepository) Update(ctx context.Context, role *repositories.Role) error {
+func (m *MockRoleRepository) Update(role *repositories.Role) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Update", ctx, role)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Update", role)
 }
 
 // Update indicates an expected call of Update.
-func (mr *MockRoleRepositoryMockRecorder) Update(ctx, role any) *gomock.Call {
+func (mr *MockRoleRepositoryMockRecorder) Update(role any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockRoleRepository)(nil).Update), ctx, role)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockRoleRepository)(nil).Update), role)
 }

@@ -42,21 +42,19 @@ func (m *MockUserRoleAssignmentRepository) EXPECT() *MockUserRoleAssignmentRepos
 }
 
 // Insert mocks base method.
-func (m *MockUserRoleAssignmentRepository) Insert(ctx context.Context, userRoleAssignment *repositories.UserRoleAssignment) error {
+func (m *MockUserRoleAssignmentRepository) Insert(userRoleAssignment *repositories.UserRoleAssignment) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Insert", ctx, userRoleAssignment)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Insert", userRoleAssignment)
 }
 
 // Insert indicates an expected call of Insert.
-func (mr *MockUserRoleAssignmentRepositoryMockRecorder) Insert(ctx, userRoleAssignment any) *gomock.Call {
+func (mr *MockUserRoleAssignmentRepositoryMockRecorder) Insert(userRoleAssignment any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockUserRoleAssignmentRepository)(nil).Insert), ctx, userRoleAssignment)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockUserRoleAssignmentRepository)(nil).Insert), userRoleAssignment)
 }
 
 // List mocks base method.
-func (m *MockUserRoleAssignmentRepository) List(ctx context.Context, filter repositories.UserRoleAssignmentFilter) ([]*repositories.UserRoleAssignment, int, error) {
+func (m *MockUserRoleAssignmentRepository) List(ctx context.Context, filter *repositories.UserRoleAssignmentFilter) ([]*repositories.UserRoleAssignment, int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "List", ctx, filter)
 	ret0, _ := ret[0].([]*repositories.UserRoleAssignment)

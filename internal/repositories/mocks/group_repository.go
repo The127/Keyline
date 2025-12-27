@@ -43,21 +43,19 @@ func (m *MockGroupRepository) EXPECT() *MockGroupRepositoryMockRecorder {
 }
 
 // Delete mocks base method.
-func (m *MockGroupRepository) Delete(ctx context.Context, id uuid.UUID) error {
+func (m *MockGroupRepository) Delete(id uuid.UUID) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", ctx, id)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Delete", id)
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockGroupRepositoryMockRecorder) Delete(ctx, id any) *gomock.Call {
+func (mr *MockGroupRepositoryMockRecorder) Delete(id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockGroupRepository)(nil).Delete), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockGroupRepository)(nil).Delete), id)
 }
 
 // First mocks base method.
-func (m *MockGroupRepository) First(ctx context.Context, filter repositories.GroupFilter) (*repositories.Group, error) {
+func (m *MockGroupRepository) First(ctx context.Context, filter *repositories.GroupFilter) (*repositories.Group, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "First", ctx, filter)
 	ret0, _ := ret[0].(*repositories.Group)
@@ -72,21 +70,19 @@ func (mr *MockGroupRepositoryMockRecorder) First(ctx, filter any) *gomock.Call {
 }
 
 // Insert mocks base method.
-func (m *MockGroupRepository) Insert(ctx context.Context, group *repositories.Group) error {
+func (m *MockGroupRepository) Insert(group *repositories.Group) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Insert", ctx, group)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Insert", group)
 }
 
 // Insert indicates an expected call of Insert.
-func (mr *MockGroupRepositoryMockRecorder) Insert(ctx, group any) *gomock.Call {
+func (mr *MockGroupRepositoryMockRecorder) Insert(group any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockGroupRepository)(nil).Insert), ctx, group)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockGroupRepository)(nil).Insert), group)
 }
 
 // List mocks base method.
-func (m *MockGroupRepository) List(ctx context.Context, filter repositories.GroupFilter) ([]*repositories.Group, int, error) {
+func (m *MockGroupRepository) List(ctx context.Context, filter *repositories.GroupFilter) ([]*repositories.Group, int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "List", ctx, filter)
 	ret0, _ := ret[0].([]*repositories.Group)
@@ -102,7 +98,7 @@ func (mr *MockGroupRepositoryMockRecorder) List(ctx, filter any) *gomock.Call {
 }
 
 // Single mocks base method.
-func (m *MockGroupRepository) Single(ctx context.Context, filter repositories.GroupFilter) (*repositories.Group, error) {
+func (m *MockGroupRepository) Single(ctx context.Context, filter *repositories.GroupFilter) (*repositories.Group, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Single", ctx, filter)
 	ret0, _ := ret[0].(*repositories.Group)
@@ -117,15 +113,13 @@ func (mr *MockGroupRepositoryMockRecorder) Single(ctx, filter any) *gomock.Call 
 }
 
 // Update mocks base method.
-func (m *MockGroupRepository) Update(ctx context.Context, group *repositories.Group) error {
+func (m *MockGroupRepository) Update(group *repositories.Group) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Update", ctx, group)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Update", group)
 }
 
 // Update indicates an expected call of Update.
-func (mr *MockGroupRepositoryMockRecorder) Update(ctx, group any) *gomock.Call {
+func (mr *MockGroupRepositoryMockRecorder) Update(group any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockGroupRepository)(nil).Update), ctx, group)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockGroupRepository)(nil).Update), group)
 }

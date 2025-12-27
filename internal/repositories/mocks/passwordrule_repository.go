@@ -43,21 +43,19 @@ func (m *MockPasswordRuleRepository) EXPECT() *MockPasswordRuleRepositoryMockRec
 }
 
 // Delete mocks base method.
-func (m *MockPasswordRuleRepository) Delete(ctx context.Context, id uuid.UUID) error {
+func (m *MockPasswordRuleRepository) Delete(id uuid.UUID) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", ctx, id)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Delete", id)
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockPasswordRuleRepositoryMockRecorder) Delete(ctx, id any) *gomock.Call {
+func (mr *MockPasswordRuleRepositoryMockRecorder) Delete(id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockPasswordRuleRepository)(nil).Delete), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockPasswordRuleRepository)(nil).Delete), id)
 }
 
 // First mocks base method.
-func (m *MockPasswordRuleRepository) First(ctx context.Context, filter repositories.PasswordRuleFilter) (*repositories.PasswordRule, error) {
+func (m *MockPasswordRuleRepository) First(ctx context.Context, filter *repositories.PasswordRuleFilter) (*repositories.PasswordRule, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "First", ctx, filter)
 	ret0, _ := ret[0].(*repositories.PasswordRule)
@@ -72,21 +70,19 @@ func (mr *MockPasswordRuleRepositoryMockRecorder) First(ctx, filter any) *gomock
 }
 
 // Insert mocks base method.
-func (m *MockPasswordRuleRepository) Insert(ctx context.Context, passwordRule *repositories.PasswordRule) error {
+func (m *MockPasswordRuleRepository) Insert(passwordRule *repositories.PasswordRule) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Insert", ctx, passwordRule)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Insert", passwordRule)
 }
 
 // Insert indicates an expected call of Insert.
-func (mr *MockPasswordRuleRepositoryMockRecorder) Insert(ctx, passwordRule any) *gomock.Call {
+func (mr *MockPasswordRuleRepositoryMockRecorder) Insert(passwordRule any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockPasswordRuleRepository)(nil).Insert), ctx, passwordRule)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockPasswordRuleRepository)(nil).Insert), passwordRule)
 }
 
 // List mocks base method.
-func (m *MockPasswordRuleRepository) List(ctx context.Context, filter repositories.PasswordRuleFilter) ([]*repositories.PasswordRule, error) {
+func (m *MockPasswordRuleRepository) List(ctx context.Context, filter *repositories.PasswordRuleFilter) ([]*repositories.PasswordRule, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "List", ctx, filter)
 	ret0, _ := ret[0].([]*repositories.PasswordRule)
@@ -101,7 +97,7 @@ func (mr *MockPasswordRuleRepositoryMockRecorder) List(ctx, filter any) *gomock.
 }
 
 // Single mocks base method.
-func (m *MockPasswordRuleRepository) Single(ctx context.Context, filter repositories.PasswordRuleFilter) (*repositories.PasswordRule, error) {
+func (m *MockPasswordRuleRepository) Single(ctx context.Context, filter *repositories.PasswordRuleFilter) (*repositories.PasswordRule, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Single", ctx, filter)
 	ret0, _ := ret[0].(*repositories.PasswordRule)
@@ -116,15 +112,13 @@ func (mr *MockPasswordRuleRepositoryMockRecorder) Single(ctx, filter any) *gomoc
 }
 
 // Update mocks base method.
-func (m *MockPasswordRuleRepository) Update(ctx context.Context, passwordRule *repositories.PasswordRule) error {
+func (m *MockPasswordRuleRepository) Update(passwordRule *repositories.PasswordRule) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Update", ctx, passwordRule)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Update", passwordRule)
 }
 
 // Update indicates an expected call of Update.
-func (mr *MockPasswordRuleRepositoryMockRecorder) Update(ctx, passwordRule any) *gomock.Call {
+func (mr *MockPasswordRuleRepositoryMockRecorder) Update(passwordRule any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockPasswordRuleRepository)(nil).Update), ctx, passwordRule)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockPasswordRuleRepository)(nil).Update), passwordRule)
 }
