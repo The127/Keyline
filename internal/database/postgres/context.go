@@ -8,6 +8,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+
+	"github.com/google/uuid"
 )
 
 type Context struct {
@@ -267,8 +269,30 @@ func (c *Context) applyChange(ctx context.Context, tx *sql.Tx, ch *change.Entry)
 	}
 }
 
+func (c *Context) applyApplicationChange(ctx context.Context, tx *sql.Tx, ch *change.Entry) error {
+	switch ch.GetChangeType() {
+	case change.Added:
+		return c.applications.ExecuteInsert(ctx, tx, ch.GetItem().(*repositories.Application))
+
+	case change.Updated:
+		return c.applications.ExecuteUpdate(ctx, tx, ch.GetItem().(*repositories.Application))
+
+	case change.Deleted:
+		return c.applications.ExecuteDelete(ctx, tx, ch.GetItem().(uuid.UUID))
+
+	default:
+		return fmt.Errorf("unsupported change type: %v", ch.GetChangeType())
+	}
+}
+
 func (c *Context) applyApplicationUserMetadataChange(ctx context.Context, tx *sql.Tx, ch *change.Entry) error {
 	switch ch.GetChangeType() {
+	case change.Added:
+		return c.applicationUserMetadata.ExecuteInsert(ctx, tx, ch.GetItem().(*repositories.ApplicationUserMetadata))
+
+	case change.Updated:
+		return c.applicationUserMetadata.ExecuteUpdate(ctx, tx, ch.GetItem().(*repositories.ApplicationUserMetadata))
+
 	default:
 		return fmt.Errorf("unsupported change type: %v", ch.GetChangeType())
 	}
@@ -276,6 +300,9 @@ func (c *Context) applyApplicationUserMetadataChange(ctx context.Context, tx *sq
 
 func (c *Context) applyAuditLogChange(ctx context.Context, tx *sql.Tx, ch *change.Entry) error {
 	switch ch.GetChangeType() {
+	case change.Added:
+		return c.auditLogs.ExecuteInsert(ctx, tx, ch.GetItem().(*repositories.AuditLog))
+
 	default:
 		return fmt.Errorf("unsupported change type: %v", ch.GetChangeType())
 	}
@@ -283,6 +310,15 @@ func (c *Context) applyAuditLogChange(ctx context.Context, tx *sql.Tx, ch *chang
 
 func (c *Context) applyCredentialChange(ctx context.Context, tx *sql.Tx, ch *change.Entry) error {
 	switch ch.GetChangeType() {
+	case change.Added:
+		return c.credentials.ExecuteInsert(ctx, tx, ch.GetItem().(*repositories.Credential))
+
+	case change.Updated:
+		return c.credentials.ExecuteUpdate(ctx, tx, ch.GetItem().(*repositories.Credential))
+
+	case change.Deleted:
+		return c.credentials.ExecuteDelete(ctx, tx, ch.GetItem().(uuid.UUID))
+
 	default:
 		return fmt.Errorf("unsupported change type: %v", ch.GetChangeType())
 	}
@@ -290,6 +326,9 @@ func (c *Context) applyCredentialChange(ctx context.Context, tx *sql.Tx, ch *cha
 
 func (c *Context) applyFileChange(ctx context.Context, tx *sql.Tx, ch *change.Entry) error {
 	switch ch.GetChangeType() {
+	case change.Added:
+		return c.files.ExecuteInsert(ctx, tx, ch.GetItem().(*repositories.File))
+
 	default:
 		return fmt.Errorf("unsupported change type: %v", ch.GetChangeType())
 	}
@@ -304,6 +343,15 @@ func (c *Context) applyGroupRoleChange(ctx context.Context, tx *sql.Tx, ch *chan
 
 func (c *Context) applyGroupChange(ctx context.Context, tx *sql.Tx, ch *change.Entry) error {
 	switch ch.GetChangeType() {
+	case change.Added:
+		return c.groups.ExecuteInsert(ctx, tx, ch.GetItem().(*repositories.Group))
+
+	case change.Updated:
+		return c.groups.ExecuteUpdate(ctx, tx, ch.GetItem().(*repositories.Group))
+
+	case change.Deleted:
+		return c.groups.ExecuteDelete(ctx, tx, ch.GetItem().(uuid.UUID))
+
 	default:
 		return fmt.Errorf("unsupported change type: %v", ch.GetChangeType())
 	}
@@ -311,6 +359,12 @@ func (c *Context) applyGroupChange(ctx context.Context, tx *sql.Tx, ch *change.E
 
 func (c *Context) applyOutboxMessageChange(ctx context.Context, tx *sql.Tx, ch *change.Entry) error {
 	switch ch.GetChangeType() {
+	case change.Added:
+		return c.outboxMessages.ExecuteInsert(ctx, tx, ch.GetItem().(*repositories.OutboxMessage))
+
+	case change.Deleted:
+		return c.outboxMessages.ExecuteDelete(ctx, tx, ch.GetItem().(uuid.UUID))
+
 	default:
 		return fmt.Errorf("unsupported change type: %v", ch.GetChangeType())
 	}
@@ -318,6 +372,15 @@ func (c *Context) applyOutboxMessageChange(ctx context.Context, tx *sql.Tx, ch *
 
 func (c *Context) applyPasswordRuleChange(ctx context.Context, tx *sql.Tx, ch *change.Entry) error {
 	switch ch.GetChangeType() {
+	case change.Added:
+		return c.passwordRules.ExecuteInsert(ctx, tx, ch.GetItem().(*repositories.PasswordRule))
+
+	case change.Updated:
+		return c.passwordRules.ExecuteUpdate(ctx, tx, ch.GetItem().(*repositories.PasswordRule))
+
+	case change.Deleted:
+		return c.passwordRules.ExecuteDelete(ctx, tx, ch.GetItem().(uuid.UUID))
+
 	default:
 		return fmt.Errorf("unsupported change type: %v", ch.GetChangeType())
 	}
@@ -325,6 +388,15 @@ func (c *Context) applyPasswordRuleChange(ctx context.Context, tx *sql.Tx, ch *c
 
 func (c *Context) applyProjectChange(ctx context.Context, tx *sql.Tx, ch *change.Entry) error {
 	switch ch.GetChangeType() {
+	case change.Added:
+		return c.projects.ExecuteInsert(ctx, tx, ch.GetItem().(*repositories.Project))
+
+	case change.Updated:
+		return c.projects.ExecuteUpdate(ctx, tx, ch.GetItem().(*repositories.Project))
+
+	case change.Deleted:
+		return c.projects.ExecuteDelete(ctx, tx, ch.GetItem().(uuid.UUID))
+
 	default:
 		return fmt.Errorf("unsupported change type: %v", ch.GetChangeType())
 	}
@@ -332,6 +404,15 @@ func (c *Context) applyProjectChange(ctx context.Context, tx *sql.Tx, ch *change
 
 func (c *Context) applyResourceServerChange(ctx context.Context, tx *sql.Tx, ch *change.Entry) error {
 	switch ch.GetChangeType() {
+	case change.Added:
+		return c.resourceServers.ExecuteInsert(ctx, tx, ch.GetItem().(*repositories.ResourceServer))
+
+	case change.Updated:
+		return c.resourceServers.ExecuteUpdate(ctx, tx, ch.GetItem().(*repositories.ResourceServer))
+
+	case change.Deleted:
+		return c.resourceServers.ExecuteDelete(ctx, tx, ch.GetItem().(uuid.UUID))
+
 	default:
 		return fmt.Errorf("unsupported change type: %v", ch.GetChangeType())
 	}
@@ -339,6 +420,15 @@ func (c *Context) applyResourceServerChange(ctx context.Context, tx *sql.Tx, ch 
 
 func (c *Context) applyResourceServerScopeChange(ctx context.Context, tx *sql.Tx, ch *change.Entry) error {
 	switch ch.GetChangeType() {
+	case change.Added:
+		return c.resourceServerScopes.ExecuteInsert(ctx, tx, ch.GetItem().(*repositories.ResourceServerScope))
+
+	case change.Updated:
+		return c.resourceServerScopes.ExecuteUpdate(ctx, tx, ch.GetItem().(*repositories.ResourceServerScope))
+
+	case change.Deleted:
+		return c.resourceServerScopes.ExecuteDelete(ctx, tx, ch.GetItem().(uuid.UUID))
+
 	default:
 		return fmt.Errorf("unsupported change type: %v", ch.GetChangeType())
 	}
@@ -346,6 +436,15 @@ func (c *Context) applyResourceServerScopeChange(ctx context.Context, tx *sql.Tx
 
 func (c *Context) applyRoleChange(ctx context.Context, tx *sql.Tx, ch *change.Entry) error {
 	switch ch.GetChangeType() {
+	case change.Added:
+		return c.roles.ExecuteInsert(ctx, tx, ch.GetItem().(*repositories.Role))
+
+	case change.Updated:
+		return c.roles.ExecuteUpdate(ctx, tx, ch.GetItem().(*repositories.Role))
+
+	case change.Deleted:
+		return c.roles.ExecuteDelete(ctx, tx, ch.GetItem().(uuid.UUID))
+
 	default:
 		return fmt.Errorf("unsupported change type: %v", ch.GetChangeType())
 	}
@@ -353,6 +452,12 @@ func (c *Context) applyRoleChange(ctx context.Context, tx *sql.Tx, ch *change.En
 
 func (c *Context) applySessionChange(ctx context.Context, tx *sql.Tx, ch *change.Entry) error {
 	switch ch.GetChangeType() {
+	case change.Added:
+		return c.sessions.ExecuteInsert(ctx, tx, ch.GetItem().(*repositories.Session))
+
+	case change.Deleted:
+		return c.sessions.ExecuteDelete(ctx, tx, ch.GetItem().(uuid.UUID))
+
 	default:
 		return fmt.Errorf("unsupported change type: %v", ch.GetChangeType())
 	}
@@ -360,13 +465,9 @@ func (c *Context) applySessionChange(ctx context.Context, tx *sql.Tx, ch *change
 
 func (c *Context) applyTemplateChange(ctx context.Context, tx *sql.Tx, ch *change.Entry) error {
 	switch ch.GetChangeType() {
-	default:
-		return fmt.Errorf("unsupported change type: %v", ch.GetChangeType())
-	}
-}
+	case change.Added:
+		return c.templates.ExecuteInsert(ctx, tx, ch.GetItem().(*repositories.Template))
 
-func (c *Context) applyApplicationChange(ctx context.Context, tx *sql.Tx, ch *change.Entry) error {
-	switch ch.GetChangeType() {
 	default:
 		return fmt.Errorf("unsupported change type: %v", ch.GetChangeType())
 	}
@@ -374,6 +475,9 @@ func (c *Context) applyApplicationChange(ctx context.Context, tx *sql.Tx, ch *ch
 
 func (c *Context) applyUserRoleAssignmentChange(ctx context.Context, tx *sql.Tx, ch *change.Entry) error {
 	switch ch.GetChangeType() {
+	case change.Added:
+		return c.userRoleAssignments.ExecuteInsert(ctx, tx, ch.GetItem().(*repositories.UserRoleAssignment))
+
 	default:
 		return fmt.Errorf("unsupported change type: %v", ch.GetChangeType())
 	}
@@ -381,6 +485,12 @@ func (c *Context) applyUserRoleAssignmentChange(ctx context.Context, tx *sql.Tx,
 
 func (c *Context) applyUserChange(ctx context.Context, tx *sql.Tx, ch *change.Entry) error {
 	switch ch.GetChangeType() {
+	case change.Added:
+		return c.users.ExecuteInsert(ctx, tx, ch.GetItem().(*repositories.User))
+
+	case change.Updated:
+		return c.users.ExecuteUpdate(ctx, tx, ch.GetItem().(*repositories.User))
+
 	default:
 		return fmt.Errorf("unsupported change type: %v", ch.GetChangeType())
 	}
@@ -388,6 +498,12 @@ func (c *Context) applyUserChange(ctx context.Context, tx *sql.Tx, ch *change.En
 
 func (c *Context) applyVirtualServerChange(ctx context.Context, tx *sql.Tx, ch *change.Entry) error {
 	switch ch.GetChangeType() {
+	case change.Added:
+		return c.virtualServers.ExecuteInsert(ctx, tx, ch.GetItem().(*repositories.VirtualServer))
+
+	case change.Updated:
+		return c.virtualServers.ExecuteUpdate(ctx, tx, ch.GetItem().(*repositories.VirtualServer))
+
 	default:
 		return fmt.Errorf("unsupported change type: %v", ch.GetChangeType())
 	}
