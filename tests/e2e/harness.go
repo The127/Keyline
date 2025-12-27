@@ -126,12 +126,12 @@ func newE2eTestHarness(tokenSourceGenerator func(ctx context.Context, url string
 	}
 	utils.PanicOnError(initDb.Close, "closing initial db connection in test")
 
+	c.Postgres.Database = dbName
 	db, err := setup.Database(dc, c)
 	if err != nil {
 		panic(fmt.Errorf("failed to create test database: %w", err))
 	}
 
-	c.Postgres.Database = dbName
 	err = db.Migrate(ctx)
 	if err != nil {
 		panic(fmt.Errorf("failed to create test database: %w", err))
