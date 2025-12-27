@@ -118,7 +118,7 @@ func (s *UpdatePasswordRuleCommandSuite) TestHappyPath() {
 	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
 	virtualServer.Mock(now)
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories.VirtualServerFilter) bool {
+	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x *repositories.VirtualServerFilter) bool {
 		return x.GetName() == virtualServer.Name()
 	})).Return(virtualServer, nil)
 
@@ -126,7 +126,7 @@ func (s *UpdatePasswordRuleCommandSuite) TestHappyPath() {
 	s.Require().NoError(err)
 	passwordRule.Mock(now)
 	passwordRuleRepository := mocks.NewMockPasswordRuleRepository(ctrl)
-	passwordRuleRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories.PasswordRuleFilter) bool {
+	passwordRuleRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x *repositories.PasswordRuleFilter) bool {
 		return x.GetVirtualServerId() == virtualServer.Id() && x.GetType() == repositories.PasswordRuleTypeSpecial
 	})).Return(passwordRule, nil)
 	passwordRuleRepository.EXPECT().Update(gomock.Any())
