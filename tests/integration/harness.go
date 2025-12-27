@@ -25,11 +25,12 @@ import (
 )
 
 type harness struct {
-	m       mediatr.Mediator
-	scope   *ioc.DependencyProvider
-	ctx     context.Context
-	setTime clock.TimeSetterFn
-	dbName  string
+	m         mediatr.Mediator
+	scope     *ioc.DependencyProvider
+	ctx       context.Context
+	setTime   clock.TimeSetterFn
+	dbName    string
+	dbContext db2.Context
 }
 
 func (h *harness) Close() {
@@ -154,10 +155,11 @@ func newIntegrationTestHarness() *harness {
 	}
 
 	return &harness{
-		m:       m,
-		scope:   scope,
-		ctx:     ctx,
-		setTime: timeSetter,
-		dbName:  dbName,
+		m:         m,
+		scope:     scope,
+		ctx:       ctx,
+		setTime:   timeSetter,
+		dbName:    dbName,
+		dbContext: dbContext,
 	}
 }
