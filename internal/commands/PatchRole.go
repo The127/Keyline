@@ -45,7 +45,7 @@ func HandlePatchRole(ctx context.Context, command PatchRole) (*PatchRoleResponse
 	dbContext := ioc.GetDependency[database.Context](scope)
 
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(command.VirtualServerName)
-	virtualServer, err := dbContext.VirtualServers().Single(ctx, virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().FirstOrErr(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
@@ -53,7 +53,7 @@ func HandlePatchRole(ctx context.Context, command PatchRole) (*PatchRoleResponse
 	projectFilter := repositories.NewProjectFilter().
 		VirtualServerId(virtualServer.Id()).
 		Slug(command.ProjectSlug)
-	project, err := dbContext.Projects().Single(ctx, projectFilter)
+	project, err := dbContext.Projects().FirstOrErr(ctx, projectFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting project: %w", err)
 	}
@@ -62,7 +62,7 @@ func HandlePatchRole(ctx context.Context, command PatchRole) (*PatchRoleResponse
 		VirtualServerId(virtualServer.Id()).
 		ProjectId(project.Id()).
 		Id(command.RoleId)
-	role, err := dbContext.Roles().Single(ctx, roleFilter)
+	role, err := dbContext.Roles().FirstOrErr(ctx, roleFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting role: %w", err)
 	}

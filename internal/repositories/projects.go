@@ -205,9 +205,9 @@ func (f *ProjectFilter) GetOrderInfo() OrderInfo {
 
 //go:generate mockgen -destination=./mocks/project_repository.go -package=mocks Keyline/internal/repositories ProjectRepository
 type ProjectRepository interface {
-	List(ctx context.Context, filter *ProjectFilter) ([]*Project, int, error)
-	Single(ctx context.Context, filter *ProjectFilter) (*Project, error)
+	FirstOrErr(ctx context.Context, filter *ProjectFilter) (*Project, error)
 	FirstOrNil(ctx context.Context, filter *ProjectFilter) (*Project, error)
+	List(ctx context.Context, filter *ProjectFilter) ([]*Project, int, error)
 	Insert(project *Project)
 	Update(project *Project)
 	Delete(id uuid.UUID)

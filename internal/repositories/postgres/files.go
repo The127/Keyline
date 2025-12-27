@@ -87,7 +87,7 @@ func (r *FileRepository) selectQuery(filter *repositories.FileFilter) *sqlbuilde
 	return s
 }
 
-func (r *FileRepository) Single(ctx context.Context, filter *repositories.FileFilter) (*repositories.File, error) {
+func (r *FileRepository) FirstOrErr(ctx context.Context, filter *repositories.FileFilter) (*repositories.File, error) {
 	file, err := r.FirstOrNil(ctx, filter)
 	if err != nil {
 		return nil, err

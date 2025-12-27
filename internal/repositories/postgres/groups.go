@@ -111,7 +111,7 @@ func (r *GroupRepository) selectQuery(filter *repositories.GroupFilter) *sqlbuil
 	return s
 }
 
-func (r *GroupRepository) Single(ctx context.Context, filter *repositories.GroupFilter) (*repositories.Group, error) {
+func (r *GroupRepository) FirstOrErr(ctx context.Context, filter *repositories.GroupFilter) (*repositories.Group, error) {
 	result, err := r.FirstOrNil(ctx, filter)
 	if err != nil {
 		return nil, err

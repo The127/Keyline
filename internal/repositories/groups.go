@@ -185,7 +185,7 @@ func (f *GroupFilter) GetId() uuid.UUID {
 
 //go:generate mockgen -destination=./mocks/group_repository.go -package=mocks Keyline/internal/repositories GroupRepository
 type GroupRepository interface {
-	Single(ctx context.Context, filter *GroupFilter) (*Group, error)
+	FirstOrErr(ctx context.Context, filter *GroupFilter) (*Group, error)
 	FirstOrNil(ctx context.Context, filter *GroupFilter) (*Group, error)
 	List(ctx context.Context, filter *GroupFilter) ([]*Group, int, error)
 	Insert(group *Group)

@@ -46,7 +46,7 @@ func HandlePatchUserAppMetadata(ctx context.Context, command PatchUserAppMetadat
 	dbContext := ioc.GetDependency[database.Context](scope)
 
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(command.VirtualServerName)
-	virtualServer, err := dbContext.VirtualServers().Single(ctx, virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().FirstOrErr(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
@@ -58,7 +58,7 @@ func HandlePatchUserAppMetadata(ctx context.Context, command PatchUserAppMetadat
 	}
 
 	applicationFilter := repositories.NewApplicationFilter().Id(command.ApplicationId).VirtualServerId(virtualServer.Id())
-	application, err := dbContext.Applications().Single(ctx, applicationFilter)
+	application, err := dbContext.Applications().FirstOrErr(ctx, applicationFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting application: %w", err)
 	}

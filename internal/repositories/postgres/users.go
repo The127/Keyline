@@ -171,7 +171,7 @@ func (r *UserRepository) List(ctx context.Context, filter *repositories.UserFilt
 	return users, totalCount, nil
 }
 
-func (r *UserRepository) Single(ctx context.Context, filter *repositories.UserFilter) (*repositories.User, error) {
+func (r *UserRepository) FirstOrErr(ctx context.Context, filter *repositories.UserFilter) (*repositories.User, error) {
 	result, err := r.FirstOrNil(ctx, filter)
 	if err != nil {
 		return nil, err

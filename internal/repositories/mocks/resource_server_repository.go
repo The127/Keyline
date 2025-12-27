@@ -97,10 +97,10 @@ func (mr *MockResourceServerRepositoryMockRecorder) List(ctx, filter any) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockResourceServerRepository)(nil).List), ctx, filter)
 }
 
-// Single mocks base method.
-func (m *MockResourceServerRepository) Single(ctx context.Context, filter *repositories.ResourceServerFilter) (*repositories.ResourceServer, error) {
+// FirstOrErr mocks base method.
+func (m *MockResourceServerRepository) FirstOrErr(ctx context.Context, filter *repositories.ResourceServerFilter) (*repositories.ResourceServer, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Single", ctx, filter)
+	ret := m.ctrl.Call(m, "FirstOrErr", ctx, filter)
 	ret0, _ := ret[0].(*repositories.ResourceServer)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
@@ -109,7 +109,7 @@ func (m *MockResourceServerRepository) Single(ctx context.Context, filter *repos
 // Single indicates an expected call of Single.
 func (mr *MockResourceServerRepositoryMockRecorder) Single(ctx, filter any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Single", reflect.TypeOf((*MockResourceServerRepository)(nil).Single), ctx, filter)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FirstOrErr", reflect.TypeOf((*MockResourceServerRepository)(nil).FirstOrErr), ctx, filter)
 }
 
 // Update mocks base method.

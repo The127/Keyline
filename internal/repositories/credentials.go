@@ -374,7 +374,7 @@ func (f *CredentialFilter) GetDetailsId() string {
 
 //go:generate mockgen -destination=./mocks/credential_repository.go -package=mocks Keyline/internal/repositories CredentialRepository
 type CredentialRepository interface {
-	Single(ctx context.Context, filter *CredentialFilter) (*Credential, error)
+	FirstOrErr(ctx context.Context, filter *CredentialFilter) (*Credential, error)
 	FirstOrNil(ctx context.Context, filter *CredentialFilter) (*Credential, error)
 	List(ctx context.Context, filter *CredentialFilter) ([]*Credential, error)
 	Insert(credential *Credential)

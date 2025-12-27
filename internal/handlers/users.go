@@ -982,7 +982,7 @@ func PasskeyCreateChallenge(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userFilter := repositories.NewUserFilter().Id(userId)
-	user, err := dbContext.Users().Single(ctx, userFilter)
+	user, err := dbContext.Users().FirstOrErr(ctx, userFilter)
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return

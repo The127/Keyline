@@ -52,7 +52,7 @@ func HandleGetVirtualServerQuery(ctx context.Context, command GetVirtualServerQu
 	dbContext := ioc.GetDependency[database.Context](scope)
 
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(command.VirtualServerName)
-	virtualServer, err := dbContext.VirtualServers().Single(ctx, virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().FirstOrErr(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, err
 	}

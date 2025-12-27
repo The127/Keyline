@@ -165,7 +165,7 @@ func (r *ResourceServerRepository) FirstOrNil(ctx context.Context, filter *repos
 	return resourceServer.Map(), nil
 }
 
-func (r *ResourceServerRepository) Single(ctx context.Context, filter *repositories.ResourceServerFilter) (*repositories.ResourceServer, error) {
+func (r *ResourceServerRepository) FirstOrErr(ctx context.Context, filter *repositories.ResourceServerFilter) (*repositories.ResourceServer, error) {
 	resourceServer, err := r.FirstOrNil(ctx, filter)
 	if err != nil {
 		return nil, err

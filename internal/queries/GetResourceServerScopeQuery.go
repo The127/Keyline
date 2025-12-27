@@ -52,13 +52,13 @@ func HandleGetResourceServerScope(ctx context.Context, query GetResourceServerSc
 	dbContext := ioc.GetDependency[database.Context](scope)
 
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(query.VirtualServerName)
-	virtualServer, err := dbContext.VirtualServers().Single(ctx, virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().FirstOrErr(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
 	projectFilter := repositories.NewProjectFilter().VirtualServerId(virtualServer.Id()).Slug(query.ProjectSlug)
-	project, err := dbContext.Projects().Single(ctx, projectFilter)
+	project, err := dbContext.Projects().FirstOrErr(ctx, projectFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting project: %w", err)
 	}
@@ -68,7 +68,7 @@ func HandleGetResourceServerScope(ctx context.Context, query GetResourceServerSc
 		ProjectId(project.Id()).
 		ResourceServerId(query.ResourceServerId).
 		Id(query.ScopeId)
-	resourceServerScope, err := dbContext.ResourceServerScopes().Single(ctx, resourceServerScopeFilter)
+	resourceServerScope, err := dbContext.ResourceServerScopes().FirstOrErr(ctx, resourceServerScopeFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting resource server scope: %w", err)
 	}

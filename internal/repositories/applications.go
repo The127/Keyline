@@ -354,7 +354,7 @@ func (f *ApplicationFilter) GetIds() []uuid.UUID {
 
 //go:generate mockgen -destination=./mocks/application_repository.go -package=mocks Keyline/internal/repositories ApplicationRepository
 type ApplicationRepository interface {
-	Single(ctx context.Context, filter *ApplicationFilter) (*Application, error)
+	FirstOrErr(ctx context.Context, filter *ApplicationFilter) (*Application, error)
 	FirstOrNil(ctx context.Context, filter *ApplicationFilter) (*Application, error)
 	List(ctx context.Context, filter *ApplicationFilter) ([]*Application, int, error)
 	Insert(application *Application)

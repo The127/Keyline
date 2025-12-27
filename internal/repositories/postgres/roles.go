@@ -147,7 +147,7 @@ func (r *RoleRepository) List(ctx context.Context, filter *repositories.RoleFilt
 	return roles, totalCount, nil
 }
 
-func (r *RoleRepository) Single(ctx context.Context, filter *repositories.RoleFilter) (*repositories.Role, error) {
+func (r *RoleRepository) FirstOrErr(ctx context.Context, filter *repositories.RoleFilter) (*repositories.Role, error) {
 	result, err := r.FirstOrNil(ctx, filter)
 	if err != nil {
 		return nil, err

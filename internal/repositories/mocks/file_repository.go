@@ -68,10 +68,10 @@ func (mr *MockFileRepositoryMockRecorder) Insert(file any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockFileRepository)(nil).Insert), file)
 }
 
-// Single mocks base method.
-func (m *MockFileRepository) Single(ctx context.Context, filter *repositories.FileFilter) (*repositories.File, error) {
+// FirstOrErr mocks base method.
+func (m *MockFileRepository) FirstOrErr(ctx context.Context, filter *repositories.FileFilter) (*repositories.File, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Single", ctx, filter)
+	ret := m.ctrl.Call(m, "FirstOrErr", ctx, filter)
 	ret0, _ := ret[0].(*repositories.File)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
@@ -80,5 +80,5 @@ func (m *MockFileRepository) Single(ctx context.Context, filter *repositories.Fi
 // Single indicates an expected call of Single.
 func (mr *MockFileRepositoryMockRecorder) Single(ctx, filter any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Single", reflect.TypeOf((*MockFileRepository)(nil).Single), ctx, filter)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FirstOrErr", reflect.TypeOf((*MockFileRepository)(nil).FirstOrErr), ctx, filter)
 }

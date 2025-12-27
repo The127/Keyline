@@ -108,7 +108,7 @@ func (r *TemplateRepository) selectQuery(filter *repositories.TemplateFilter) *s
 	return s
 }
 
-func (r *TemplateRepository) Single(ctx context.Context, filter *repositories.TemplateFilter) (*repositories.Template, error) {
+func (r *TemplateRepository) FirstOrErr(ctx context.Context, filter *repositories.TemplateFilter) (*repositories.Template, error) {
 	template, err := r.FirstOrNil(ctx, filter)
 	if err != nil {
 		return nil, err

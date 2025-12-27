@@ -132,9 +132,9 @@ func (f *PasswordRuleFilter) GetType() PasswordRuleType {
 
 //go:generate mockgen -destination=./mocks/passwordrule_repository.go -package=mocks Keyline/internal/repositories PasswordRuleRepository
 type PasswordRuleRepository interface {
-	List(ctx context.Context, filter *PasswordRuleFilter) ([]*PasswordRule, error)
-	Single(ctx context.Context, filter *PasswordRuleFilter) (*PasswordRule, error)
+	FirstOrErr(ctx context.Context, filter *PasswordRuleFilter) (*PasswordRule, error)
 	FirstOrNil(ctx context.Context, filter *PasswordRuleFilter) (*PasswordRule, error)
+	List(ctx context.Context, filter *PasswordRuleFilter) ([]*PasswordRule, error)
 	Insert(passwordRule *PasswordRule)
 	Update(passwordRule *PasswordRule)
 	Delete(id uuid.UUID)

@@ -275,9 +275,9 @@ func (f *UserFilter) GetSearch() SearchFilter {
 
 //go:generate mockgen -destination=./mocks/user_repository.go -package=mocks Keyline/internal/repositories UserRepository
 type UserRepository interface {
-	List(ctx context.Context, filter *UserFilter) ([]*User, int, error)
-	Single(ctx context.Context, filter *UserFilter) (*User, error)
+	FirstOrErr(ctx context.Context, filter *UserFilter) (*User, error)
 	FirstOrNil(ctx context.Context, filter *UserFilter) (*User, error)
+	List(ctx context.Context, filter *UserFilter) ([]*User, int, error)
 	Insert(user *User)
 	Update(user *User)
 }

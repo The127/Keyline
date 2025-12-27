@@ -192,7 +192,7 @@ func evaluatePolicy(ctx context.Context, request Policy) (PolicyResult, error) {
 		dbContext := ioc.GetDependency[database.Context](scope)
 
 		virtualServerFilter := repositories.NewVirtualServerFilter().Name(virtualServerName)
-		virtualServer, err := dbContext.VirtualServers().Single(ctx, virtualServerFilter)
+		virtualServer, err := dbContext.VirtualServers().FirstOrErr(ctx, virtualServerFilter)
 		if err != nil {
 			return PolicyResult{}, fmt.Errorf("getting virtual server: %w", err)
 		}

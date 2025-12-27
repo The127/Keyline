@@ -25,7 +25,7 @@ func HandleUpdatePasswordRule(ctx context.Context, command UpdatePasswordRule) (
 	dbContext := ioc.GetDependency[database.Context](scope)
 
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(command.VirtualServerName)
-	virtualServer, err := dbContext.VirtualServers().Single(ctx, virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().FirstOrErr(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
@@ -33,7 +33,7 @@ func HandleUpdatePasswordRule(ctx context.Context, command UpdatePasswordRule) (
 	passwordRuleFilter := repositories.NewPasswordRuleFilter().
 		Type(command.Type).
 		VirtualServerId(virtualServer.Id())
-	passwordRule, err := dbContext.PasswordRules().Single(ctx, passwordRuleFilter)
+	passwordRule, err := dbContext.PasswordRules().FirstOrErr(ctx, passwordRuleFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting password rule: %w", err)
 	}

@@ -51,7 +51,7 @@ func HandleGetProject(ctx context.Context, query GetProject) (*GetProjectRespons
 	dbContext := ioc.GetDependency[database.Context](scope)
 
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(query.VirtualServerName)
-	virtualServer, err := dbContext.VirtualServers().Single(ctx, virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().FirstOrErr(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
@@ -59,7 +59,7 @@ func HandleGetProject(ctx context.Context, query GetProject) (*GetProjectRespons
 	projectFilter := repositories.NewProjectFilter().
 		VirtualServerId(virtualServer.Id()).
 		Slug(query.ProjectSlug)
-	project, err := dbContext.Projects().Single(ctx, projectFilter)
+	project, err := dbContext.Projects().FirstOrErr(ctx, projectFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting project: %w", err)
 	}

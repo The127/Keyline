@@ -107,7 +107,7 @@ func (r *SessionRepository) selectQuery(filter *repositories.SessionFilter) *sql
 	return s
 }
 
-func (r *SessionRepository) Single(ctx context.Context, filter *repositories.SessionFilter) (*repositories.Session, error) {
+func (r *SessionRepository) FirstOrErr(ctx context.Context, filter *repositories.SessionFilter) (*repositories.Session, error) {
 	result, err := r.FirstOrNil(ctx, filter)
 	if err != nil {
 		return nil, err

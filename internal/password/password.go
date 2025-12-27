@@ -33,7 +33,7 @@ func (v *validator) Validate(ctx context.Context, password string) error {
 	}
 
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(vsName)
-	virtualServer, err := dbContext.VirtualServers().Single(ctx, virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().FirstOrErr(ctx, virtualServerFilter)
 	if err != nil {
 		return fmt.Errorf("failed to get virtual server: %w", err)
 	}

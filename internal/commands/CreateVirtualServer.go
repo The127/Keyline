@@ -288,7 +288,7 @@ func assignRoles(ctx context.Context, m mediatr.Mediator, virtualServer *reposit
 		roleName := split[1]
 
 		projectFilter := repositories.NewProjectFilter().VirtualServerId(virtualServer.Id()).Slug(projectSlug)
-		project, err := dbContext.Projects().Single(ctx, projectFilter)
+		project, err := dbContext.Projects().FirstOrErr(ctx, projectFilter)
 		if err != nil {
 			return fmt.Errorf("getting project: %w", err)
 		}
@@ -297,7 +297,7 @@ func assignRoles(ctx context.Context, m mediatr.Mediator, virtualServer *reposit
 			VirtualServerId(virtualServer.Id()).
 			ProjectId(project.Id()).
 			Name(roleName)
-		role, err := dbContext.Roles().Single(ctx, roleFilter)
+		role, err := dbContext.Roles().FirstOrErr(ctx, roleFilter)
 		if err != nil {
 			return fmt.Errorf("getting role: %w", err)
 		}

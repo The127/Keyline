@@ -36,7 +36,7 @@ func (s *sessionService) NewSession(ctx context.Context, virtualServerName strin
 	dbContext := ioc.GetDependency[database.Context](scope)
 
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(virtualServerName)
-	virtualServer, err := dbContext.VirtualServers().Single(ctx, virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().FirstOrErr(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
@@ -107,7 +107,7 @@ func (s *sessionService) DeleteSession(ctx context.Context, virtualServerName st
 	dbContext := ioc.GetDependency[database.Context](scope)
 
 	vsFilter := repositories.NewVirtualServerFilter().Name(virtualServerName)
-	virtualServer, err := dbContext.VirtualServers().Single(ctx, vsFilter)
+	virtualServer, err := dbContext.VirtualServers().FirstOrErr(ctx, vsFilter)
 	if err != nil {
 		return fmt.Errorf("getting virtual server: %w", err)
 	}
@@ -144,7 +144,7 @@ func (s *sessionService) loadSessionFromDatabase(ctx context.Context, virtualSer
 
 	vsFilter := repositories.NewVirtualServerFilter().
 		Name(virtualServerName)
-	virtualServer, err := dbContext.VirtualServers().Single(ctx, vsFilter)
+	virtualServer, err := dbContext.VirtualServers().FirstOrErr(ctx, vsFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}

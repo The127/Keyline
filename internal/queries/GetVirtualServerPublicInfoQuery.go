@@ -28,7 +28,7 @@ func HandleGetVirtualServerPublicInfo(ctx context.Context, query GetVirtualServe
 
 	virtualServerFilter := repositories.NewVirtualServerFilter().
 		Name(query.VirtualServerName)
-	virtualServer, err := dbContext.VirtualServers().Single(ctx, virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().FirstOrErr(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("searching virtual servers: %w", err)
 	}

@@ -112,7 +112,7 @@ func (r *VirtualServerRepository) selectQuery(filter *repositories.VirtualServer
 	return s
 }
 
-func (r *VirtualServerRepository) Single(ctx context.Context, filter *repositories.VirtualServerFilter) (*repositories.VirtualServer, error) {
+func (r *VirtualServerRepository) FirstOrErr(ctx context.Context, filter *repositories.VirtualServerFilter) (*repositories.VirtualServer, error) {
 	result, err := r.FirstOrNil(ctx, filter)
 	if err != nil {
 		return nil, err

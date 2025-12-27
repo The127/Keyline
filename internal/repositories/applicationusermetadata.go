@@ -131,7 +131,7 @@ func (f *ApplicationUserMetadataFilter) GetUserId() uuid.UUID {
 
 //go:generate mockgen -destination=./mocks/application_user_metadata_repository.go -package=mocks Keyline/internal/repositories ApplicationUserMetadataRepository
 type ApplicationUserMetadataRepository interface {
-	Single(ctx context.Context, filter *ApplicationUserMetadataFilter) (*ApplicationUserMetadata, error)
+	FirstOrErr(ctx context.Context, filter *ApplicationUserMetadataFilter) (*ApplicationUserMetadata, error)
 	FirstOrNil(ctx context.Context, filter *ApplicationUserMetadataFilter) (*ApplicationUserMetadata, error)
 	List(ctx context.Context, filter *ApplicationUserMetadataFilter) ([]*ApplicationUserMetadata, int, error)
 	Insert(applicationUserMetadata *ApplicationUserMetadata)

@@ -135,7 +135,7 @@ func (r *PasswordRuleRepository) FirstOrNil(ctx context.Context, filter *reposit
 	return passwordRule.Map(), nil
 }
 
-func (r *PasswordRuleRepository) Single(ctx context.Context, filter *repositories.PasswordRuleFilter) (*repositories.PasswordRule, error) {
+func (r *PasswordRuleRepository) FirstOrErr(ctx context.Context, filter *repositories.PasswordRuleFilter) (*repositories.PasswordRule, error) {
 	rule, err := r.FirstOrNil(ctx, filter)
 	if err != nil {
 		return nil, err

@@ -56,7 +56,7 @@ func HandleGetApplication(ctx context.Context, query GetApplication) (*GetApplic
 
 	virtualServerFilter := repositories.NewVirtualServerFilter().
 		Name(query.VirtualServerName)
-	virtualServer, err := dbContext.VirtualServers().Single(ctx, virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().FirstOrErr(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("searching virtual servers: %w", err)
 	}
@@ -64,7 +64,7 @@ func HandleGetApplication(ctx context.Context, query GetApplication) (*GetApplic
 	projectFilter := repositories.NewProjectFilter().
 		VirtualServerId(virtualServer.Id()).
 		Slug(query.ProjectSlug)
-	project, err := dbContext.Projects().Single(ctx, projectFilter)
+	project, err := dbContext.Projects().FirstOrErr(ctx, projectFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting project: %w", err)
 	}

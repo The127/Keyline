@@ -171,7 +171,7 @@ func (r *ProjectRepository) FirstOrNil(ctx context.Context, filter *repositories
 	return project.Map(), nil
 }
 
-func (r *ProjectRepository) Single(ctx context.Context, filter *repositories.ProjectFilter) (*repositories.Project, error) {
+func (r *ProjectRepository) FirstOrErr(ctx context.Context, filter *repositories.ProjectFilter) (*repositories.Project, error) {
 	project, err := r.FirstOrNil(ctx, filter)
 	if err != nil {
 		return nil, err

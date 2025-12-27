@@ -87,7 +87,7 @@ func (mr *MockApplicationUserMetadataRepositoryMockRecorder) List(ctx, filter an
 // Single mocks base method.
 func (m *MockApplicationUserMetadataRepository) Single(ctx context.Context, filter *repositories.ApplicationUserMetadataFilter) (*repositories.ApplicationUserMetadata, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Single", ctx, filter)
+	ret := m.ctrl.Call(m, "FirstOrErr", ctx, filter)
 	ret0, _ := ret[0].(*repositories.ApplicationUserMetadata)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
@@ -96,7 +96,7 @@ func (m *MockApplicationUserMetadataRepository) Single(ctx context.Context, filt
 // Single indicates an expected call of Single.
 func (mr *MockApplicationUserMetadataRepositoryMockRecorder) Single(ctx, filter any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Single", reflect.TypeOf((*MockApplicationUserMetadataRepository)(nil).Single), ctx, filter)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FirstOrErr", reflect.TypeOf((*MockApplicationUserMetadataRepository)(nil).Single), ctx, filter)
 }
 
 // Update mocks base method.

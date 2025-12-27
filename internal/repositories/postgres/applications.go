@@ -162,7 +162,7 @@ func (r *ApplicationRepository) selectQuery(filter *repositories.ApplicationFilt
 	return s
 }
 
-func (r *ApplicationRepository) Single(ctx context.Context, filter *repositories.ApplicationFilter) (*repositories.Application, error) {
+func (r *ApplicationRepository) FirstOrErr(ctx context.Context, filter *repositories.ApplicationFilter) (*repositories.Application, error) {
 	application, err := r.FirstOrNil(ctx, filter)
 	if err != nil {
 		return nil, err

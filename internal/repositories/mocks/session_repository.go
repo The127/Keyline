@@ -81,10 +81,10 @@ func (mr *MockSessionRepositoryMockRecorder) Insert(session any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockSessionRepository)(nil).Insert), session)
 }
 
-// Single mocks base method.
-func (m *MockSessionRepository) Single(ctx context.Context, filter *repositories.SessionFilter) (*repositories.Session, error) {
+// FirstOrErr mocks base method.
+func (m *MockSessionRepository) FirstOrErr(ctx context.Context, filter *repositories.SessionFilter) (*repositories.Session, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Single", ctx, filter)
+	ret := m.ctrl.Call(m, "FirstOrErr", ctx, filter)
 	ret0, _ := ret[0].(*repositories.Session)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
@@ -93,5 +93,5 @@ func (m *MockSessionRepository) Single(ctx context.Context, filter *repositories
 // Single indicates an expected call of Single.
 func (mr *MockSessionRepositoryMockRecorder) Single(ctx, filter any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Single", reflect.TypeOf((*MockSessionRepository)(nil).Single), ctx, filter)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FirstOrErr", reflect.TypeOf((*MockSessionRepository)(nil).FirstOrErr), ctx, filter)
 }

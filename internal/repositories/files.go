@@ -74,7 +74,7 @@ func (f *FileFilter) GetId() uuid.UUID {
 
 //go:generate mockgen -destination=./mocks/file_repository.go -package=mocks Keyline/internal/repositories FileRepository
 type FileRepository interface {
-	Single(ctx context.Context, filter *FileFilter) (*File, error)
+	FirstOrErr(ctx context.Context, filter *FileFilter) (*File, error)
 	FirstOrNil(ctx context.Context, filter *FileFilter) (*File, error)
 	Insert(file *File)
 }

@@ -48,7 +48,7 @@ func HandleGetTemplate(ctx context.Context, query GetTemplate) (*GetTemplateResu
 	dbContext := ioc.GetDependency[database.Context](scope)
 
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(query.VirtualServerName)
-	virtualServer, err := dbContext.VirtualServers().Single(ctx, virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().FirstOrErr(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
@@ -56,14 +56,14 @@ func HandleGetTemplate(ctx context.Context, query GetTemplate) (*GetTemplateResu
 	templateFilter := repositories.NewTemplateFilter().
 		VirtualServerId(virtualServer.Id()).
 		TemplateType(query.Type)
-	template, err := dbContext.Templates().Single(ctx, templateFilter)
+	template, err := dbContext.Templates().FirstOrErr(ctx, templateFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting template: %w", err)
 	}
 
 	fileFilter := repositories.NewFileFilter().
 		Id(template.FileId())
-	file, err := dbContext.Files().Single(ctx, fileFilter)
+	file, err := dbContext.Files().FirstOrErr(ctx, fileFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting file: %w", err)
 	}

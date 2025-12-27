@@ -84,10 +84,10 @@ func (mr *MockUserRepositoryMockRecorder) List(ctx, filter any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockUserRepository)(nil).List), ctx, filter)
 }
 
-// Single mocks base method.
-func (m *MockUserRepository) Single(ctx context.Context, filter *repositories.UserFilter) (*repositories.User, error) {
+// FirstOrErr mocks base method.
+func (m *MockUserRepository) FirstOrErr(ctx context.Context, filter *repositories.UserFilter) (*repositories.User, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Single", ctx, filter)
+	ret := m.ctrl.Call(m, "FirstOrErr", ctx, filter)
 	ret0, _ := ret[0].(*repositories.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
@@ -96,7 +96,7 @@ func (m *MockUserRepository) Single(ctx context.Context, filter *repositories.Us
 // Single indicates an expected call of Single.
 func (mr *MockUserRepositoryMockRecorder) Single(ctx, filter any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Single", reflect.TypeOf((*MockUserRepository)(nil).Single), ctx, filter)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FirstOrErr", reflect.TypeOf((*MockUserRepository)(nil).FirstOrErr), ctx, filter)
 }
 
 // Update mocks base method.
