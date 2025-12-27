@@ -89,7 +89,7 @@ func (s *RemoveServiceUserPublicKeyCommandSuite) TestHappyPath() {
 			x.GetUserId() == serviceUser.Id() &&
 			x.GetType() == repositories.CredentialTypeServiceUserKey
 	})).Return(credential, nil)
-	credentialRepository.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(nil)
+	credentialRepository.EXPECT().Delete(gomock.Any())
 
 	ctx := s.createContext(virtualServerRepository, userRepository, credentialRepository)
 	cmd := RemoveServiceUserPublicKey{
@@ -104,37 +104,6 @@ func (s *RemoveServiceUserPublicKeyCommandSuite) TestHappyPath() {
 	// assert
 	s.Require().NoError(err)
 	s.NotNil(resp)
-}
-
-func (s *RemoveServiceUserPublicKeyCommandSuite) TestDeleteError() {
-	// arrange
-	ctrl := gomock.NewController(s.T())
-	defer ctrl.Finish()
-
-	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
-	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
-
-	serviceUser := repositories.NewServiceUser("service-user", virtualServer.Id())
-	userRepository := mocks.NewMockUserRepository(ctrl)
-	userRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(serviceUser, nil)
-
-	credential := repositories.NewCredential(serviceUser.Id(), &repositories.CredentialServiceUserKey{
-		PublicKey: "publicKey",
-	})
-	credentialRepository := mocks.NewMockCredentialRepository(ctrl)
-	credentialRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(credential, nil)
-	credentialRepository.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(errors.New("error"))
-
-	ctx := s.createContext(virtualServerRepository, userRepository, credentialRepository)
-	cmd := RemoveServiceUserPublicKey{}
-
-	// act
-	resp, err := HandleRemoveServiceUserPublicKey(ctx, cmd)
-
-	// assert
-	s.Require().Error(err)
-	s.Nil(resp)
 }
 
 func (s *RemoveServiceUserPublicKeyCommandSuite) TestCredentialError() {

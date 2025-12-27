@@ -134,7 +134,7 @@ func (s *CreateApplicationCommandSuite) TestPublicApplicationHappyPath() {
 	})).Return(project, nil)
 
 	applicationRepository := mocks.NewMockApplicationRepository(ctrl)
-	applicationRepository.EXPECT().Insert(gomock.Any(), gomock.Cond(func(x *repositories.Application) bool {
+	applicationRepository.EXPECT().Insert(gomock.Cond(func(x *repositories.Application) bool {
 		return x.Name() == "applicationName" &&
 			x.Type() == repositories.ApplicationTypePublic &&
 			x.HashedSecret() == "" &&
@@ -186,7 +186,7 @@ func (s *CreateApplicationCommandSuite) TestConfidentialApplicationHappyPath() {
 	})).Return(project, nil)
 
 	applicationRepository := mocks.NewMockApplicationRepository(ctrl)
-	applicationRepository.EXPECT().Insert(gomock.Any(), gomock.Cond(func(x *repositories.Application) bool {
+	applicationRepository.EXPECT().Insert(gomock.Cond(func(x *repositories.Application) bool {
 		return x.Name() == "applicationName" &&
 			x.Type() == repositories.ApplicationTypeConfidential &&
 			x.HashedSecret() != "" &&

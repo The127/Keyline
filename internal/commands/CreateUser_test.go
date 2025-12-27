@@ -77,32 +77,6 @@ func (s *CreateUserCommandSuite) TestVirtualServerError() {
 	s.Error(err)
 }
 
-func (s *CreateUserCommandSuite) TestApplicationError() {
-	// arrange
-	ctrl := gomock.NewController(s.T())
-	defer ctrl.Finish()
-
-	now := time.Now()
-
-	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
-	virtualServer.Mock(now)
-	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
-
-	userRepository := mocks.NewMockUserRepository(ctrl)
-	userRepository.EXPECT().Insert(gomock.Any(), gomock.Any()).
-		Return(errors.New("error"))
-
-	ctx := s.createContext(virtualServerRepository, userRepository, nil)
-	cmd := CreateUser{}
-
-	// act
-	_, err := HandleCreateUser(ctx, cmd)
-
-	// assert
-	s.Error(err)
-}
-
 func (s *CreateUserCommandSuite) TestHappyPath() {
 	// arrange
 	ctrl := gomock.NewController(s.T())
@@ -118,7 +92,7 @@ func (s *CreateUserCommandSuite) TestHappyPath() {
 	})).Return(virtualServer, nil)
 
 	userRepository := mocks.NewMockUserRepository(ctrl)
-	userRepository.EXPECT().Insert(gomock.Any(), gomock.Any()).Return(nil)
+	userRepository.EXPECT().Insert(gomock.Any())
 
 	m := mocks2.NewMockMediator(ctrl)
 	m.EXPECT().SendEvent(gomock.Any(), gomock.AssignableToTypeOf(events.UserCreatedEvent{}), gomock.Any())

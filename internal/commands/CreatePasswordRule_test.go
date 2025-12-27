@@ -63,33 +63,6 @@ func (m mockPasswordRule) Serialize() ([]byte, error) {
 	return []byte("{}"), nil
 }
 
-func (s *CreatePasswordRuleCommandSuite) InsertError() {
-	// arrange
-	ctrl := gomock.NewController(s.T())
-	defer ctrl.Finish()
-
-	now := time.Now()
-
-	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
-	virtualServer.Mock(now)
-	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
-
-	passwordRuleRepository := mocks.NewMockPasswordRuleRepository(ctrl)
-	passwordRuleRepository.EXPECT().First(gomock.Any(), gomock.Any()).Return(nil, nil)
-	passwordRuleRepository.EXPECT().Insert(gomock.Any(), gomock.Any()).Return(errors.New("error"))
-
-	ctx := s.createContext(virtualServerRepository, passwordRuleRepository)
-	cmd := CreatePasswordRule{}
-
-	// act
-	resp, err := HandleCreatePasswordRule(ctx, cmd)
-
-	// assert
-	s.Require().Error(err)
-	s.Nil(resp)
-}
-
 func (s *CreatePasswordRuleCommandSuite) QueryingExistingError() {
 	// arrange
 	ctrl := gomock.NewController(s.T())
@@ -190,7 +163,7 @@ func (s *CreatePasswordRuleCommandSuite) TestHappyPath() {
 	passwordRuleRepository.EXPECT().First(gomock.Any(), gomock.Cond(func(x repositories.PasswordRuleFilter) bool {
 		return x.GetVirtualServerId() == virtualServer.Id() && x.GetType() == repositories.PasswordRuleTypeSpecial
 	})).Return(nil, nil)
-	passwordRuleRepository.EXPECT().Insert(gomock.Any(), gomock.Any()).Return(nil)
+	passwordRuleRepository.EXPECT().Insert(gomock.Any()).Return(nil)
 
 	ctx := s.createContext(virtualServerRepository, passwordRuleRepository)
 	cmd := CreatePasswordRule{

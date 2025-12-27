@@ -110,33 +110,6 @@ func (s *CreateRoleCommandSuite) TestProjectError() {
 	s.Error(err)
 }
 
-func (s *CreateRoleCommandSuite) TestRoleError() {
-	// arrange
-	ctrl := gomock.NewController(s.T())
-	defer ctrl.Finish()
-
-	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
-	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
-
-	project := repositories.NewProject(virtualServer.Id(), "project", "Project", "Test Project")
-	projectRepository := mocks.NewMockProjectRepository(ctrl)
-	projectRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(project, nil)
-
-	roleRepository := mocks.NewMockRoleRepository(ctrl)
-	roleRepository.EXPECT().Insert(gomock.Any(), gomock.Any()).
-		Return(errors.New("error"))
-
-	ctx := s.createContext(virtualServerRepository, projectRepository, roleRepository, nil)
-	cmd := CreateRole{}
-
-	// act
-	_, err := HandleCreateRole(ctx, cmd)
-
-	// assert
-	s.Error(err)
-}
-
 func (s *CreateRoleCommandSuite) TestHappyPath() {
 	// arrange
 	ctrl := gomock.NewController(s.T())
@@ -155,11 +128,11 @@ func (s *CreateRoleCommandSuite) TestHappyPath() {
 	})).Return(project, nil)
 
 	roleRepository := mocks.NewMockRoleRepository(ctrl)
-	roleRepository.EXPECT().Insert(gomock.Any(), gomock.Cond(func(x *repositories.Role) bool {
+	roleRepository.EXPECT().Insert(gomock.Cond(func(x *repositories.Role) bool {
 		return x.Name() == "role" &&
 			x.Description() == "description" &&
 			x.VirtualServerId() == virtualServer.Id()
-	})).Return(nil)
+	}))
 
 	m := mediatorMocks.NewMockMediator(ctrl)
 	m.EXPECT().SendEvent(gomock.Any(), gomock.AssignableToTypeOf(events.RoleCreatedEvent{}), gomock.Any())

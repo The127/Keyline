@@ -87,9 +87,9 @@ func (s *PatchResourceServerCommandSuite) TestHappyPath() {
 			x.GetProjectId() == project.Id() &&
 			x.GetId() == resourceServer.Id()
 	})).Return(resourceServer, nil)
-	resourceServerRepository.EXPECT().Update(gomock.Any(), gomock.Cond(func(x *repositories.ResourceServer) bool {
+	resourceServerRepository.EXPECT().Update(gomock.Cond(func(x *repositories.ResourceServer) bool {
 		return x.Name() == "new name" && x.Description() == "new description"
-	})).Return(nil)
+	}))
 
 	ctx := s.createContext(virtualServerRepository, projectRepository, resourceServerRepository)
 	cmd := PatchResourceServer{
@@ -106,35 +106,6 @@ func (s *PatchResourceServerCommandSuite) TestHappyPath() {
 	// assert
 	s.Require().NoError(err)
 	s.NotNil(resp)
-}
-
-func (s *PatchResourceServerCommandSuite) TestUpdateError() {
-	// arrange
-	ctrl := gomock.NewController(s.T())
-	defer ctrl.Finish()
-
-	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
-	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
-
-	project := repositories.NewProject(virtualServer.Id(), "project", "Project", "Test Project")
-	projectRepository := mocks.NewMockProjectRepository(ctrl)
-	projectRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(project, nil)
-
-	resourceServer := repositories.NewResourceServer(virtualServer.Id(), project.Id(), "slug", "resourceServer", "Resource Server")
-	resourceServerRepository := mocks.NewMockResourceServerRepository(ctrl)
-	resourceServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(resourceServer, nil)
-	resourceServerRepository.EXPECT().Update(gomock.Any(), gomock.Any()).Return(errors.New("error"))
-
-	ctx := s.createContext(virtualServerRepository, projectRepository, resourceServerRepository)
-	cmd := PatchResourceServer{}
-
-	// act
-	resp, err := HandlePatchResourceServer(ctx, cmd)
-
-	// assert
-	s.Require().Error(err)
-	s.Nil(resp)
 }
 
 func (s *PatchResourceServerCommandSuite) TestResourceServerError() {

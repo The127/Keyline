@@ -661,7 +661,7 @@ func TestCreateUser(t *testing.T) {
     
     // Create test dependencies
     mockUserRepo := mocks.NewMockUserRepository(ctrl)
-    mockUserRepo.EXPECT().Insert(gomock.Any(), gomock.Any()).Return(nil)
+    mockUserRepo.EXPECT().Insert( gomock.Any())
     
     // For unit testing handler functions, you would:
     // 1. Create a test IoC scope with mocked dependencies

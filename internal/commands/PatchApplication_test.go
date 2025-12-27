@@ -87,7 +87,7 @@ func (s *PatchApplicationCommandSuite) TestHappyPath() {
 			x.GetProjectId() == project.Id() &&
 			x.GetVirtualServerId() == virtualServer.Id()
 	})).Return(application, nil)
-	applicationRepository.EXPECT().Update(gomock.Any(), gomock.Any()).Return(nil)
+	applicationRepository.EXPECT().Update(gomock.Any())
 
 	ctx := s.createContext(virtualServerRepository, projectRepository, applicationRepository)
 	cmd := PatchApplication{
@@ -104,35 +104,6 @@ func (s *PatchApplicationCommandSuite) TestHappyPath() {
 	// assert
 	s.Require().NoError(err)
 	s.NotNil(resp)
-}
-
-func (s *PatchApplicationCommandSuite) TestUpdateError() {
-	// arrange
-	ctrl := gomock.NewController(s.T())
-	defer ctrl.Finish()
-
-	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
-	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
-
-	project := repositories.NewProject(virtualServer.Id(), "project", "Project", "Test Project")
-	projectRepository := mocks.NewMockProjectRepository(ctrl)
-	projectRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(project, nil)
-
-	application := repositories.NewApplication(virtualServer.Id(), project.Id(), "application", "Application", repositories.ApplicationTypePublic, []string{})
-	applicationRepository := mocks.NewMockApplicationRepository(ctrl)
-	applicationRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(application, nil)
-	applicationRepository.EXPECT().Update(gomock.Any(), gomock.Any()).Return(errors.New("error"))
-
-	ctx := s.createContext(virtualServerRepository, projectRepository, applicationRepository)
-	cmd := PatchApplication{}
-
-	// act
-	resp, err := HandlePatchApplication(ctx, cmd)
-
-	// assert
-	s.Require().Error(err)
-	s.Nil(resp)
 }
 
 func (s *PatchApplicationCommandSuite) TestApplicationError() {

@@ -41,10 +41,10 @@ func (s *RegisterUserCommandSuite) TestHandleRegisterUser() {
 	})).Return(virtualServer, nil)
 
 	userRepository := mocks.NewMockUserRepository(ctrl)
-	userRepository.EXPECT().Insert(gomock.Any(), gomock.Any()).Return(nil)
+	userRepository.EXPECT().Insert(gomock.Any())
 
 	credentialRepository := mocks.NewMockCredentialRepository(ctrl)
-	credentialRepository.EXPECT().Insert(gomock.Any(), gomock.Any()).Return(nil)
+	credentialRepository.EXPECT().Insert(gomock.Any())
 
 	passwordValidator := mock.NewMockValidator(ctrl)
 	passwordValidator.EXPECT().Validate(gomock.Any(), gomock.Any()).Return(nil)

@@ -104,40 +104,6 @@ func (s *UpdatePasswordRuleCommandSuite) TestPasswordRuleError() {
 	s.Nil(resp)
 }
 
-func (s *UpdatePasswordRuleCommandSuite) TestUpdateError() {
-	// arrange
-	ctrl := gomock.NewController(s.T())
-	defer ctrl.Finish()
-
-	now := time.Now()
-
-	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
-	virtualServer.Mock(now)
-	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
-
-	passwordRule, err := repositories.NewPasswordRule(virtualServer.Id(), mockPasswordRule{})
-	s.Require().NoError(err)
-	passwordRule.Mock(now)
-	passwordRuleRepository := mocks.NewMockPasswordRuleRepository(ctrl)
-	passwordRuleRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(passwordRule, nil)
-	passwordRuleRepository.EXPECT().Update(gomock.Any(), gomock.Any()).Return(errors.New("error"))
-
-	ctx := s.createContext(virtualServerRepository, passwordRuleRepository)
-	cmd := UpdatePasswordRule{
-		VirtualServerName: virtualServer.Name(),
-		Type:              repositories.PasswordRuleTypeSpecial,
-		Details:           make(map[string]interface{}),
-	}
-
-	// act
-	resp, err := HandleUpdatePasswordRule(ctx, cmd)
-
-	// assert
-	s.Require().Error(err)
-	s.Nil(resp)
-}
-
 func (s *UpdatePasswordRuleCommandSuite) TestHappyPath() {
 	// arrange
 	ctrl := gomock.NewController(s.T())
@@ -159,7 +125,7 @@ func (s *UpdatePasswordRuleCommandSuite) TestHappyPath() {
 	passwordRuleRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories.PasswordRuleFilter) bool {
 		return x.GetVirtualServerId() == virtualServer.Id() && x.GetType() == repositories.PasswordRuleTypeSpecial
 	})).Return(passwordRule, nil)
-	passwordRuleRepository.EXPECT().Update(gomock.Any(), gomock.Any()).Return(nil)
+	passwordRuleRepository.EXPECT().Update(gomock.Any())
 
 	ctx := s.createContext(virtualServerRepository, passwordRuleRepository)
 	cmd := UpdatePasswordRule{

@@ -349,7 +349,7 @@ func (s *DeactivateUserCommandSuite) TestDeactivateUser_Success() {
 
 	mockRepo := mocks.NewMockUserRepository(ctrl)
 	mockRepo.EXPECT().First(gomock.Any(), gomock.Any()).Return(user, nil)
-	mockRepo.EXPECT().Update(gomock.Any(), gomock.Any()).Return(nil)
+	mockRepo.EXPECT().Update(gomock.Any())
 
 	mockMediator := mediatormocks.NewMockMediator(ctrl)
 	mockMediator.EXPECT().SendEvent(gomock.Any(), gomock.AssignableToTypeOf(events.UserDeactivatedEvent{}), gomock.Any())

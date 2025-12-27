@@ -116,7 +116,7 @@ func (s *CreateUserCommandSuite) TestCreateUser_Success() {
     defer ctrl.Finish()
     
     mockUserRepo := mocks.NewMockUserRepository(ctrl)
-    mockUserRepo.EXPECT().Insert(gomock.Any(), gomock.Any()).Return(nil)
+    mockUserRepo.EXPECT().Insert(gomock.Any())
     
     ctx := s.createContext(mockUserRepo)
     cmd := CreateUser{
@@ -209,7 +209,7 @@ func (s *CreateUserCommandSuite) TestCreateUser_Success() {
     mockVsRepo.EXPECT().Single(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
     
     mockUserRepo := mocks.NewMockUserRepository(ctrl)
-    mockUserRepo.EXPECT().Insert(gomock.Any(), gomock.Any()).Return(nil)
+    mockUserRepo.EXPECT().Insert(gomock.Any())
     
     mockMediator := mediatormocks.NewMockMediator(ctrl)
     mockMediator.EXPECT().SendEvent(gomock.Any(), gomock.AssignableToTypeOf(events.UserCreatedEvent{}), gomock.Any())
@@ -819,10 +819,6 @@ mockRepo.EXPECT().
 mockMediator.EXPECT().
     SendEvent(gomock.Any(), gomock.AssignableToTypeOf(events.UserCreatedEvent{}), gomock.Any())
 
-// Return different values on consecutive calls
-mockRepo.EXPECT().Insert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
-mockRepo.EXPECT().Insert(gomock.Any(), gomock.Any()).Return(errors.New("error")).Times(1)
-
 // Use DoAndReturn to execute custom logic
 mockRepo.EXPECT().
     Insert(gomock.Any(), gomock.Any()).
@@ -898,7 +894,7 @@ func TestCreateUser_StoresHashedPassword(t *testing.T) {
     defer ctrl.Finish()
     
     mockRepo := mocks.NewMockUserRepository(ctrl)
-    mockRepo.EXPECT().Insert(gomock.Any(), gomock.Any()).Return(nil)
+    mockRepo.EXPECT().Insert(gomock.Any())
     
     ctx := createTestContext(mockRepo)
     result, err := HandleCreateUser(ctx, CreateUser{
@@ -929,7 +925,7 @@ func (s *CreateUserCommandSuite) TestCreateUser_Success() {
     defer ctrl.Finish()
     
     mockRepo := mocks.NewMockUserRepository(ctrl)
-    mockRepo.EXPECT().Insert(gomock.Any(), gomock.Any()).Return(nil)
+    mockRepo.EXPECT().Insert(gomock.Any())
     
     ctx := s.createContext(mockRepo)
     
@@ -939,23 +935,6 @@ func (s *CreateUserCommandSuite) TestCreateUser_Success() {
     // Assert
     s.NoError(err)
     s.NotNil(result)
-}
-
-func (s *CreateUserCommandSuite) TestCreateUser_RepositoryError() {
-    // Arrange
-    ctrl := gomock.NewController(s.T())
-    defer ctrl.Finish()
-    
-    mockRepo := mocks.NewMockUserRepository(ctrl)
-    mockRepo.EXPECT().Insert(gomock.Any(), gomock.Any()).Return(errors.New("db error"))
-    
-    ctx := s.createContext(mockRepo)
-    
-    // Act
-    _, err := HandleCreateUser(ctx, CreateUser{Username: "testuser"})
-    
-    // Assert
-    s.Error(err)
 }
 ```
 

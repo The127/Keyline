@@ -72,7 +72,7 @@ func (s *PatchUserCommandSuite) TestHappyPath() {
 		return x.GetId() == user.Id() &&
 			x.GetVirtualServerId() == virtualServer.Id()
 	})).Return(user, nil)
-	userRepository.EXPECT().Update(gomock.Any(), gomock.Any()).Return(nil)
+	userRepository.EXPECT().Update(gomock.Any())
 
 	ctx := s.createContext(virtualServerRepository, userRepository)
 	cmd := PatchUser{
@@ -87,31 +87,6 @@ func (s *PatchUserCommandSuite) TestHappyPath() {
 	// assert
 	s.Require().NoError(err)
 	s.NotNil(resp)
-}
-
-func (s *PatchUserCommandSuite) TestUpdateError() {
-	// arrange
-	ctrl := gomock.NewController(s.T())
-	defer ctrl.Finish()
-
-	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
-	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
-
-	user := repositories.NewUser("user", "User", "user@mail", virtualServer.Id())
-	userRepository := mocks.NewMockUserRepository(ctrl)
-	userRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(user, nil)
-	userRepository.EXPECT().Update(gomock.Any(), gomock.Any()).Return(errors.New("error"))
-
-	ctx := s.createContext(virtualServerRepository, userRepository)
-	cmd := PatchUser{}
-
-	// act
-	resp, err := HandlePatchUser(ctx, cmd)
-
-	// assert
-	s.Require().Error(err)
-	s.Nil(resp)
 }
 
 func (s *PatchUserCommandSuite) TestUserError() {

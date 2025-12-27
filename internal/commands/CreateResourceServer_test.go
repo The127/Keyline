@@ -80,7 +80,7 @@ func (s *CreateResourceServerCommandSuite) TestHappyPath() {
 	})).Return(project, nil)
 
 	resourceServerRepository := mocks.NewMockResourceServerRepository(ctrl)
-	resourceServerRepository.EXPECT().Insert(gomock.Any(), gomock.Any()).Return(nil)
+	resourceServerRepository.EXPECT().Insert(gomock.Any())
 
 	ctx := s.createContext(virtualServerRepository, projectRepository, resourceServerRepository)
 	cmd := CreateResourceServer{
@@ -97,33 +97,6 @@ func (s *CreateResourceServerCommandSuite) TestHappyPath() {
 	// assert
 	s.Require().NoError(err)
 	s.NotNil(resp)
-}
-
-func (s *CreateResourceServerCommandSuite) TestInsertError() {
-	// arrange
-	ctrl := gomock.NewController(s.T())
-	defer ctrl.Finish()
-
-	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
-	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
-
-	project := repositories.NewProject(virtualServer.Id(), "project", "Project", "Test Project")
-	projectRepository := mocks.NewMockProjectRepository(ctrl)
-	projectRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(project, nil)
-
-	resourceServerRepository := mocks.NewMockResourceServerRepository(ctrl)
-	resourceServerRepository.EXPECT().Insert(gomock.Any(), gomock.Any()).Return(errors.New("error"))
-
-	ctx := s.createContext(virtualServerRepository, projectRepository, resourceServerRepository)
-	cmd := CreateResourceServer{}
-
-	// act
-	resp, err := HandleCreateResourceServer(ctx, cmd)
-
-	// assert
-	s.Require().Error(err)
-	s.Nil(resp)
 }
 
 func (s *CreateResourceServerCommandSuite) TestProjectError() {

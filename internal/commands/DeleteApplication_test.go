@@ -194,7 +194,7 @@ func (s *DeleteApplicationCommandSuite) TestHappyPath() {
 	applicationRepository.EXPECT().First(gomock.Any(), gomock.Cond(func(x repositories.ApplicationFilter) bool {
 		return x.GetId() == application.Id()
 	})).Return(application, nil)
-	applicationRepository.EXPECT().Delete(gomock.Any(), application.Id()).Return(nil)
+	applicationRepository.EXPECT().Delete(application.Id())
 
 	ctx := s.createContext(virtualServerRepository, projectRepository, applicationRepository)
 	cmd := DeleteApplication{

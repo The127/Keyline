@@ -70,33 +70,6 @@ func (s *CreateServiceUserCommandSuite) TestVirtualServerError() {
 	s.Error(err)
 }
 
-func (s *CreateServiceUserCommandSuite) TestUserError() {
-	// arrange
-	ctrl := gomock.NewController(s.T())
-	defer ctrl.Finish()
-
-	now := time.Now()
-
-	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
-	virtualServer.Mock(now)
-	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).
-		Return(virtualServer, nil)
-
-	userRepository := mocks.NewMockUserRepository(ctrl)
-	userRepository.EXPECT().Insert(gomock.Any(), gomock.Any()).
-		Return(errors.New("error"))
-
-	ctx := s.createContext(virtualServerRepository, userRepository)
-	cmd := CreateServiceUser{}
-
-	// act
-	_, err := HandleCreateServiceUser(ctx, cmd)
-
-	// assert
-	s.Error(err)
-}
-
 func (s *CreateServiceUserCommandSuite) TestHappyPath() {
 	// arrange
 	ctrl := gomock.NewController(s.T())
@@ -112,10 +85,10 @@ func (s *CreateServiceUserCommandSuite) TestHappyPath() {
 	})).Return(virtualServer, nil)
 
 	userRepository := mocks.NewMockUserRepository(ctrl)
-	userRepository.EXPECT().Insert(gomock.Any(), gomock.Cond(func(x *repositories.User) bool {
+	userRepository.EXPECT().Insert(gomock.Cond(func(x *repositories.User) bool {
 		return x.Username() == "username" &&
 			x.VirtualServerId() == virtualServer.Id()
-	})).Return(nil)
+	}))
 
 	ctx := s.createContext(virtualServerRepository, userRepository)
 	cmd := CreateServiceUser{

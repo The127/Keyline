@@ -79,11 +79,11 @@ func (s *AssociateServiceUserPublicKeyCommandSuite) TestHappyPath() {
 	})).Return(user, nil)
 
 	credentialRepository := mocks.NewMockCredentialRepository(ctrl)
-	credentialRepository.EXPECT().Insert(gomock.Any(), gomock.Cond(func(x *repositories.Credential) bool {
+	credentialRepository.EXPECT().Insert(gomock.Cond(func(x *repositories.Credential) bool {
 		return x.UserId() == user.Id() &&
 			x.Type() == repositories.CredentialTypeServiceUserKey &&
 			utils.Unwrap(x.ServiceUserKeyDetails()).PublicKey == "publicKey"
-	})).Return(nil)
+	}))
 
 	ctx := s.createContext(virtualServerRepository, userRepository, credentialRepository)
 	cmd := AssociateServiceUserPublicKey{

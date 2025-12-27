@@ -66,13 +66,12 @@ func (s *CreateProjectCommandSuite) TestHappyPath() {
 	})).Return(virtualServer, nil)
 
 	projectRepository := mocks.NewMockProjectRepository(ctrl)
-	projectRepository.EXPECT().Insert(gomock.Any(), gomock.Cond(func(x *repositories.Project) bool {
+	projectRepository.EXPECT().Insert(gomock.Cond(func(x *repositories.Project) bool {
 		return x.Name() == "Name" &&
 			x.Slug() == "slug" &&
 			x.Description() == "Description" &&
 			x.VirtualServerId() == virtualServer.Id()
-	})).
-		Return(nil)
+	}))
 
 	ctx := s.createContext(virtualServerRepository, projectRepository)
 	cmd := CreateProject{
@@ -88,29 +87,6 @@ func (s *CreateProjectCommandSuite) TestHappyPath() {
 	// assert
 	s.Require().NoError(err)
 	s.NotNil(resp)
-}
-
-func (s *CreateProjectCommandSuite) TestInsertError() {
-	// arrange
-	ctrl := gomock.NewController(s.T())
-	defer ctrl.Finish()
-
-	virtualServer := repositories.NewVirtualServer("virtual-server", "Virtual Server")
-	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
-
-	projectRepository := mocks.NewMockProjectRepository(ctrl)
-	projectRepository.EXPECT().Insert(gomock.Any(), gomock.Any()).Return(errors.New("error"))
-
-	ctx := s.createContext(virtualServerRepository, projectRepository)
-	cmd := CreateProject{}
-
-	// act
-	resp, err := HandleCreateProject(ctx, cmd)
-
-	// assert
-	s.Require().Error(err)
-	s.Nil(resp)
 }
 
 func (s *CreateProjectCommandSuite) TestVirtualServerError() {
