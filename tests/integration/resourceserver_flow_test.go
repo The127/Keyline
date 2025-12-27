@@ -30,6 +30,8 @@ var _ = Describe("ResourceServer flow", Ordered, func() {
 		}
 		_, err := mediatr.Send[*commands.CreateProjectResponse](h.Ctx(), h.Mediator(), req)
 		Expect(err).ToNot(HaveOccurred())
+
+		Expect(h.dbContext.SaveChanges(h.ctx)).ToNot(HaveOccurred())
 	})
 
 	AfterAll(func() {
