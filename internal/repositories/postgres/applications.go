@@ -241,17 +241,20 @@ func (r *ApplicationRepository) ExecuteInsert(ctx context.Context, tx *sql.Tx, a
 			"access_token_header_type",
 		).
 		Values(
+			mapped.id,
+			mapped.auditCreatedAt,
+			mapped.auditUpdatedAt,
 			mapped.virtualServerId,
-			application.ProjectId(),
-			application.Name(),
-			application.DisplayName(),
-			application.Type(),
-			application.HashedSecret(),
-			pq.Array(application.RedirectUris()),
-			pq.Array(application.PostLogoutRedirectUris()),
-			application.SystemApplication(),
-			application.ClaimsMappingScript(),
-			application.AccessTokenHeaderType(),
+			mapped.projectId,
+			mapped.name,
+			mapped.displayName,
+			mapped.type_,
+			mapped.hashedSecret,
+			mapped.redirectUris,
+			mapped.postLogoutRedirectUris,
+			mapped.systemApplication,
+			mapped.claimsMappingScript,
+			mapped.accessTokenHeaderType,
 		).
 		Returning("xmin")
 
