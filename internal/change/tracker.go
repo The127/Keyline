@@ -51,3 +51,7 @@ func (t *Tracker) Add(entry *Entry) {
 func (t *Tracker) GetChanges() []*Entry {
 	return t.entries
 }
+
+func (t *Tracker) Clear() {
+	t.entries = []*Entry{}
+}

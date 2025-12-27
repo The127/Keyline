@@ -205,6 +205,7 @@ func (c *Context) SaveChanges(ctx context.Context) error {
 		return fmt.Errorf("committing transaction: %w", err)
 	}
 
+	c.changeTracker.Clear()
 	return nil
 }
 
