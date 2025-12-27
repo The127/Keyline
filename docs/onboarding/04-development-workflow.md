@@ -171,17 +171,19 @@ Create `internal/commands/DeactivateUser.go`:
 package commands
 
 import (
-    "context"
-    "errors"
-    "fmt"
-    "Keyline/internal/authentication/permissions"
-    "Keyline/internal/behaviours"
-    "Keyline/internal/middlewares"
-    "Keyline/internal/repositories"
-    "Keyline/internal/events"
-    "github.com/The127/ioc"
-    "github.com/The127/mediatr"
-    "github.com/google/uuid"
+
+"Keyline/internal/authentication/permissions"
+"Keyline/internal/behaviours"
+"Keyline/internal/events"
+"Keyline/internal/middlewares"
+"Keyline/internal/repositories"
+"context"
+"errors"
+"fmt"
+
+"github.com/The127/ioc"
+"github.com/The127/mediatr"
+"github.com/google/uuid"
 )
 
 // Command request
@@ -287,94 +289,95 @@ Create `internal/commands/DeactivateUser_test.go`:
 package commands
 
 import (
-    "context"
-    "testing"
-    "Keyline/internal/events"
-    "Keyline/internal/middlewares"
-    "Keyline/internal/repositories"
-    "Keyline/internal/repositories/mocks"
-    "github.com/The127/ioc"
-    "github.com/The127/mediatr"
-    mediatormocks "github.com/The127/mediatr/mocks"
-    "github.com/google/uuid"
-    "github.com/stretchr/testify/suite"
-    "go.uber.org/mock/gomock"
+	"Keyline/internal/events"
+	"Keyline/internal/middlewares"
+	"Keyline/internal/repositories"
+	"Keyline/internal/repositories/mocks"
+	"context"
+	"testing"
+
+	"github.com/The127/ioc"
+	"github.com/The127/mediatr"
+	mediatormocks "github.com/The127/mediatr/mocks"
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 type DeactivateUserCommandSuite struct {
-    suite.Suite
+	suite.Suite
 }
 
 func TestDeactivateUserCommandSuite(t *testing.T) {
-    t.Parallel()
-    suite.Run(t, new(DeactivateUserCommandSuite))
+	t.Parallel()
+	suite.Run(t, new(DeactivateUserCommandSuite))
 }
 
 func (s *DeactivateUserCommandSuite) createContext(
-    userRepo repositories.UserRepository,
-    m mediatr.Mediator,
+	userRepo repositories.UserRepository,
+	m mediatr.Mediator,
 ) context.Context {
-    dc := ioc.NewDependencyCollection()
-    
-    if userRepo != nil {
-        ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.UserRepository {
-            return userRepo
-        })
-    }
-    
-    if m != nil {
-        ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) mediatr.Mediator {
-            return m
-        })
-    }
-    
-    scope := dc.BuildProvider()
-    s.T().Cleanup(func() {
-        _ = scope.Close()
-    })
-    
-    return middlewares.ContextWithScope(s.T().Context(), scope)
+	dc := ioc.NewDependencyCollection()
+
+	if userRepo != nil {
+		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.UserRepository {
+			return userRepo
+		})
+	}
+
+	if m != nil {
+		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) mediatr.Mediator {
+			return m
+		})
+	}
+
+	scope := dc.BuildProvider()
+	s.T().Cleanup(func() {
+		_ = scope.Close()
+	})
+
+	return middlewares.ContextWithScope(s.T().Context(), scope)
 }
 
 func (s *DeactivateUserCommandSuite) TestDeactivateUser_Success() {
-    // Arrange
-    ctrl := gomock.NewController(s.T())
-    defer ctrl.Finish()
-    
-    userID := uuid.New()
-    user := repositories.NewUser("testuser", "Test User", "test@example.com", uuid.New())
-    
-    mockRepo := mocks.NewMockUserRepository(ctrl)
-    mockRepo.EXPECT().First(gomock.Any(), gomock.Any()).Return(user, nil)
-    mockRepo.EXPECT().Update(gomock.Any(), gomock.Any()).Return(nil)
-    
-    mockMediator := mediatormocks.NewMockMediator(ctrl)
-    mockMediator.EXPECT().SendEvent(gomock.Any(), gomock.AssignableToTypeOf(events.UserDeactivatedEvent{}), gomock.Any())
-    
-    ctx := s.createContext(mockRepo, mockMediator)
-    
-    // Act
-    result, err := HandleDeactivateUser(ctx, DeactivateUser{
-        UserID: userID,
-        Reason: "Policy violation",
-    })
-    
-    // Assert
-    s.NoError(err)
-    s.True(result.Success)
+	// Arrange
+	ctrl := gomock.NewController(s.T())
+	defer ctrl.Finish()
+
+	userID := uuid.New()
+	user := repositories.NewUser("testuser", "Test User", "test@example.com", uuid.New())
+
+	mockRepo := mocks.NewMockUserRepository(ctrl)
+	mockRepo.EXPECT().First(gomock.Any(), gomock.Any()).Return(user, nil)
+	mockRepo.EXPECT().Update(gomock.Any(), gomock.Any()).Return(nil)
+
+	mockMediator := mediatormocks.NewMockMediator(ctrl)
+	mockMediator.EXPECT().SendEvent(gomock.Any(), gomock.AssignableToTypeOf(events.UserDeactivatedEvent{}), gomock.Any())
+
+	ctx := s.createContext(mockRepo, mockMediator)
+
+	// Act
+	result, err := HandleDeactivateUser(ctx, DeactivateUser{
+		UserID: userID,
+		Reason: "Policy violation",
+	})
+
+	// Assert
+	s.NoError(err)
+	s.True(result.Success)
 }
 
 func (s *DeactivateUserCommandSuite) TestDeactivateUser_InvalidUserID() {
-    // Arrange
-    ctx := s.createContext(nil, nil)
-    
-    // Act
-    _, err := HandleDeactivateUser(ctx, DeactivateUser{
-        UserID: uuid.Nil,
-    })
-    
-    // Assert
-    s.Error(err)
+	// Arrange
+	ctx := s.createContext(nil, nil)
+
+	// Act
+	_, err := HandleDeactivateUser(ctx, DeactivateUser{
+		UserID: uuid.Nil,
+	})
+
+	// Assert
+	s.Error(err)
 }
 ```
 

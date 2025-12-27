@@ -2,6 +2,7 @@ package integration
 
 import (
 	"Keyline/internal/commands"
+
 	"github.com/The127/mediatr"
 
 	"github.com/google/uuid"

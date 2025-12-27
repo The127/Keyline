@@ -334,47 +334,48 @@ scope.Close() // Cleanup called here
 package main
 
 import (
-    "Keyline/internal/setup"
-    "github.com/The127/ioc"
+	"Keyline/internal/setup"
+
+	"github.com/The127/ioc"
 )
 
 func main() {
-    // Create dependency collection
-    dc := ioc.NewDependencyCollection()
-    
-    // Register configuration (singleton)
-    setup.Configuration(dc)
-    
-    // Register database (singleton)
-    setup.Database(dc)
-    
-    // Register repositories (singleton)
-    setup.Repositories(dc, config.DatabaseModePostgres, postgresConfig)
-    
-    // Register services (singleton)
-    setup.Services(dc)
-    
-    // Register mediator (singleton)
-    setup.Mediator(dc)
-    
-    // Register command handlers (singleton)
-    setup.Commands(dc)
-    
-    // Register query handlers (singleton)
-    setup.Queries(dc)
-    
-    // Register behaviors (singleton)
-    setup.Behaviours(dc)
-    
-    // Register event handlers (singleton)
-    setup.Events(dc)
-    
-    // Build provider
-    provider := dc.BuildProvider()
-    
-    // Start server
-    router := ioc.GetDependency[*mux.Router](provider)
-    http.ListenAndServe(":8080", router)
+	// Create dependency collection
+	dc := ioc.NewDependencyCollection()
+
+	// Register configuration (singleton)
+	setup.Configuration(dc)
+
+	// Register database (singleton)
+	setup.Database(dc)
+
+	// Register repositories (singleton)
+	setup.Repositories(dc, config.DatabaseModePostgres, postgresConfig)
+
+	// Register services (singleton)
+	setup.Services(dc)
+
+	// Register mediator (singleton)
+	setup.Mediator(dc)
+
+	// Register command handlers (singleton)
+	setup.Commands(dc)
+
+	// Register query handlers (singleton)
+	setup.Queries(dc)
+
+	// Register behaviors (singleton)
+	setup.Behaviours(dc)
+
+	// Register event handlers (singleton)
+	setup.Events(dc)
+
+	// Build provider
+	provider := dc.BuildProvider()
+
+	// Start server
+	router := ioc.GetDependency[*mux.Router](provider)
+	http.ListenAndServe(":8080", router)
 }
 ```
 

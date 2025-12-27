@@ -8,8 +8,9 @@ import (
 	"Keyline/utils"
 	"context"
 	"errors"
-	"github.com/The127/ioc"
 	"testing"
+
+	"github.com/The127/ioc"
 
 	"github.com/The127/mediatr"
 	mediatorMocks "github.com/The127/mediatr/mocks"

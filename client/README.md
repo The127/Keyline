@@ -26,34 +26,34 @@ import "Keyline/client"
 package main
 
 import (
-    "context"
-    "fmt"
-    "Keyline/client"
-    "Keyline/internal/handlers"
+	"Keyline/client"
+	"Keyline/internal/handlers"
+	"context"
+	"fmt"
 )
 
 func main() {
-    // Create a new client
-    c := client.NewClient(
-        "http://localhost:8081",  // Base URL of Keyline API
-        "my-virtual-server",       // Virtual server name
-    )
+	// Create a new client
+	c := client.NewClient(
+		"http://localhost:8081", // Base URL of Keyline API
+		"my-virtual-server",     // Virtual server name
+	)
 
-    ctx := context.Background()
+	ctx := context.Background()
 
-    // Create an application
-    app, err := c.Application().Create(ctx, handlers.CreateApplicationRequestDto{
-        Name:           "my-app",
-        DisplayName:    "My Application",
-        RedirectUris:   []string{"http://localhost:3000/callback"},
-        PostLogoutUris: []string{"http://localhost:3000/logout"},
-        Type:           "public",
-    })
-    if err != nil {
-        panic(err)
-    }
+	// Create an application
+	app, err := c.Application().Create(ctx, handlers.CreateApplicationRequestDto{
+		Name:           "my-app",
+		DisplayName:    "My Application",
+		RedirectUris:   []string{"http://localhost:3000/callback"},
+		PostLogoutUris: []string{"http://localhost:3000/logout"},
+		Type:           "public",
+	})
+	if err != nil {
+		panic(err)
+	}
 
-    fmt.Printf("Created application with ID: %s\n", app.Id)
+	fmt.Printf("Created application with ID: %s\n", app.Id)
 }
 ```
 

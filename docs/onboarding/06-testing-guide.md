@@ -69,14 +69,16 @@ Keyline uses **gomock** for mocking and **testify/suite** for test organization.
 package commands
 
 import (
-    "context"
-    "testing"
-    "Keyline/internal/middlewares"
-    "Keyline/internal/repositories"
-    "Keyline/internal/repositories/mocks"
-    "github.com/The127/ioc"
-    "github.com/stretchr/testify/suite"
-    "go.uber.org/mock/gomock"
+
+"Keyline/internal/middlewares"
+"Keyline/internal/repositories"
+"Keyline/internal/repositories/mocks"
+"context"
+"testing"
+
+"github.com/The127/ioc"
+"github.com/stretchr/testify/suite"
+"go.uber.org/mock/gomock"
 )
 
 type CreateUserCommandSuite struct {
@@ -138,18 +140,20 @@ func (s *CreateUserCommandSuite) TestCreateUser_Success() {
 package commands
 
 import (
-    "context"
-    "errors"
-    "testing"
-    "Keyline/internal/events"
-    "Keyline/internal/middlewares"
-    "Keyline/internal/repositories"
-    "Keyline/internal/repositories/mocks"
-    "github.com/The127/ioc"
-    "github.com/The127/mediatr"
-    mediatormocks "github.com/The127/mediatr/mocks"
-    "github.com/stretchr/testify/suite"
-    "go.uber.org/mock/gomock"
+
+"Keyline/internal/events"
+"Keyline/internal/middlewares"
+"Keyline/internal/repositories"
+"Keyline/internal/repositories/mocks"
+"context"
+"errors"
+"testing"
+
+"github.com/The127/ioc"
+"github.com/The127/mediatr"
+mediatormocks "github.com/The127/mediatr/mocks"
+"github.com/stretchr/testify/suite"
+"go.uber.org/mock/gomock"
 )
 
 type CreateUserCommandSuite struct {
@@ -253,83 +257,84 @@ Queries follow the same pattern as commands:
 package queries
 
 import (
-    "context"
-    "errors"
-    "testing"
-    "Keyline/internal/middlewares"
-    "Keyline/internal/repositories"
-    "Keyline/internal/repositories/mocks"
-    "github.com/The127/ioc"
-    "github.com/stretchr/testify/suite"
-    "go.uber.org/mock/gomock"
+	"Keyline/internal/middlewares"
+	"Keyline/internal/repositories"
+	"Keyline/internal/repositories/mocks"
+	"context"
+	"errors"
+	"testing"
+
+	"github.com/The127/ioc"
+	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 type GetUserQuerySuite struct {
-    suite.Suite
+	suite.Suite
 }
 
 func TestGetUserQuerySuite(t *testing.T) {
-    t.Parallel()
-    suite.Run(t, new(GetUserQuerySuite))
+	t.Parallel()
+	suite.Run(t, new(GetUserQuerySuite))
 }
 
 func (s *GetUserQuerySuite) createContext(
-    userRepo repositories.UserRepository,
+	userRepo repositories.UserRepository,
 ) context.Context {
-    dc := ioc.NewDependencyCollection()
-    
-    if userRepo != nil {
-        ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.UserRepository {
-            return userRepo
-        })
-    }
-    
-    scope := dc.BuildProvider()
-    s.T().Cleanup(func() {
-        _ = scope.Close()
-    })
-    
-    return middlewares.ContextWithScope(s.T().Context(), scope)
+	dc := ioc.NewDependencyCollection()
+
+	if userRepo != nil {
+		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.UserRepository {
+			return userRepo
+		})
+	}
+
+	scope := dc.BuildProvider()
+	s.T().Cleanup(func() {
+		_ = scope.Close()
+	})
+
+	return middlewares.ContextWithScope(s.T().Context(), scope)
 }
 
 func (s *GetUserQuerySuite) TestGetUser_Success() {
-    // Arrange
-    ctrl := gomock.NewController(s.T())
-    defer ctrl.Finish()
-    
-    user := repositories.NewUser("testuser", "Test User", "test@example.com", uuid.New())
-    
-    mockUserRepo := mocks.NewMockUserRepository(ctrl)
-    mockUserRepo.EXPECT().First(gomock.Any(), gomock.Any()).Return(user, nil)
-    
-    ctx := s.createContext(mockUserRepo)
-    query := GetUser{UserID: user.Id()}
-    
-    // Act
-    result, err := HandleGetUser(ctx, query)
-    
-    // Assert
-    s.Require().NoError(err)
-    s.Equal(user.Id(), result.UserID)
-    s.Equal(user.Username(), result.Username)
+	// Arrange
+	ctrl := gomock.NewController(s.T())
+	defer ctrl.Finish()
+
+	user := repositories.NewUser("testuser", "Test User", "test@example.com", uuid.New())
+
+	mockUserRepo := mocks.NewMockUserRepository(ctrl)
+	mockUserRepo.EXPECT().First(gomock.Any(), gomock.Any()).Return(user, nil)
+
+	ctx := s.createContext(mockUserRepo)
+	query := GetUser{UserID: user.Id()}
+
+	// Act
+	result, err := HandleGetUser(ctx, query)
+
+	// Assert
+	s.Require().NoError(err)
+	s.Equal(user.Id(), result.UserID)
+	s.Equal(user.Username(), result.Username)
 }
 
 func (s *GetUserQuerySuite) TestGetUser_NotFound() {
-    // Arrange
-    ctrl := gomock.NewController(s.T())
-    defer ctrl.Finish()
-    
-    mockUserRepo := mocks.NewMockUserRepository(ctrl)
-    mockUserRepo.EXPECT().First(gomock.Any(), gomock.Any()).Return(nil, errors.New("not found"))
-    
-    ctx := s.createContext(mockUserRepo)
-    query := GetUser{UserID: uuid.New()}
-    
-    // Act
-    _, err := HandleGetUser(ctx, query)
-    
-    // Assert
-    s.Error(err)
+	// Arrange
+	ctrl := gomock.NewController(s.T())
+	defer ctrl.Finish()
+
+	mockUserRepo := mocks.NewMockUserRepository(ctrl)
+	mockUserRepo.EXPECT().First(gomock.Any(), gomock.Any()).Return(nil, errors.New("not found"))
+
+	ctx := s.createContext(mockUserRepo)
+	query := GetUser{UserID: uuid.New()}
+
+	// Act
+	_, err := HandleGetUser(ctx, query)
+
+	// Assert
+	s.Error(err)
 }
 ```
 

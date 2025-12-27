@@ -3,6 +3,7 @@ package setup
 import (
 	"Keyline/internal/config"
 	"Keyline/internal/services/outbox"
+
 	"github.com/The127/ioc"
 )
 

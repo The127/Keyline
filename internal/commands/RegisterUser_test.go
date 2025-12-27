@@ -6,10 +6,11 @@ import (
 	"Keyline/internal/password/mock"
 	"Keyline/internal/repositories"
 	"Keyline/internal/repositories/mocks"
-	"github.com/The127/ioc"
-	"github.com/The127/mediatr"
 	"testing"
 	"time"
+
+	"github.com/The127/ioc"
+	"github.com/The127/mediatr"
 
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
