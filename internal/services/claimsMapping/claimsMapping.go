@@ -46,7 +46,7 @@ func (c *claimsMapper) MapClaims(ctx context.Context, applicationId uuid.UUID, p
 
 	applicationFilter := repositories.NewApplicationFilter().
 		Id(applicationId)
-	application, err := dbContext.Applications().First(ctx, applicationFilter)
+	application, err := dbContext.Applications().FirstOrNil(ctx, applicationFilter)
 	if err != nil {
 		logging.Logger.Error(fmt.Errorf("falling back to default mapping, failed getting application: %w", err))
 		return defaultMapping(params)

@@ -147,7 +147,7 @@ func (f *TemplateFilter) GetOrderInfo() OrderInfo {
 //go:generate mockgen -destination=./mocks/template_repository.go -package=mocks Keyline/internal/repositories TemplateRepository
 type TemplateRepository interface {
 	Single(ctx context.Context, filter *TemplateFilter) (*Template, error)
-	First(ctx context.Context, filter *TemplateFilter) (*Template, error)
+	FirstOrNil(ctx context.Context, filter *TemplateFilter) (*Template, error)
 	List(ctx context.Context, filter *TemplateFilter) ([]*Template, int, error)
 	Insert(template *Template)
 }

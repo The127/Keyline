@@ -108,7 +108,7 @@ func (r *SessionRepository) selectQuery(filter *repositories.SessionFilter) *sql
 }
 
 func (r *SessionRepository) Single(ctx context.Context, filter *repositories.SessionFilter) (*repositories.Session, error) {
-	result, err := r.First(ctx, filter)
+	result, err := r.FirstOrNil(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +118,7 @@ func (r *SessionRepository) Single(ctx context.Context, filter *repositories.Ses
 	return result, nil
 }
 
-func (r *SessionRepository) First(ctx context.Context, filter *repositories.SessionFilter) (*repositories.Session, error) {
+func (r *SessionRepository) FirstOrNil(ctx context.Context, filter *repositories.SessionFilter) (*repositories.Session, error) {
 	s := r.selectQuery(filter)
 	s.Limit(1)
 

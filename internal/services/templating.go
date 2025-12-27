@@ -29,7 +29,7 @@ func (s templateService) Template(ctx context.Context, virtualServerId uuid.UUID
 	scope := middlewares.GetScope(ctx)
 	dbContext := ioc.GetDependency[database.Context](scope)
 
-	dbTemplate, err := dbContext.Templates().First(ctx, repositories.NewTemplateFilter().
+	dbTemplate, err := dbContext.Templates().FirstOrNil(ctx, repositories.NewTemplateFilter().
 		VirtualServerId(virtualServerId).
 		TemplateType(templateType))
 	if err != nil {
@@ -40,7 +40,7 @@ func (s templateService) Template(ctx context.Context, virtualServerId uuid.UUID
 		return "", fmt.Errorf("template not found")
 	}
 
-	dbFile, err := dbContext.Files().First(ctx, repositories.NewFileFilter().
+	dbFile, err := dbContext.Files().FirstOrNil(ctx, repositories.NewFileFilter().
 		Id(dbTemplate.FileId()))
 	if err != nil {
 		return "", fmt.Errorf("querying file: %w", err)

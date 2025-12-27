@@ -73,7 +73,7 @@ func HandleGetApplication(ctx context.Context, query GetApplication) (*GetApplic
 		VirtualServerId(virtualServer.Id()).
 		ProjectId(project.Id()).
 		Id(query.ApplicationId)
-	application, err := dbContext.Applications().First(ctx, applicationFilter)
+	application, err := dbContext.Applications().FirstOrNil(ctx, applicationFilter)
 	if err != nil {
 		return nil, fmt.Errorf("searching application: %w", err)
 	}

@@ -134,7 +134,7 @@ func (f *PasswordRuleFilter) GetType() PasswordRuleType {
 type PasswordRuleRepository interface {
 	List(ctx context.Context, filter *PasswordRuleFilter) ([]*PasswordRule, error)
 	Single(ctx context.Context, filter *PasswordRuleFilter) (*PasswordRule, error)
-	First(ctx context.Context, filter *PasswordRuleFilter) (*PasswordRule, error)
+	FirstOrNil(ctx context.Context, filter *PasswordRuleFilter) (*PasswordRule, error)
 	Insert(passwordRule *PasswordRule)
 	Update(passwordRule *PasswordRule)
 	Delete(id uuid.UUID)

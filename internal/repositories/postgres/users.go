@@ -172,7 +172,7 @@ func (r *UserRepository) List(ctx context.Context, filter *repositories.UserFilt
 }
 
 func (r *UserRepository) Single(ctx context.Context, filter *repositories.UserFilter) (*repositories.User, error) {
-	result, err := r.First(ctx, filter)
+	result, err := r.FirstOrNil(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -182,7 +182,7 @@ func (r *UserRepository) Single(ctx context.Context, filter *repositories.UserFi
 	return result, nil
 }
 
-func (r *UserRepository) First(ctx context.Context, filter *repositories.UserFilter) (*repositories.User, error) {
+func (r *UserRepository) FirstOrNil(ctx context.Context, filter *repositories.UserFilter) (*repositories.User, error) {
 	s := r.selectQuery(filter)
 	s.Limit(1)
 

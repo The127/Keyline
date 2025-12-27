@@ -107,7 +107,7 @@ func (r *CredentialRepository) selectQuery(filter *repositories.CredentialFilter
 }
 
 func (r *CredentialRepository) Single(ctx context.Context, filter *repositories.CredentialFilter) (*repositories.Credential, error) {
-	credential, err := r.First(ctx, filter)
+	credential, err := r.FirstOrNil(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +117,7 @@ func (r *CredentialRepository) Single(ctx context.Context, filter *repositories.
 	return credential, nil
 }
 
-func (r *CredentialRepository) First(ctx context.Context, filter *repositories.CredentialFilter) (*repositories.Credential, error) {
+func (r *CredentialRepository) FirstOrNil(ctx context.Context, filter *repositories.CredentialFilter) (*repositories.Credential, error) {
 	s := r.selectQuery(filter)
 	s.Limit(1)
 

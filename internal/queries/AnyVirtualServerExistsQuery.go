@@ -22,7 +22,7 @@ func HandleAnyVirtualServerExists(ctx context.Context, _ AnyVirtualServerExists)
 	scope := middlewares.GetScope(ctx)
 	dbContext := ioc.GetDependency[database.Context](scope)
 
-	virtualServer, err := dbContext.VirtualServers().First(ctx, repositories.NewVirtualServerFilter())
+	virtualServer, err := dbContext.VirtualServers().FirstOrNil(ctx, repositories.NewVirtualServerFilter())
 	if err != nil {
 		return nil, fmt.Errorf("searching virtual servers: %w", err)
 	}

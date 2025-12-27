@@ -150,7 +150,7 @@ func (r *ProjectRepository) List(ctx context.Context, filter *repositories.Proje
 	return projects, totalCount, nil
 }
 
-func (r *ProjectRepository) First(ctx context.Context, filter *repositories.ProjectFilter) (*repositories.Project, error) {
+func (r *ProjectRepository) FirstOrNil(ctx context.Context, filter *repositories.ProjectFilter) (*repositories.Project, error) {
 	s := r.selectQuery(filter)
 	s.Limit(1)
 
@@ -172,7 +172,7 @@ func (r *ProjectRepository) First(ctx context.Context, filter *repositories.Proj
 }
 
 func (r *ProjectRepository) Single(ctx context.Context, filter *repositories.ProjectFilter) (*repositories.Project, error) {
-	project, err := r.First(ctx, filter)
+	project, err := r.FirstOrNil(ctx, filter)
 	if err != nil {
 		return nil, err
 	}

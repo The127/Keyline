@@ -65,7 +65,7 @@ func HandleUpdateUserAppMetadata(ctx context.Context, command UpdateUserAppMetad
 	applicationUserMetadatFilter := repositories.NewApplicationUserMetadataFilter().
 		ApplicationId(application.Id()).
 		UserId(user.Id())
-	metadata, err := dbContext.ApplicationUserMetadata().First(ctx, applicationUserMetadatFilter)
+	metadata, err := dbContext.ApplicationUserMetadata().FirstOrNil(ctx, applicationUserMetadatFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting application user metadata: %w", err)
 	}

@@ -112,7 +112,7 @@ func (r *GroupRepository) selectQuery(filter *repositories.GroupFilter) *sqlbuil
 }
 
 func (r *GroupRepository) Single(ctx context.Context, filter *repositories.GroupFilter) (*repositories.Group, error) {
-	result, err := r.First(ctx, filter)
+	result, err := r.FirstOrNil(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +122,7 @@ func (r *GroupRepository) Single(ctx context.Context, filter *repositories.Group
 	return result, nil
 }
 
-func (r *GroupRepository) First(ctx context.Context, filter *repositories.GroupFilter) (*repositories.Group, error) {
+func (r *GroupRepository) FirstOrNil(ctx context.Context, filter *repositories.GroupFilter) (*repositories.Group, error) {
 	s := r.selectQuery(filter)
 	s.Limit(1)
 

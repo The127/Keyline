@@ -215,7 +215,7 @@ func (f *ResourceServerFilter) GetOrderInfo() OrderInfo {
 //go:generate mockgen -destination=./mocks/resource_server_repository.go -package=mocks Keyline/internal/repositories ResourceServerRepository
 type ResourceServerRepository interface {
 	List(ctx context.Context, filter *ResourceServerFilter) ([]*ResourceServer, int, error)
-	First(ctx context.Context, filter *ResourceServerFilter) (*ResourceServer, error)
+	FirstOrNil(ctx context.Context, filter *ResourceServerFilter) (*ResourceServer, error)
 	Single(ctx context.Context, filter *ResourceServerFilter) (*ResourceServer, error)
 	Insert(resourceServer *ResourceServer)
 	Update(resourceServer *ResourceServer)

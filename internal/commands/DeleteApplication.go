@@ -59,7 +59,7 @@ func HandleDeleteApplication(ctx context.Context, command DeleteApplication) (*D
 		VirtualServerId(virtualServer.Id()).
 		ProjectId(project.Id()).
 		Id(command.ApplicationId)
-	application, err := dbContext.Applications().First(ctx, applicationFilter)
+	application, err := dbContext.Applications().FirstOrNil(ctx, applicationFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting application: %w", err)
 	}

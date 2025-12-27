@@ -227,7 +227,7 @@ func PermissionBasedPolicy(ctx context.Context, permission permissions.Permissio
 		dbContext := ioc.GetDependency[database.Context](scope)
 
 		virtualServerFilter := repositories.NewVirtualServerFilter().Name(virtualServerName)
-		virtualServer, err := dbContext.VirtualServers().First(ctx, virtualServerFilter)
+		virtualServer, err := dbContext.VirtualServers().FirstOrNil(ctx, virtualServerFilter)
 		if err != nil {
 			return PolicyResult{}, fmt.Errorf("getting virtual server: %w", err)
 		}

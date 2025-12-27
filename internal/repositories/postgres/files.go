@@ -88,7 +88,7 @@ func (r *FileRepository) selectQuery(filter *repositories.FileFilter) *sqlbuilde
 }
 
 func (r *FileRepository) Single(ctx context.Context, filter *repositories.FileFilter) (*repositories.File, error) {
-	file, err := r.First(ctx, filter)
+	file, err := r.FirstOrNil(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +98,7 @@ func (r *FileRepository) Single(ctx context.Context, filter *repositories.FileFi
 	return file, nil
 }
 
-func (r *FileRepository) First(ctx context.Context, filter *repositories.FileFilter) (*repositories.File, error) {
+func (r *FileRepository) FirstOrNil(ctx context.Context, filter *repositories.FileFilter) (*repositories.File, error) {
 	s := r.selectQuery(filter)
 
 	s.Limit(1)

@@ -54,7 +54,7 @@ func HandleCreatePasswordRule(ctx context.Context, command CreatePasswordRule) (
 	passwordRuleFilter := repositories.NewPasswordRuleFilter().
 		VirtualServerId(virtualServer.Id()).
 		Type(command.Type)
-	passwordRule, err := dbContext.PasswordRules().First(ctx, passwordRuleFilter)
+	passwordRule, err := dbContext.PasswordRules().FirstOrNil(ctx, passwordRuleFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting password rule: %w", err)
 	}

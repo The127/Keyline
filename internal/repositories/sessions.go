@@ -144,7 +144,7 @@ func (f *SessionFilter) GetId() uuid.UUID {
 //go:generate mockgen -destination=./mocks/session_repository.go -package=mocks Keyline/internal/repositories SessionRepository
 type SessionRepository interface {
 	Single(ctx context.Context, filter *SessionFilter) (*Session, error)
-	First(ctx context.Context, filter *SessionFilter) (*Session, error)
+	FirstOrNil(ctx context.Context, filter *SessionFilter) (*Session, error)
 	Insert(session *Session)
 	Delete(id uuid.UUID)
 }

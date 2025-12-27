@@ -54,10 +54,10 @@ func (mr *MockApplicationRepositoryMockRecorder) Delete(id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockApplicationRepository)(nil).Delete), id)
 }
 
-// First mocks base method.
-func (m *MockApplicationRepository) First(ctx context.Context, filter *repositories.ApplicationFilter) (*repositories.Application, error) {
+// FirstOrNil mocks base method.
+func (m *MockApplicationRepository) FirstOrNil(ctx context.Context, filter *repositories.ApplicationFilter) (*repositories.Application, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "First", ctx, filter)
+	ret := m.ctrl.Call(m, "FirstOrNil", ctx, filter)
 	ret0, _ := ret[0].(*repositories.Application)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
@@ -66,7 +66,7 @@ func (m *MockApplicationRepository) First(ctx context.Context, filter *repositor
 // First indicates an expected call of First.
 func (mr *MockApplicationRepositoryMockRecorder) First(ctx, filter any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "First", reflect.TypeOf((*MockApplicationRepository)(nil).First), ctx, filter)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FirstOrNil", reflect.TypeOf((*MockApplicationRepository)(nil).FirstOrNil), ctx, filter)
 }
 
 // Insert mocks base method.

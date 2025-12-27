@@ -51,7 +51,7 @@ func HandleSetPassword(ctx context.Context, command SetPassword) (*SetPasswordRe
 	credentialFilter := repositories.NewCredentialFilter().
 		UserId(command.UserId).
 		Type(repositories.CredentialTypePassword)
-	credential, err := dbContext.Credentials().First(ctx, credentialFilter)
+	credential, err := dbContext.Credentials().FirstOrNil(ctx, credentialFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting credential: %w", err)
 	}

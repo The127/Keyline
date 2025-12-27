@@ -41,10 +41,10 @@ func (m *MockApplicationUserMetadataRepository) EXPECT() *MockApplicationUserMet
 	return m.recorder
 }
 
-// First mocks base method.
-func (m *MockApplicationUserMetadataRepository) First(ctx context.Context, filter *repositories.ApplicationUserMetadataFilter) (*repositories.ApplicationUserMetadata, error) {
+// FirstOrNil mocks base method.
+func (m *MockApplicationUserMetadataRepository) FirstOrNil(ctx context.Context, filter *repositories.ApplicationUserMetadataFilter) (*repositories.ApplicationUserMetadata, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "First", ctx, filter)
+	ret := m.ctrl.Call(m, "FirstOrNil", ctx, filter)
 	ret0, _ := ret[0].(*repositories.ApplicationUserMetadata)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
@@ -53,7 +53,7 @@ func (m *MockApplicationUserMetadataRepository) First(ctx context.Context, filte
 // First indicates an expected call of First.
 func (mr *MockApplicationUserMetadataRepositoryMockRecorder) First(ctx, filter any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "First", reflect.TypeOf((*MockApplicationUserMetadataRepository)(nil).First), ctx, filter)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FirstOrNil", reflect.TypeOf((*MockApplicationUserMetadataRepository)(nil).FirstOrNil), ctx, filter)
 }
 
 // Insert mocks base method.

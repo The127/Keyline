@@ -277,7 +277,7 @@ func (f *UserFilter) GetSearch() SearchFilter {
 type UserRepository interface {
 	List(ctx context.Context, filter *UserFilter) ([]*User, int, error)
 	Single(ctx context.Context, filter *UserFilter) (*User, error)
-	First(ctx context.Context, filter *UserFilter) (*User, error)
+	FirstOrNil(ctx context.Context, filter *UserFilter) (*User, error)
 	Insert(user *User)
 	Update(user *User)
 }

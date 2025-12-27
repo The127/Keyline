@@ -41,10 +41,10 @@ func (m *MockFileRepository) EXPECT() *MockFileRepositoryMockRecorder {
 	return m.recorder
 }
 
-// First mocks base method.
-func (m *MockFileRepository) First(ctx context.Context, filter *repositories.FileFilter) (*repositories.File, error) {
+// FirstOrNil mocks base method.
+func (m *MockFileRepository) FirstOrNil(ctx context.Context, filter *repositories.FileFilter) (*repositories.File, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "First", ctx, filter)
+	ret := m.ctrl.Call(m, "FirstOrNil", ctx, filter)
 	ret0, _ := ret[0].(*repositories.File)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
@@ -53,7 +53,7 @@ func (m *MockFileRepository) First(ctx context.Context, filter *repositories.Fil
 // First indicates an expected call of First.
 func (mr *MockFileRepositoryMockRecorder) First(ctx, filter any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "First", reflect.TypeOf((*MockFileRepository)(nil).First), ctx, filter)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FirstOrNil", reflect.TypeOf((*MockFileRepository)(nil).FirstOrNil), ctx, filter)
 }
 
 // Insert mocks base method.

@@ -148,7 +148,7 @@ func (r *RoleRepository) List(ctx context.Context, filter *repositories.RoleFilt
 }
 
 func (r *RoleRepository) Single(ctx context.Context, filter *repositories.RoleFilter) (*repositories.Role, error) {
-	result, err := r.First(ctx, filter)
+	result, err := r.FirstOrNil(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +158,7 @@ func (r *RoleRepository) Single(ctx context.Context, filter *repositories.RoleFi
 	return result, nil
 }
 
-func (r *RoleRepository) First(ctx context.Context, filter *repositories.RoleFilter) (*repositories.Role, error) {
+func (r *RoleRepository) FirstOrNil(ctx context.Context, filter *repositories.RoleFilter) (*repositories.Role, error) {
 	s := r.selectQuery(filter)
 	s.Limit(1)
 

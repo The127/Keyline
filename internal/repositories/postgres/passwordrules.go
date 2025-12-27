@@ -115,7 +115,7 @@ func (r *PasswordRuleRepository) List(ctx context.Context, filter *repositories.
 	return result, nil
 }
 
-func (r *PasswordRuleRepository) First(ctx context.Context, filter *repositories.PasswordRuleFilter) (*repositories.PasswordRule, error) {
+func (r *PasswordRuleRepository) FirstOrNil(ctx context.Context, filter *repositories.PasswordRuleFilter) (*repositories.PasswordRule, error) {
 	s := r.selectQuery(filter)
 	s.Limit(1)
 
@@ -136,7 +136,7 @@ func (r *PasswordRuleRepository) First(ctx context.Context, filter *repositories
 }
 
 func (r *PasswordRuleRepository) Single(ctx context.Context, filter *repositories.PasswordRuleFilter) (*repositories.PasswordRule, error) {
-	rule, err := r.First(ctx, filter)
+	rule, err := r.FirstOrNil(ctx, filter)
 	if err != nil {
 		return nil, err
 	}

@@ -265,7 +265,7 @@ func VerifyPassword(w http.ResponseWriter, r *http.Request) {
 		}
 
 		userFilter := repositories.NewUserFilter().VirtualServerId(loginInfo.VirtualServerId).Username(dto.Username)
-		user, err := dbContext.Users().First(ctx, userFilter)
+		user, err := dbContext.Users().FirstOrNil(ctx, userFilter)
 		if err != nil {
 			return err
 		}

@@ -25,7 +25,7 @@ func QueueEmailVerificationJobOnUserCreatedEvent(ctx context.Context, event User
 	scope := middlewares.GetScope(ctx)
 	dbContext := ioc.GetDependency[db.Context](scope)
 
-	user, err := dbContext.Users().First(ctx, repositories.NewUserFilter().Id(event.UserId))
+	user, err := dbContext.Users().FirstOrNil(ctx, repositories.NewUserFilter().Id(event.UserId))
 	if err != nil {
 		return fmt.Errorf("getting user: %w", err)
 	}
@@ -34,7 +34,7 @@ func QueueEmailVerificationJobOnUserCreatedEvent(ctx context.Context, event User
 		return nil
 	}
 
-	virtualServer, err := dbContext.VirtualServers().First(ctx, repositories.NewVirtualServerFilter().Id(user.VirtualServerId()))
+	virtualServer, err := dbContext.VirtualServers().FirstOrNil(ctx, repositories.NewVirtualServerFilter().Id(user.VirtualServerId()))
 	if err != nil {
 		return fmt.Errorf("getting virtual server: %w", err)
 	}

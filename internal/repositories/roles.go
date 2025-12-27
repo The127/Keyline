@@ -209,7 +209,7 @@ func (f *RoleFilter) GetVirtualServerId() uuid.UUID {
 type RoleRepository interface {
 	List(ctx context.Context, filter *RoleFilter) ([]*Role, int, error)
 	Single(ctx context.Context, filter *RoleFilter) (*Role, error)
-	First(ctx context.Context, filter *RoleFilter) (*Role, error)
+	FirstOrNil(ctx context.Context, filter *RoleFilter) (*Role, error)
 	Insert(role *Role)
 	Update(role *Role)
 	Delete(id uuid.UUID)

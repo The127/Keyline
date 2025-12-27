@@ -207,7 +207,7 @@ func (f *ProjectFilter) GetOrderInfo() OrderInfo {
 type ProjectRepository interface {
 	List(ctx context.Context, filter *ProjectFilter) ([]*Project, int, error)
 	Single(ctx context.Context, filter *ProjectFilter) (*Project, error)
-	First(ctx context.Context, filter *ProjectFilter) (*Project, error)
+	FirstOrNil(ctx context.Context, filter *ProjectFilter) (*Project, error)
 	Insert(project *Project)
 	Update(project *Project)
 	Delete(id uuid.UUID)

@@ -108,7 +108,7 @@ func WellKnownJwks(w http.ResponseWriter, r *http.Request) {
 	keyService := ioc.GetDependency[services.KeyService](scope)
 
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(vsName)
-	virtualServer, err := dbContext.VirtualServers().First(r.Context(), virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().FirstOrNil(r.Context(), virtualServerFilter)
 	if err != nil {
 		utils.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
 		return
@@ -204,7 +204,7 @@ func WellKnownOpenIdConfiguration(w http.ResponseWriter, r *http.Request) {
 
 	// Fetch the virtual server from database
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(vsName)
-	virtualServer, err := dbContext.VirtualServers().First(ctx, virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().FirstOrNil(ctx, virtualServerFilter)
 	if err != nil {
 		utils.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
 		return
@@ -344,7 +344,7 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 	dbContext := ioc.GetDependency[database.Context](scope)
 
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(vsName)
-	virtualServer, err := dbContext.VirtualServers().First(ctx, virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().FirstOrNil(ctx, virtualServerFilter)
 	if err != nil {
 		utils.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
 		return
@@ -358,7 +358,7 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 	applicationFilter := repositories.NewApplicationFilter().
 		Name(authRequest.ApplicationName).
 		VirtualServerId(virtualServer.Id())
-	application, err := dbContext.Applications().First(ctx, applicationFilter)
+	application, err := dbContext.Applications().FirstOrNil(ctx, applicationFilter)
 	if err != nil {
 		utils.HandleHttpError(w, fmt.Errorf("getting application: %w", err))
 		return
@@ -527,7 +527,7 @@ func OidcEndSession(w http.ResponseWriter, r *http.Request) {
 	}
 
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(vsName)
-	virtualServer, err := dbContext.VirtualServers().First(r.Context(), virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().FirstOrNil(r.Context(), virtualServerFilter)
 	if err != nil {
 		utils.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
 		return
@@ -578,7 +578,7 @@ func OidcEndSession(w http.ResponseWriter, r *http.Request) {
 	}
 
 	applicationFilter := repositories.NewApplicationFilter().Name(clientId)
-	application, err := dbContext.Applications().First(ctx, applicationFilter)
+	application, err := dbContext.Applications().FirstOrNil(ctx, applicationFilter)
 	if err != nil {
 		utils.HandleHttpError(w, fmt.Errorf("getting application: %w", err))
 		return
@@ -675,7 +675,7 @@ func OidcUserinfo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(vsName)
-	virtualServer, err := dbContext.VirtualServers().First(r.Context(), virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().FirstOrNil(r.Context(), virtualServerFilter)
 	if err != nil {
 		utils.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
 		return
@@ -727,7 +727,7 @@ func OidcUserinfo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userFilter := repositories.NewUserFilter().Id(userId).VirtualServerId(virtualServer.Id())
-	user, err := dbContext.Users().First(ctx, userFilter)
+	user, err := dbContext.Users().FirstOrNil(ctx, userFilter)
 	if err != nil {
 		utils.HandleHttpError(w, fmt.Errorf("getting user: %w", err))
 		return
@@ -849,7 +849,7 @@ func authenticateApplication(ctx context.Context, applicationName string, applic
 	dbContext := ioc.GetDependency[database.Context](scope)
 
 	applicationFilter := repositories.NewApplicationFilter().Name(applicationName)
-	application, err := dbContext.Applications().First(ctx, applicationFilter)
+	application, err := dbContext.Applications().FirstOrNil(ctx, applicationFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting application: %w", err)
 	}
@@ -922,7 +922,7 @@ func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 	dbContext := ioc.GetDependency[database.Context](scope)
 
 	userFilter := repositories.NewUserFilter().Id(codeInfo.UserId)
-	user, err := dbContext.Users().First(ctx, userFilter)
+	user, err := dbContext.Users().FirstOrNil(ctx, userFilter)
 	if err != nil {
 		utils.HandleHttpError(w, fmt.Errorf("getting user: %w", err))
 		return
@@ -938,7 +938,7 @@ func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 	now := clockService.Now()
 
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(codeInfo.VirtualServerName)
-	virtualServer, err := dbContext.VirtualServers().First(r.Context(), virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().FirstOrNil(r.Context(), virtualServerFilter)
 	if err != nil {
 		utils.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
 		return
@@ -947,7 +947,7 @@ func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 	applicationFilter := repositories.NewApplicationFilter().
 		VirtualServerId(virtualServer.Id()).
 		Name(clientId)
-	application, err := dbContext.Applications().First(ctx, applicationFilter)
+	application, err := dbContext.Applications().FirstOrNil(ctx, applicationFilter)
 	if err != nil {
 		utils.HandleHttpError(w, fmt.Errorf("getting application: %w", err))
 		return
@@ -1236,7 +1236,7 @@ func mapClaims(ctx context.Context, params AccessTokenGenerationParams) (jwt.Map
 	applicationUserMetadataFilter := repositories.NewApplicationUserMetadataFilter().
 		UserId(params.UserId).
 		ApplicationId(params.ApplicationId)
-	applicationUserMetadata, err := dbContext.ApplicationUserMetadata().First(ctx, applicationUserMetadataFilter)
+	applicationUserMetadata, err := dbContext.ApplicationUserMetadata().FirstOrNil(ctx, applicationUserMetadataFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting application user metadata: %w", err)
 	}
@@ -1362,7 +1362,7 @@ func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 	dbContext := ioc.GetDependency[database.Context](scope)
 
 	userFilter := repositories.NewUserFilter().Id(refreshTokenInfo.UserId)
-	user, err := dbContext.Users().First(ctx, userFilter)
+	user, err := dbContext.Users().FirstOrNil(ctx, userFilter)
 	if err != nil {
 		utils.HandleHttpError(w, fmt.Errorf("getting user: %w", err))
 		return
@@ -1376,7 +1376,7 @@ func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 	now := clockService.Now()
 
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(refreshTokenInfo.VirtualServerName)
-	virtualServer, err := dbContext.VirtualServers().First(r.Context(), virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().FirstOrNil(r.Context(), virtualServerFilter)
 	if err != nil {
 		utils.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
 		return
@@ -1385,7 +1385,7 @@ func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 	applicationFilter := repositories.NewApplicationFilter().
 		VirtualServerId(virtualServer.Id()).
 		Name(clientId)
-	application, err := dbContext.Applications().First(ctx, applicationFilter)
+	application, err := dbContext.Applications().FirstOrNil(ctx, applicationFilter)
 	if err != nil {
 		utils.HandleHttpError(w, fmt.Errorf("getting application: %w", err))
 		return
@@ -1476,7 +1476,7 @@ func handleTokenExchange(w http.ResponseWriter, r *http.Request) {
 	}
 
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(virtualServerName)
-	virtualServer, err := dbContext.VirtualServers().First(ctx, virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().FirstOrNil(ctx, virtualServerFilter)
 	if err != nil {
 		utils.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
 		return
@@ -1548,7 +1548,7 @@ func handleTokenExchange(w http.ResponseWriter, r *http.Request) {
 		userFilter := repositories.NewUserFilter().
 			VirtualServerId(virtualServer.Id()).
 			Username(subject)
-		user, err := dbContext.Users().First(ctx, userFilter)
+		user, err := dbContext.Users().FirstOrNil(ctx, userFilter)
 		if err != nil {
 			return nil, fmt.Errorf("getting user: %w", err)
 		}
@@ -1564,7 +1564,7 @@ func handleTokenExchange(w http.ResponseWriter, r *http.Request) {
 			Type(repositories.CredentialTypeServiceUserKey).
 			UserId(user.Id()).
 			DetailKid(kid)
-		credential, err := dbContext.Credentials().First(ctx, credentialFilter)
+		credential, err := dbContext.Credentials().FirstOrNil(ctx, credentialFilter)
 		if err != nil {
 			return nil, fmt.Errorf("getting credential: %w", err)
 		}
@@ -1608,7 +1608,7 @@ func handleTokenExchange(w http.ResponseWriter, r *http.Request) {
 	userFilter := repositories.NewUserFilter().
 		VirtualServerId(virtualServer.Id()).
 		Username(subject)
-	user, err := dbContext.Users().First(ctx, userFilter)
+	user, err := dbContext.Users().FirstOrNil(ctx, userFilter)
 	if err != nil {
 		utils.HandleHttpError(w, fmt.Errorf("getting user: %w", err))
 		return
@@ -1635,7 +1635,7 @@ func handleTokenExchange(w http.ResponseWriter, r *http.Request) {
 	applicationFilter := repositories.NewApplicationFilter().
 		VirtualServerId(virtualServer.Id()).
 		Name(applicationName)
-	application, err := dbContext.Applications().First(ctx, applicationFilter)
+	application, err := dbContext.Applications().FirstOrNil(ctx, applicationFilter)
 	if err != nil {
 		utils.HandleHttpError(w, fmt.Errorf("getting application: %w", err))
 		return

@@ -109,7 +109,7 @@ func (r *TemplateRepository) selectQuery(filter *repositories.TemplateFilter) *s
 }
 
 func (r *TemplateRepository) Single(ctx context.Context, filter *repositories.TemplateFilter) (*repositories.Template, error) {
-	template, err := r.First(ctx, filter)
+	template, err := r.FirstOrNil(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +119,7 @@ func (r *TemplateRepository) Single(ctx context.Context, filter *repositories.Te
 	return template, nil
 }
 
-func (r *TemplateRepository) First(ctx context.Context, filter *repositories.TemplateFilter) (*repositories.Template, error) {
+func (r *TemplateRepository) FirstOrNil(ctx context.Context, filter *repositories.TemplateFilter) (*repositories.Template, error) {
 	s := r.selectQuery(filter)
 	s.Limit(1)
 

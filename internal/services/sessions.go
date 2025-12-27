@@ -113,7 +113,7 @@ func (s *sessionService) DeleteSession(ctx context.Context, virtualServerName st
 	}
 
 	sessionFilter := repositories.NewSessionFilter().Id(id)
-	dbSession, err := dbContext.Sessions().First(ctx, sessionFilter)
+	dbSession, err := dbContext.Sessions().FirstOrNil(ctx, sessionFilter)
 	if err != nil {
 		return fmt.Errorf("getting session from db: %w", err)
 	}
@@ -152,7 +152,7 @@ func (s *sessionService) loadSessionFromDatabase(ctx context.Context, virtualSer
 	sessionFilter := repositories.NewSessionFilter().
 		VirtualServerId(virtualServer.Id()).
 		Id(id)
-	dbSession, err := dbContext.Sessions().First(ctx, sessionFilter)
+	dbSession, err := dbContext.Sessions().FirstOrNil(ctx, sessionFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting session from db: %w", err)
 	}

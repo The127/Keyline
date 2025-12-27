@@ -222,7 +222,7 @@ func (f *ResourceServerScopeFilter) GetOrderInfo() OrderInfo {
 type ResourceServerScopeRepository interface {
 	List(ctx context.Context, filter *ResourceServerScopeFilter) ([]*ResourceServerScope, int, error)
 	Single(ctx context.Context, filter *ResourceServerScopeFilter) (*ResourceServerScope, error)
-	First(ctx context.Context, filter *ResourceServerScopeFilter) (*ResourceServerScope, error)
+	FirstOrNil(ctx context.Context, filter *ResourceServerScopeFilter) (*ResourceServerScope, error)
 	Insert(resourceServerScope *ResourceServerScope)
 	Update(resourceServerScope *ResourceServerScope)
 	Delete(id uuid.UUID)

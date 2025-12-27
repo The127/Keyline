@@ -148,7 +148,7 @@ func (r *ResourceServerRepository) List(ctx context.Context, filter *repositorie
 	return resourceServers, totalCount, nil
 }
 
-func (r *ResourceServerRepository) First(ctx context.Context, filter *repositories.ResourceServerFilter) (*repositories.ResourceServer, error) {
+func (r *ResourceServerRepository) FirstOrNil(ctx context.Context, filter *repositories.ResourceServerFilter) (*repositories.ResourceServer, error) {
 	s := r.selectQuery(filter)
 	s.Limit(1)
 
@@ -166,7 +166,7 @@ func (r *ResourceServerRepository) First(ctx context.Context, filter *repositori
 }
 
 func (r *ResourceServerRepository) Single(ctx context.Context, filter *repositories.ResourceServerFilter) (*repositories.ResourceServer, error) {
-	resourceServer, err := r.First(ctx, filter)
+	resourceServer, err := r.FirstOrNil(ctx, filter)
 	if err != nil {
 		return nil, err
 	}

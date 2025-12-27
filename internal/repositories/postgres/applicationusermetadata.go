@@ -125,7 +125,7 @@ func (r *ApplicationUserMetadataRepository) List(ctx context.Context, filter *re
 }
 
 func (r *ApplicationUserMetadataRepository) Single(ctx context.Context, filter *repositories.ApplicationUserMetadataFilter) (*repositories.ApplicationUserMetadata, error) {
-	result, err := r.First(ctx, filter)
+	result, err := r.FirstOrNil(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +135,7 @@ func (r *ApplicationUserMetadataRepository) Single(ctx context.Context, filter *
 	return result, nil
 }
 
-func (r *ApplicationUserMetadataRepository) First(ctx context.Context, filter *repositories.ApplicationUserMetadataFilter) (*repositories.ApplicationUserMetadata, error) {
+func (r *ApplicationUserMetadataRepository) FirstOrNil(ctx context.Context, filter *repositories.ApplicationUserMetadataFilter) (*repositories.ApplicationUserMetadata, error) {
 	s := r.selectQuery(filter)
 	s.Limit(1)
 

@@ -163,7 +163,7 @@ func (r *ApplicationRepository) selectQuery(filter *repositories.ApplicationFilt
 }
 
 func (r *ApplicationRepository) Single(ctx context.Context, filter *repositories.ApplicationFilter) (*repositories.Application, error) {
-	application, err := r.First(ctx, filter)
+	application, err := r.FirstOrNil(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -173,7 +173,7 @@ func (r *ApplicationRepository) Single(ctx context.Context, filter *repositories
 	return application, nil
 }
 
-func (r *ApplicationRepository) First(ctx context.Context, filter *repositories.ApplicationFilter) (*repositories.Application, error) {
+func (r *ApplicationRepository) FirstOrNil(ctx context.Context, filter *repositories.ApplicationFilter) (*repositories.Application, error) {
 	s := r.selectQuery(filter)
 	s.Limit(1)
 
