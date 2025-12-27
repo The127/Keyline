@@ -69,7 +69,7 @@ func HandleRegisterUser(ctx context.Context, command RegisterUser) (*RegisterUse
 
 	m := ioc.GetDependency[mediatr.Mediator](scope)
 	err = mediatr.SendEvent(ctx, m, events.UserCreatedEvent{
-		UserId: user.Id(),
+		User: user,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("raising event: %w", err)

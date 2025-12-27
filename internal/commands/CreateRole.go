@@ -80,7 +80,7 @@ func HandleCreateRole(ctx context.Context, command CreateRole) (*CreateRoleRespo
 
 	m := ioc.GetDependency[mediatr.Mediator](scope)
 	err = mediatr.SendEvent(ctx, m, events.RoleCreatedEvent{
-		RoleId: role.Id(),
+		Role: role,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("raising event: %w", err)

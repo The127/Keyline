@@ -13,7 +13,6 @@ import (
 	"Keyline/internal/setup"
 	"Keyline/utils"
 	"context"
-	"database/sql"
 	"fmt"
 	"strings"
 	"sync"
@@ -62,7 +61,7 @@ func (h *harness) Client() client.Client {
 
 func (h *harness) Close() {
 	// cleanup database
-	dbConnection := ioc.GetDependency[*sql.DB](h.scope)
+	dbConnection := ioc.GetDependency[database.Database](h.scope)
 	utils.PanicOnError(h.scope.Close, "closing scope")
 	utils.PanicOnError(dbConnection.Close, "closing db connection in test")
 

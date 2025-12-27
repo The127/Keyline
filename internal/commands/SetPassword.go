@@ -4,7 +4,6 @@ import (
 	"Keyline/internal/authentication/permissions"
 	"Keyline/internal/behaviours"
 	"Keyline/internal/database"
-	"Keyline/internal/events"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/utils"
@@ -12,8 +11,6 @@ import (
 	"fmt"
 
 	"github.com/The127/ioc"
-	"github.com/The127/mediatr"
-
 	"github.com/google/uuid"
 )
 
@@ -75,14 +72,6 @@ func HandleSetPassword(ctx context.Context, command SetPassword) (*SetPasswordRe
 		dbContext.Credentials().Update(credential)
 	} else {
 		dbContext.Credentials().Insert(credential)
-	}
-
-	m := ioc.GetDependency[mediatr.Mediator](scope)
-	err = mediatr.SendEvent(ctx, m, events.PasswordChangedEvent{
-		UserId: command.UserId,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("raising event: %w", err)
 	}
 
 	return &SetPasswordResponse{}, nil
