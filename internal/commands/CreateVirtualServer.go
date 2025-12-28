@@ -17,8 +17,6 @@ import (
 	"github.com/The127/go-clock"
 
 	"github.com/The127/ioc"
-	"github.com/The127/mediatr"
-
 	"github.com/google/uuid"
 )
 
@@ -118,6 +116,8 @@ func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer)
 	scope := middlewares.GetScope(ctx)
 	dbContext := ioc.GetDependency[database.Context](scope)
 
+	roleIdsByFullyQualifiedName := make(map[string]uuid.UUID)
+
 	virtualServer := repositories.NewVirtualServer(command.Name, command.DisplayName)
 	virtualServer.SetEnableRegistration(command.EnableRegistration)
 	virtualServer.SetRequire2fa(command.Require2fa)
@@ -140,126 +140,90 @@ func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer)
 	initDefaultAppsResult := initializeDefaultApplications(ctx, virtualServer, systemProject)
 	defaultRolesResult := initializeDefaultAdminRoles(ctx, virtualServer, systemProject, command.CreateSystemAdminRole)
 
-	m := ioc.GetDependency[mediatr.Mediator](scope)
+	roleIdsByFullyQualifiedName[fmt.Sprintf("%s:%s", systemProject.Slug(), AdminRoleName)] = defaultRolesResult.adminRoleId
+	if defaultRolesResult.systemAdminRoleId != nil {
+		roleIdsByFullyQualifiedName[fmt.Sprintf("%s:%s", systemProject.Slug(), SystemAdminRoleName)] = *defaultRolesResult.systemAdminRoleId
+	}
+
 	for _, project := range command.Projects {
-		_, err = mediatr.Send[*CreateProjectResponse](ctx, m, CreateProject{
-			VirtualServerName: virtualServer.Name(),
-			Slug:              project.Slug,
-			Name:              project.Name,
-			Description:       project.Description,
-		})
-		if err != nil {
-			return nil, fmt.Errorf("creating project: %w", err)
-		}
+		newProject := repositories.NewProject(virtualServer.Id(), project.Slug, project.Name, project.Description)
+		dbContext.Projects().Insert(newProject)
 
 		for _, app := range project.Applications {
-			_, err = mediatr.Send[*CreateApplicationResponse](ctx, m, CreateApplication{
-				VirtualServerName:      virtualServer.Name(),
-				ProjectSlug:            project.Slug,
-				Name:                   app.Name,
-				DisplayName:            app.DisplayName,
-				Type:                   repositories.ApplicationType(app.Type),
-				RedirectUris:           app.RedirectUris,
-				PostLogoutRedirectUris: app.PostLogoutUris,
-				HashedSecret:           app.HashedSecret,
-			})
-			if err != nil {
-				return nil, fmt.Errorf("creating application: %w", err)
+			newApp := repositories.NewApplication(
+				virtualServer.Id(),
+				newProject.Id(),
+				app.Name,
+				app.DisplayName,
+				repositories.ApplicationType(app.Type),
+				app.RedirectUris,
+			)
+			if app.HashedSecret != nil {
+				newApp.SetHashedSecret(*app.HashedSecret)
 			}
+			newApp.SetPostLogoutRedirectUris(app.PostLogoutUris)
+			dbContext.Applications().Insert(newApp)
 		}
 
 		for _, role := range project.Roles {
-			_, err = mediatr.Send[*CreateRoleResponse](ctx, m, CreateRole{
-				VirtualServerName: virtualServer.Name(),
-				ProjectSlug:       project.Slug,
-				Name:              role.Name,
-				Description:       role.Description,
-			})
-			if err != nil {
-				return nil, fmt.Errorf("creating role: %w", err)
-			}
+			newRole := repositories.NewRole(virtualServer.Id(), newProject.Id(), role.Name, role.Description)
+			dbContext.Roles().Insert(newRole)
+			roleIdsByFullyQualifiedName[fmt.Sprintf("%s:%s", project.Slug, role.Name)] = newRole.Id()
 		}
 
 		for _, resourceServer := range project.ResourceServers {
-			_, err = mediatr.Send[*CreateResourceServerResponse](ctx, m, CreateResourceServer{
-				VirtualServerName: virtualServer.Name(),
-				ProjectSlug:       project.Slug,
-				Slug:              resourceServer.Slug,
-				Name:              resourceServer.Name,
-				Description:       resourceServer.Description,
-			})
-			if err != nil {
-				return nil, fmt.Errorf("creating resource server: %w", err)
-			}
+			newResourceServer := repositories.NewResourceServer(virtualServer.Id(), newProject.Id(), resourceServer.Slug, resourceServer.Name, resourceServer.Description)
+			dbContext.ResourceServers().Insert(newResourceServer)
 		}
 	}
 
 	if command.Admin != nil {
-		initialAdminUserInfo, err := mediatr.Send[*CreateUserResponse](ctx, m, CreateUser{
-			VirtualServerName: virtualServer.Name(),
-			DisplayName:       command.Admin.DisplayName,
-			Username:          command.Admin.Username,
-			Email:             command.Admin.PrimaryEmail,
-			EmailVerified:     true,
-		})
-		if err != nil {
-			return nil, fmt.Errorf("creating admin user: %w", err)
-		}
+		initialAdminUser := repositories.NewUser(command.Admin.Username, command.Admin.DisplayName, command.Admin.PrimaryEmail, virtualServer.Id())
+		initialAdminUser.SetEmailVerified(true)
+		dbContext.Users().Insert(initialAdminUser)
 
-		initialAdminCredential := repositories.NewCredential(initialAdminUserInfo.Id, &repositories.CredentialPasswordDetails{
+		initialAdminCredential := repositories.NewCredential(initialAdminUser.Id(), &repositories.CredentialPasswordDetails{
 			HashedPassword: command.Admin.PasswordHash,
 			Temporary:      false,
 		})
 		dbContext.Credentials().Insert(initialAdminCredential)
 
-		_, err = mediatr.Send[*AssignRoleToUserResponse](ctx, m, AssignRoleToUser{
-			VirtualServerName: virtualServer.Name(),
-			ProjectSlug:       systemProject.Slug(),
-			UserId:            initialAdminUserInfo.Id,
-			RoleId:            defaultRolesResult.adminRoleId,
-		})
-		if err != nil {
-			return nil, fmt.Errorf("assigning admin role to admin user: %w", err)
-		}
+		adminRoleAssignment := repositories.NewUserRoleAssignment(
+			initialAdminUser.Id(),
+			defaultRolesResult.adminRoleId,
+			nil,
+		)
+		dbContext.UserRoleAssignments().Insert(adminRoleAssignment)
 
 		if command.CreateSystemAdminRole {
-			_, err = mediatr.Send[*AssignRoleToUserResponse](ctx, m, AssignRoleToUser{
-				VirtualServerName: virtualServer.Name(),
-				ProjectSlug:       systemProject.Slug(),
-				UserId:            initialAdminUserInfo.Id,
-				RoleId:            *defaultRolesResult.systemAdminRoleId,
-			})
-			if err != nil {
-				return nil, fmt.Errorf("assigning system admin role to admin user: %w", err)
-			}
+			systemAdminRoleAssignment := repositories.NewUserRoleAssignment(
+				initialAdminUser.Id(),
+				*defaultRolesResult.systemAdminRoleId,
+				nil,
+			)
+			dbContext.UserRoleAssignments().Insert(systemAdminRoleAssignment)
 		}
 
-		err = assignRoles(ctx, m, virtualServer, initialAdminUserInfo.Id, command.Admin.Roles)
+		err = assignRoles(ctx, initialAdminUser.Id(), command.Admin.Roles, roleIdsByFullyQualifiedName)
 		if err != nil {
 			return nil, fmt.Errorf("assigning roles to admin user: %w", err)
 		}
 	}
 
 	for _, serviceUser := range command.ServiceUsers {
-		serviceUserResponse, err := mediatr.Send[*CreateServiceUserResponse](ctx, m, CreateServiceUser{
-			VirtualServerName: virtualServer.Name(),
-			Username:          serviceUser.Username,
-		})
-		if err != nil {
-			return nil, fmt.Errorf("creating service user: %w", err)
-		}
+		newServiceUser := repositories.NewServiceUser(serviceUser.Username, virtualServer.Id())
+		dbContext.Users().Insert(newServiceUser)
 
-		_, err = mediatr.Send[*AssociateServiceUserPublicKeyResponse](ctx, m, AssociateServiceUserPublicKey{
-			VirtualServerName: virtualServer.Name(),
-			ServiceUserId:     serviceUserResponse.Id,
-			PublicKey:         serviceUser.PublicKey.Pem,
-			Kid:               &serviceUser.PublicKey.Kid,
-		})
-		if err != nil {
-			return nil, fmt.Errorf("associating service user public key: %w", err)
-		}
+		associatedPublicKey := repositories.NewCredential(
+			newServiceUser.Id(),
+			&repositories.CredentialServiceUserKey{
+				Kid:       serviceUser.PublicKey.Kid,
+				PublicKey: serviceUser.PublicKey.Pem,
+			},
+		)
+		dbContext.Credentials().Insert(associatedPublicKey)
 
-		err = assignRoles(ctx, m, virtualServer, serviceUserResponse.Id, serviceUser.Roles)
+		err = assignRoles(ctx, newServiceUser.Id(), serviceUser.Roles, roleIdsByFullyQualifiedName)
 		if err != nil {
 			return nil, fmt.Errorf("assigning roles to service user: %w", err)
 		}
@@ -274,7 +238,7 @@ func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer)
 	}, nil
 }
 
-func assignRoles(ctx context.Context, m mediatr.Mediator, virtualServer *repositories.VirtualServer, userId uuid.UUID, roleList []string) error {
+func assignRoles(ctx context.Context, userId uuid.UUID, roleList []string, roleIdsByFullyQualifiedName map[string]uuid.UUID) error {
 	scope := middlewares.GetScope(ctx)
 	dbContext := ioc.GetDependency[database.Context](scope)
 
@@ -283,34 +247,13 @@ func assignRoles(ctx context.Context, m mediatr.Mediator, virtualServer *reposit
 			return fmt.Errorf("role %s does not contain project slug", configuredRole)
 		}
 
-		split := strings.Split(configuredRole, ":")
-		projectSlug := split[0]
-		roleName := split[1]
-
-		projectFilter := repositories.NewProjectFilter().VirtualServerId(virtualServer.Id()).Slug(projectSlug)
-		project, err := dbContext.Projects().FirstOrErr(ctx, projectFilter)
-		if err != nil {
-			return fmt.Errorf("getting project: %w", err)
+		roleId, ok := roleIdsByFullyQualifiedName[configuredRole]
+		if !ok {
+			return fmt.Errorf("role %s not found", configuredRole)
 		}
 
-		roleFilter := repositories.NewRoleFilter().
-			VirtualServerId(virtualServer.Id()).
-			ProjectId(project.Id()).
-			Name(roleName)
-		role, err := dbContext.Roles().FirstOrErr(ctx, roleFilter)
-		if err != nil {
-			return fmt.Errorf("getting role: %w", err)
-		}
-
-		_, err = mediatr.Send[*AssignRoleToUserResponse](ctx, m, AssignRoleToUser{
-			VirtualServerName: virtualServer.Name(),
-			ProjectSlug:       projectSlug,
-			UserId:            userId,
-			RoleId:            role.Id(),
-		})
-		if err != nil {
-			return fmt.Errorf("assigning role to user: %w", err)
-		}
+		newRoleAssignment := repositories.NewUserRoleAssignment(userId, roleId, nil)
+		dbContext.UserRoleAssignments().Insert(newRoleAssignment)
 	}
 
 	return nil
