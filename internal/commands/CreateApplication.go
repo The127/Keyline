@@ -4,6 +4,7 @@ import (
 	"Keyline/internal/authentication"
 	"Keyline/internal/authentication/permissions"
 	"Keyline/internal/behaviours"
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/utils"
@@ -51,17 +52,16 @@ type CreateApplicationResponse struct {
 
 func HandleCreateApplication(ctx context.Context, command CreateApplication) (*CreateApplicationResponse, error) {
 	scope := middlewares.GetScope(ctx)
+	dbContext := ioc.GetDependency[database.Context](scope)
 
-	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(command.VirtualServerName)
-	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().FirstOrErr(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
-	projectRepository := ioc.GetDependency[repositories.ProjectRepository](scope)
 	projectFilter := repositories.NewProjectFilter().VirtualServerId(virtualServer.Id()).Slug(command.ProjectSlug)
-	project, err := projectRepository.Single(ctx, projectFilter)
+	project, err := dbContext.Projects().FirstOrErr(ctx, projectFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting project: %w", err)
 	}
@@ -74,7 +74,6 @@ func HandleCreateApplication(ctx context.Context, command CreateApplication) (*C
 		}
 	}
 
-	applicationRepository := ioc.GetDependency[repositories.ApplicationRepository](scope)
 	application := repositories.NewApplication(virtualServer.Id(), project.Id(), command.Name, command.DisplayName, command.Type, command.RedirectUris)
 
 	var secret *string = nil
@@ -90,10 +89,7 @@ func HandleCreateApplication(ctx context.Context, command CreateApplication) (*C
 	application.SetPostLogoutRedirectUris(command.PostLogoutRedirectUris)
 	application.SetAccessTokenHeaderType(command.AccessTokenHeaderType)
 
-	err = applicationRepository.Insert(ctx, application)
-	if err != nil {
-		return nil, fmt.Errorf("inserting application: %w", err)
-	}
+	dbContext.Applications().Insert(application)
 
 	return &CreateApplicationResponse{
 		Id:     application.Id(),

@@ -3,12 +3,14 @@ package queries
 import (
 	"Keyline/internal/authentication/permissions"
 	"Keyline/internal/behaviours"
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"context"
 	"fmt"
-	"github.com/The127/ioc"
 	"time"
+
+	"github.com/The127/ioc"
 
 	"github.com/google/uuid"
 )
@@ -47,27 +49,26 @@ type GetResourceServerScopeResponse struct {
 
 func HandleGetResourceServerScope(ctx context.Context, query GetResourceServerScope) (*GetResourceServerScopeResponse, error) {
 	scope := middlewares.GetScope(ctx)
+	dbContext := ioc.GetDependency[database.Context](scope)
 
-	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(query.VirtualServerName)
-	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().FirstOrErr(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
-	projectRepository := ioc.GetDependency[repositories.ProjectRepository](scope)
 	projectFilter := repositories.NewProjectFilter().VirtualServerId(virtualServer.Id()).Slug(query.ProjectSlug)
-	project, err := projectRepository.Single(ctx, projectFilter)
+	project, err := dbContext.Projects().FirstOrErr(ctx, projectFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting project: %w", err)
 	}
-	resourceServerScopeRepository := ioc.GetDependency[repositories.ResourceServerScopeRepository](scope)
+
 	resourceServerScopeFilter := repositories.NewResourceServerScopeFilter().
 		VirtualServerId(virtualServer.Id()).
 		ProjectId(project.Id()).
 		ResourceServerId(query.ResourceServerId).
 		Id(query.ScopeId)
-	resourceServerScope, err := resourceServerScopeRepository.Single(ctx, resourceServerScopeFilter)
+	resourceServerScope, err := dbContext.ResourceServerScopes().FirstOrErr(ctx, resourceServerScopeFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting resource server scope: %w", err)
 	}

@@ -20,21 +20,10 @@ type OutboxMessageDetails interface {
 }
 
 type OutboxMessage struct {
-	ModelBase
+	BaseModel
 
 	_type   OutboxMessageType
 	details []byte
-}
-
-func (m *OutboxMessage) GetScanPointers() []any {
-	return []any{
-		&m.id,
-		&m.auditCreatedAt,
-		&m.auditUpdatedAt,
-		&m.version,
-		&m._type,
-		&m.details,
-	}
 }
 
 func (m *OutboxMessage) Type() OutboxMessageType {
@@ -52,41 +41,50 @@ func NewOutboxMessage(details OutboxMessageDetails) (*OutboxMessage, error) {
 	}
 
 	return &OutboxMessage{
-		ModelBase: NewModelBase(),
+		BaseModel: NewBaseModel(),
 		_type:     details.OutboxMessageType(),
 		details:   serializedDetails,
 	}, nil
+}
+
+func NewOutboxMessageFromDB(base BaseModel, _type OutboxMessageType, details []byte) *OutboxMessage {
+	return &OutboxMessage{
+		BaseModel: base,
+		_type:     _type,
+		details:   details,
+	}
 }
 
 type OutboxMessageFilter struct {
 	id *uuid.UUID
 }
 
-func NewOutboxMessageFilter() OutboxMessageFilter {
-	return OutboxMessageFilter{}
+func NewOutboxMessageFilter() *OutboxMessageFilter {
+	return &OutboxMessageFilter{}
 }
 
-func (f OutboxMessageFilter) Clone() OutboxMessageFilter {
-	return f
+func (f *OutboxMessageFilter) Clone() *OutboxMessageFilter {
+	clone := *f
+	return &clone
 }
 
-func (f OutboxMessageFilter) Id(id uuid.UUID) OutboxMessageFilter {
+func (f *OutboxMessageFilter) Id(id uuid.UUID) *OutboxMessageFilter {
 	filter := f.Clone()
 	filter.id = &id
 	return filter
 }
 
-func (f OutboxMessageFilter) HasId() bool {
+func (f *OutboxMessageFilter) HasId() bool {
 	return f.id != nil
 }
 
-func (f OutboxMessageFilter) GetId() uuid.UUID {
+func (f *OutboxMessageFilter) GetId() uuid.UUID {
 	return utils.ZeroIfNil(f.id)
 }
 
 //go:generate mockgen -destination=./mocks/outboxmessage_repository.go -package=mocks Keyline/internal/repositories OutboxMessageRepository
 type OutboxMessageRepository interface {
-	List(ctx context.Context, filter OutboxMessageFilter) ([]*OutboxMessage, error)
-	Insert(ctx context.Context, outboxMessage *OutboxMessage) error
-	Delete(ctx context.Context, id uuid.UUID) error
+	List(ctx context.Context, filter *OutboxMessageFilter) ([]*OutboxMessage, error)
+	Insert(outboxMessage *OutboxMessage)
+	Delete(id uuid.UUID)
 }

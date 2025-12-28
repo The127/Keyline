@@ -14,7 +14,7 @@ const (
 )
 
 type Template struct {
-	ModelBase
+	BaseModel
 
 	virtualServerId uuid.UUID
 	fileId          uuid.UUID
@@ -23,7 +23,16 @@ type Template struct {
 
 func NewTemplate(virtualServerId uuid.UUID, fileId uuid.UUID, templateType TemplateType) *Template {
 	return &Template{
-		ModelBase:       NewModelBase(),
+		BaseModel:       NewBaseModel(),
+		virtualServerId: virtualServerId,
+		fileId:          fileId,
+		templateType:    templateType,
+	}
+}
+
+func NewTemplateFromDB(base BaseModel, virtualServerId uuid.UUID, fileId uuid.UUID, templateType TemplateType) *Template {
+	return &Template{
+		BaseModel:       base,
 		virtualServerId: virtualServerId,
 		fileId:          fileId,
 		templateType:    templateType,
@@ -42,18 +51,6 @@ func (t *Template) TemplateType() TemplateType {
 	return t.templateType
 }
 
-func (t *Template) GetScanPointers() []any {
-	return []any{
-		&t.id,
-		&t.auditCreatedAt,
-		&t.auditUpdatedAt,
-		&t.version,
-		&t.virtualServerId,
-		&t.fileId,
-		&t.templateType,
-	}
-}
-
 type TemplateFilter struct {
 	PagingInfo
 	OrderInfo
@@ -62,57 +59,58 @@ type TemplateFilter struct {
 	searchFilter    *SearchFilter
 }
 
-func NewTemplateFilter() TemplateFilter {
-	return TemplateFilter{}
+func NewTemplateFilter() *TemplateFilter {
+	return &TemplateFilter{}
 }
 
-func (f TemplateFilter) Clone() TemplateFilter {
-	return f
+func (f *TemplateFilter) Clone() *TemplateFilter {
+	clone := *f
+	return &clone
 }
 
-func (f TemplateFilter) VirtualServerId(virtualServerId uuid.UUID) TemplateFilter {
+func (f *TemplateFilter) VirtualServerId(virtualServerId uuid.UUID) *TemplateFilter {
 	filter := f.Clone()
 	filter.virtualServerId = &virtualServerId
 	return filter
 }
 
-func (f TemplateFilter) HasVirtualServerId() bool {
+func (f *TemplateFilter) HasVirtualServerId() bool {
 	return f.virtualServerId != nil
 }
 
-func (f TemplateFilter) GetVirtualServerId() uuid.UUID {
+func (f *TemplateFilter) GetVirtualServerId() uuid.UUID {
 	return utils.ZeroIfNil(f.virtualServerId)
 }
 
-func (f TemplateFilter) TemplateType(templateType TemplateType) TemplateFilter {
+func (f *TemplateFilter) TemplateType(templateType TemplateType) *TemplateFilter {
 	filter := f.Clone()
 	filter.templateType = &templateType
 	return filter
 }
 
-func (f TemplateFilter) HasTemplateType() bool {
+func (f *TemplateFilter) HasTemplateType() bool {
 	return f.templateType != nil
 }
 
-func (f TemplateFilter) GetTemplateType() TemplateType {
+func (f *TemplateFilter) GetTemplateType() TemplateType {
 	return utils.ZeroIfNil(f.templateType)
 }
 
-func (f TemplateFilter) Search(searchFilter SearchFilter) TemplateFilter {
+func (f *TemplateFilter) Search(searchFilter SearchFilter) *TemplateFilter {
 	filter := f.Clone()
 	filter.searchFilter = &searchFilter
 	return filter
 }
 
-func (f TemplateFilter) HasSearch() bool {
+func (f *TemplateFilter) HasSearch() bool {
 	return f.searchFilter != nil
 }
 
-func (f TemplateFilter) GetSearch() SearchFilter {
+func (f *TemplateFilter) GetSearch() SearchFilter {
 	return *f.searchFilter
 }
 
-func (f TemplateFilter) Pagination(page int, size int) TemplateFilter {
+func (f *TemplateFilter) Pagination(page int, size int) *TemplateFilter {
 	filter := f.Clone()
 	filter.PagingInfo = PagingInfo{
 		page: page,
@@ -121,15 +119,15 @@ func (f TemplateFilter) Pagination(page int, size int) TemplateFilter {
 	return filter
 }
 
-func (f TemplateFilter) HasPagination() bool {
+func (f *TemplateFilter) HasPagination() bool {
 	return !f.PagingInfo.IsZero()
 }
 
-func (f TemplateFilter) GetPagingInfo() PagingInfo {
+func (f *TemplateFilter) GetPagingInfo() PagingInfo {
 	return f.PagingInfo
 }
 
-func (f TemplateFilter) Order(by string, direction string) TemplateFilter {
+func (f *TemplateFilter) Order(by string, direction string) *TemplateFilter {
 	filter := f.Clone()
 	filter.OrderInfo = OrderInfo{
 		orderBy:  by,
@@ -138,18 +136,18 @@ func (f TemplateFilter) Order(by string, direction string) TemplateFilter {
 	return filter
 }
 
-func (f TemplateFilter) HasOrder() bool {
+func (f *TemplateFilter) HasOrder() bool {
 	return !f.OrderInfo.IsZero()
 }
 
-func (f TemplateFilter) GetOrderInfo() OrderInfo {
+func (f *TemplateFilter) GetOrderInfo() OrderInfo {
 	return f.OrderInfo
 }
 
 //go:generate mockgen -destination=./mocks/template_repository.go -package=mocks Keyline/internal/repositories TemplateRepository
 type TemplateRepository interface {
-	Single(ctx context.Context, filter TemplateFilter) (*Template, error)
-	First(ctx context.Context, filter TemplateFilter) (*Template, error)
-	Insert(ctx context.Context, template *Template) error
-	List(ctx context.Context, filter TemplateFilter) ([]*Template, int, error)
+	FirstOrErr(ctx context.Context, filter *TemplateFilter) (*Template, error)
+	FirstOrNil(ctx context.Context, filter *TemplateFilter) (*Template, error)
+	List(ctx context.Context, filter *TemplateFilter) ([]*Template, int, error)
+	Insert(template *Template)
 }

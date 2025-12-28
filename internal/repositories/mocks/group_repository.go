@@ -43,50 +43,61 @@ func (m *MockGroupRepository) EXPECT() *MockGroupRepositoryMockRecorder {
 }
 
 // Delete mocks base method.
-func (m *MockGroupRepository) Delete(ctx context.Context, id uuid.UUID) error {
+func (m *MockGroupRepository) Delete(id uuid.UUID) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", ctx, id)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Delete", id)
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockGroupRepositoryMockRecorder) Delete(ctx, id any) *gomock.Call {
+func (mr *MockGroupRepositoryMockRecorder) Delete(id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockGroupRepository)(nil).Delete), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockGroupRepository)(nil).Delete), id)
 }
 
-// First mocks base method.
-func (m *MockGroupRepository) First(ctx context.Context, filter repositories.GroupFilter) (*repositories.Group, error) {
+// FirstOrErr mocks base method.
+func (m *MockGroupRepository) FirstOrErr(ctx context.Context, filter *repositories.GroupFilter) (*repositories.Group, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "First", ctx, filter)
+	ret := m.ctrl.Call(m, "FirstOrErr", ctx, filter)
 	ret0, _ := ret[0].(*repositories.Group)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// First indicates an expected call of First.
-func (mr *MockGroupRepositoryMockRecorder) First(ctx, filter any) *gomock.Call {
+// FirstOrErr indicates an expected call of FirstOrErr.
+func (mr *MockGroupRepositoryMockRecorder) FirstOrErr(ctx, filter any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "First", reflect.TypeOf((*MockGroupRepository)(nil).First), ctx, filter)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FirstOrErr", reflect.TypeOf((*MockGroupRepository)(nil).FirstOrErr), ctx, filter)
+}
+
+// FirstOrNil mocks base method.
+func (m *MockGroupRepository) FirstOrNil(ctx context.Context, filter *repositories.GroupFilter) (*repositories.Group, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FirstOrNil", ctx, filter)
+	ret0, _ := ret[0].(*repositories.Group)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FirstOrNil indicates an expected call of FirstOrNil.
+func (mr *MockGroupRepositoryMockRecorder) FirstOrNil(ctx, filter any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FirstOrNil", reflect.TypeOf((*MockGroupRepository)(nil).FirstOrNil), ctx, filter)
 }
 
 // Insert mocks base method.
-func (m *MockGroupRepository) Insert(ctx context.Context, group *repositories.Group) error {
+func (m *MockGroupRepository) Insert(group *repositories.Group) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Insert", ctx, group)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Insert", group)
 }
 
 // Insert indicates an expected call of Insert.
-func (mr *MockGroupRepositoryMockRecorder) Insert(ctx, group any) *gomock.Call {
+func (mr *MockGroupRepositoryMockRecorder) Insert(group any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockGroupRepository)(nil).Insert), ctx, group)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockGroupRepository)(nil).Insert), group)
 }
 
 // List mocks base method.
-func (m *MockGroupRepository) List(ctx context.Context, filter repositories.GroupFilter) ([]*repositories.Group, int, error) {
+func (m *MockGroupRepository) List(ctx context.Context, filter *repositories.GroupFilter) ([]*repositories.Group, int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "List", ctx, filter)
 	ret0, _ := ret[0].([]*repositories.Group)
@@ -101,31 +112,14 @@ func (mr *MockGroupRepositoryMockRecorder) List(ctx, filter any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockGroupRepository)(nil).List), ctx, filter)
 }
 
-// Single mocks base method.
-func (m *MockGroupRepository) Single(ctx context.Context, filter repositories.GroupFilter) (*repositories.Group, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Single", ctx, filter)
-	ret0, _ := ret[0].(*repositories.Group)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Single indicates an expected call of Single.
-func (mr *MockGroupRepositoryMockRecorder) Single(ctx, filter any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Single", reflect.TypeOf((*MockGroupRepository)(nil).Single), ctx, filter)
-}
-
 // Update mocks base method.
-func (m *MockGroupRepository) Update(ctx context.Context, group *repositories.Group) error {
+func (m *MockGroupRepository) Update(group *repositories.Group) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Update", ctx, group)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Update", group)
 }
 
 // Update indicates an expected call of Update.
-func (mr *MockGroupRepositoryMockRecorder) Update(ctx, group any) *gomock.Call {
+func (mr *MockGroupRepositoryMockRecorder) Update(group any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockGroupRepository)(nil).Update), ctx, group)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockGroupRepository)(nil).Update), group)
 }

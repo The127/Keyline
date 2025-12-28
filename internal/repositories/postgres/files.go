@@ -1,33 +1,80 @@
 package postgres
 
 import (
-	"Keyline/internal/database"
+	"Keyline/internal/change"
 	"Keyline/internal/logging"
-	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
+	"Keyline/internal/repositories/postgres/pghelpers"
 	"Keyline/utils"
 	"context"
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/The127/ioc"
 
 	"github.com/huandu/go-sqlbuilder"
 )
 
-type fileRepository struct {
+type postgresFile struct {
+	postgresBaseModel
+	name     string
+	mimeType string
+	content  []byte
 }
 
-func NewFileRepository() repositories.FileRepository {
-	return &fileRepository{}
+func mapFile(file *repositories.File) *postgresFile {
+	return &postgresFile{
+		postgresBaseModel: mapBase(file.BaseModel),
+		name:              file.Name(),
+		mimeType:          file.MimeType(),
+		content:           file.Content(),
+	}
 }
 
-func (r *fileRepository) selectQuery(filter repositories.FileFilter) *sqlbuilder.SelectBuilder {
+func (f *postgresFile) Map() *repositories.File {
+	return repositories.NewFileFromDB(
+		f.MapBase(),
+		f.name,
+		f.mimeType,
+		f.content,
+	)
+}
+
+func (f *postgresFile) scan(row pghelpers.Row, additionalPtrs ...any) error {
+	ptrs := []any{
+		&f.id,
+		&f.auditCreatedAt,
+		&f.auditUpdatedAt,
+		&f.xmin,
+		&f.name,
+		&f.mimeType,
+		&f.content,
+	}
+
+	ptrs = append(ptrs, additionalPtrs...)
+
+	return row.Scan(ptrs...)
+}
+
+type FileRepository struct {
+	db            *sql.DB
+	changeTracker *change.Tracker
+	entityType    int
+}
+
+func NewFileRepository(db *sql.DB, changeTracker *change.Tracker, entityType int) *FileRepository {
+	return &FileRepository{
+		db:            db,
+		changeTracker: changeTracker,
+		entityType:    entityType,
+	}
+}
+
+func (r *FileRepository) selectQuery(filter *repositories.FileFilter) *sqlbuilder.SelectBuilder {
 	s := sqlbuilder.Select(
 		"id",
 		"audit_created_at",
 		"audit_updated_at",
-		"version",
+		"xmin",
 		"name",
 		"mime_type",
 		"content",
@@ -40,8 +87,8 @@ func (r *fileRepository) selectQuery(filter repositories.FileFilter) *sqlbuilder
 	return s
 }
 
-func (r *fileRepository) Single(ctx context.Context, filter repositories.FileFilter) (*repositories.File, error) {
-	file, err := r.First(ctx, filter)
+func (r *FileRepository) FirstOrErr(ctx context.Context, filter *repositories.FileFilter) (*repositories.File, error) {
+	file, err := r.FirstOrNil(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -51,27 +98,17 @@ func (r *fileRepository) Single(ctx context.Context, filter repositories.FileFil
 	return file, nil
 }
 
-func (r *fileRepository) First(ctx context.Context, filter repositories.FileFilter) (*repositories.File, error) {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
-
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return nil, fmt.Errorf("failed to open tx: %w", err)
-	}
-
+func (r *FileRepository) FirstOrNil(ctx context.Context, filter *repositories.FileFilter) (*repositories.File, error) {
 	s := r.selectQuery(filter)
 
 	s.Limit(1)
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
-	row := tx.QueryRowContext(ctx, query, args...)
+	row := r.db.QueryRowContext(ctx, query, args...)
 
-	file := repositories.File{
-		ModelBase: repositories.NewModelBase(),
-	}
-	err = row.Scan(file.GetScanPointers()...)
+	file := &postgresFile{}
+	err := file.scan(row)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, nil
@@ -80,35 +117,45 @@ func (r *fileRepository) First(ctx context.Context, filter repositories.FileFilt
 		return nil, fmt.Errorf("scanning row: %w", err)
 	}
 
-	return &file, nil
+	return file.Map(), nil
 }
 
-func (r *fileRepository) Insert(ctx context.Context, file *repositories.File) error {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
+func (r *FileRepository) Insert(file *repositories.File) {
+	r.changeTracker.Add(change.NewEntry(change.Added, r.entityType, file))
+}
 
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return fmt.Errorf("failed to open tx: %w", err)
-	}
+func (r *FileRepository) ExecuteInsert(ctx context.Context, tx *sql.Tx, file *repositories.File) error {
+	mapped := mapFile(file)
 
 	s := sqlbuilder.InsertInto("files").
-		Cols("name", "mime_type", "content").
+		Cols(
+			"id",
+			"audit_created_at",
+			"audit_updated_at",
+			"name",
+			"mime_type",
+			"content",
+		).
 		Values(
-			file.Name(),
-			file.MimeType(),
-			file.Content(),
-		).Returning("id", "audit_created_at", "audit_updated_at", "version")
+			mapped.id,
+			mapped.auditCreatedAt,
+			mapped.auditUpdatedAt,
+			mapped.name,
+			mapped.mimeType,
+			mapped.content,
+		).
+		Returning("xmin")
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
 	row := tx.QueryRowContext(ctx, query, args...)
 
-	err = row.Scan(file.InsertPointers()...)
+	var xmin uint32
+	err := row.Scan(&xmin)
 	if err != nil {
 		return fmt.Errorf("scanning row: %w", err)
 	}
 
-	file.ClearChanges()
+	file.SetVersion(xmin)
 	return nil
 }

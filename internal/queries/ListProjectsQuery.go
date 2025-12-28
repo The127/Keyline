@@ -3,6 +3,7 @@ package queries
 import (
 	"Keyline/internal/authentication/permissions"
 	"Keyline/internal/behaviours"
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/utils"
@@ -50,21 +51,20 @@ type ListProjectsResponseItem struct {
 
 func HandleListProjects(ctx context.Context, query ListProjects) (*ListProjectsResponse, error) {
 	scope := middlewares.GetScope(ctx)
+	dbContext := ioc.GetDependency[database.Context](scope)
 
-	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(query.VirtualServerName)
-	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().FirstOrErr(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
-	projectRepository := ioc.GetDependency[repositories.ProjectRepository](scope)
 	projectFilter := repositories.NewProjectFilter().
 		VirtualServerId(virtualServer.Id()).
 		Pagination(query.Page, query.PageSize).
 		Order(query.OrderBy, query.OrderDir).
 		Search(repositories.NewContainsSearchFilter(query.SearchText))
-	projects, total, err := projectRepository.List(ctx, projectFilter)
+	projects, total, err := dbContext.Projects().List(ctx, projectFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting projects: %w", err)
 	}

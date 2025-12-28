@@ -1,15 +1,18 @@
 package commands
 
 import (
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
+	mocks2 "Keyline/internal/mocks"
 	"Keyline/internal/repositories"
 	"Keyline/internal/repositories/mocks"
 	"Keyline/utils"
 	"context"
 	"errors"
-	"github.com/The127/ioc"
 	"testing"
 	"time"
+
+	"github.com/The127/ioc"
 
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -25,21 +28,23 @@ func TestPatchProjectCommandSuite(t *testing.T) {
 }
 
 func (s *PatchProjectCommandSuite) createContext(
+	ctrl *gomock.Controller,
 	virtualServerRepository repositories.VirtualServerRepository,
 	projectRepository repositories.ProjectRepository,
 ) context.Context {
 	dc := ioc.NewDependencyCollection()
 
+	dbContext := mocks2.NewMockContext(ctrl)
+	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) database.Context {
+		return dbContext
+	})
+
 	if virtualServerRepository != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.VirtualServerRepository {
-			return virtualServerRepository
-		})
+		dbContext.EXPECT().VirtualServers().Return(virtualServerRepository).AnyTimes()
 	}
 
 	if projectRepository != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.ProjectRepository {
-			return projectRepository
-		})
+		dbContext.EXPECT().Projects().Return(projectRepository).AnyTimes()
 	}
 
 	scope := dc.BuildProvider()
@@ -60,21 +65,21 @@ func (s *PatchProjectCommandSuite) TestHappyPath() {
 	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
 	virtualServer.Mock(now)
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories.VirtualServerFilter) bool {
+	virtualServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Cond(func(x *repositories.VirtualServerFilter) bool {
 		return x.GetName() == "virtualServer"
 	})).Return(virtualServer, nil)
 
 	project := repositories.NewProject(virtualServer.Id(), "project", "Project", "Test Project")
 	project.Mock(now)
 	projectRepository := mocks.NewMockProjectRepository(ctrl)
-	projectRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories.ProjectFilter) bool {
+	projectRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Cond(func(x *repositories.ProjectFilter) bool {
 		return x.GetSlug() == "project" && x.GetVirtualServerId() == virtualServer.Id()
 	})).Return(project, nil)
-	projectRepository.EXPECT().Update(gomock.Any(), gomock.Cond(func(x *repositories.Project) bool {
+	projectRepository.EXPECT().Update(gomock.Cond(func(x *repositories.Project) bool {
 		return x.Name() == "New Name" && x.Description() == "New Description"
-	})).Return(nil)
+	}))
 
-	ctx := s.createContext(virtualServerRepository, projectRepository)
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository)
 	cmd := PatchProject{
 		VirtualServerName: virtualServer.Name(),
 		Slug:              project.Slug(),
@@ -90,31 +95,6 @@ func (s *PatchProjectCommandSuite) TestHappyPath() {
 	s.NotNil(resp)
 }
 
-func (s *PatchProjectCommandSuite) TestUpdateError() {
-	// arrange
-	ctrl := gomock.NewController(s.T())
-	defer ctrl.Finish()
-
-	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
-	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
-
-	project := repositories.NewProject(virtualServer.Id(), "project", "Project", "Test Project")
-	projectRepository := mocks.NewMockProjectRepository(ctrl)
-	projectRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(project, nil)
-	projectRepository.EXPECT().Update(gomock.Any(), gomock.Any()).Return(errors.New("error"))
-
-	ctx := s.createContext(virtualServerRepository, projectRepository)
-	cmd := PatchProject{}
-
-	// act
-	resp, err := HandlePatchProject(ctx, cmd)
-
-	// assert
-	s.Require().Error(err)
-	s.Nil(resp)
-}
-
 func (s *PatchProjectCommandSuite) TestProjectError() {
 	// arrange
 	ctrl := gomock.NewController(s.T())
@@ -122,12 +102,12 @@ func (s *PatchProjectCommandSuite) TestProjectError() {
 
 	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
+	virtualServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
 
 	projectRepository := mocks.NewMockProjectRepository(ctrl)
-	projectRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
+	projectRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
 
-	ctx := s.createContext(virtualServerRepository, projectRepository)
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository)
 	cmd := PatchProject{}
 
 	// act
@@ -144,9 +124,9 @@ func (s *PatchProjectCommandSuite) TestVirtualServerError() {
 	defer ctrl.Finish()
 
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
+	virtualServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
 
-	ctx := s.createContext(virtualServerRepository, nil)
+	ctx := s.createContext(ctrl, virtualServerRepository, nil)
 	cmd := PatchProject{}
 
 	// act

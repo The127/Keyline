@@ -1,30 +1,94 @@
 package postgres
 
 import (
-	"Keyline/internal/database"
+	"Keyline/internal/change"
 	"Keyline/internal/logging"
-	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
+	"Keyline/internal/repositories/postgres/pghelpers"
 	"Keyline/utils"
 	"context"
+	"database/sql"
 	"fmt"
-	"github.com/The127/ioc"
+
+	"github.com/google/uuid"
+	"github.com/lib/pq"
 
 	"github.com/huandu/go-sqlbuilder"
 )
 
-type auditLogRepository struct{}
-
-func NewAuditLogRepository() repositories.AuditLogRepository {
-	return &auditLogRepository{}
+type postgresAuditLog struct {
+	postgresBaseModel
+	virtualServerId uuid.UUID
+	userId          *uuid.UUID
+	requestType     string
+	request         string
+	response        *pq.ByteaArray
+	allowed         bool
+	allowReasonType string
+	allowReason     *string
 }
 
-func (r *auditLogRepository) selectQuery(filter repositories.AuditLogFilter) *sqlbuilder.SelectBuilder {
+func mapAuditLog(auditLog *repositories.AuditLog) *postgresAuditLog {
+	return &postgresAuditLog{
+		postgresBaseModel: mapBase(auditLog.BaseModel),
+	}
+}
+
+func (a *postgresAuditLog) Map() *repositories.AuditLog {
+	return repositories.NewAuditLogFromDB(
+		a.MapBase(),
+		a.virtualServerId,
+		a.userId,
+		a.requestType,
+		a.request,
+		nil, // TODO
+		a.allowed,
+		&a.allowReasonType,
+		a.allowReason,
+	)
+}
+
+func (a *postgresAuditLog) scan(row pghelpers.Row, additionalPtrs ...any) error {
+	ptrs := []any{
+		&a.id,
+		&a.auditCreatedAt,
+		&a.auditUpdatedAt,
+		&a.xmin,
+		&a.virtualServerId,
+		&a.userId,
+		&a.requestType,
+		&a.request,
+		&a.response,
+		&a.allowed,
+		&a.allowReasonType,
+		&a.allowReason,
+	}
+
+	ptrs = append(ptrs, additionalPtrs...)
+
+	return row.Scan(ptrs...)
+}
+
+type AuditLogRepository struct {
+	db            *sql.DB
+	changeTracker *change.Tracker
+	entityType    int
+}
+
+func NewAuditLogRepository(db *sql.DB, changeTracker *change.Tracker, entityType int) *AuditLogRepository {
+	return &AuditLogRepository{
+		db:            db,
+		changeTracker: changeTracker,
+		entityType:    entityType,
+	}
+}
+
+func (r *AuditLogRepository) selectQuery(filter *repositories.AuditLogFilter) *sqlbuilder.SelectBuilder {
 	s := sqlbuilder.Select(
 		"id",
 		"audit_created_at",
 		"audit_updated_at",
-		"version",
+		"xmin",
 		"virtual_server_id",
 		"user_id",
 		"request_type",
@@ -54,21 +118,13 @@ func (r *auditLogRepository) selectQuery(filter repositories.AuditLogFilter) *sq
 	return s
 }
 
-func (r *auditLogRepository) List(ctx context.Context, filter repositories.AuditLogFilter) ([]*repositories.AuditLog, int, error) {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
-
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return nil, 0, fmt.Errorf("failed to open tx: %w", err)
-	}
-
+func (r *AuditLogRepository) List(ctx context.Context, filter *repositories.AuditLogFilter) ([]*repositories.AuditLog, int, error) {
 	s := r.selectQuery(filter)
 	s.SelectMore("count(*) over()")
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
-	rows, err := tx.Query(query, args...)
+	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("querying db: %w", err)
 	}
@@ -77,51 +133,49 @@ func (r *auditLogRepository) List(ctx context.Context, filter repositories.Audit
 	var auditLogs []*repositories.AuditLog
 	var totalCount int
 	for rows.Next() {
-		auditLog := repositories.AuditLog{
-			ModelBase: repositories.NewModelBase(),
-		}
-		err = rows.Scan(append(auditLog.GetScanPointers(), &totalCount)...)
+		auditLog := &postgresAuditLog{}
+		err := auditLog.scan(rows, &totalCount)
 		if err != nil {
 			return nil, 0, fmt.Errorf("scanning row: %w", err)
 		}
 
-		auditLogs = append(auditLogs, &auditLog)
+		auditLogs = append(auditLogs, auditLog.Map())
 	}
 
 	return auditLogs, totalCount, nil
 }
 
-func (r *auditLogRepository) Insert(ctx context.Context, auditLog *repositories.AuditLog) error {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
+func (r *AuditLogRepository) Insert(auditLog *repositories.AuditLog) {
+	r.changeTracker.Add(change.NewEntry(change.Added, r.entityType, auditLog))
+}
 
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return fmt.Errorf("failed to open tx: %w", err)
-	}
+func (r *AuditLogRepository) ExecuteInsert(ctx context.Context, tx *sql.Tx, auditLog *repositories.AuditLog) error {
+	mapped := mapAuditLog(auditLog)
 
 	s := sqlbuilder.InsertInto("audit_logs").
 		Cols("virtual_server_id", "user_id", "request_type", "request", "response", "allowed", "allow_reason_type", "allow_reason").
 		Values(
-			auditLog.VirtualServerId(),
-			auditLog.UserId(),
-			auditLog.RequestType(),
-			auditLog.Request(),
-			auditLog.Response(),
-			auditLog.Allowed(),
-			auditLog.AllowReasonType(),
-			auditLog.AllowReason(),
-		).Returning("id", "audit_created_at", "audit_updated_at", "version")
+			mapped.virtualServerId,
+			mapped.userId,
+			mapped.requestType,
+			mapped.request,
+			mapped.response,
+			mapped.allowed,
+			mapped.allowReasonType,
+			mapped.allowReason,
+		).
+		Returning("xmin")
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
 	row := tx.QueryRowContext(ctx, query, args...)
 
-	err = row.Scan(auditLog.InsertPointers()...)
+	var xmin uint32
+	err := row.Scan(&xmin)
 	if err != nil {
 		return fmt.Errorf("scanning row: %w", err)
 	}
 
-	auditLog.ClearChanges()
+	auditLog.SetVersion(xmin)
 	return nil
 }

@@ -43,50 +43,61 @@ func (m *MockProjectRepository) EXPECT() *MockProjectRepositoryMockRecorder {
 }
 
 // Delete mocks base method.
-func (m *MockProjectRepository) Delete(ctx context.Context, id uuid.UUID) error {
+func (m *MockProjectRepository) Delete(id uuid.UUID) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", ctx, id)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Delete", id)
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockProjectRepositoryMockRecorder) Delete(ctx, id any) *gomock.Call {
+func (mr *MockProjectRepositoryMockRecorder) Delete(id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockProjectRepository)(nil).Delete), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockProjectRepository)(nil).Delete), id)
 }
 
-// First mocks base method.
-func (m *MockProjectRepository) First(ctx context.Context, filter repositories.ProjectFilter) (*repositories.Project, error) {
+// FirstOrErr mocks base method.
+func (m *MockProjectRepository) FirstOrErr(ctx context.Context, filter *repositories.ProjectFilter) (*repositories.Project, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "First", ctx, filter)
+	ret := m.ctrl.Call(m, "FirstOrErr", ctx, filter)
 	ret0, _ := ret[0].(*repositories.Project)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// First indicates an expected call of First.
-func (mr *MockProjectRepositoryMockRecorder) First(ctx, filter any) *gomock.Call {
+// FirstOrErr indicates an expected call of FirstOrErr.
+func (mr *MockProjectRepositoryMockRecorder) FirstOrErr(ctx, filter any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "First", reflect.TypeOf((*MockProjectRepository)(nil).First), ctx, filter)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FirstOrErr", reflect.TypeOf((*MockProjectRepository)(nil).FirstOrErr), ctx, filter)
+}
+
+// FirstOrNil mocks base method.
+func (m *MockProjectRepository) FirstOrNil(ctx context.Context, filter *repositories.ProjectFilter) (*repositories.Project, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FirstOrNil", ctx, filter)
+	ret0, _ := ret[0].(*repositories.Project)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FirstOrNil indicates an expected call of FirstOrNil.
+func (mr *MockProjectRepositoryMockRecorder) FirstOrNil(ctx, filter any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FirstOrNil", reflect.TypeOf((*MockProjectRepository)(nil).FirstOrNil), ctx, filter)
 }
 
 // Insert mocks base method.
-func (m *MockProjectRepository) Insert(ctx context.Context, project *repositories.Project) error {
+func (m *MockProjectRepository) Insert(project *repositories.Project) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Insert", ctx, project)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Insert", project)
 }
 
 // Insert indicates an expected call of Insert.
-func (mr *MockProjectRepositoryMockRecorder) Insert(ctx, project any) *gomock.Call {
+func (mr *MockProjectRepositoryMockRecorder) Insert(project any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockProjectRepository)(nil).Insert), ctx, project)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockProjectRepository)(nil).Insert), project)
 }
 
 // List mocks base method.
-func (m *MockProjectRepository) List(ctx context.Context, filter repositories.ProjectFilter) ([]*repositories.Project, int, error) {
+func (m *MockProjectRepository) List(ctx context.Context, filter *repositories.ProjectFilter) ([]*repositories.Project, int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "List", ctx, filter)
 	ret0, _ := ret[0].([]*repositories.Project)
@@ -101,31 +112,14 @@ func (mr *MockProjectRepositoryMockRecorder) List(ctx, filter any) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockProjectRepository)(nil).List), ctx, filter)
 }
 
-// Single mocks base method.
-func (m *MockProjectRepository) Single(ctx context.Context, filter repositories.ProjectFilter) (*repositories.Project, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Single", ctx, filter)
-	ret0, _ := ret[0].(*repositories.Project)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Single indicates an expected call of Single.
-func (mr *MockProjectRepositoryMockRecorder) Single(ctx, filter any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Single", reflect.TypeOf((*MockProjectRepository)(nil).Single), ctx, filter)
-}
-
 // Update mocks base method.
-func (m *MockProjectRepository) Update(ctx context.Context, project *repositories.Project) error {
+func (m *MockProjectRepository) Update(project *repositories.Project) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Update", ctx, project)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Update", project)
 }
 
 // Update indicates an expected call of Update.
-func (mr *MockProjectRepositoryMockRecorder) Update(ctx, project any) *gomock.Call {
+func (mr *MockProjectRepositoryMockRecorder) Update(project any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockProjectRepository)(nil).Update), ctx, project)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockProjectRepository)(nil).Update), project)
 }

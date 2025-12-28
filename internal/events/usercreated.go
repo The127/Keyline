@@ -2,6 +2,7 @@ package events
 
 import (
 	"Keyline/internal/config"
+	db "Keyline/internal/database"
 	"Keyline/internal/messages"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
@@ -9,37 +10,30 @@ import (
 	"Keyline/templates"
 	"context"
 	"fmt"
-	"github.com/The127/ioc"
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/The127/ioc"
 )
 
 type UserCreatedEvent struct {
-	UserId uuid.UUID
+	User *repositories.User
 }
 
 func QueueEmailVerificationJobOnUserCreatedEvent(ctx context.Context, event UserCreatedEvent) error {
 	scope := middlewares.GetScope(ctx)
+	dbContext := ioc.GetDependency[db.Context](scope)
 
-	userRepository := ioc.GetDependency[repositories.UserRepository](scope)
-	user, err := userRepository.First(ctx, repositories.NewUserFilter().Id(event.UserId))
-	if err != nil {
-		return fmt.Errorf("getting user: %w", err)
-	}
-
-	if user.EmailVerified() {
+	if event.User.EmailVerified() {
 		return nil
 	}
 
-	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
-	virtualServer, err := virtualServerRepository.First(ctx, repositories.NewVirtualServerFilter().Id(user.VirtualServerId()))
+	virtualServer, err := dbContext.VirtualServers().FirstOrNil(ctx, repositories.NewVirtualServerFilter().Id(event.User.VirtualServerId()))
 	if err != nil {
 		return fmt.Errorf("getting virtual server: %w", err)
 	}
 
 	tokenService := ioc.GetDependency[services.TokenService](scope)
-	token, err := tokenService.GenerateAndStoreToken(ctx, services.EmailVerificationTokenType, user.Id().String(), time.Minute*15)
+	token, err := tokenService.GenerateAndStoreToken(ctx, services.EmailVerificationTokenType, event.User.Id().String(), time.Minute*15)
 	if err != nil {
 		return fmt.Errorf("storing email verification token: %w", err)
 	}
@@ -47,7 +41,7 @@ func QueueEmailVerificationJobOnUserCreatedEvent(ctx context.Context, event User
 	templateService := ioc.GetDependency[services.TemplateService](scope)
 	mailBody, err := templateService.Template(
 		ctx,
-		user.VirtualServerId(),
+		event.User.VirtualServerId(),
 		repositories.EmailVerificationMailTemplate,
 		templates.EmailVerificationTemplateData{
 			VerificationLink: fmt.Sprintf(
@@ -63,22 +57,17 @@ func QueueEmailVerificationJobOnUserCreatedEvent(ctx context.Context, event User
 	}
 
 	message := &messages.SendEmailMessage{
-		VirtualServerId: user.VirtualServerId(),
-		To:              user.PrimaryEmail(),
+		VirtualServerId: event.User.VirtualServerId(),
+		To:              event.User.PrimaryEmail(),
 		Subject:         "Email verification",
 		Body:            mailBody,
 	}
 
-	outboxMessageRepository := ioc.GetDependency[repositories.OutboxMessageRepository](scope)
 	outboxMessage, err := repositories.NewOutboxMessage(message)
 	if err != nil {
 		return fmt.Errorf("creating email outbox message: %w", err)
 	}
 
-	err = outboxMessageRepository.Insert(ctx, outboxMessage)
-	if err != nil {
-		return fmt.Errorf("creating email outbox message: %w", err)
-	}
-
+	dbContext.OutboxMessages().Insert(outboxMessage)
 	return nil
 }

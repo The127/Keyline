@@ -3,11 +3,13 @@ package queries
 import (
 	"Keyline/internal/authentication/permissions"
 	"Keyline/internal/behaviours"
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/utils"
 	"context"
 	"fmt"
+
 	"github.com/The127/ioc"
 
 	"github.com/google/uuid"
@@ -47,22 +49,21 @@ type ListTemplatesResponseItem struct {
 
 func HandleListTemplates(ctx context.Context, query ListTemplates) (*ListTemplatesResponse, error) {
 	scope := middlewares.GetScope(ctx)
+	dbContext := ioc.GetDependency[database.Context](scope)
 
-	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
 	virtualServerFilter := repositories.NewVirtualServerFilter().
 		Name(query.VirtualServerName)
-	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().FirstOrErr(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("searching virtual servers: %w", err)
 	}
 
-	templateRepository := ioc.GetDependency[repositories.TemplateRepository](scope)
 	templateFilter := repositories.NewTemplateFilter().
 		VirtualServerId(virtualServer.Id()).
 		Pagination(query.Page, query.PageSize).
 		Order(query.OrderBy, query.OrderDir).
 		Search(repositories.NewContainsSearchFilter(query.SearchText))
-	templates, total, err := templateRepository.List(ctx, templateFilter)
+	templates, total, err := dbContext.Templates().List(ctx, templateFilter)
 	if err != nil {
 		return nil, fmt.Errorf("searching templates: %w", err)
 	}

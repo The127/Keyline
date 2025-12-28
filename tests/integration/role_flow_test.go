@@ -4,6 +4,7 @@ import (
 	"Keyline/internal/commands"
 	"Keyline/internal/queries"
 	"Keyline/utils"
+
 	"github.com/The127/mediatr"
 
 	"github.com/google/uuid"
@@ -29,6 +30,8 @@ var _ = Describe("Role flow", Ordered, func() {
 		}
 		_, err := mediatr.Send[*commands.CreateProjectResponse](h.Ctx(), h.Mediator(), req)
 		Expect(err).ToNot(HaveOccurred())
+
+		Expect(h.dbContext.SaveChanges(h.ctx)).ToNot(HaveOccurred())
 	})
 
 	AfterAll(func() {
@@ -45,6 +48,8 @@ var _ = Describe("Role flow", Ordered, func() {
 		response, err := mediatr.Send[*commands.CreateRoleResponse](h.Ctx(), h.Mediator(), req)
 		Expect(err).ToNot(HaveOccurred())
 		roleId = response.Id
+
+		Expect(h.dbContext.SaveChanges(h.ctx)).ToNot(HaveOccurred())
 	})
 
 	It("should list roles successfully", func() {
@@ -71,6 +76,8 @@ var _ = Describe("Role flow", Ordered, func() {
 		}
 		_, err := mediatr.Send[*commands.PatchRoleResponse](h.Ctx(), h.Mediator(), cmd)
 		Expect(err).ToNot(HaveOccurred())
+
+		Expect(h.dbContext.SaveChanges(h.ctx)).ToNot(HaveOccurred())
 	})
 
 	It("should reflect updated values", func() {

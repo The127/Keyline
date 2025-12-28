@@ -3,11 +3,13 @@ package queries
 import (
 	"Keyline/internal/authentication/permissions"
 	"Keyline/internal/behaviours"
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/utils"
 	"context"
 	"fmt"
+
 	"github.com/The127/ioc"
 
 	"github.com/google/uuid"
@@ -48,27 +50,24 @@ type ListResourceServersResponseItem struct {
 
 func HandleListResourceServers(ctx context.Context, query ListResourceServers) (*ListResourceServersResponse, error) {
 	scope := middlewares.GetScope(ctx)
+	dbContext := ioc.GetDependency[database.Context](scope)
 
-	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(query.VirtualServerName)
-	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().FirstOrErr(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
-	projectRepository := ioc.GetDependency[repositories.ProjectRepository](scope)
 	projectFilter := repositories.NewProjectFilter().VirtualServerId(virtualServer.Id()).Slug(query.ProjectSlug)
-	project, err := projectRepository.Single(ctx, projectFilter)
+	project, err := dbContext.Projects().FirstOrErr(ctx, projectFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting project: %w", err)
 	}
 
-	resourceServerRepository := ioc.GetDependency[repositories.ResourceServerRepository](scope)
 	resourceServerFilter := repositories.NewResourceServerFilter().
 		VirtualServerId(virtualServer.Id()).
 		ProjectId(project.Id())
-
-	resourceServers, total, err := resourceServerRepository.List(ctx, resourceServerFilter)
+	resourceServers, total, err := dbContext.ResourceServers().List(ctx, resourceServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting resource servers: %w", err)
 	}

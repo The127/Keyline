@@ -41,37 +41,50 @@ func (m *MockUserRepository) EXPECT() *MockUserRepositoryMockRecorder {
 	return m.recorder
 }
 
-// First mocks base method.
-func (m *MockUserRepository) First(ctx context.Context, filter repositories.UserFilter) (*repositories.User, error) {
+// FirstOrErr mocks base method.
+func (m *MockUserRepository) FirstOrErr(ctx context.Context, filter *repositories.UserFilter) (*repositories.User, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "First", ctx, filter)
+	ret := m.ctrl.Call(m, "FirstOrErr", ctx, filter)
 	ret0, _ := ret[0].(*repositories.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// First indicates an expected call of First.
-func (mr *MockUserRepositoryMockRecorder) First(ctx, filter any) *gomock.Call {
+// FirstOrErr indicates an expected call of FirstOrErr.
+func (mr *MockUserRepositoryMockRecorder) FirstOrErr(ctx, filter any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "First", reflect.TypeOf((*MockUserRepository)(nil).First), ctx, filter)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FirstOrErr", reflect.TypeOf((*MockUserRepository)(nil).FirstOrErr), ctx, filter)
+}
+
+// FirstOrNil mocks base method.
+func (m *MockUserRepository) FirstOrNil(ctx context.Context, filter *repositories.UserFilter) (*repositories.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FirstOrNil", ctx, filter)
+	ret0, _ := ret[0].(*repositories.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FirstOrNil indicates an expected call of FirstOrNil.
+func (mr *MockUserRepositoryMockRecorder) FirstOrNil(ctx, filter any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FirstOrNil", reflect.TypeOf((*MockUserRepository)(nil).FirstOrNil), ctx, filter)
 }
 
 // Insert mocks base method.
-func (m *MockUserRepository) Insert(ctx context.Context, user *repositories.User) error {
+func (m *MockUserRepository) Insert(user *repositories.User) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Insert", ctx, user)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Insert", user)
 }
 
 // Insert indicates an expected call of Insert.
-func (mr *MockUserRepositoryMockRecorder) Insert(ctx, user any) *gomock.Call {
+func (mr *MockUserRepositoryMockRecorder) Insert(user any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockUserRepository)(nil).Insert), ctx, user)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockUserRepository)(nil).Insert), user)
 }
 
 // List mocks base method.
-func (m *MockUserRepository) List(ctx context.Context, filter repositories.UserFilter) ([]*repositories.User, int, error) {
+func (m *MockUserRepository) List(ctx context.Context, filter *repositories.UserFilter) ([]*repositories.User, int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "List", ctx, filter)
 	ret0, _ := ret[0].([]*repositories.User)
@@ -86,31 +99,14 @@ func (mr *MockUserRepositoryMockRecorder) List(ctx, filter any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockUserRepository)(nil).List), ctx, filter)
 }
 
-// Single mocks base method.
-func (m *MockUserRepository) Single(ctx context.Context, filter repositories.UserFilter) (*repositories.User, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Single", ctx, filter)
-	ret0, _ := ret[0].(*repositories.User)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Single indicates an expected call of Single.
-func (mr *MockUserRepositoryMockRecorder) Single(ctx, filter any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Single", reflect.TypeOf((*MockUserRepository)(nil).Single), ctx, filter)
-}
-
 // Update mocks base method.
-func (m *MockUserRepository) Update(ctx context.Context, user *repositories.User) error {
+func (m *MockUserRepository) Update(user *repositories.User) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Update", ctx, user)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Update", user)
 }
 
 // Update indicates an expected call of Update.
-func (mr *MockUserRepositoryMockRecorder) Update(ctx, user any) *gomock.Call {
+func (mr *MockUserRepositoryMockRecorder) Update(user any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockUserRepository)(nil).Update), ctx, user)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockUserRepository)(nil).Update), user)
 }

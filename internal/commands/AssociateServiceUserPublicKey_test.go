@@ -1,14 +1,17 @@
 package commands
 
 import (
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
+	mocks2 "Keyline/internal/mocks"
 	"Keyline/internal/repositories"
 	"Keyline/internal/repositories/mocks"
 	"Keyline/utils"
 	"context"
-	"github.com/The127/ioc"
 	"testing"
 	"time"
+
+	"github.com/The127/ioc"
 
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -24,28 +27,28 @@ func TestAssociateServiceUserPublicKeyCommandSuite(t *testing.T) {
 }
 
 func (s *AssociateServiceUserPublicKeyCommandSuite) createContext(
+	ctrl *gomock.Controller,
 	virtualServerRepository repositories.VirtualServerRepository,
 	userRepository repositories.UserRepository,
 	credentialRepository repositories.CredentialRepository,
 ) context.Context {
 	dc := ioc.NewDependencyCollection()
 
+	dbContext := mocks2.NewMockContext(ctrl)
+	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) database.Context {
+		return dbContext
+	})
+
 	if virtualServerRepository != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.VirtualServerRepository {
-			return virtualServerRepository
-		})
+		dbContext.EXPECT().VirtualServers().Return(virtualServerRepository).AnyTimes()
 	}
 
 	if userRepository != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.UserRepository {
-			return userRepository
-		})
+		dbContext.EXPECT().Users().Return(userRepository).AnyTimes()
 	}
 
 	if credentialRepository != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.CredentialRepository {
-			return credentialRepository
-		})
+		dbContext.EXPECT().Credentials().Return(credentialRepository).AnyTimes()
 	}
 
 	scope := dc.BuildProvider()
@@ -66,25 +69,25 @@ func (s *AssociateServiceUserPublicKeyCommandSuite) TestHappyPath() {
 	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
 	virtualServer.Mock(now)
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories.VirtualServerFilter) bool {
+	virtualServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Cond(func(x *repositories.VirtualServerFilter) bool {
 		return x.GetName() == "virtualServer"
 	})).Return(virtualServer, nil)
 
 	user := repositories.NewUser("user", "User", "user@mail", virtualServer.Id())
 	user.Mock(now)
 	userRepository := mocks.NewMockUserRepository(ctrl)
-	userRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories.UserFilter) bool {
+	userRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Cond(func(x *repositories.UserFilter) bool {
 		return x.GetId() == user.Id()
 	})).Return(user, nil)
 
 	credentialRepository := mocks.NewMockCredentialRepository(ctrl)
-	credentialRepository.EXPECT().Insert(gomock.Any(), gomock.Cond(func(x *repositories.Credential) bool {
+	credentialRepository.EXPECT().Insert(gomock.Cond(func(x *repositories.Credential) bool {
 		return x.UserId() == user.Id() &&
 			x.Type() == repositories.CredentialTypeServiceUserKey &&
 			utils.Unwrap(x.ServiceUserKeyDetails()).PublicKey == "publicKey"
-	})).Return(nil)
+	}))
 
-	ctx := s.createContext(virtualServerRepository, userRepository, credentialRepository)
+	ctx := s.createContext(ctrl, virtualServerRepository, userRepository, credentialRepository)
 	cmd := AssociateServiceUserPublicKey{
 		VirtualServerName: "virtualServer",
 		ServiceUserId:     user.Id(),

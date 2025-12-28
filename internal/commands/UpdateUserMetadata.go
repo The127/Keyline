@@ -3,11 +3,13 @@ package commands
 import (
 	"Keyline/internal/authentication/permissions"
 	"Keyline/internal/behaviours"
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"context"
 	"encoding/json"
 	"fmt"
+
 	"github.com/The127/ioc"
 
 	"github.com/google/uuid"
@@ -39,17 +41,16 @@ type UpdateUserMetadataResponse struct{}
 
 func HandleUpdateUserMetadata(ctx context.Context, command UpdateUserMetadata) (*UpdateUserMetadataResponse, error) {
 	scope := middlewares.GetScope(ctx)
+	dbContext := ioc.GetDependency[database.Context](scope)
 
-	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(command.VirtualServerName)
-	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().FirstOrErr(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
-	userRepository := ioc.GetDependency[repositories.UserRepository](scope)
 	userFilter := repositories.NewUserFilter().Id(command.UserId).VirtualServerId(virtualServer.Id())
-	user, err := userRepository.Single(ctx, userFilter)
+	user, err := dbContext.Users().FirstOrErr(ctx, userFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting user: %w", err)
 	}
@@ -60,10 +61,7 @@ func HandleUpdateUserMetadata(ctx context.Context, command UpdateUserMetadata) (
 	}
 
 	user.SetMetadata(string(jsonString))
-	err = userRepository.Update(ctx, user)
-	if err != nil {
-		return nil, fmt.Errorf("updating user: %w", err)
-	}
 
+	dbContext.Users().Update(user)
 	return &UpdateUserMetadataResponse{}, nil
 }

@@ -1,33 +1,89 @@
 package postgres
 
 import (
-	"Keyline/internal/database"
+	"Keyline/internal/change"
 	"Keyline/internal/logging"
-	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
+	"Keyline/internal/repositories/postgres/pghelpers"
 	"Keyline/utils"
 	"context"
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/The127/ioc"
 
 	"github.com/google/uuid"
 	"github.com/huandu/go-sqlbuilder"
 )
 
-type resourceServerRepository struct{}
-
-func NewResourceServerRepository() repositories.ResourceServerRepository {
-	return &resourceServerRepository{}
+type postgresResourceServer struct {
+	postgresBaseModel
+	virtualServerId uuid.UUID
+	projectId       uuid.UUID
+	slug            string
+	name            string
+	description     string
 }
 
-func (r *resourceServerRepository) selectQuery(filter repositories.ResourceServerFilter) *sqlbuilder.SelectBuilder {
+func mapResourceServer(resourceServer *repositories.ResourceServer) *postgresResourceServer {
+	return &postgresResourceServer{
+		postgresBaseModel: mapBase(resourceServer.BaseModel),
+		virtualServerId:   resourceServer.VirtualServerId(),
+		projectId:         resourceServer.ProjectId(),
+		slug:              resourceServer.Slug(),
+		name:              resourceServer.Name(),
+		description:       resourceServer.Description(),
+	}
+}
+
+func (r *postgresResourceServer) Map() *repositories.ResourceServer {
+	return repositories.NewResourceServerFromDB(
+		r.MapBase(),
+		r.virtualServerId,
+		r.projectId,
+		r.slug,
+		r.name,
+		r.description,
+	)
+}
+
+func (r *postgresResourceServer) scan(row pghelpers.Row, additionalPtrs ...any) error {
+	ptrs := []any{
+		&r.id,
+		&r.auditCreatedAt,
+		&r.auditUpdatedAt,
+		&r.xmin,
+		&r.virtualServerId,
+		&r.projectId,
+		&r.slug,
+		&r.name,
+		&r.description,
+	}
+
+	ptrs = append(ptrs, additionalPtrs...)
+
+	return row.Scan(ptrs...)
+}
+
+type ResourceServerRepository struct {
+	db            *sql.DB
+	changeTracker *change.Tracker
+	entityType    int
+}
+
+func NewResourceServerRepository(db *sql.DB, changeTracker *change.Tracker, entityType int) *ResourceServerRepository {
+	return &ResourceServerRepository{
+		db:            db,
+		changeTracker: changeTracker,
+		entityType:    entityType,
+	}
+}
+
+func (r *ResourceServerRepository) selectQuery(filter *repositories.ResourceServerFilter) *sqlbuilder.SelectBuilder {
 	s := sqlbuilder.Select(
 		"id",
 		"audit_created_at",
 		"audit_updated_at",
-		"version",
+		"xmin",
 		"virtual_server_id",
 		"project_id",
 		"slug",
@@ -65,21 +121,13 @@ func (r *resourceServerRepository) selectQuery(filter repositories.ResourceServe
 	return s
 }
 
-func (r *resourceServerRepository) List(ctx context.Context, filter repositories.ResourceServerFilter) ([]*repositories.ResourceServer, int, error) {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
-
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return nil, 0, fmt.Errorf("failed to open tx: %w", err)
-	}
-
+func (r *ResourceServerRepository) List(ctx context.Context, filter *repositories.ResourceServerFilter) ([]*repositories.ResourceServer, int, error) {
 	s := r.selectQuery(filter)
 	s.SelectMore("count(*) over()")
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
-	rows, err := tx.Query(query, args...)
+	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("querying db: %w", err)
 	}
@@ -88,49 +136,37 @@ func (r *resourceServerRepository) List(ctx context.Context, filter repositories
 	var resourceServers []*repositories.ResourceServer
 	var totalCount int
 	for rows.Next() {
-		resourceServer := repositories.ResourceServer{
-			ModelBase: repositories.NewModelBase(),
-		}
-		err = rows.Scan(append(resourceServer.GetScanPointers(), &totalCount)...)
+		resourceServer := &postgresResourceServer{}
+		err := resourceServer.scan(rows, &totalCount)
 		if err != nil {
 			return nil, 0, fmt.Errorf("scanning row: %w", err)
 		}
 
-		resourceServers = append(resourceServers, &resourceServer)
+		resourceServers = append(resourceServers, resourceServer.Map())
 	}
 
 	return resourceServers, totalCount, nil
 }
 
-func (r *resourceServerRepository) First(ctx context.Context, filter repositories.ResourceServerFilter) (*repositories.ResourceServer, error) {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
-
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return nil, fmt.Errorf("failed to open tx: %w", err)
-	}
-
+func (r *ResourceServerRepository) FirstOrNil(ctx context.Context, filter *repositories.ResourceServerFilter) (*repositories.ResourceServer, error) {
 	s := r.selectQuery(filter)
 	s.Limit(1)
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
-	row := tx.QueryRowContext(ctx, query, args...)
+	row := r.db.QueryRowContext(ctx, query, args...)
 
-	resourceServer := repositories.ResourceServer{
-		ModelBase: repositories.NewModelBase(),
-	}
-	err = row.Scan(resourceServer.GetScanPointers()...)
+	resourceServer := &postgresResourceServer{}
+	err := resourceServer.scan(row)
 	if err != nil {
 		return nil, fmt.Errorf("scanning row: %w", err)
 	}
 
-	return &resourceServer, nil
+	return resourceServer.Map(), nil
 }
 
-func (r *resourceServerRepository) Single(ctx context.Context, filter repositories.ResourceServerFilter) (*repositories.ResourceServer, error) {
-	resourceServer, err := r.First(ctx, filter)
+func (r *ResourceServerRepository) FirstOrErr(ctx context.Context, filter *repositories.ResourceServerFilter) (*repositories.ResourceServer, error) {
+	resourceServer, err := r.FirstOrNil(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -140,17 +176,18 @@ func (r *resourceServerRepository) Single(ctx context.Context, filter repositori
 	return resourceServer, nil
 }
 
-func (r *resourceServerRepository) Insert(ctx context.Context, resourceServer *repositories.ResourceServer) error {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
+func (r *ResourceServerRepository) Insert(resourceServer *repositories.ResourceServer) {
+	r.changeTracker.Add(change.NewEntry(change.Added, r.entityType, resourceServer))
+}
 
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return fmt.Errorf("failed to open tx: %w", err)
-	}
+func (r *ResourceServerRepository) ExecuteInsert(ctx context.Context, tx *sql.Tx, resourceServer *repositories.ResourceServer) error {
+	mapped := mapResourceServer(resourceServer)
 
 	s := sqlbuilder.InsertInto("resource_servers").
 		Cols(
+			"id",
+			"audit_created_at",
+			"audit_updated_at",
 			"virtual_server_id",
 			"project_id",
 			"slug",
@@ -158,76 +195,90 @@ func (r *resourceServerRepository) Insert(ctx context.Context, resourceServer *r
 			"description",
 		).
 		Values(
-			resourceServer.VirtualServerId(),
-			resourceServer.ProjectId(),
-			resourceServer.Slug(),
-			resourceServer.Name(),
-			resourceServer.Description(),
-		).Returning("id", "audit_created_at", "audit_updated_at", "version")
+			mapped.id,
+			mapped.auditCreatedAt,
+			mapped.auditUpdatedAt,
+			mapped.virtualServerId,
+			mapped.projectId,
+			mapped.slug,
+			mapped.name,
+			mapped.description,
+		).
+		Returning("xmin")
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
 	row := tx.QueryRowContext(ctx, query, args...)
-	err = row.Scan(resourceServer.InsertPointers()...)
+
+	var xmin uint32
+	err := row.Scan(&xmin)
 	if err != nil {
 		return fmt.Errorf("scanning row: %w", err)
 	}
 
+	resourceServer.SetVersion(xmin)
 	resourceServer.ClearChanges()
 	return nil
 }
 
-func (r *resourceServerRepository) Update(ctx context.Context, resourceServer *repositories.ResourceServer) error {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
+func (r *ResourceServerRepository) Update(resourceServer *repositories.ResourceServer) {
+	r.changeTracker.Add(change.NewEntry(change.Updated, r.entityType, resourceServer))
+}
 
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return fmt.Errorf("failed to open tx: %w", err)
+func (r *ResourceServerRepository) ExecuteUpdate(ctx context.Context, tx *sql.Tx, resourceServer *repositories.ResourceServer) error {
+	if !resourceServer.HasChanges() {
+		return nil
 	}
+
+	mapped := mapResourceServer(resourceServer)
 
 	s := sqlbuilder.Update("resource_servers")
-	for fieldName, value := range resourceServer.Changes() {
-		s.SetMore(s.Assign(fieldName, value))
+	s.Where(s.Equal("id", mapped.id))
+	s.Where(s.Equal("xmin", mapped.xmin))
+
+	for _, field := range resourceServer.GetChanges() {
+		switch field {
+		case repositories.ResourceServerChangeName:
+			s.SetMore(s.Assign("name", mapped.name))
+
+		case repositories.ResourceServerChangeDescription:
+			s.SetMore(s.Assign("description", mapped.description))
+
+		default:
+			return fmt.Errorf("updating field %v is not supported", field)
+		}
 	}
-	s.SetMore(s.Assign("version", resourceServer.Version()+1))
 
-	s.Where(s.Equal("id", resourceServer.Id()))
-	s.Where(s.Equal("version", resourceServer.Version()))
-	s.Returning("audit_updated_at", "version")
-
+	s.Returning("xmin")
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
 	row := tx.QueryRowContext(ctx, query, args...)
 
-	err = row.Scan(resourceServer.UpdatePointers()...)
+	var xmin uint32
+	err := row.Scan(&xmin)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
-		return fmt.Errorf("updating resource server: %w", repositories.ErrVersionMismatch)
-
+		return fmt.Errorf("updating application: %w", repositories.ErrVersionMismatch)
 	case err != nil:
 		return fmt.Errorf("scanning row: %w", err)
 	}
 
+	resourceServer.SetVersion(xmin)
 	resourceServer.ClearChanges()
 	return nil
 }
 
-func (r *resourceServerRepository) Delete(ctx context.Context, id uuid.UUID) error {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
+func (r *ResourceServerRepository) Delete(id uuid.UUID) {
+	r.changeTracker.Add(change.NewEntry(change.Deleted, r.entityType, id))
+}
 
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return fmt.Errorf("failed to open tx: %w", err)
-	}
-
+func (r *ResourceServerRepository) ExecuteDelete(ctx context.Context, tx *sql.Tx, id uuid.UUID) error {
 	s := sqlbuilder.DeleteFrom("resource_servers")
 	s.Where(s.Equal("id", id))
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
-	_, err = tx.ExecContext(ctx, query, args...)
+	_, err := tx.ExecContext(ctx, query, args...)
 	if err != nil {
 		return fmt.Errorf("executing sql: %w", err)
 	}

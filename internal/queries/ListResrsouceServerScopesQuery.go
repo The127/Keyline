@@ -3,11 +3,13 @@ package queries
 import (
 	"Keyline/internal/authentication/permissions"
 	"Keyline/internal/behaviours"
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/utils"
 	"context"
 	"fmt"
+
 	"github.com/The127/ioc"
 
 	"github.com/google/uuid"
@@ -50,32 +52,29 @@ type ListResourceServerScopesResponseItem struct {
 
 func HandleListResourceServerScopes(ctx context.Context, query ListRessouceServerScopes) (*ListResourceServerScopesResponse, error) {
 	scope := middlewares.GetScope(ctx)
+	dbContext := ioc.GetDependency[database.Context](scope)
 
-	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(query.VirtualServerName)
-	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().FirstOrErr(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
-	projectRepository := ioc.GetDependency[repositories.ProjectRepository](scope)
 	projectFilter := repositories.NewProjectFilter().VirtualServerId(virtualServer.Id()).Slug(query.ProjectSlug)
-	project, err := projectRepository.Single(ctx, projectFilter)
+	project, err := dbContext.Projects().FirstOrErr(ctx, projectFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting project: %w", err)
 	}
 
-	resourceServerRepository := ioc.GetDependency[repositories.ResourceServerRepository](scope)
 	resourceServerFilter := repositories.NewResourceServerFilter().
 		VirtualServerId(virtualServer.Id()).
 		ProjectId(project.Id()).
 		Id(query.ResourceServerId)
-	resourceServer, err := resourceServerRepository.Single(ctx, resourceServerFilter)
+	resourceServer, err := dbContext.ResourceServers().FirstOrErr(ctx, resourceServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting resource server: %w", err)
 	}
 
-	resourceServerScopeRepository := ioc.GetDependency[repositories.ResourceServerScopeRepository](scope)
 	resourceServerScopeFilter := repositories.NewResourceServerScopeFilter().
 		VirtualServerId(virtualServer.Id()).
 		ProjectId(project.Id()).
@@ -83,7 +82,7 @@ func HandleListResourceServerScopes(ctx context.Context, query ListRessouceServe
 		Pagination(query.Page, query.PageSize).
 		Order(query.OrderBy, query.OrderDir).
 		Search(repositories.NewContainsSearchFilter(query.SearchText))
-	resourceServerScopes, total, err := resourceServerScopeRepository.List(ctx, resourceServerScopeFilter)
+	resourceServerScopes, total, err := dbContext.ResourceServerScopes().List(ctx, resourceServerScopeFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting resource server scopes: %w", err)
 	}

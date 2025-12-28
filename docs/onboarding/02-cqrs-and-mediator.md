@@ -228,7 +228,7 @@ func HandleGetUser(
     
     // Retrieve data
     filter := repositories.NewUserFilter().Id(query.UserID)
-    user, err := userRepo.Single(ctx, filter)
+    user, err := userRepo.FirstOrErr(ctx, filter)
     if err != nil {
         return nil, fmt.Errorf("getting user: %w", err)
     }
@@ -368,7 +368,7 @@ func QueueEmailVerificationJobOnUserCreatedEvent(
     emailService := ioc.GetDependency[services.EmailService](scope)
     
     // Get user
-    user, err := userRepo.First(ctx, repositories.NewUserFilter().Id(evt.UserID))
+    user, err := userRepo.FirstOrNil(ctx, repositories.NewUserFilter().Id(evt.UserID))
     if err != nil {
         return fmt.Errorf("getting user: %w", err)
     }
@@ -474,7 +474,7 @@ func HandleRegisterUser(
     m := ioc.GetDependency[mediatr.Mediator](scope)
     
     // 1. Check if registration is enabled
-    vs, err := vsRepo.First(ctx, repositories.NewVirtualServerFilter().Name(cmd.VirtualServerName))
+    vs, err := vsRepo.FirstOrNil(ctx, repositories.NewVirtualServerFilter().Name(cmd.VirtualServerName))
     if err != nil {
         return nil, fmt.Errorf("getting virtual server: %w", err)
     }
@@ -483,7 +483,7 @@ func HandleRegisterUser(
     }
     
     // 2. Validate username is available
-    existing, _ := userRepo.First(ctx, repositories.NewUserFilter().
+    existing, _ := userRepo.FirstOrNil(ctx, repositories.NewUserFilter().
         VirtualServerId(vs.Id()).
         Username(cmd.Username))
     if existing != nil {
@@ -518,7 +518,7 @@ func QueueEmailVerificationJobOnUserCreatedEvent(
     tokenService := ioc.GetDependency[services.TokenService](scope)
     
     // Get user
-    user, err := userRepo.First(ctx, repositories.NewUserFilter().Id(evt.UserID))
+    user, err := userRepo.FirstOrNil(ctx, repositories.NewUserFilter().Id(evt.UserID))
     if err != nil {
         return fmt.Errorf("getting user: %w", err)
     }
@@ -575,7 +575,7 @@ func HandleGetApplication(
     
     // Get application
     filter := repositories.NewApplicationFilter().Id(query.ApplicationID)
-    app, err := appRepo.First(ctx, filter)
+    app, err := appRepo.FirstOrNil(ctx, filter)
     if err != nil {
         return nil, fmt.Errorf("getting application: %w", err)
     }
@@ -618,7 +618,7 @@ func HandleAssignRole(
     txCtx := context.WithValue(ctx, "tx", tx)
     
     // 1. Verify role exists
-    role, err := roleRepo.First(txCtx, repositories.NewRoleFilter().Id(cmd.RoleID))
+    role, err := roleRepo.FirstOrNil(txCtx, repositories.NewRoleFilter().Id(cmd.RoleID))
     if err != nil {
         return nil, fmt.Errorf("getting role: %w", err)
     }
@@ -661,7 +661,7 @@ func TestCreateUser(t *testing.T) {
     
     // Create test dependencies
     mockUserRepo := mocks.NewMockUserRepository(ctrl)
-    mockUserRepo.EXPECT().Insert(gomock.Any(), gomock.Any()).Return(nil)
+    mockUserRepo.EXPECT().Insert( gomock.Any())
     
     // For unit testing handler functions, you would:
     // 1. Create a test IoC scope with mocked dependencies

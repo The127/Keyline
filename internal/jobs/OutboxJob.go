@@ -1,6 +1,7 @@
 package jobs
 
 import (
+	"Keyline/internal/database"
 	"Keyline/internal/logging"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
@@ -8,6 +9,7 @@ import (
 	"Keyline/utils"
 	"context"
 	"fmt"
+
 	"github.com/The127/ioc"
 )
 
@@ -16,16 +18,16 @@ func OutboxSendingJob(dp *ioc.DependencyProvider) JobFn {
 		scope := dp.NewScope()
 		defer utils.PanicOnError(scope.Close, "failed to close scope")
 		ctx = middlewares.ContextWithScope(ctx, scope)
+		dbContext := ioc.GetDependency[database.Context](scope)
 
-		outboxMessageRepository := ioc.GetDependency[repositories.OutboxMessageRepository](scope)
 		filter := repositories.NewOutboxMessageFilter()
-		outboxMessages, err := outboxMessageRepository.List(ctx, filter)
+		outboxMessages, err := dbContext.OutboxMessages().List(ctx, filter)
 		if err != nil {
 			return fmt.Errorf("failed to list outbox messages: %w", err)
 		}
 
 		for _, message := range outboxMessages {
-			err = handleMessage(ctx, message, outboxMessageRepository)
+			err = handleMessage(ctx, message, dbContext)
 			if err != nil {
 				// we don't want to stop the whole job if one message fails
 				// failed messages will be retried later
@@ -37,7 +39,7 @@ func OutboxSendingJob(dp *ioc.DependencyProvider) JobFn {
 	}
 }
 
-func handleMessage(ctx context.Context, message *repositories.OutboxMessage, repository repositories.OutboxMessageRepository) error {
+func handleMessage(ctx context.Context, message *repositories.OutboxMessage, dbContext database.Context) error {
 	scope := middlewares.GetScope(ctx)
 	delivery := ioc.GetDependency[outbox.DeliveryService](scope)
 
@@ -46,10 +48,7 @@ func handleMessage(ctx context.Context, message *repositories.OutboxMessage, rep
 		return fmt.Errorf("failed to handle message: %w", err)
 	}
 
-	err = repository.Delete(ctx, message.Id())
-	if err != nil {
-		return fmt.Errorf("failed to delete message in database: %w", err)
-	}
+	dbContext.OutboxMessages().Delete(message.Id())
 
 	return nil
 }

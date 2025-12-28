@@ -2,7 +2,9 @@ package handlers
 
 import (
 	"Keyline/internal/config"
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
+	"Keyline/internal/mocks"
 	"Keyline/internal/repositories"
 	repoMocks "Keyline/internal/repositories/mocks"
 	"Keyline/internal/services"
@@ -28,26 +30,25 @@ func newTestContext(t *testing.T) context.Context {
 
 	ctrl := gomock.NewController(t)
 
+	dbContext := mocks.NewMockContext(ctrl)
+	ioc.RegisterTransient(dependencyCollection, func(dp *ioc.DependencyProvider) database.Context {
+		return dbContext
+	})
+
 	userRepository := repoMocks.NewMockUserRepository(ctrl)
 	user := repositories.NewUser("user", "User", "user@mail", uuid.New())
 	user.Mock(time.Now())
-	userRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(user, nil)
-	ioc.RegisterTransient(dependencyCollection, func(dp *ioc.DependencyProvider) repositories.UserRepository {
-		return userRepository
-	})
+	userRepository.EXPECT().FirstOrNil(gomock.Any(), gomock.Any()).Return(user, nil)
+	dbContext.EXPECT().Users().Return(userRepository).AnyTimes()
 
 	userRoleAssignmentRepository := repoMocks.NewMockUserRoleAssignmentRepository(ctrl)
 	userRoleAssignmentRepository.EXPECT().List(gomock.Any(), gomock.Any()).Return(nil, 0, nil).Times(2)
-	ioc.RegisterTransient(dependencyCollection, func(dp *ioc.DependencyProvider) repositories.UserRoleAssignmentRepository {
-		return userRoleAssignmentRepository
-	})
+	dbContext.EXPECT().UserRoleAssignments().Return(userRoleAssignmentRepository).AnyTimes()
 
 	applicationUserMetadata := repositories.NewApplicationUserMetadata(uuid.New(), user.Id(), "{\"foo\": \"bar\"}")
 	applicationUserMetadataRepository := repoMocks.NewMockApplicationUserMetadataRepository(ctrl)
-	applicationUserMetadataRepository.EXPECT().First(gomock.Any(), gomock.Any()).Return(applicationUserMetadata, nil).AnyTimes()
-	ioc.RegisterTransient(dependencyCollection, func(dp *ioc.DependencyProvider) repositories.ApplicationUserMetadataRepository {
-		return applicationUserMetadataRepository
-	})
+	applicationUserMetadataRepository.EXPECT().FirstOrNil(gomock.Any(), gomock.Any()).Return(applicationUserMetadata, nil).AnyTimes()
+	dbContext.EXPECT().ApplicationUserMetadata().Return(applicationUserMetadataRepository).AnyTimes()
 
 	claimsMapper := serviceMocks.NewMockClaimsMapper(ctrl)
 	claimsMapper.EXPECT().MapClaims(gomock.Any(), gomock.Any(), gomock.Any()).Return(jwt.MapClaims{})

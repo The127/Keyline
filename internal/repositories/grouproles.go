@@ -7,7 +7,7 @@ import (
 )
 
 type GroupRole struct {
-	ModelBase
+	BaseModel
 
 	groupId uuid.UUID
 	roleId  uuid.UUID
@@ -15,7 +15,7 @@ type GroupRole struct {
 
 func NewGroupRole(groupId uuid.UUID, roleId uuid.UUID) *GroupRole {
 	return &GroupRole{
-		ModelBase: NewModelBase(),
+		BaseModel: NewBaseModel(),
 		groupId:   groupId,
 		roleId:    roleId,
 	}
@@ -34,39 +34,39 @@ type GroupRoleFilter struct {
 	roleId  *uuid.UUID
 }
 
-func NewGroupRoleFilter() GroupRoleFilter {
-	return GroupRoleFilter{}
+func NewGroupRoleFilter() *GroupRoleFilter {
+	return &GroupRoleFilter{}
 }
 
-func (f GroupRoleFilter) Clone() GroupRoleFilter {
+func (f *GroupRoleFilter) Clone() *GroupRoleFilter {
 	return f
 }
 
-func (f GroupRoleFilter) GroupId(groupId uuid.UUID) GroupRoleFilter {
+func (f *GroupRoleFilter) GroupId(groupId uuid.UUID) *GroupRoleFilter {
 	filter := f.Clone()
 	filter.groupId = &groupId
 	return filter
 }
 
-func (f GroupRoleFilter) HasGroupId() bool {
+func (f *GroupRoleFilter) HasGroupId() bool {
 	return f.groupId != nil
 }
 
-func (f GroupRoleFilter) GetGroupId() uuid.UUID {
+func (f *GroupRoleFilter) GetGroupId() uuid.UUID {
 	return utils.ZeroIfNil(f.groupId)
 }
 
-func (f GroupRoleFilter) RoleId(roleId uuid.UUID) GroupRoleFilter {
+func (f *GroupRoleFilter) RoleId(roleId uuid.UUID) *GroupRoleFilter {
 	filter := f.Clone()
 	filter.roleId = &roleId
 	return filter
 }
 
-func (f GroupRoleFilter) HasRoleId() bool {
+func (f *GroupRoleFilter) HasRoleId() bool {
 	return f.roleId != nil
 }
 
-func (f GroupRoleFilter) GetRoleId() uuid.UUID {
+func (f *GroupRoleFilter) GetRoleId() uuid.UUID {
 	return utils.ZeroIfNil(f.roleId)
 }
 

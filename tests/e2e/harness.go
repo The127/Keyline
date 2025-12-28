@@ -6,13 +6,13 @@ import (
 	"Keyline/internal/commands"
 	"Keyline/internal/config"
 	"Keyline/internal/database"
+	"Keyline/internal/database/postgres"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/internal/server"
 	"Keyline/internal/setup"
 	"Keyline/utils"
 	"context"
-	"database/sql"
 	"fmt"
 	"strings"
 	"sync"
@@ -61,7 +61,7 @@ func (h *harness) Client() client.Client {
 
 func (h *harness) Close() {
 	// cleanup database
-	dbConnection := ioc.GetDependency[*sql.DB](h.scope)
+	dbConnection := ioc.GetDependency[database.Database](h.scope)
 	utils.PanicOnError(h.scope.Close, "closing scope")
 	utils.PanicOnError(dbConnection.Close, "closing db connection in test")
 
@@ -74,9 +74,14 @@ func (h *harness) Close() {
 		SslMode:  "disable",
 	}
 
-	db := database.ConnectToDatabase(pc)
+	db, err := postgres.ConnectToDatabase(pc)
+	if err != nil {
+		panic(err)
+	}
+	defer utils.PanicOnError(db.Close, "closing initial db connection in test")
+
 	createQuery := fmt.Sprintf("drop database %s;", h.dbName)
-	_, err := db.Exec(createQuery)
+	_, err = db.Exec(createQuery)
 	if err != nil {
 		panic(err)
 	}
@@ -96,25 +101,37 @@ func newE2eTestHarness(tokenSourceGenerator func(ctx context.Context, url string
 	sqlbuilder.DefaultFlavor = sqlbuilder.PostgreSQL
 
 	dbName := strings.ReplaceAll("keyline_test_"+uuid.New().String(), "-", "")
-	pc := config.PostgresConfig{
-		Database: "postgres",
-		Host:     "localhost",
-		Port:     5732,
-		Username: "user",
-		Password: "password",
-		SslMode:  "disable",
+	c := config.DatabaseConfig{
+		Mode: config.DatabaseModePostgres,
+		Postgres: config.PostgresConfig{
+			Database: "postgres",
+			Host:     "localhost",
+			Port:     5732,
+			Username: "user",
+			Password: "password",
+			SslMode:  "disable",
+		},
 	}
 
-	db := database.ConnectToDatabase(pc)
-	createQuery := fmt.Sprintf("create database %s;", dbName)
-	_, err := db.Exec(createQuery)
+	initDb, err := postgres.ConnectToDatabase(c.Postgres)
 	if err != nil {
 		panic(err)
 	}
-	utils.PanicOnError(db.Close, "closing initial db connection in test")
 
-	pc.Database = dbName
-	err = database.Migrate(pc)
+	createQuery := fmt.Sprintf("create database %s;", dbName)
+	_, err = initDb.Exec(createQuery)
+	if err != nil {
+		panic(err)
+	}
+	utils.PanicOnError(initDb.Close, "closing initial db connection in test")
+
+	c.Postgres.Database = dbName
+	db, err := setup.Database(dc, c)
+	if err != nil {
+		panic(fmt.Errorf("failed to create test database: %w", err))
+	}
+
+	err = db.Migrate(ctx)
 	if err != nil {
 		panic(fmt.Errorf("failed to create test database: %w", err))
 	}
@@ -137,7 +154,6 @@ func newE2eTestHarness(tokenSourceGenerator func(ctx context.Context, url string
 
 	setup.Caching(dc, config.CacheModeMemory)
 	setup.Services(dc)
-	setup.Repositories(dc, config.DatabaseModePostgres, pc)
 	setup.Mediator(dc)
 
 	scope := dc.BuildProvider()
@@ -159,7 +175,7 @@ func newE2eTestHarness(tokenSourceGenerator func(ctx context.Context, url string
 		opts = append(opts, client.WithOidc(tokenSourceGenerator(ctx, serverConfig.ExternalUrl)))
 	}
 
-	c := client.NewClient(serverConfig.ExternalUrl, "test-vs", opts...)
+	cl := client.NewClient(serverConfig.ExternalUrl, "test-vs", opts...)
 
 	err = initTest(scope)
 	if err != nil {
@@ -167,7 +183,7 @@ func newE2eTestHarness(tokenSourceGenerator func(ctx context.Context, url string
 	}
 
 	return &harness{
-		c:         c,
+		c:         cl,
 		scope:     scope,
 		ctx:       ctx,
 		setTime:   timeSetter,
@@ -178,6 +194,7 @@ func newE2eTestHarness(tokenSourceGenerator func(ctx context.Context, url string
 
 func initTest(dp *ioc.DependencyProvider) error {
 	scope := dp.NewScope()
+	dbContext := ioc.GetDependency[database.Context](scope)
 
 	ctx := middlewares.ContextWithScope(context.Background(), scope)
 	ctx = authentication.ContextWithCurrentUser(ctx, authentication.SystemUser())
@@ -192,6 +209,10 @@ func initTest(dp *ioc.DependencyProvider) error {
 	if err != nil {
 		return fmt.Errorf("failed to create initial virtual server: %v", err)
 	}
+	err = dbContext.SaveChanges(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to save changes to database: %v", err)
+	}
 
 	initialAdminUserInfo, err := mediatr.Send[*commands.CreateUserResponse](ctx, m, commands.CreateUser{
 		VirtualServerName: "test-vs",
@@ -203,15 +224,19 @@ func initTest(dp *ioc.DependencyProvider) error {
 	if err != nil {
 		return fmt.Errorf("failed to create initial admin user: %v", err)
 	}
+	err = dbContext.SaveChanges(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to save changes to database: %v", err)
+	}
 
-	credentialRepository := ioc.GetDependency[repositories.CredentialRepository](scope)
 	initialAdminCredential := repositories.NewCredential(initialAdminUserInfo.Id, &repositories.CredentialPasswordDetails{
 		HashedPassword: config.C.InitialVirtualServer.Admin.PasswordHash,
 		Temporary:      false,
 	})
-	err = credentialRepository.Insert(ctx, initialAdminCredential)
+	dbContext.Credentials().Insert(initialAdminCredential)
+	err = dbContext.SaveChanges(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to create initial admin credential: %v", err)
+		return fmt.Errorf("failed to save changes to database: %v", err)
 	}
 
 	_, err = mediatr.Send[*commands.AssignRoleToUserResponse](ctx, m, commands.AssignRoleToUser{
@@ -223,6 +248,10 @@ func initTest(dp *ioc.DependencyProvider) error {
 	if err != nil {
 		return fmt.Errorf("failed to assign admin role to initial admin user: %v", err)
 	}
+	err = dbContext.SaveChanges(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to save changes to database: %v", err)
+	}
 
 	serviceUserResponse, err := mediatr.Send[*commands.CreateServiceUserResponse](ctx, m, commands.CreateServiceUser{
 		VirtualServerName: "test-vs",
@@ -230,6 +259,10 @@ func initTest(dp *ioc.DependencyProvider) error {
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create initial service user: %v", err)
+	}
+	err = dbContext.SaveChanges(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to save changes to database: %v", err)
 	}
 
 	_, err = mediatr.Send[*commands.AssignRoleToUserResponse](ctx, m, commands.AssignRoleToUser{
@@ -241,6 +274,10 @@ func initTest(dp *ioc.DependencyProvider) error {
 	if err != nil {
 		return fmt.Errorf("failed to assign admin role to service user: %v", err)
 	}
+	err = dbContext.SaveChanges(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to save changes to database: %v", err)
+	}
 
 	_, err = mediatr.Send[*commands.AssociateServiceUserPublicKeyResponse](ctx, m, commands.AssociateServiceUserPublicKey{
 		VirtualServerName: "test-vs",
@@ -250,6 +287,10 @@ func initTest(dp *ioc.DependencyProvider) error {
 	})
 	if err != nil {
 		return fmt.Errorf("failed to associate service user public key: %v", err)
+	}
+	err = dbContext.SaveChanges(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to save changes to database: %v", err)
 	}
 
 	return scope.Close()

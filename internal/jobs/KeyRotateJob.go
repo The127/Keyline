@@ -2,6 +2,7 @@ package jobs
 
 import (
 	"Keyline/internal/config"
+	"Keyline/internal/database"
 	"Keyline/internal/logging"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
@@ -20,9 +21,10 @@ func KeyRotateJob() JobFn {
 		scope := middlewares.GetScope(ctx).NewScope()
 		defer utils.PanicOnError(scope.Close, "failed to close scope")
 
-		virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
+		dbContext := ioc.GetDependency[database.Context](scope)
+
 		virtualServerFilter := repositories.NewVirtualServerFilter()
-		virtualServers, _, err := virtualServerRepository.List(ctx, virtualServerFilter)
+		virtualServers, _, err := dbContext.VirtualServers().List(ctx, virtualServerFilter)
 		if err != nil {
 			return fmt.Errorf("listing virtual servers: %w", err)
 		}

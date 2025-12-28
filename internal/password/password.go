@@ -1,12 +1,14 @@
 package password
 
 import (
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+
 	"github.com/The127/ioc"
 )
 
@@ -23,22 +25,21 @@ func NewValidator() Validator {
 
 func (v *validator) Validate(ctx context.Context, password string) error {
 	scope := middlewares.GetScope(ctx)
+	dbContext := ioc.GetDependency[database.Context](scope)
 
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get virtual server name: %w", err)
 	}
 
-	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(vsName)
-	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().FirstOrErr(ctx, virtualServerFilter)
 	if err != nil {
 		return fmt.Errorf("failed to get virtual server: %w", err)
 	}
 
-	passwordRuleRepository := ioc.GetDependency[repositories.PasswordRuleRepository](scope)
 	passwordRuleFilter := repositories.NewPasswordRuleFilter().VirtualServerId(virtualServer.Id())
-	passwordRules, err := passwordRuleRepository.List(ctx, passwordRuleFilter)
+	passwordRules, err := dbContext.PasswordRules().List(ctx, passwordRuleFilter)
 	if err != nil {
 		return fmt.Errorf("failed to get password rules: %w", err)
 	}

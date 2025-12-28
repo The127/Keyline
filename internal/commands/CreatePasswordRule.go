@@ -3,6 +3,7 @@ package commands
 import (
 	"Keyline/internal/authentication/permissions"
 	"Keyline/internal/behaviours"
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/password"
 	"Keyline/internal/repositories"
@@ -10,6 +11,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	"github.com/The127/ioc"
 )
 
@@ -39,21 +41,20 @@ type CreatePasswordRuleResponse struct{}
 
 func HandleCreatePasswordRule(ctx context.Context, command CreatePasswordRule) (*CreatePasswordRuleResponse, error) {
 	scope := middlewares.GetScope(ctx)
+	dbContext := ioc.GetDependency[database.Context](scope)
 
 	// TODO: validation
 
-	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(command.VirtualServerName)
-	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().FirstOrErr(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
-	passwordRuleRepository := ioc.GetDependency[repositories.PasswordRuleRepository](scope)
 	passwordRuleFilter := repositories.NewPasswordRuleFilter().
 		VirtualServerId(virtualServer.Id()).
 		Type(command.Type)
-	passwordRule, err := passwordRuleRepository.First(ctx, passwordRuleFilter)
+	passwordRule, err := dbContext.PasswordRules().FirstOrNil(ctx, passwordRuleFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting password rule: %w", err)
 	}
@@ -77,10 +78,7 @@ func HandleCreatePasswordRule(ctx context.Context, command CreatePasswordRule) (
 		return nil, fmt.Errorf("creating password rule: %w", err)
 	}
 
-	err = passwordRuleRepository.Insert(ctx, passwordRule)
-	if err != nil {
-		return nil, fmt.Errorf("inserting password rule: %w", err)
-	}
+	dbContext.PasswordRules().Insert(passwordRule)
 
 	return &CreatePasswordRuleResponse{}, nil
 }

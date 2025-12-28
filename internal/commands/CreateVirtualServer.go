@@ -4,6 +4,7 @@ import (
 	"Keyline/internal/authentication/permissions"
 	"Keyline/internal/behaviours"
 	"Keyline/internal/config"
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/internal/services"
@@ -11,12 +12,11 @@ import (
 	"Keyline/utils"
 	"context"
 	"fmt"
-	"github.com/The127/go-clock"
 	"strings"
 
-	"github.com/The127/ioc"
-	"github.com/The127/mediatr"
+	"github.com/The127/go-clock"
 
+	"github.com/The127/ioc"
 	"github.com/google/uuid"
 )
 
@@ -114,173 +114,116 @@ type CreateVirtualServerResponse struct {
 
 func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer) (*CreateVirtualServerResponse, error) {
 	scope := middlewares.GetScope(ctx)
+	dbContext := ioc.GetDependency[database.Context](scope)
 
-	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
+	roleIdsByFullyQualifiedName := make(map[string]uuid.UUID)
 
 	virtualServer := repositories.NewVirtualServer(command.Name, command.DisplayName)
 	virtualServer.SetEnableRegistration(command.EnableRegistration)
 	virtualServer.SetRequire2fa(command.Require2fa)
 	virtualServer.SetSigningAlgorithm(command.SigningAlgorithm)
 
-	err := virtualServerRepository.Insert(ctx, virtualServer)
-	if err != nil {
-		return nil, fmt.Errorf("inserting virtual server: %w", err)
-	}
+	dbContext.VirtualServers().Insert(virtualServer)
 
 	clockService := ioc.GetDependency[clock.Service](scope)
 
 	keyService := ioc.GetDependency[services.KeyService](scope)
-	_, err = keyService.Generate(clockService, command.Name, command.SigningAlgorithm)
+	_, err := keyService.Generate(clockService, command.Name, command.SigningAlgorithm)
 	if err != nil {
 		return nil, fmt.Errorf("generating keypair: %w", err)
 	}
-	err = initializeDefaultTemplates(ctx, virtualServer)
-	if err != nil {
-		return nil, fmt.Errorf("initializing default templates: %w", err)
-	}
-
-	projectRepository := ioc.GetDependency[repositories.ProjectRepository](scope)
+	initializeDefaultTemplates(ctx, virtualServer)
 
 	systemProject := repositories.NewSystemProject(virtualServer.Id())
-	err = projectRepository.Insert(ctx, systemProject)
-	if err != nil {
-		return nil, fmt.Errorf("inserting project: %w", err)
+	dbContext.Projects().Insert(systemProject)
+
+	initDefaultAppsResult := initializeDefaultApplications(ctx, virtualServer, systemProject)
+	defaultRolesResult := initializeDefaultAdminRoles(ctx, virtualServer, systemProject, command.CreateSystemAdminRole)
+
+	roleIdsByFullyQualifiedName[fmt.Sprintf("%s:%s", systemProject.Slug(), AdminRoleName)] = defaultRolesResult.adminRoleId
+	if defaultRolesResult.systemAdminRoleId != nil {
+		roleIdsByFullyQualifiedName[fmt.Sprintf("%s:%s", systemProject.Slug(), SystemAdminRoleName)] = *defaultRolesResult.systemAdminRoleId
 	}
 
-	initDefaultAppsResult, err := initializeDefaultApplications(ctx, virtualServer, systemProject)
-	if err != nil {
-		return nil, fmt.Errorf("initializing default applications: %w", err)
-	}
-
-	defaultRolesResult, err := initializeDefaultAdminRoles(ctx, virtualServer, systemProject, command.CreateSystemAdminRole)
-	if err != nil {
-		return nil, fmt.Errorf("initializing default roles: %w", err)
-	}
-
-	m := ioc.GetDependency[mediatr.Mediator](scope)
 	for _, project := range command.Projects {
-		_, err = mediatr.Send[*CreateProjectResponse](ctx, m, CreateProject{
-			VirtualServerName: virtualServer.Name(),
-			Slug:              project.Slug,
-			Name:              project.Name,
-			Description:       project.Description,
-		})
-		if err != nil {
-			return nil, fmt.Errorf("creating project: %w", err)
-		}
+		newProject := repositories.NewProject(virtualServer.Id(), project.Slug, project.Name, project.Description)
+		dbContext.Projects().Insert(newProject)
 
 		for _, app := range project.Applications {
-			_, err = mediatr.Send[*CreateApplicationResponse](ctx, m, CreateApplication{
-				VirtualServerName:      virtualServer.Name(),
-				ProjectSlug:            project.Slug,
-				Name:                   app.Name,
-				DisplayName:            app.DisplayName,
-				Type:                   repositories.ApplicationType(app.Type),
-				RedirectUris:           app.RedirectUris,
-				PostLogoutRedirectUris: app.PostLogoutUris,
-				HashedSecret:           app.HashedSecret,
-			})
-			if err != nil {
-				return nil, fmt.Errorf("creating application: %w", err)
+			newApp := repositories.NewApplication(
+				virtualServer.Id(),
+				newProject.Id(),
+				app.Name,
+				app.DisplayName,
+				repositories.ApplicationType(app.Type),
+				app.RedirectUris,
+			)
+			if app.HashedSecret != nil {
+				newApp.SetHashedSecret(*app.HashedSecret)
 			}
+			newApp.SetPostLogoutRedirectUris(app.PostLogoutUris)
+			dbContext.Applications().Insert(newApp)
 		}
 
 		for _, role := range project.Roles {
-			_, err = mediatr.Send[*CreateRoleResponse](ctx, m, CreateRole{
-				VirtualServerName: virtualServer.Name(),
-				ProjectSlug:       project.Slug,
-				Name:              role.Name,
-				Description:       role.Description,
-			})
-			if err != nil {
-				return nil, fmt.Errorf("creating role: %w", err)
-			}
+			newRole := repositories.NewRole(virtualServer.Id(), newProject.Id(), role.Name, role.Description)
+			dbContext.Roles().Insert(newRole)
+			roleIdsByFullyQualifiedName[fmt.Sprintf("%s:%s", project.Slug, role.Name)] = newRole.Id()
 		}
 
 		for _, resourceServer := range project.ResourceServers {
-			_, err = mediatr.Send[*CreateResourceServerResponse](ctx, m, CreateResourceServer{
-				VirtualServerName: virtualServer.Name(),
-				ProjectSlug:       project.Slug,
-				Slug:              resourceServer.Slug,
-				Name:              resourceServer.Name,
-				Description:       resourceServer.Description,
-			})
-			if err != nil {
-				return nil, fmt.Errorf("creating resource server: %w", err)
-			}
+			newResourceServer := repositories.NewResourceServer(virtualServer.Id(), newProject.Id(), resourceServer.Slug, resourceServer.Name, resourceServer.Description)
+			dbContext.ResourceServers().Insert(newResourceServer)
 		}
 	}
 
 	if command.Admin != nil {
-		initialAdminUserInfo, err := mediatr.Send[*CreateUserResponse](ctx, m, CreateUser{
-			VirtualServerName: virtualServer.Name(),
-			DisplayName:       command.Admin.DisplayName,
-			Username:          command.Admin.Username,
-			Email:             command.Admin.PrimaryEmail,
-			EmailVerified:     true,
-		})
-		if err != nil {
-			return nil, fmt.Errorf("creating admin user: %w", err)
-		}
+		initialAdminUser := repositories.NewUser(command.Admin.Username, command.Admin.DisplayName, command.Admin.PrimaryEmail, virtualServer.Id())
+		initialAdminUser.SetEmailVerified(true)
+		dbContext.Users().Insert(initialAdminUser)
 
-		credentialRepository := ioc.GetDependency[repositories.CredentialRepository](scope)
-		initialAdminCredential := repositories.NewCredential(initialAdminUserInfo.Id, &repositories.CredentialPasswordDetails{
+		initialAdminCredential := repositories.NewCredential(initialAdminUser.Id(), &repositories.CredentialPasswordDetails{
 			HashedPassword: command.Admin.PasswordHash,
 			Temporary:      false,
 		})
-		err = credentialRepository.Insert(ctx, initialAdminCredential)
-		if err != nil {
-			return nil, fmt.Errorf("creating initial admin credential: %w", err)
-		}
+		dbContext.Credentials().Insert(initialAdminCredential)
 
-		_, err = mediatr.Send[*AssignRoleToUserResponse](ctx, m, AssignRoleToUser{
-			VirtualServerName: virtualServer.Name(),
-			ProjectSlug:       systemProject.Slug(),
-			UserId:            initialAdminUserInfo.Id,
-			RoleId:            defaultRolesResult.adminRoleId,
-		})
-		if err != nil {
-			return nil, fmt.Errorf("assigning admin role to admin user: %w", err)
-		}
+		adminRoleAssignment := repositories.NewUserRoleAssignment(
+			initialAdminUser.Id(),
+			defaultRolesResult.adminRoleId,
+			nil,
+		)
+		dbContext.UserRoleAssignments().Insert(adminRoleAssignment)
 
 		if command.CreateSystemAdminRole {
-			_, err = mediatr.Send[*AssignRoleToUserResponse](ctx, m, AssignRoleToUser{
-				VirtualServerName: virtualServer.Name(),
-				ProjectSlug:       systemProject.Slug(),
-				UserId:            initialAdminUserInfo.Id,
-				RoleId:            *defaultRolesResult.systemAdminRoleId,
-			})
-			if err != nil {
-				return nil, fmt.Errorf("assigning system admin role to admin user: %w", err)
-			}
+			systemAdminRoleAssignment := repositories.NewUserRoleAssignment(
+				initialAdminUser.Id(),
+				*defaultRolesResult.systemAdminRoleId,
+				nil,
+			)
+			dbContext.UserRoleAssignments().Insert(systemAdminRoleAssignment)
 		}
 
-		err = assignRoles(ctx, m, virtualServer, initialAdminUserInfo.Id, command.Admin.Roles)
+		err = assignRoles(ctx, initialAdminUser.Id(), command.Admin.Roles, roleIdsByFullyQualifiedName)
 		if err != nil {
 			return nil, fmt.Errorf("assigning roles to admin user: %w", err)
 		}
 	}
 
 	for _, serviceUser := range command.ServiceUsers {
-		serviceUserResponse, err := mediatr.Send[*CreateServiceUserResponse](ctx, m, CreateServiceUser{
-			VirtualServerName: virtualServer.Name(),
-			Username:          serviceUser.Username,
-		})
-		if err != nil {
-			return nil, fmt.Errorf("creating service user: %w", err)
-		}
+		newServiceUser := repositories.NewServiceUser(serviceUser.Username, virtualServer.Id())
+		dbContext.Users().Insert(newServiceUser)
 
-		_, err = mediatr.Send[*AssociateServiceUserPublicKeyResponse](ctx, m, AssociateServiceUserPublicKey{
-			VirtualServerName: virtualServer.Name(),
-			ServiceUserId:     serviceUserResponse.Id,
-			PublicKey:         serviceUser.PublicKey.Pem,
-			Kid:               &serviceUser.PublicKey.Kid,
-		})
-		if err != nil {
-			return nil, fmt.Errorf("associating service user public key: %w", err)
-		}
+		associatedPublicKey := repositories.NewCredential(
+			newServiceUser.Id(),
+			&repositories.CredentialServiceUserKey{
+				Kid:       serviceUser.PublicKey.Kid,
+				PublicKey: serviceUser.PublicKey.Pem,
+			},
+		)
+		dbContext.Credentials().Insert(associatedPublicKey)
 
-		err = assignRoles(ctx, m, virtualServer, serviceUserResponse.Id, serviceUser.Roles)
+		err = assignRoles(ctx, newServiceUser.Id(), serviceUser.Roles, roleIdsByFullyQualifiedName)
 		if err != nil {
 			return nil, fmt.Errorf("assigning roles to service user: %w", err)
 		}
@@ -295,44 +238,22 @@ func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer)
 	}, nil
 }
 
-func assignRoles(ctx context.Context, m mediatr.Mediator, virtualServer *repositories.VirtualServer, userId uuid.UUID, roleList []string) error {
+func assignRoles(ctx context.Context, userId uuid.UUID, roleList []string, roleIdsByFullyQualifiedName map[string]uuid.UUID) error {
 	scope := middlewares.GetScope(ctx)
-	projectRepository := ioc.GetDependency[repositories.ProjectRepository](scope)
-	roleRepository := ioc.GetDependency[repositories.RoleRepository](scope)
+	dbContext := ioc.GetDependency[database.Context](scope)
 
 	for _, configuredRole := range roleList {
 		if !strings.Contains(configuredRole, ":") {
 			return fmt.Errorf("role %s does not contain project slug", configuredRole)
 		}
 
-		split := strings.Split(configuredRole, ":")
-		projectSlug := split[0]
-		roleName := split[1]
-
-		projectFilter := repositories.NewProjectFilter().VirtualServerId(virtualServer.Id()).Slug(projectSlug)
-		project, err := projectRepository.Single(ctx, projectFilter)
-		if err != nil {
-			return fmt.Errorf("getting project: %w", err)
+		roleId, ok := roleIdsByFullyQualifiedName[configuredRole]
+		if !ok {
+			return fmt.Errorf("role %s not found", configuredRole)
 		}
 
-		roleFilter := repositories.NewRoleFilter().
-			VirtualServerId(virtualServer.Id()).
-			ProjectId(project.Id()).
-			Name(roleName)
-		role, err := roleRepository.Single(ctx, roleFilter)
-		if err != nil {
-			return fmt.Errorf("getting role: %w", err)
-		}
-
-		_, err = mediatr.Send[*AssignRoleToUserResponse](ctx, m, AssignRoleToUser{
-			VirtualServerName: virtualServer.Name(),
-			ProjectSlug:       projectSlug,
-			UserId:            userId,
-			RoleId:            role.Id(),
-		})
-		if err != nil {
-			return fmt.Errorf("assigning role to user: %w", err)
-		}
+		newRoleAssignment := repositories.NewUserRoleAssignment(userId, roleId, nil)
+		dbContext.UserRoleAssignments().Insert(newRoleAssignment)
 	}
 
 	return nil
@@ -342,10 +263,9 @@ type createDefaultApplicationResult struct {
 	adminUidApplicationId uuid.UUID
 }
 
-func initializeDefaultApplications(ctx context.Context, virtualServer *repositories.VirtualServer, systemProject *repositories.Project) (*createDefaultApplicationResult, error) {
+func initializeDefaultApplications(ctx context.Context, virtualServer *repositories.VirtualServer, systemProject *repositories.Project) *createDefaultApplicationResult {
 	scope := middlewares.GetScope(ctx)
-
-	applicationRepository := ioc.GetDependency[repositories.ApplicationRepository](scope)
+	dbContext := ioc.GetDependency[database.Context](scope)
 
 	adminUiApplication := repositories.NewApplication(virtualServer.Id(), systemProject.Id(), AdminApplicationName, "Admin Application", repositories.ApplicationTypePublic, []string{
 		fmt.Sprintf("%s/mgmt/%s/auth", config.C.Frontend.ExternalUrl, virtualServer.Name()),
@@ -356,14 +276,11 @@ func initializeDefaultApplications(ctx context.Context, virtualServer *repositor
 	})
 	adminUiApplication.SetSystemApplication(true)
 
-	err := applicationRepository.Insert(ctx, adminUiApplication)
-	if err != nil {
-		return nil, fmt.Errorf("inserting application: %w", err)
-	}
+	dbContext.Applications().Insert(adminUiApplication)
 
 	return &createDefaultApplicationResult{
 		adminUidApplicationId: adminUiApplication.Id(),
-	}, nil
+	}
 }
 
 type createDefaultAdminUiRolesResult struct {
@@ -371,10 +288,9 @@ type createDefaultAdminUiRolesResult struct {
 	systemAdminRoleId *uuid.UUID
 }
 
-func initializeDefaultAdminRoles(ctx context.Context, virtualServer *repositories.VirtualServer, project *repositories.Project, createSystemAdminRole bool) (*createDefaultAdminUiRolesResult, error) {
+func initializeDefaultAdminRoles(ctx context.Context, virtualServer *repositories.VirtualServer, project *repositories.Project, createSystemAdminRole bool) *createDefaultAdminUiRolesResult {
 	scope := middlewares.GetScope(ctx)
-
-	roleRepository := ioc.GetDependency[repositories.RoleRepository](scope)
+	dbContext := ioc.GetDependency[database.Context](scope)
 
 	adminRole := repositories.NewRole(
 		virtualServer.Id(),
@@ -382,11 +298,7 @@ func initializeDefaultAdminRoles(ctx context.Context, virtualServer *repositorie
 		AdminRoleName,
 		"Administrator role",
 	)
-
-	err := roleRepository.Insert(ctx, adminRole)
-	if err != nil {
-		return nil, fmt.Errorf("inserting admin role: %w", err)
-	}
+	dbContext.Roles().Insert(adminRole)
 
 	var systemAdminRoleId *uuid.UUID
 	if createSystemAdminRole {
@@ -396,11 +308,7 @@ func initializeDefaultAdminRoles(ctx context.Context, virtualServer *repositorie
 			SystemAdminRoleName,
 			"System administrator role",
 		)
-
-		err := roleRepository.Insert(ctx, systemAdminRole)
-		if err != nil {
-			return nil, fmt.Errorf("inserting system admin role: %w", err)
-		}
+		dbContext.Roles().Insert(systemAdminRole)
 
 		systemAdminRoleId = utils.Ptr(systemAdminRole.Id())
 	}
@@ -408,46 +316,28 @@ func initializeDefaultAdminRoles(ctx context.Context, virtualServer *repositorie
 	return &createDefaultAdminUiRolesResult{
 		adminRoleId:       adminRole.Id(),
 		systemAdminRoleId: systemAdminRoleId,
-	}, nil
+	}
 }
 
-func initializeDefaultTemplates(ctx context.Context, virtualServer *repositories.VirtualServer) error {
-	scope := middlewares.GetScope(ctx)
-
-	fileRepository := ioc.GetDependency[repositories.FileRepository](scope)
-	templateRepository := ioc.GetDependency[repositories.TemplateRepository](scope)
-
-	err := insertTemplate(
+func initializeDefaultTemplates(ctx context.Context, virtualServer *repositories.VirtualServer) {
+	insertTemplate(
 		ctx,
 		"email_verification_template",
 		virtualServer,
-		fileRepository,
-		templateRepository)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	)
 }
 
 func insertTemplate(
 	ctx context.Context,
 	templateName string,
 	virtualServer *repositories.VirtualServer,
-	fileRepository repositories.FileRepository,
-	templateRepository repositories.TemplateRepository,
-) error {
+) {
+	scope := middlewares.GetScope(ctx)
+	dbContext := ioc.GetDependency[database.Context](scope)
+
 	file := repositories.NewFile(templateName, "text/plain", templates.DefaultEmailVerificationTemplate)
-	err := fileRepository.Insert(ctx, file)
-	if err != nil {
-		return fmt.Errorf("inserting %s file: %w", templateName, err)
-	}
+	dbContext.Files().Insert(file)
 
 	t := repositories.NewTemplate(virtualServer.Id(), file.Id(), repositories.EmailVerificationMailTemplate)
-	err = templateRepository.Insert(ctx, t)
-	if err != nil {
-		return fmt.Errorf("inserting %s template: %w", templateName, err)
-	}
-
-	return nil
+	dbContext.Templates().Insert(t)
 }

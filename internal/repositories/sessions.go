@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"Keyline/internal/change"
 	"Keyline/utils"
 	"context"
 	"encoding/base64"
@@ -9,8 +10,15 @@ import (
 	"github.com/google/uuid"
 )
 
+type SessionChange int
+
+const (
+	SessionChangeLastUsedAt SessionChange = iota
+)
+
 type Session struct {
-	ModelBase
+	BaseModel
+	change.List[SessionChange]
 	virtualServerId uuid.UUID
 	userId          uuid.UUID
 	hashedToken     string
@@ -20,23 +28,23 @@ type Session struct {
 
 func NewSession(virtualServerId uuid.UUID, userId uuid.UUID, expiresAt time.Time) *Session {
 	return &Session{
+		BaseModel:       NewBaseModel(),
+		List:            change.NewChanges[SessionChange](),
 		virtualServerId: virtualServerId,
 		userId:          userId,
 		expiresAt:       expiresAt,
 	}
 }
 
-func (s *Session) GetScanPointers() []any {
-	return []any{
-		&s.id,
-		&s.auditCreatedAt,
-		&s.auditUpdatedAt,
-		&s.version,
-		&s.virtualServerId,
-		&s.userId,
-		&s.hashedToken,
-		&s.expiresAt,
-		&s.lastUsedAt,
+func NewSessionFromDB(base BaseModel, virtualServerId uuid.UUID, userId uuid.UUID, hashedToken string, expiresAt time.Time, lastUsedAt *time.Time) *Session {
+	return &Session{
+		BaseModel:       base,
+		List:            change.NewChanges[SessionChange](),
+		virtualServerId: virtualServerId,
+		userId:          userId,
+		hashedToken:     hashedToken,
+		expiresAt:       expiresAt,
+		lastUsedAt:      lastUsedAt,
 	}
 }
 
@@ -57,8 +65,12 @@ func (s *Session) LastUsedAt() *time.Time {
 }
 
 func (s *Session) SetLastUsedAt(lastUsedAt time.Time) {
+	if s.lastUsedAt != nil && s.lastUsedAt.Equal(lastUsedAt) {
+		return
+	}
+
 	s.lastUsedAt = &lastUsedAt
-	s.TrackChange("last_used_at", &lastUsedAt)
+	s.TrackChange(SessionChangeLastUsedAt)
 }
 
 func (s *Session) HashedToken() string {
@@ -78,60 +90,61 @@ type SessionFilter struct {
 	userId          *uuid.UUID
 }
 
-func NewSessionFilter() SessionFilter {
-	return SessionFilter{}
+func NewSessionFilter() *SessionFilter {
+	return &SessionFilter{}
 }
 
-func (f SessionFilter) Clone() SessionFilter {
-	return f
+func (f *SessionFilter) Clone() *SessionFilter {
+	clone := *f
+	return &clone
 }
 
-func (f SessionFilter) VirtualServerId(virtualServerId uuid.UUID) SessionFilter {
+func (f *SessionFilter) VirtualServerId(virtualServerId uuid.UUID) *SessionFilter {
 	filter := f.Clone()
 	filter.virtualServerId = &virtualServerId
 	return filter
 }
 
-func (f SessionFilter) HasVirtualServerId() bool {
+func (f *SessionFilter) HasVirtualServerId() bool {
 	return f.virtualServerId != nil
 }
 
-func (f SessionFilter) GetVirtualServerId() uuid.UUID {
+func (f *SessionFilter) GetVirtualServerId() uuid.UUID {
 	return utils.ZeroIfNil(f.virtualServerId)
 }
 
-func (f SessionFilter) UserId(userId uuid.UUID) SessionFilter {
+func (f *SessionFilter) UserId(userId uuid.UUID) *SessionFilter {
 	filter := f.Clone()
 	filter.userId = &userId
 	return filter
 }
 
-func (f SessionFilter) HasUserId() bool {
+func (f *SessionFilter) HasUserId() bool {
 	return f.userId != nil
 }
 
-func (f SessionFilter) GetUserId() uuid.UUID {
+func (f *SessionFilter) GetUserId() uuid.UUID {
 	return utils.ZeroIfNil(f.userId)
 }
 
-func (f SessionFilter) Id(id uuid.UUID) SessionFilter {
+func (f *SessionFilter) Id(id uuid.UUID) *SessionFilter {
 	filter := f.Clone()
 	filter.id = &id
 	return filter
 }
 
-func (f SessionFilter) HasId() bool {
+func (f *SessionFilter) HasId() bool {
 	return f.id != nil
 }
 
-func (f SessionFilter) GetId() uuid.UUID {
+func (f *SessionFilter) GetId() uuid.UUID {
 	return utils.ZeroIfNil(f.id)
 }
 
 //go:generate mockgen -destination=./mocks/session_repository.go -package=mocks Keyline/internal/repositories SessionRepository
 type SessionRepository interface {
-	Single(ctx context.Context, filter SessionFilter) (*Session, error)
-	First(ctx context.Context, filter SessionFilter) (*Session, error)
-	Insert(ctx context.Context, session *Session) error
-	Delete(ctx context.Context, id uuid.UUID) error
+	FirstOrErr(ctx context.Context, filter *SessionFilter) (*Session, error)
+	FirstOrNil(ctx context.Context, filter *SessionFilter) (*Session, error)
+	Insert(session *Session)
+	Delete(id uuid.UUID)
 }

@@ -3,10 +3,12 @@ package commands
 import (
 	"Keyline/internal/authentication/permissions"
 	"Keyline/internal/behaviours"
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"context"
 	"fmt"
+
 	"github.com/The127/ioc"
 
 	"github.com/google/uuid"
@@ -39,38 +41,32 @@ type CreateResourceServerScopeResponse struct {
 
 func HandleCreateResourceServerScope(ctx context.Context, command CreateResourceServerScope) (*CreateResourceServerScopeResponse, error) {
 	scope := middlewares.GetScope(ctx)
+	dbContext := ioc.GetDependency[database.Context](scope)
 
-	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(command.VirtualServerName)
-	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().FirstOrErr(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
-	projectRepository := ioc.GetDependency[repositories.ProjectRepository](scope)
 	projectFilter := repositories.NewProjectFilter().VirtualServerId(virtualServer.Id()).Slug(command.ProjectSlug)
-	project, err := projectRepository.Single(ctx, projectFilter)
+	project, err := dbContext.Projects().FirstOrErr(ctx, projectFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting project: %w", err)
 	}
 
-	resourceServerRepository := ioc.GetDependency[repositories.ResourceServerRepository](scope)
 	resourceServerFilter := repositories.NewResourceServerFilter().
 		VirtualServerId(virtualServer.Id()).
 		ProjectId(project.Id()).
 		Id(command.ResourceServerId)
-	resourceServer, err := resourceServerRepository.Single(ctx, resourceServerFilter)
+	resourceServer, err := dbContext.ResourceServers().FirstOrErr(ctx, resourceServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting resource server: %w", err)
 	}
 
-	resourceServerScopeRepository := ioc.GetDependency[repositories.ResourceServerScopeRepository](scope)
 	resourceServerScope := repositories.NewResourceServerScope(virtualServer.Id(), project.Id(), resourceServer.Id(), command.Scope, command.Name)
 	resourceServerScope.SetDescription(command.Description)
-	err = resourceServerScopeRepository.Insert(ctx, resourceServerScope)
-	if err != nil {
-		return nil, fmt.Errorf("inserting resource server scope: %w", err)
-	}
+	dbContext.ResourceServerScopes().Insert(resourceServerScope)
 
 	return &CreateResourceServerScopeResponse{
 		Id: resourceServerScope.Id(),

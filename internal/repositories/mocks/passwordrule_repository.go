@@ -43,50 +43,61 @@ func (m *MockPasswordRuleRepository) EXPECT() *MockPasswordRuleRepositoryMockRec
 }
 
 // Delete mocks base method.
-func (m *MockPasswordRuleRepository) Delete(ctx context.Context, id uuid.UUID) error {
+func (m *MockPasswordRuleRepository) Delete(id uuid.UUID) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", ctx, id)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Delete", id)
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockPasswordRuleRepositoryMockRecorder) Delete(ctx, id any) *gomock.Call {
+func (mr *MockPasswordRuleRepositoryMockRecorder) Delete(id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockPasswordRuleRepository)(nil).Delete), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockPasswordRuleRepository)(nil).Delete), id)
 }
 
-// First mocks base method.
-func (m *MockPasswordRuleRepository) First(ctx context.Context, filter repositories.PasswordRuleFilter) (*repositories.PasswordRule, error) {
+// FirstOrErr mocks base method.
+func (m *MockPasswordRuleRepository) FirstOrErr(ctx context.Context, filter *repositories.PasswordRuleFilter) (*repositories.PasswordRule, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "First", ctx, filter)
+	ret := m.ctrl.Call(m, "FirstOrErr", ctx, filter)
 	ret0, _ := ret[0].(*repositories.PasswordRule)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// First indicates an expected call of First.
-func (mr *MockPasswordRuleRepositoryMockRecorder) First(ctx, filter any) *gomock.Call {
+// FirstOrErr indicates an expected call of FirstOrErr.
+func (mr *MockPasswordRuleRepositoryMockRecorder) FirstOrErr(ctx, filter any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "First", reflect.TypeOf((*MockPasswordRuleRepository)(nil).First), ctx, filter)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FirstOrErr", reflect.TypeOf((*MockPasswordRuleRepository)(nil).FirstOrErr), ctx, filter)
+}
+
+// FirstOrNil mocks base method.
+func (m *MockPasswordRuleRepository) FirstOrNil(ctx context.Context, filter *repositories.PasswordRuleFilter) (*repositories.PasswordRule, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FirstOrNil", ctx, filter)
+	ret0, _ := ret[0].(*repositories.PasswordRule)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FirstOrNil indicates an expected call of FirstOrNil.
+func (mr *MockPasswordRuleRepositoryMockRecorder) FirstOrNil(ctx, filter any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FirstOrNil", reflect.TypeOf((*MockPasswordRuleRepository)(nil).FirstOrNil), ctx, filter)
 }
 
 // Insert mocks base method.
-func (m *MockPasswordRuleRepository) Insert(ctx context.Context, passwordRule *repositories.PasswordRule) error {
+func (m *MockPasswordRuleRepository) Insert(passwordRule *repositories.PasswordRule) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Insert", ctx, passwordRule)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Insert", passwordRule)
 }
 
 // Insert indicates an expected call of Insert.
-func (mr *MockPasswordRuleRepositoryMockRecorder) Insert(ctx, passwordRule any) *gomock.Call {
+func (mr *MockPasswordRuleRepositoryMockRecorder) Insert(passwordRule any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockPasswordRuleRepository)(nil).Insert), ctx, passwordRule)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockPasswordRuleRepository)(nil).Insert), passwordRule)
 }
 
 // List mocks base method.
-func (m *MockPasswordRuleRepository) List(ctx context.Context, filter repositories.PasswordRuleFilter) ([]*repositories.PasswordRule, error) {
+func (m *MockPasswordRuleRepository) List(ctx context.Context, filter *repositories.PasswordRuleFilter) ([]*repositories.PasswordRule, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "List", ctx, filter)
 	ret0, _ := ret[0].([]*repositories.PasswordRule)
@@ -100,31 +111,14 @@ func (mr *MockPasswordRuleRepositoryMockRecorder) List(ctx, filter any) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockPasswordRuleRepository)(nil).List), ctx, filter)
 }
 
-// Single mocks base method.
-func (m *MockPasswordRuleRepository) Single(ctx context.Context, filter repositories.PasswordRuleFilter) (*repositories.PasswordRule, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Single", ctx, filter)
-	ret0, _ := ret[0].(*repositories.PasswordRule)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Single indicates an expected call of Single.
-func (mr *MockPasswordRuleRepositoryMockRecorder) Single(ctx, filter any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Single", reflect.TypeOf((*MockPasswordRuleRepository)(nil).Single), ctx, filter)
-}
-
 // Update mocks base method.
-func (m *MockPasswordRuleRepository) Update(ctx context.Context, passwordRule *repositories.PasswordRule) error {
+func (m *MockPasswordRuleRepository) Update(passwordRule *repositories.PasswordRule) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Update", ctx, passwordRule)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Update", passwordRule)
 }
 
 // Update indicates an expected call of Update.
-func (mr *MockPasswordRuleRepositoryMockRecorder) Update(ctx, passwordRule any) *gomock.Call {
+func (mr *MockPasswordRuleRepositoryMockRecorder) Update(passwordRule any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockPasswordRuleRepository)(nil).Update), ctx, passwordRule)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockPasswordRuleRepository)(nil).Update), passwordRule)
 }

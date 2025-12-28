@@ -41,37 +41,50 @@ func (m *MockVirtualServerRepository) EXPECT() *MockVirtualServerRepositoryMockR
 	return m.recorder
 }
 
-// First mocks base method.
-func (m *MockVirtualServerRepository) First(ctx context.Context, filter repositories.VirtualServerFilter) (*repositories.VirtualServer, error) {
+// FirstOrErr mocks base method.
+func (m *MockVirtualServerRepository) FirstOrErr(ctx context.Context, filter *repositories.VirtualServerFilter) (*repositories.VirtualServer, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "First", ctx, filter)
+	ret := m.ctrl.Call(m, "FirstOrErr", ctx, filter)
 	ret0, _ := ret[0].(*repositories.VirtualServer)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// First indicates an expected call of First.
-func (mr *MockVirtualServerRepositoryMockRecorder) First(ctx, filter any) *gomock.Call {
+// FirstOrErr indicates an expected call of FirstOrErr.
+func (mr *MockVirtualServerRepositoryMockRecorder) FirstOrErr(ctx, filter any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "First", reflect.TypeOf((*MockVirtualServerRepository)(nil).First), ctx, filter)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FirstOrErr", reflect.TypeOf((*MockVirtualServerRepository)(nil).FirstOrErr), ctx, filter)
+}
+
+// FirstOrNil mocks base method.
+func (m *MockVirtualServerRepository) FirstOrNil(ctx context.Context, filter *repositories.VirtualServerFilter) (*repositories.VirtualServer, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FirstOrNil", ctx, filter)
+	ret0, _ := ret[0].(*repositories.VirtualServer)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FirstOrNil indicates an expected call of FirstOrNil.
+func (mr *MockVirtualServerRepositoryMockRecorder) FirstOrNil(ctx, filter any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FirstOrNil", reflect.TypeOf((*MockVirtualServerRepository)(nil).FirstOrNil), ctx, filter)
 }
 
 // Insert mocks base method.
-func (m *MockVirtualServerRepository) Insert(ctx context.Context, virtualServer *repositories.VirtualServer) error {
+func (m *MockVirtualServerRepository) Insert(virtualServer *repositories.VirtualServer) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Insert", ctx, virtualServer)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Insert", virtualServer)
 }
 
 // Insert indicates an expected call of Insert.
-func (mr *MockVirtualServerRepositoryMockRecorder) Insert(ctx, virtualServer any) *gomock.Call {
+func (mr *MockVirtualServerRepositoryMockRecorder) Insert(virtualServer any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockVirtualServerRepository)(nil).Insert), ctx, virtualServer)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockVirtualServerRepository)(nil).Insert), virtualServer)
 }
 
 // List mocks base method.
-func (m *MockVirtualServerRepository) List(ctx context.Context, filter repositories.VirtualServerFilter) ([]*repositories.VirtualServer, int, error) {
+func (m *MockVirtualServerRepository) List(ctx context.Context, filter *repositories.VirtualServerFilter) ([]*repositories.VirtualServer, int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "List", ctx, filter)
 	ret0, _ := ret[0].([]*repositories.VirtualServer)
@@ -86,31 +99,14 @@ func (mr *MockVirtualServerRepositoryMockRecorder) List(ctx, filter any) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockVirtualServerRepository)(nil).List), ctx, filter)
 }
 
-// Single mocks base method.
-func (m *MockVirtualServerRepository) Single(ctx context.Context, filter repositories.VirtualServerFilter) (*repositories.VirtualServer, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Single", ctx, filter)
-	ret0, _ := ret[0].(*repositories.VirtualServer)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Single indicates an expected call of Single.
-func (mr *MockVirtualServerRepositoryMockRecorder) Single(ctx, filter any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Single", reflect.TypeOf((*MockVirtualServerRepository)(nil).Single), ctx, filter)
-}
-
 // Update mocks base method.
-func (m *MockVirtualServerRepository) Update(ctx context.Context, virtualServer *repositories.VirtualServer) error {
+func (m *MockVirtualServerRepository) Update(virtualServer *repositories.VirtualServer) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Update", ctx, virtualServer)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Update", virtualServer)
 }
 
 // Update indicates an expected call of Update.
-func (mr *MockVirtualServerRepositoryMockRecorder) Update(ctx, virtualServer any) *gomock.Call {
+func (mr *MockVirtualServerRepositoryMockRecorder) Update(virtualServer any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockVirtualServerRepository)(nil).Update), ctx, virtualServer)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockVirtualServerRepository)(nil).Update), virtualServer)
 }

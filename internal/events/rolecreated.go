@@ -1,7 +1,9 @@
 package events
 
-import "github.com/google/uuid"
+import (
+	"Keyline/internal/repositories"
+)
 
 type RoleCreatedEvent struct {
-	RoleId uuid.UUID
+	Role *repositories.Role
 }

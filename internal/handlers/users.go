@@ -4,6 +4,7 @@ import (
 	"Keyline/internal/authentication"
 	"Keyline/internal/commands"
 	"Keyline/internal/config"
+	"Keyline/internal/database"
 	"Keyline/internal/jsonTypes"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/queries"
@@ -965,6 +966,7 @@ type PasskeyCreateChallengeResponseDto struct {
 func PasskeyCreateChallenge(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	scope := middlewares.GetScope(ctx)
+	dbContext := ioc.GetDependency[database.Context](scope)
 
 	vars := mux.Vars(r)
 	userId, err := uuid.Parse(vars["userId"])
@@ -979,9 +981,8 @@ func PasskeyCreateChallenge(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userRepository := ioc.GetDependency[repositories.UserRepository](scope)
 	userFilter := repositories.NewUserFilter().Id(userId)
-	user, err := userRepository.Single(ctx, userFilter)
+	user, err := dbContext.Users().FirstOrErr(ctx, userFilter)
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
@@ -1044,6 +1045,7 @@ type PasskeyValidateChallengeRequestDto struct {
 func PasskeyValidateCreateChallengeResponse(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	scope := middlewares.GetScope(ctx)
+	dbContext := ioc.GetDependency[database.Context](scope)
 
 	vars := mux.Vars(r)
 	userId, err := uuid.Parse(vars["userId"])
@@ -1082,17 +1084,12 @@ func PasskeyValidateCreateChallengeResponse(w http.ResponseWriter, r *http.Reque
 	}
 
 	// store the credential in the db
-	credentialRepository := ioc.GetDependency[repositories.CredentialRepository](scope)
 	credential := repositories.NewCredential(userId, &repositories.CredentialWebauthnDetails{
 		CredentialId:       dto.WebauthnResponse.RawId,
 		PublicKeyAlgorithm: dto.WebauthnResponse.Response.PublicKeyAlgorithm,
 		PublicKey:          pubKey,
 	})
-	err = credentialRepository.Insert(ctx, credential)
-	if err != nil {
-		utils.HandleHttpError(w, err)
-		return
-	}
+	dbContext.Credentials().Insert(credential)
 
 	_ = kvStore.Delete(ctx, "passkey_challenge:"+dto.Id.String())
 

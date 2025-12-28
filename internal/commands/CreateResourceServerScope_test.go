@@ -1,15 +1,18 @@
 package commands
 
 import (
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
+	mocks2 "Keyline/internal/mocks"
 	"Keyline/internal/repositories"
 	"Keyline/internal/repositories/mocks"
 	"Keyline/utils"
 	"context"
 	"errors"
-	"github.com/The127/ioc"
 	"testing"
 	"time"
+
+	"github.com/The127/ioc"
 
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -25,6 +28,7 @@ func TestCreateResourceServerScopeCommandSuite(t *testing.T) {
 }
 
 func (s *CreateResourceServerScopeCommandSuite) createContext(
+	ctrl *gomock.Controller,
 	virtualServerRepository repositories.VirtualServerRepository,
 	projectRepository repositories.ProjectRepository,
 	resourceServerRepository repositories.ResourceServerRepository,
@@ -32,28 +36,25 @@ func (s *CreateResourceServerScopeCommandSuite) createContext(
 ) context.Context {
 	dc := ioc.NewDependencyCollection()
 
+	dbContext := mocks2.NewMockContext(ctrl)
+	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) database.Context {
+		return dbContext
+	})
+
 	if virtualServerRepository != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.VirtualServerRepository {
-			return virtualServerRepository
-		})
+		dbContext.EXPECT().VirtualServers().Return(virtualServerRepository).AnyTimes()
 	}
 
 	if projectRepository != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.ProjectRepository {
-			return projectRepository
-		})
+		dbContext.EXPECT().Projects().Return(projectRepository).AnyTimes()
 	}
 
 	if resourceServerRepository != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.ResourceServerRepository {
-			return resourceServerRepository
-		})
+		dbContext.EXPECT().ResourceServers().Return(resourceServerRepository).AnyTimes()
 	}
 
 	if resourceServerScopeRepository != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.ResourceServerScopeRepository {
-			return resourceServerScopeRepository
-		})
+		dbContext.EXPECT().ResourceServerScopes().Return(resourceServerScopeRepository).AnyTimes()
 	}
 
 	scope := dc.BuildProvider()
@@ -74,22 +75,22 @@ func (s *CreateResourceServerScopeCommandSuite) TestHappyPath() {
 	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
 	virtualServer.Mock(now)
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
+	virtualServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
 
 	project := repositories.NewProject(virtualServer.Id(), "project", "Project", "Test Project")
 	project.Mock(now)
 	projectRepository := mocks.NewMockProjectRepository(ctrl)
-	projectRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(project, nil)
+	projectRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(project, nil)
 
 	resourceServer := repositories.NewResourceServer(virtualServer.Id(), project.Id(), "slug", "resourceServer", "Resource Server")
 	resourceServer.Mock(now)
 	resourceServerRepository := mocks.NewMockResourceServerRepository(ctrl)
-	resourceServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(resourceServer, nil)
+	resourceServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(resourceServer, nil)
 
 	resourceServerScopeRepository := mocks.NewMockResourceServerScopeRepository(ctrl)
-	resourceServerScopeRepository.EXPECT().Insert(gomock.Any(), gomock.Any()).Return(nil)
+	resourceServerScopeRepository.EXPECT().Insert(gomock.Any())
 
-	ctx := s.createContext(virtualServerRepository, projectRepository, resourceServerRepository, resourceServerScopeRepository)
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, resourceServerRepository, resourceServerScopeRepository)
 	cmd := CreateResourceServerScope{
 		VirtualServerName: virtualServer.Name(),
 		ProjectSlug:       project.Slug(),
@@ -107,37 +108,6 @@ func (s *CreateResourceServerScopeCommandSuite) TestHappyPath() {
 	s.NotNil(resp)
 }
 
-func (s *CreateResourceServerScopeCommandSuite) TestInsertError() {
-	// arrange
-	ctrl := gomock.NewController(s.T())
-	defer ctrl.Finish()
-
-	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
-	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
-
-	project := repositories.NewProject(virtualServer.Id(), "project", "Project", "Test Project")
-	projectRepository := mocks.NewMockProjectRepository(ctrl)
-	projectRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(project, nil)
-
-	resourceServer := repositories.NewResourceServer(virtualServer.Id(), project.Id(), "slug", "resourceServer", "Resource Server")
-	resourceServerRepository := mocks.NewMockResourceServerRepository(ctrl)
-	resourceServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(resourceServer, nil)
-
-	resourceServerScopeRepository := mocks.NewMockResourceServerScopeRepository(ctrl)
-	resourceServerScopeRepository.EXPECT().Insert(gomock.Any(), gomock.Any()).Return(errors.New("error"))
-
-	ctx := s.createContext(virtualServerRepository, projectRepository, resourceServerRepository, resourceServerScopeRepository)
-	cmd := CreateResourceServerScope{}
-
-	// act
-	resp, err := HandleCreateResourceServerScope(ctx, cmd)
-
-	// assert
-	s.Require().Error(err)
-	s.Nil(resp)
-}
-
 func (s *CreateResourceServerScopeCommandSuite) TestResourceServerError() {
 	// arrange
 	ctrl := gomock.NewController(s.T())
@@ -145,16 +115,16 @@ func (s *CreateResourceServerScopeCommandSuite) TestResourceServerError() {
 
 	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
+	virtualServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
 
 	project := repositories.NewProject(virtualServer.Id(), "project", "Project", "Test Project")
 	projectRepository := mocks.NewMockProjectRepository(ctrl)
-	projectRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(project, nil)
+	projectRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(project, nil)
 
 	resourceServerRepository := mocks.NewMockResourceServerRepository(ctrl)
-	resourceServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
+	resourceServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
 
-	ctx := s.createContext(virtualServerRepository, projectRepository, resourceServerRepository, nil)
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, resourceServerRepository, nil)
 	cmd := CreateResourceServerScope{}
 
 	// act
@@ -172,12 +142,12 @@ func (s *CreateResourceServerScopeCommandSuite) TestProjectError() {
 
 	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
+	virtualServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
 
 	projectRepository := mocks.NewMockProjectRepository(ctrl)
-	projectRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
+	projectRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
 
-	ctx := s.createContext(virtualServerRepository, projectRepository, nil, nil)
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, nil, nil)
 	cmd := CreateResourceServerScope{}
 
 	// act
@@ -194,9 +164,9 @@ func (s *CreateResourceServerScopeCommandSuite) TestVirtualServerError() {
 	defer ctrl.Finish()
 
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
+	virtualServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
 
-	ctx := s.createContext(virtualServerRepository, nil, nil, nil)
+	ctx := s.createContext(ctrl, virtualServerRepository, nil, nil, nil)
 	cmd := CreateResourceServerScope{}
 
 	// act

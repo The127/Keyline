@@ -41,37 +41,50 @@ func (m *MockTemplateRepository) EXPECT() *MockTemplateRepositoryMockRecorder {
 	return m.recorder
 }
 
-// First mocks base method.
-func (m *MockTemplateRepository) First(ctx context.Context, filter repositories.TemplateFilter) (*repositories.Template, error) {
+// FirstOrErr mocks base method.
+func (m *MockTemplateRepository) FirstOrErr(ctx context.Context, filter *repositories.TemplateFilter) (*repositories.Template, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "First", ctx, filter)
+	ret := m.ctrl.Call(m, "FirstOrErr", ctx, filter)
 	ret0, _ := ret[0].(*repositories.Template)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// First indicates an expected call of First.
-func (mr *MockTemplateRepositoryMockRecorder) First(ctx, filter any) *gomock.Call {
+// FirstOrErr indicates an expected call of FirstOrErr.
+func (mr *MockTemplateRepositoryMockRecorder) FirstOrErr(ctx, filter any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "First", reflect.TypeOf((*MockTemplateRepository)(nil).First), ctx, filter)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FirstOrErr", reflect.TypeOf((*MockTemplateRepository)(nil).FirstOrErr), ctx, filter)
+}
+
+// FirstOrNil mocks base method.
+func (m *MockTemplateRepository) FirstOrNil(ctx context.Context, filter *repositories.TemplateFilter) (*repositories.Template, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FirstOrNil", ctx, filter)
+	ret0, _ := ret[0].(*repositories.Template)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FirstOrNil indicates an expected call of FirstOrNil.
+func (mr *MockTemplateRepositoryMockRecorder) FirstOrNil(ctx, filter any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FirstOrNil", reflect.TypeOf((*MockTemplateRepository)(nil).FirstOrNil), ctx, filter)
 }
 
 // Insert mocks base method.
-func (m *MockTemplateRepository) Insert(ctx context.Context, template *repositories.Template) error {
+func (m *MockTemplateRepository) Insert(template *repositories.Template) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Insert", ctx, template)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Insert", template)
 }
 
 // Insert indicates an expected call of Insert.
-func (mr *MockTemplateRepositoryMockRecorder) Insert(ctx, template any) *gomock.Call {
+func (mr *MockTemplateRepositoryMockRecorder) Insert(template any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockTemplateRepository)(nil).Insert), ctx, template)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockTemplateRepository)(nil).Insert), template)
 }
 
 // List mocks base method.
-func (m *MockTemplateRepository) List(ctx context.Context, filter repositories.TemplateFilter) ([]*repositories.Template, int, error) {
+func (m *MockTemplateRepository) List(ctx context.Context, filter *repositories.TemplateFilter) ([]*repositories.Template, int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "List", ctx, filter)
 	ret0, _ := ret[0].([]*repositories.Template)
@@ -84,19 +97,4 @@ func (m *MockTemplateRepository) List(ctx context.Context, filter repositories.T
 func (mr *MockTemplateRepositoryMockRecorder) List(ctx, filter any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockTemplateRepository)(nil).List), ctx, filter)
-}
-
-// Single mocks base method.
-func (m *MockTemplateRepository) Single(ctx context.Context, filter repositories.TemplateFilter) (*repositories.Template, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Single", ctx, filter)
-	ret0, _ := ret[0].(*repositories.Template)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Single indicates an expected call of Single.
-func (mr *MockTemplateRepositoryMockRecorder) Single(ctx, filter any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Single", reflect.TypeOf((*MockTemplateRepository)(nil).Single), ctx, filter)
 }

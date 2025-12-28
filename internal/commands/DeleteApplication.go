@@ -3,11 +3,13 @@ package commands
 import (
 	"Keyline/internal/authentication/permissions"
 	"Keyline/internal/behaviours"
+	db "Keyline/internal/database"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/utils"
 	"context"
 	"fmt"
+
 	"github.com/The127/ioc"
 
 	"github.com/google/uuid"
@@ -39,27 +41,25 @@ type DeleteApplicationResponse struct{}
 
 func HandleDeleteApplication(ctx context.Context, command DeleteApplication) (*DeleteApplicationResponse, error) {
 	scope := middlewares.GetScope(ctx)
+	dbContext := ioc.GetDependency[db.Context](scope)
 
-	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(command.VirtualServerName)
-	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().FirstOrErr(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
-	projectRepository := ioc.GetDependency[repositories.ProjectRepository](scope)
 	projectFilter := repositories.NewProjectFilter().VirtualServerId(virtualServer.Id()).Slug(command.ProjectSlug)
-	project, err := projectRepository.Single(ctx, projectFilter)
+	project, err := dbContext.Projects().FirstOrErr(ctx, projectFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting project: %w", err)
 	}
 
-	applicationRepository := ioc.GetDependency[repositories.ApplicationRepository](scope)
 	applicationFilter := repositories.NewApplicationFilter().
 		VirtualServerId(virtualServer.Id()).
 		ProjectId(project.Id()).
 		Id(command.ApplicationId)
-	application, err := applicationRepository.First(ctx, applicationFilter)
+	application, err := dbContext.Applications().FirstOrNil(ctx, applicationFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting application: %w", err)
 	}
@@ -72,10 +72,7 @@ func HandleDeleteApplication(ctx context.Context, command DeleteApplication) (*D
 		return nil, fmt.Errorf("cannot delete system application: %w", utils.ErrHttpBadRequest)
 	}
 
-	err = applicationRepository.Delete(ctx, application.Id())
-	if err != nil {
-		return nil, fmt.Errorf("deleting application: %w", err)
-	}
+	dbContext.Applications().Delete(application.Id())
 
 	return &DeleteApplicationResponse{}, nil
 }

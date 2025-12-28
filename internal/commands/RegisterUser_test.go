@@ -1,15 +1,20 @@
 package commands
 
 import (
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
+	mocks2 "Keyline/internal/mocks"
 	"Keyline/internal/password"
 	"Keyline/internal/password/mock"
 	"Keyline/internal/repositories"
 	"Keyline/internal/repositories/mocks"
-	"github.com/The127/ioc"
-	"github.com/The127/mediatr"
+	"Keyline/utils"
+	"context"
 	"testing"
 	"time"
+
+	"github.com/The127/ioc"
+	"github.com/The127/mediatr"
 
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -24,6 +29,53 @@ func TestRegisterUserCommandSuite(t *testing.T) {
 	suite.Run(t, new(RegisterUserCommandSuite))
 }
 
+func (s *RegisterUserCommandSuite) createContext(
+	ctrl *gomock.Controller,
+	virtualServerRepository repositories.VirtualServerRepository,
+	userRepository repositories.UserRepository,
+	credentialRepository repositories.CredentialRepository,
+	validator password.Validator,
+	m mediatr.Mediator,
+) context.Context {
+	dc := ioc.NewDependencyCollection()
+
+	dbContext := mocks2.NewMockContext(ctrl)
+	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) database.Context {
+		return dbContext
+	})
+
+	if virtualServerRepository != nil {
+		dbContext.EXPECT().VirtualServers().Return(virtualServerRepository).AnyTimes()
+	}
+
+	if userRepository != nil {
+		dbContext.EXPECT().Users().Return(userRepository).AnyTimes()
+	}
+
+	if credentialRepository != nil {
+		dbContext.EXPECT().Credentials().Return(credentialRepository).AnyTimes()
+	}
+
+	if validator != nil {
+		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) password.Validator {
+			return validator
+		})
+	}
+
+	if m != nil {
+		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) mediatr.Mediator {
+			return m
+		})
+	}
+
+	scope := dc.BuildProvider()
+	s.T().Cleanup(func() {
+		utils.PanicOnError(scope.Close, "closing scope")
+	})
+
+	return middlewares.ContextWithScope(s.T().Context(), scope)
+}
+
 func (s *RegisterUserCommandSuite) TestHandleRegisterUser() {
 	// arrange
 	ctrl := gomock.NewController(s.T())
@@ -35,40 +87,22 @@ func (s *RegisterUserCommandSuite) TestHandleRegisterUser() {
 	virtualServer.Mock(now)
 	virtualServer.SetEnableRegistration(true)
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories.VirtualServerFilter) bool {
+	virtualServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Cond(func(x *repositories.VirtualServerFilter) bool {
 		return x.GetName() == virtualServer.Name()
 	})).Return(virtualServer, nil)
 
 	userRepository := mocks.NewMockUserRepository(ctrl)
-	userRepository.EXPECT().Insert(gomock.Any(), gomock.Any()).Return(nil)
+	userRepository.EXPECT().Insert(gomock.Any())
 
 	credentialRepository := mocks.NewMockCredentialRepository(ctrl)
-	credentialRepository.EXPECT().Insert(gomock.Any(), gomock.Any()).Return(nil)
+	credentialRepository.EXPECT().Insert(gomock.Any())
 
 	passwordValidator := mock.NewMockValidator(ctrl)
 	passwordValidator.EXPECT().Validate(gomock.Any(), gomock.Any()).Return(nil)
 
 	m := mediatr.NewMediator()
 
-	dc := ioc.NewDependencyCollection()
-	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.VirtualServerRepository {
-		return virtualServerRepository
-	})
-	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.UserRepository {
-		return userRepository
-	})
-	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.CredentialRepository {
-		return credentialRepository
-	})
-	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) mediatr.Mediator {
-		return m
-	})
-	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) password.Validator {
-		return passwordValidator
-	})
-	scope := dc.BuildProvider()
-	ctx := middlewares.ContextWithScope(s.T().Context(), scope)
-
+	ctx := s.createContext(ctrl, virtualServerRepository, userRepository, credentialRepository, passwordValidator, m)
 	cmd := RegisterUser{
 		VirtualServerName: virtualServer.Name(),
 		DisplayName:       "User",
@@ -96,17 +130,11 @@ func (s *RegisterUserCommandSuite) TestRegistrationNotEnabled() {
 	virtualServer.Mock(now)
 	virtualServer.SetEnableRegistration(false)
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories.VirtualServerFilter) bool {
+	virtualServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Cond(func(x *repositories.VirtualServerFilter) bool {
 		return x.GetName() == virtualServer.Name()
 	})).Return(virtualServer, nil)
 
-	dc := ioc.NewDependencyCollection()
-	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) repositories.VirtualServerRepository {
-		return virtualServerRepository
-	})
-	scope := dc.BuildProvider()
-	ctx := middlewares.ContextWithScope(s.T().Context(), scope)
-
+	ctx := s.createContext(ctrl, virtualServerRepository, nil, nil, nil, nil)
 	cmd := RegisterUser{
 		VirtualServerName: virtualServer.Name(),
 		DisplayName:       "User",

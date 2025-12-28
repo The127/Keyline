@@ -1,11 +1,13 @@
 package claimsMapping
 
 import (
+	"Keyline/internal/database"
 	"Keyline/internal/logging"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"context"
 	"fmt"
+
 	"github.com/The127/ioc"
 
 	"github.com/dop251/goja"
@@ -40,11 +42,11 @@ func defaultMapping(params Params) map[string]any {
 
 func (c *claimsMapper) MapClaims(ctx context.Context, applicationId uuid.UUID, params Params) map[string]any {
 	scope := middlewares.GetScope(ctx)
+	dbContext := ioc.GetDependency[database.Context](scope)
 
-	applicationRepository := ioc.GetDependency[repositories.ApplicationRepository](scope)
 	applicationFilter := repositories.NewApplicationFilter().
 		Id(applicationId)
-	application, err := applicationRepository.First(ctx, applicationFilter)
+	application, err := dbContext.Applications().FirstOrNil(ctx, applicationFilter)
 	if err != nil {
 		logging.Logger.Error(fmt.Errorf("falling back to default mapping, failed getting application: %w", err))
 		return defaultMapping(params)

@@ -14,11 +14,12 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
-	"github.com/The127/go-clock"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/The127/go-clock"
 
 	vault "github.com/hashicorp/vault/api"
 )

@@ -2,11 +2,12 @@ package audit
 
 import (
 	"Keyline/internal/behaviours"
+	"Keyline/internal/database"
 	"Keyline/internal/logging"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"context"
-	"fmt"
+
 	"github.com/The127/ioc"
 
 	"github.com/google/uuid"
@@ -43,7 +44,7 @@ func (d *dbAuditLogger) Log(ctx context.Context, policy behaviours.Policy, polic
 		return nil
 	}
 
-	auditLogRepository := ioc.GetDependency[repositories.AuditLogRepository](scope)
+	dbContext := ioc.GetDependency[database.Context](scope)
 
 	var auditLogEntry *repositories.AuditLog
 	if policyResult.IsAllowed() {
@@ -70,11 +71,7 @@ func (d *dbAuditLogger) Log(ctx context.Context, policy behaviours.Policy, polic
 		auditLogEntry = entry
 	}
 
-	err := auditLogRepository.Insert(ctx, auditLogEntry)
-	if err != nil {
-		return fmt.Errorf("inserting audit log: %w", err)
-	}
-
+	dbContext.AuditLogs().Insert(auditLogEntry)
 	return nil
 }
 

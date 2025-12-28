@@ -3,10 +3,12 @@ package commands
 import (
 	"Keyline/internal/authentication/permissions"
 	"Keyline/internal/behaviours"
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"context"
 	"fmt"
+
 	"github.com/The127/ioc"
 )
 
@@ -39,10 +41,10 @@ type PatchVirtualServerResponse struct{}
 
 func HandlePatchVirtualServer(ctx context.Context, command PatchVirtualServer) (*PatchVirtualServerResponse, error) {
 	scope := middlewares.GetScope(ctx)
+	dbContext := ioc.GetDependency[database.Context](scope)
 
-	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(command.VirtualServerName)
-	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().FirstOrErr(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
@@ -63,10 +65,6 @@ func HandlePatchVirtualServer(ctx context.Context, command PatchVirtualServer) (
 		virtualServer.SetRequireEmailVerification(*command.RequireEmailVerification)
 	}
 
-	err = virtualServerRepository.Update(ctx, virtualServer)
-	if err != nil {
-		return nil, fmt.Errorf("updating virtual server: %w", err)
-	}
-
+	dbContext.VirtualServers().Update(virtualServer)
 	return &PatchVirtualServerResponse{}, nil
 }

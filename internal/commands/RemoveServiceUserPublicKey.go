@@ -3,10 +3,12 @@ package commands
 import (
 	"Keyline/internal/authentication/permissions"
 	"Keyline/internal/behaviours"
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"context"
 	"fmt"
+
 	"github.com/The127/ioc"
 
 	"github.com/google/uuid"
@@ -38,38 +40,32 @@ type RemoveServiceUserPublicKeyResponse struct{}
 
 func HandleRemoveServiceUserPublicKey(ctx context.Context, command RemoveServiceUserPublicKey) (*RemoveServiceUserPublicKeyResponse, error) {
 	scope := middlewares.GetScope(ctx)
+	dbContext := ioc.GetDependency[database.Context](scope)
 
-	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(command.VirtualServerName)
-	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().FirstOrErr(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
-	userRepository := ioc.GetDependency[repositories.UserRepository](scope)
 	userFilter := repositories.NewUserFilter().
 		VirtualServerId(virtualServer.Id()).
 		ServiceUser(true).
 		Id(command.ServiceUserId)
-	user, err := userRepository.Single(ctx, userFilter)
+	user, err := dbContext.Users().FirstOrErr(ctx, userFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting user: %w", err)
 	}
 
-	credentialRepository := ioc.GetDependency[repositories.CredentialRepository](scope)
 	credentialFilter := repositories.NewCredentialFilter().
 		UserId(user.Id()).
 		Type(repositories.CredentialTypeServiceUserKey).
 		DetailPublicKey(command.PublicKey)
-	credential, err := credentialRepository.Single(ctx, credentialFilter)
+	credential, err := dbContext.Credentials().FirstOrErr(ctx, credentialFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting credential: %w", err)
 	}
 
-	err = credentialRepository.Delete(ctx, credential.Id())
-	if err != nil {
-		return nil, fmt.Errorf("deleting credential: %w", err)
-	}
-
+	dbContext.Credentials().Delete(credential.Id())
 	return &RemoveServiceUserPublicKeyResponse{}, nil
 }

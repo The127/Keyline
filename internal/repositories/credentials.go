@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"Keyline/internal/change"
 	"Keyline/utils"
 	"context"
 	"database/sql/driver"
@@ -15,8 +16,16 @@ var (
 	ErrWrongCredentialCast = errors.New("wrong credential cast")
 )
 
+type CredentialChange int
+
+const (
+	CredentialChangeDetails CredentialChange = iota
+	CredentialChangeType
+)
+
 type Credential struct {
-	ModelBase
+	BaseModel
+	change.List[CredentialChange]
 
 	userId uuid.UUID
 
@@ -26,22 +35,21 @@ type Credential struct {
 
 func NewCredential(userId uuid.UUID, details CredentialDetails) *Credential {
 	return &Credential{
-		ModelBase: NewModelBase(),
+		BaseModel: NewBaseModel(),
+		List:      change.NewChanges[CredentialChange](),
 		userId:    userId,
 		_type:     details.CredentialDetailType(),
 		details:   details,
 	}
 }
 
-func (c *Credential) GetScanPointers() []any {
-	return []any{
-		&c.id,
-		&c.auditCreatedAt,
-		&c.auditUpdatedAt,
-		&c.version,
-		&c.userId,
-		&c._type,
-		&c.details,
+func NewCredentialFromDB(base BaseModel, userId uuid.UUID, _type CredentialType, details any) *Credential {
+	return &Credential{
+		BaseModel: base,
+		List:      change.NewChanges[CredentialChange](),
+		userId:    userId,
+		_type:     _type,
+		details:   details,
 	}
 }
 
@@ -60,104 +68,45 @@ func (c *Credential) Details() any {
 func (c *Credential) SetDetails(details CredentialDetails) {
 	c._type = details.CredentialDetailType()
 	c.details = details
-	c.TrackChange("type", details.CredentialDetailType())
-	c.TrackChange("details", details)
+
+	c.TrackChange(CredentialChangeDetails)
+	c.TrackChange(CredentialChangeType)
 }
 
 func (c *Credential) PasswordDetails() (*CredentialPasswordDetails, error) {
-	if c._type != CredentialTypePassword {
-		return nil, fmt.Errorf("expected password credential, got %s: %w", c._type, ErrWrongCredentialCast)
-	}
-
-	result, ok := c.details.(*CredentialPasswordDetails)
+	details, ok := c.details.(*CredentialPasswordDetails)
 	if ok {
-		return result, nil
+		return details, nil
 	}
 
-	detailBytes, ok := c.details.([]byte)
-	if !ok {
-		return nil, fmt.Errorf("cannot access detail bytes: %w", ErrWrongCredentialCast)
-	}
-
-	passwordDetails := CredentialPasswordDetails{}
-	err := json.Unmarshal(detailBytes, &passwordDetails)
-	if err != nil {
-		return nil, fmt.Errorf("cannot unmarshal password details: %w", err)
-	}
-
-	return &passwordDetails, nil
+	return nil, fmt.Errorf("expected password credential, got %s: %w", c._type, ErrWrongCredentialCast)
 }
 
 func (c *Credential) WebauthnDetails() (*CredentialWebauthnDetails, error) {
-	if c._type != CredentialTypeWebauthn {
-		return nil, fmt.Errorf("expected webauthn credential, got %s: %w", c._type, ErrWrongCredentialCast)
-	}
-
-	result, ok := c.details.(*CredentialWebauthnDetails)
+	details, ok := c.details.(*CredentialWebauthnDetails)
 	if ok {
-		return result, nil
+		return details, nil
 	}
 
-	detailBytes, ok := c.details.([]byte)
-	if !ok {
-		return nil, fmt.Errorf("cannot access detail bytes: %w", ErrWrongCredentialCast)
-	}
-
-	webauthnDetails := CredentialWebauthnDetails{}
-	err := json.Unmarshal(detailBytes, &webauthnDetails)
-	if err != nil {
-		return nil, fmt.Errorf("cannot unmarshal webauthn details: %w", err)
-	}
-
-	return &webauthnDetails, nil
+	return nil, fmt.Errorf("expected webauthn credential, got %s: %w", c._type, ErrWrongCredentialCast)
 }
 
 func (c *Credential) TotpDetails() (*CredentialTotpDetails, error) {
-	if c._type != CredentialTypeTotp {
-		return nil, fmt.Errorf("expected totp credential, got %s: %w", c._type, ErrWrongCredentialCast)
-	}
-
-	result, ok := c.details.(*CredentialTotpDetails)
+	details, ok := c.details.(*CredentialTotpDetails)
 	if ok {
-		return result, nil
+		return details, nil
 	}
 
-	detailBytes, ok := c.details.([]byte)
-	if !ok {
-		return nil, fmt.Errorf("cannot access detail bytes: %w", ErrWrongCredentialCast)
-	}
-
-	totpDetails := CredentialTotpDetails{}
-	err := json.Unmarshal(detailBytes, &totpDetails)
-	if err != nil {
-		return nil, fmt.Errorf("cannot unmarshal totp details: %w", err)
-	}
-
-	return &totpDetails, nil
+	return nil, fmt.Errorf("expected totp credential, got %s: %w", c._type, ErrWrongCredentialCast)
 }
 
 func (c *Credential) ServiceUserKeyDetails() (*CredentialServiceUserKey, error) {
-	if c._type != CredentialTypeServiceUserKey {
-		return nil, fmt.Errorf("expected service user key credential, got %s: %w", c._type, ErrWrongCredentialCast)
-	}
-
-	result, ok := c.details.(*CredentialServiceUserKey)
+	details, ok := c.details.(*CredentialServiceUserKey)
 	if ok {
-		return result, nil
+		return details, nil
 	}
 
-	detailBytes, ok := c.details.([]byte)
-	if !ok {
-		return nil, fmt.Errorf("cannot access detail bytes: %w", ErrWrongCredentialCast)
-	}
-
-	serviceUserKeyDetails := CredentialServiceUserKey{}
-	err := json.Unmarshal(detailBytes, &serviceUserKeyDetails)
-	if err != nil {
-		return nil, fmt.Errorf("cannot unmarshal service user key details: %w", err)
-	}
-
-	return &serviceUserKeyDetails, nil
+	return nil, fmt.Errorf("expected service user key credential, got %s: %w", c._type, ErrWrongCredentialCast)
 }
 
 // CredentialType represents a credential type.
@@ -274,104 +223,105 @@ type CredentialFilter struct {
 	detailPublicKey *string
 }
 
-func NewCredentialFilter() CredentialFilter {
-	return CredentialFilter{}
+func NewCredentialFilter() *CredentialFilter {
+	return &CredentialFilter{}
 }
 
-func (f CredentialFilter) Clone() CredentialFilter {
-	return f
+func (f *CredentialFilter) Clone() *CredentialFilter {
+	clone := *f
+	return &clone
 }
 
-func (f CredentialFilter) Id(id uuid.UUID) CredentialFilter {
+func (f *CredentialFilter) Id(id uuid.UUID) *CredentialFilter {
 	filter := f.Clone()
 	filter.id = &id
 	return filter
 }
 
-func (f CredentialFilter) HasId() bool {
+func (f *CredentialFilter) HasId() bool {
 	return f.id != nil
 }
 
-func (f CredentialFilter) GetId() uuid.UUID {
+func (f *CredentialFilter) GetId() uuid.UUID {
 	return utils.ZeroIfNil(f.id)
 }
 
-func (f CredentialFilter) UserId(userId uuid.UUID) CredentialFilter {
+func (f *CredentialFilter) UserId(userId uuid.UUID) *CredentialFilter {
 	filter := f.Clone()
 	filter.userId = &userId
 	return filter
 }
 
-func (f CredentialFilter) HasUserId() bool {
+func (f *CredentialFilter) HasUserId() bool {
 	return f.userId != nil
 }
 
-func (f CredentialFilter) GetUserId() uuid.UUID {
+func (f *CredentialFilter) GetUserId() uuid.UUID {
 	return utils.ZeroIfNil(f.userId)
 }
 
-func (f CredentialFilter) DetailPublicKey(publicKey string) CredentialFilter {
+func (f *CredentialFilter) DetailPublicKey(publicKey string) *CredentialFilter {
 	filter := f.Clone()
 	filter.detailPublicKey = &publicKey
 	return filter
 }
 
-func (f CredentialFilter) HasDetailPublicKey() bool {
+func (f *CredentialFilter) HasDetailPublicKey() bool {
 	return f.detailPublicKey != nil
 }
 
-func (f CredentialFilter) GetDetailPublicKey() string {
+func (f *CredentialFilter) GetDetailPublicKey() string {
 	return utils.ZeroIfNil(f.detailPublicKey)
 }
 
-func (f CredentialFilter) Type(credentialType CredentialType) CredentialFilter {
+func (f *CredentialFilter) Type(credentialType CredentialType) *CredentialFilter {
 	filter := f.Clone()
 	filter._type = &credentialType
 	return filter
 }
 
-func (f CredentialFilter) HasType() bool {
+func (f *CredentialFilter) HasType() bool {
 	return f._type != nil
 }
 
-func (f CredentialFilter) GetType() CredentialType {
+func (f *CredentialFilter) GetType() CredentialType {
 	return utils.ZeroIfNil(f._type)
 }
 
-func (f CredentialFilter) DetailKid(key string) CredentialFilter {
+func (f *CredentialFilter) DetailKid(key string) *CredentialFilter {
 	filter := f.Clone()
 	filter.detailKid = &key
 	return filter
 }
 
-func (f CredentialFilter) HasDetailKid() bool {
+func (f *CredentialFilter) HasDetailKid() bool {
 	return f.detailKid != nil
 }
 
-func (f CredentialFilter) GetDetailKid() string {
+func (f *CredentialFilter) GetDetailKid() string {
 	return utils.ZeroIfNil(f.detailKid)
 }
 
-func (f CredentialFilter) DetailsId(id string) CredentialFilter {
+func (f *CredentialFilter) DetailsId(id string) *CredentialFilter {
 	filter := f.Clone()
 	filter.detailId = &id
 	return filter
 }
 
-func (f CredentialFilter) HasDetailsId() bool {
+func (f *CredentialFilter) HasDetailsId() bool {
 	return f.detailId != nil
 }
 
-func (f CredentialFilter) GetDetailsId() string {
+func (f *CredentialFilter) GetDetailsId() string {
 	return utils.ZeroIfNil(f.detailId)
 }
 
 //go:generate mockgen -destination=./mocks/credential_repository.go -package=mocks Keyline/internal/repositories CredentialRepository
 type CredentialRepository interface {
-	Single(ctx context.Context, filter CredentialFilter) (*Credential, error)
-	First(ctx context.Context, filter CredentialFilter) (*Credential, error)
-	List(ctx context.Context, filter CredentialFilter) ([]*Credential, error)
-	Insert(ctx context.Context, credential *Credential) error
-	Update(ctx context.Context, credential *Credential) error
-	Delete(ctx context.Context, id uuid.UUID) error
+	FirstOrErr(ctx context.Context, filter *CredentialFilter) (*Credential, error)
+	FirstOrNil(ctx context.Context, filter *CredentialFilter) (*Credential, error)
+	List(ctx context.Context, filter *CredentialFilter) ([]*Credential, error)
+	Insert(credential *Credential)
+	Update(credential *Credential)
+	Delete(id uuid.UUID)
 }

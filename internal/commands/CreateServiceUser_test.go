@@ -1,15 +1,18 @@
 package commands
 
 import (
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
+	mocks2 "Keyline/internal/mocks"
 	"Keyline/internal/repositories"
 	"Keyline/internal/repositories/mocks"
 	"Keyline/utils"
 	"context"
 	"errors"
-	"github.com/The127/ioc"
 	"testing"
 	"time"
+
+	"github.com/The127/ioc"
 
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -25,21 +28,23 @@ func TestCreateServiceUserCommandSuite(t *testing.T) {
 }
 
 func (s *CreateServiceUserCommandSuite) createContext(
+	ctrl *gomock.Controller,
 	vsr repositories.VirtualServerRepository,
 	ur repositories.UserRepository,
 ) context.Context {
 	dc := ioc.NewDependencyCollection()
 
+	dbContext := mocks2.NewMockContext(ctrl)
+	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) database.Context {
+		return dbContext
+	})
+
 	if vsr != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.VirtualServerRepository {
-			return vsr
-		})
+		dbContext.EXPECT().VirtualServers().Return(vsr).AnyTimes()
 	}
 
 	if ur != nil {
-		ioc.RegisterTransient(dc, func(_ *ioc.DependencyProvider) repositories.UserRepository {
-			return ur
-		})
+		dbContext.EXPECT().Users().Return(ur).AnyTimes()
 	}
 
 	scope := dc.BuildProvider()
@@ -56,37 +61,10 @@ func (s *CreateServiceUserCommandSuite) TestVirtualServerError() {
 	defer ctrl.Finish()
 
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).
+	virtualServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).
 		Return(nil, errors.New("error"))
 
-	ctx := s.createContext(virtualServerRepository, nil)
-	cmd := CreateServiceUser{}
-
-	// act
-	_, err := HandleCreateServiceUser(ctx, cmd)
-
-	// assert
-	s.Error(err)
-}
-
-func (s *CreateServiceUserCommandSuite) TestUserError() {
-	// arrange
-	ctrl := gomock.NewController(s.T())
-	defer ctrl.Finish()
-
-	now := time.Now()
-
-	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
-	virtualServer.Mock(now)
-	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Any()).
-		Return(virtualServer, nil)
-
-	userRepository := mocks.NewMockUserRepository(ctrl)
-	userRepository.EXPECT().Insert(gomock.Any(), gomock.Any()).
-		Return(errors.New("error"))
-
-	ctx := s.createContext(virtualServerRepository, userRepository)
+	ctx := s.createContext(ctrl, virtualServerRepository, nil)
 	cmd := CreateServiceUser{}
 
 	// act
@@ -106,17 +84,17 @@ func (s *CreateServiceUserCommandSuite) TestHappyPath() {
 	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
 	virtualServer.Mock(now)
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
-	virtualServerRepository.EXPECT().Single(gomock.Any(), gomock.Cond(func(x repositories.VirtualServerFilter) bool {
+	virtualServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Cond(func(x *repositories.VirtualServerFilter) bool {
 		return x.GetName() == virtualServer.Name()
 	})).Return(virtualServer, nil)
 
 	userRepository := mocks.NewMockUserRepository(ctrl)
-	userRepository.EXPECT().Insert(gomock.Any(), gomock.Cond(func(x *repositories.User) bool {
+	userRepository.EXPECT().Insert(gomock.Cond(func(x *repositories.User) bool {
 		return x.Username() == "username" &&
 			x.VirtualServerId() == virtualServer.Id()
-	})).Return(nil)
+	}))
 
-	ctx := s.createContext(virtualServerRepository, userRepository)
+	ctx := s.createContext(ctrl, virtualServerRepository, userRepository)
 	cmd := CreateServiceUser{
 		VirtualServerName: virtualServer.Name(),
 		Username:          "username",

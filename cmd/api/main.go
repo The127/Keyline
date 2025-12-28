@@ -52,21 +52,25 @@ func main() {
 	logging.Init()
 	metrics.Init()
 
-	retry.FiveTimes(func() error {
-		return database.Migrate(config.C.Database.Postgres)
-	}, "failed to migrate database")
-
 	dc := ioc.NewDependencyCollection()
 
 	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) clock.Service {
 		return clock.NewSystemClock()
 	})
 
+	db, err := setup.Database(dc, config.C.Database)
+	if err != nil {
+		logging.Logger.Fatalf("failed to connect to database: %v", err)
+	}
+
+	retry.FiveTimes(func() error {
+		return db.Migrate(context.TODO())
+	}, "failed to migrate database")
+
 	setup.OutboxDelivery(dc, config.QueueModeInProcess)
 	setup.KeyServices(dc, config.C.KeyStore)
 	setup.Caching(dc, config.C.Cache.Mode)
 	setup.Services(dc)
-	setup.Repositories(dc, config.C.Database.Mode, config.C.Database.Postgres)
 	setup.Mediator(dc)
 	dp := dc.BuildProvider()
 
@@ -104,9 +108,10 @@ func main() {
 			}
 		}).
 		Build(config.C.LeaderElection)
-	err := leaderElection.Start(middlewares.ContextWithScope(context.Background(), dp))
+
+	err = leaderElection.Start(middlewares.ContextWithScope(context.Background(), dp))
 	if err != nil {
-		panic(fmt.Errorf("failed to start leader election: %s", err.Error()))
+		logging.Logger.Panicf("failed to start leader election: %s", err.Error())
 	}
 
 	server.Serve(dp, config.C.Server)
@@ -120,6 +125,9 @@ func main() {
 // It creates an initial virtual server and other necessary defaults if none exist.
 func initApplication(dp *ioc.DependencyProvider) {
 	scope := dp.NewScope()
+	defer utils.PanicOnError(scope.Close, "failed creating scope to init application")
+
+	dbContext := ioc.GetDependency[database.Context](scope)
 
 	ctx := middlewares.ContextWithScope(context.Background(), scope)
 	ctx = authentication.ContextWithCurrentUser(ctx, authentication.SystemUser())
@@ -136,12 +144,8 @@ func initApplication(dp *ioc.DependencyProvider) {
 	}
 
 	logging.Logger.Info("Creating system user")
-	userRepository := ioc.GetDependency[repositories.UserRepository](scope)
 	systemUser := repositories.NewSystemUser("system-user")
-	err = userRepository.Insert(ctx, systemUser)
-	if err != nil {
-		logging.Logger.Fatalf("failed to create system user: %v", err)
-	}
+	dbContext.Users().Insert(systemUser)
 
 	logging.Logger.Infof("Creating initial virtual server")
 
@@ -227,8 +231,6 @@ func initApplication(dp *ioc.DependencyProvider) {
 	if err != nil {
 		logging.Logger.Fatalf("failed to create initial virtual server: %v", err)
 	}
-
-	utils.PanicOnError(scope.Close, "failed creating scope to init application")
 }
 
 func configureSwaggerFromConfig() {

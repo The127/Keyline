@@ -43,50 +43,61 @@ func (m *MockCredentialRepository) EXPECT() *MockCredentialRepositoryMockRecorde
 }
 
 // Delete mocks base method.
-func (m *MockCredentialRepository) Delete(ctx context.Context, id uuid.UUID) error {
+func (m *MockCredentialRepository) Delete(id uuid.UUID) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", ctx, id)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Delete", id)
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockCredentialRepositoryMockRecorder) Delete(ctx, id any) *gomock.Call {
+func (mr *MockCredentialRepositoryMockRecorder) Delete(id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockCredentialRepository)(nil).Delete), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockCredentialRepository)(nil).Delete), id)
 }
 
-// First mocks base method.
-func (m *MockCredentialRepository) First(ctx context.Context, filter repositories.CredentialFilter) (*repositories.Credential, error) {
+// FirstOrErr mocks base method.
+func (m *MockCredentialRepository) FirstOrErr(ctx context.Context, filter *repositories.CredentialFilter) (*repositories.Credential, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "First", ctx, filter)
+	ret := m.ctrl.Call(m, "FirstOrErr", ctx, filter)
 	ret0, _ := ret[0].(*repositories.Credential)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// First indicates an expected call of First.
-func (mr *MockCredentialRepositoryMockRecorder) First(ctx, filter any) *gomock.Call {
+// FirstOrErr indicates an expected call of FirstOrErr.
+func (mr *MockCredentialRepositoryMockRecorder) FirstOrErr(ctx, filter any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "First", reflect.TypeOf((*MockCredentialRepository)(nil).First), ctx, filter)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FirstOrErr", reflect.TypeOf((*MockCredentialRepository)(nil).FirstOrErr), ctx, filter)
+}
+
+// FirstOrNil mocks base method.
+func (m *MockCredentialRepository) FirstOrNil(ctx context.Context, filter *repositories.CredentialFilter) (*repositories.Credential, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FirstOrNil", ctx, filter)
+	ret0, _ := ret[0].(*repositories.Credential)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FirstOrNil indicates an expected call of FirstOrNil.
+func (mr *MockCredentialRepositoryMockRecorder) FirstOrNil(ctx, filter any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FirstOrNil", reflect.TypeOf((*MockCredentialRepository)(nil).FirstOrNil), ctx, filter)
 }
 
 // Insert mocks base method.
-func (m *MockCredentialRepository) Insert(ctx context.Context, credential *repositories.Credential) error {
+func (m *MockCredentialRepository) Insert(credential *repositories.Credential) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Insert", ctx, credential)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Insert", credential)
 }
 
 // Insert indicates an expected call of Insert.
-func (mr *MockCredentialRepositoryMockRecorder) Insert(ctx, credential any) *gomock.Call {
+func (mr *MockCredentialRepositoryMockRecorder) Insert(credential any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockCredentialRepository)(nil).Insert), ctx, credential)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockCredentialRepository)(nil).Insert), credential)
 }
 
 // List mocks base method.
-func (m *MockCredentialRepository) List(ctx context.Context, filter repositories.CredentialFilter) ([]*repositories.Credential, error) {
+func (m *MockCredentialRepository) List(ctx context.Context, filter *repositories.CredentialFilter) ([]*repositories.Credential, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "List", ctx, filter)
 	ret0, _ := ret[0].([]*repositories.Credential)
@@ -100,31 +111,14 @@ func (mr *MockCredentialRepositoryMockRecorder) List(ctx, filter any) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockCredentialRepository)(nil).List), ctx, filter)
 }
 
-// Single mocks base method.
-func (m *MockCredentialRepository) Single(ctx context.Context, filter repositories.CredentialFilter) (*repositories.Credential, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Single", ctx, filter)
-	ret0, _ := ret[0].(*repositories.Credential)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Single indicates an expected call of Single.
-func (mr *MockCredentialRepositoryMockRecorder) Single(ctx, filter any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Single", reflect.TypeOf((*MockCredentialRepository)(nil).Single), ctx, filter)
-}
-
 // Update mocks base method.
-func (m *MockCredentialRepository) Update(ctx context.Context, credential *repositories.Credential) error {
+func (m *MockCredentialRepository) Update(credential *repositories.Credential) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Update", ctx, credential)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Update", credential)
 }
 
 // Update indicates an expected call of Update.
-func (mr *MockCredentialRepositoryMockRecorder) Update(ctx, credential any) *gomock.Call {
+func (mr *MockCredentialRepositoryMockRecorder) Update(credential any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockCredentialRepository)(nil).Update), ctx, credential)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockCredentialRepository)(nil).Update), credential)
 }

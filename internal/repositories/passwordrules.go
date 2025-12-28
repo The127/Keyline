@@ -1,21 +1,13 @@
 package repositories
 
 import (
+	"Keyline/internal/change"
 	"Keyline/utils"
 	"context"
 	"fmt"
 
 	"github.com/google/uuid"
 )
-
-type PasswordRule struct {
-	ModelBase
-
-	virtualServerId uuid.UUID
-
-	_type   PasswordRuleType
-	details []byte
-}
 
 type PasswordRuleType string
 
@@ -27,6 +19,22 @@ const (
 	PasswordRuleTypeDigits    PasswordRuleType = "digits"
 	PasswordRuleTypeSpecial   PasswordRuleType = "special"
 )
+
+type PasswordRuleChange int
+
+const (
+	PasswordRuleChangeDetails PasswordRuleChange = iota
+)
+
+type PasswordRule struct {
+	BaseModel
+	change.List[PasswordRuleChange]
+
+	virtualServerId uuid.UUID
+
+	_type   PasswordRuleType
+	details []byte
+}
 
 type PasswordRuleDetails interface {
 	GetPasswordRuleType() PasswordRuleType
@@ -40,22 +48,21 @@ func NewPasswordRule(virtualServerId uuid.UUID, details PasswordRuleDetails) (*P
 	}
 
 	return &PasswordRule{
-		ModelBase:       NewModelBase(),
+		BaseModel:       NewBaseModel(),
+		List:            change.NewChanges[PasswordRuleChange](),
 		virtualServerId: virtualServerId,
 		_type:           details.GetPasswordRuleType(),
 		details:         serializedDetails,
 	}, nil
 }
 
-func (p *PasswordRule) GetScanPointers() []any {
-	return []any{
-		&p.id,
-		&p.auditCreatedAt,
-		&p.auditUpdatedAt,
-		&p.version,
-		&p.virtualServerId,
-		&p._type,
-		&p.details,
+func NewPasswordRuleFromDB(base BaseModel, virtualServerId uuid.UUID, _type PasswordRuleType, details []byte) *PasswordRule {
+	return &PasswordRule{
+		BaseModel:       base,
+		List:            change.NewChanges[PasswordRuleChange](),
+		virtualServerId: virtualServerId,
+		_type:           _type,
+		details:         details,
 	}
 }
 
@@ -78,7 +85,7 @@ func (p *PasswordRule) SetDetails(details PasswordRuleDetails) error {
 	}
 
 	p.details = serialized
-	p.TrackChange("details", serialized)
+	p.TrackChange(PasswordRuleChangeDetails)
 	return nil
 }
 
@@ -87,48 +94,49 @@ type PasswordRuleFilter struct {
 	type_           *PasswordRuleType
 }
 
-func NewPasswordRuleFilter() PasswordRuleFilter {
-	return PasswordRuleFilter{}
+func NewPasswordRuleFilter() *PasswordRuleFilter {
+	return &PasswordRuleFilter{}
 }
 
-func (f PasswordRuleFilter) Clone() PasswordRuleFilter {
-	return f
+func (f *PasswordRuleFilter) Clone() *PasswordRuleFilter {
+	clone := *f
+	return &clone
 }
 
-func (f PasswordRuleFilter) VirtualServerId(virtualServerId uuid.UUID) PasswordRuleFilter {
+func (f *PasswordRuleFilter) VirtualServerId(virtualServerId uuid.UUID) *PasswordRuleFilter {
 	filter := f.Clone()
 	filter.virtualServerId = &virtualServerId
 	return filter
 }
 
-func (f PasswordRuleFilter) HasVirtualServerId() bool {
+func (f *PasswordRuleFilter) HasVirtualServerId() bool {
 	return f.virtualServerId != nil
 }
 
-func (f PasswordRuleFilter) GetVirtualServerId() uuid.UUID {
+func (f *PasswordRuleFilter) GetVirtualServerId() uuid.UUID {
 	return utils.ZeroIfNil(f.virtualServerId)
 }
 
-func (f PasswordRuleFilter) Type(type_ PasswordRuleType) PasswordRuleFilter {
+func (f *PasswordRuleFilter) Type(type_ PasswordRuleType) *PasswordRuleFilter {
 	filter := f.Clone()
 	filter.type_ = &type_
 	return filter
 }
 
-func (f PasswordRuleFilter) HasType() bool {
+func (f *PasswordRuleFilter) HasType() bool {
 	return f.type_ != nil
 }
 
-func (f PasswordRuleFilter) GetType() PasswordRuleType {
+func (f *PasswordRuleFilter) GetType() PasswordRuleType {
 	return utils.ZeroIfNil(f.type_)
 }
 
 //go:generate mockgen -destination=./mocks/passwordrule_repository.go -package=mocks Keyline/internal/repositories PasswordRuleRepository
 type PasswordRuleRepository interface {
-	List(ctx context.Context, filter PasswordRuleFilter) ([]*PasswordRule, error)
-	Single(ctx context.Context, filter PasswordRuleFilter) (*PasswordRule, error)
-	First(ctx context.Context, filter PasswordRuleFilter) (*PasswordRule, error)
-	Insert(ctx context.Context, passwordRule *PasswordRule) error
-	Update(ctx context.Context, passwordRule *PasswordRule) error
-	Delete(ctx context.Context, id uuid.UUID) error
+	FirstOrErr(ctx context.Context, filter *PasswordRuleFilter) (*PasswordRule, error)
+	FirstOrNil(ctx context.Context, filter *PasswordRuleFilter) (*PasswordRule, error)
+	List(ctx context.Context, filter *PasswordRuleFilter) ([]*PasswordRule, error)
+	Insert(passwordRule *PasswordRule)
+	Update(passwordRule *PasswordRule)
+	Delete(id uuid.UUID)
 }

@@ -3,11 +3,13 @@ package commands
 import (
 	"Keyline/internal/authentication/permissions"
 	"Keyline/internal/behaviours"
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"context"
 	"encoding/json"
 	"fmt"
+
 	"github.com/The127/ioc"
 
 	"github.com/google/uuid"
@@ -40,33 +42,30 @@ type UpdateUserAppMetadataResponse struct{}
 
 func HandleUpdateUserAppMetadata(ctx context.Context, command UpdateUserAppMetadata) (*UpdateUserAppMetadataResponse, error) {
 	scope := middlewares.GetScope(ctx)
+	dbContext := ioc.GetDependency[database.Context](scope)
 
-	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(command.VirtualServerName)
-	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().FirstOrErr(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
-	userRepository := ioc.GetDependency[repositories.UserRepository](scope)
 	userFilter := repositories.NewUserFilter().Id(command.UserId).VirtualServerId(virtualServer.Id())
-	user, err := userRepository.Single(ctx, userFilter)
+	user, err := dbContext.Users().FirstOrNil(ctx, userFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting user: %w", err)
 	}
 
-	applicationRepository := ioc.GetDependency[repositories.ApplicationRepository](scope)
 	applicationFilter := repositories.NewApplicationFilter().Id(command.ApplicationId).VirtualServerId(virtualServer.Id())
-	application, err := applicationRepository.Single(ctx, applicationFilter)
+	application, err := dbContext.Applications().FirstOrErr(ctx, applicationFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting application: %w", err)
 	}
 
-	applicationUserMetadataRepository := ioc.GetDependency[repositories.ApplicationUserMetadataRepository](scope)
 	applicationUserMetadatFilter := repositories.NewApplicationUserMetadataFilter().
 		ApplicationId(application.Id()).
 		UserId(user.Id())
-	metadata, err := applicationUserMetadataRepository.First(ctx, applicationUserMetadatFilter)
+	metadata, err := dbContext.ApplicationUserMetadata().FirstOrNil(ctx, applicationUserMetadatFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting application user metadata: %w", err)
 	}
@@ -83,16 +82,10 @@ func HandleUpdateUserAppMetadata(ctx context.Context, command UpdateUserAppMetad
 			string(jsonString),
 		)
 
-		err := applicationUserMetadataRepository.Insert(ctx, metadata)
-		if err != nil {
-			return nil, fmt.Errorf("inserting application user metadata: %w", err)
-		}
+		dbContext.ApplicationUserMetadata().Insert(metadata)
 	} else {
 		metadata.SetMetadata(string(jsonString))
-		err := applicationUserMetadataRepository.Update(ctx, metadata)
-		if err != nil {
-			return nil, fmt.Errorf("updating application user metadata: %w", err)
-		}
+		dbContext.ApplicationUserMetadata().Update(metadata)
 	}
 
 	return &UpdateUserAppMetadataResponse{}, nil

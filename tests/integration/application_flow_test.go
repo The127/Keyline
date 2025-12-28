@@ -5,6 +5,7 @@ import (
 	"Keyline/internal/queries"
 	"Keyline/internal/repositories"
 	"Keyline/utils"
+
 	"github.com/The127/mediatr"
 
 	"github.com/google/uuid"
@@ -30,6 +31,8 @@ var _ = Describe("Application flow", Ordered, func() {
 		}
 		_, err := mediatr.Send[*commands.CreateProjectResponse](h.Ctx(), h.Mediator(), req)
 		Expect(err).ToNot(HaveOccurred())
+
+		Expect(h.dbContext.SaveChanges(h.ctx)).ToNot(HaveOccurred())
 	})
 
 	AfterAll(func() {
@@ -49,6 +52,8 @@ var _ = Describe("Application flow", Ordered, func() {
 		response, err := mediatr.Send[*commands.CreateApplicationResponse](h.Ctx(), h.Mediator(), req)
 		Expect(err).ToNot(HaveOccurred())
 		applicationId = response.Id
+
+		Expect(h.dbContext.SaveChanges(h.ctx)).ToNot(HaveOccurred())
 	})
 
 	It("should list applications successfully", func() {
@@ -74,6 +79,8 @@ var _ = Describe("Application flow", Ordered, func() {
 		}
 		_, err := mediatr.Send[*commands.PatchApplicationResponse](h.Ctx(), h.Mediator(), cmd)
 		Expect(err).ToNot(HaveOccurred())
+
+		Expect(h.dbContext.SaveChanges(h.ctx)).ToNot(HaveOccurred())
 	})
 
 	It("should reflect updated values", func() {
@@ -95,6 +102,8 @@ var _ = Describe("Application flow", Ordered, func() {
 		}
 		_, err := mediatr.Send[*commands.DeleteApplicationResponse](h.Ctx(), h.Mediator(), cmd)
 		Expect(err).ToNot(HaveOccurred())
+
+		Expect(h.dbContext.SaveChanges(h.ctx)).ToNot(HaveOccurred())
 	})
 
 	It("should not list deleted application", func() {

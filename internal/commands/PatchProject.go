@@ -3,10 +3,12 @@ package commands
 import (
 	"Keyline/internal/authentication/permissions"
 	"Keyline/internal/behaviours"
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"context"
 	"fmt"
+
 	"github.com/The127/ioc"
 )
 
@@ -37,17 +39,16 @@ type PatchProjectResponse struct{}
 
 func HandlePatchProject(ctx context.Context, command PatchProject) (*PatchProjectResponse, error) {
 	scope := middlewares.GetScope(ctx)
+	dbContext := ioc.GetDependency[database.Context](scope)
 
-	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(command.VirtualServerName)
-	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().FirstOrErr(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
-	projectRepository := ioc.GetDependency[repositories.ProjectRepository](scope)
 	projectFilter := repositories.NewProjectFilter().VirtualServerId(virtualServer.Id()).Slug(command.Slug)
-	project, err := projectRepository.Single(ctx, projectFilter)
+	project, err := dbContext.Projects().FirstOrErr(ctx, projectFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting project: %w", err)
 	}
@@ -59,10 +60,6 @@ func HandlePatchProject(ctx context.Context, command PatchProject) (*PatchProjec
 		project.SetDescription(*command.Description)
 	}
 
-	err = projectRepository.Update(ctx, project)
-	if err != nil {
-		return nil, fmt.Errorf("updating project: %w", err)
-	}
-
+	dbContext.Projects().Update(project)
 	return &PatchProjectResponse{}, nil
 }

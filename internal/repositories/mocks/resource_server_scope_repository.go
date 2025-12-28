@@ -43,50 +43,61 @@ func (m *MockResourceServerScopeRepository) EXPECT() *MockResourceServerScopeRep
 }
 
 // Delete mocks base method.
-func (m *MockResourceServerScopeRepository) Delete(ctx context.Context, id uuid.UUID) error {
+func (m *MockResourceServerScopeRepository) Delete(id uuid.UUID) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", ctx, id)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Delete", id)
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockResourceServerScopeRepositoryMockRecorder) Delete(ctx, id any) *gomock.Call {
+func (mr *MockResourceServerScopeRepositoryMockRecorder) Delete(id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockResourceServerScopeRepository)(nil).Delete), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockResourceServerScopeRepository)(nil).Delete), id)
 }
 
-// First mocks base method.
-func (m *MockResourceServerScopeRepository) First(ctx context.Context, filter repositories.ResourceServerScopeFilter) (*repositories.ResourceServerScope, error) {
+// FirstOrErr mocks base method.
+func (m *MockResourceServerScopeRepository) FirstOrErr(ctx context.Context, filter *repositories.ResourceServerScopeFilter) (*repositories.ResourceServerScope, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "First", ctx, filter)
+	ret := m.ctrl.Call(m, "FirstOrErr", ctx, filter)
 	ret0, _ := ret[0].(*repositories.ResourceServerScope)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// First indicates an expected call of First.
-func (mr *MockResourceServerScopeRepositoryMockRecorder) First(ctx, filter any) *gomock.Call {
+// FirstOrErr indicates an expected call of FirstOrErr.
+func (mr *MockResourceServerScopeRepositoryMockRecorder) FirstOrErr(ctx, filter any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "First", reflect.TypeOf((*MockResourceServerScopeRepository)(nil).First), ctx, filter)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FirstOrErr", reflect.TypeOf((*MockResourceServerScopeRepository)(nil).FirstOrErr), ctx, filter)
+}
+
+// FirstOrNil mocks base method.
+func (m *MockResourceServerScopeRepository) FirstOrNil(ctx context.Context, filter *repositories.ResourceServerScopeFilter) (*repositories.ResourceServerScope, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FirstOrNil", ctx, filter)
+	ret0, _ := ret[0].(*repositories.ResourceServerScope)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FirstOrNil indicates an expected call of FirstOrNil.
+func (mr *MockResourceServerScopeRepositoryMockRecorder) FirstOrNil(ctx, filter any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FirstOrNil", reflect.TypeOf((*MockResourceServerScopeRepository)(nil).FirstOrNil), ctx, filter)
 }
 
 // Insert mocks base method.
-func (m *MockResourceServerScopeRepository) Insert(ctx context.Context, resourceServerScope *repositories.ResourceServerScope) error {
+func (m *MockResourceServerScopeRepository) Insert(resourceServerScope *repositories.ResourceServerScope) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Insert", ctx, resourceServerScope)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Insert", resourceServerScope)
 }
 
 // Insert indicates an expected call of Insert.
-func (mr *MockResourceServerScopeRepositoryMockRecorder) Insert(ctx, resourceServerScope any) *gomock.Call {
+func (mr *MockResourceServerScopeRepositoryMockRecorder) Insert(resourceServerScope any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockResourceServerScopeRepository)(nil).Insert), ctx, resourceServerScope)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockResourceServerScopeRepository)(nil).Insert), resourceServerScope)
 }
 
 // List mocks base method.
-func (m *MockResourceServerScopeRepository) List(ctx context.Context, filter repositories.ResourceServerScopeFilter) ([]*repositories.ResourceServerScope, int, error) {
+func (m *MockResourceServerScopeRepository) List(ctx context.Context, filter *repositories.ResourceServerScopeFilter) ([]*repositories.ResourceServerScope, int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "List", ctx, filter)
 	ret0, _ := ret[0].([]*repositories.ResourceServerScope)
@@ -101,31 +112,14 @@ func (mr *MockResourceServerScopeRepositoryMockRecorder) List(ctx, filter any) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockResourceServerScopeRepository)(nil).List), ctx, filter)
 }
 
-// Single mocks base method.
-func (m *MockResourceServerScopeRepository) Single(ctx context.Context, filter repositories.ResourceServerScopeFilter) (*repositories.ResourceServerScope, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Single", ctx, filter)
-	ret0, _ := ret[0].(*repositories.ResourceServerScope)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Single indicates an expected call of Single.
-func (mr *MockResourceServerScopeRepositoryMockRecorder) Single(ctx, filter any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Single", reflect.TypeOf((*MockResourceServerScopeRepository)(nil).Single), ctx, filter)
-}
-
 // Update mocks base method.
-func (m *MockResourceServerScopeRepository) Update(ctx context.Context, resourceServerScope *repositories.ResourceServerScope) error {
+func (m *MockResourceServerScopeRepository) Update(resourceServerScope *repositories.ResourceServerScope) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Update", ctx, resourceServerScope)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Update", resourceServerScope)
 }
 
 // Update indicates an expected call of Update.
-func (mr *MockResourceServerScopeRepositoryMockRecorder) Update(ctx, resourceServerScope any) *gomock.Call {
+func (mr *MockResourceServerScopeRepositoryMockRecorder) Update(resourceServerScope any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockResourceServerScopeRepository)(nil).Update), ctx, resourceServerScope)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockResourceServerScopeRepository)(nil).Update), resourceServerScope)
 }

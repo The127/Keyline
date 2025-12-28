@@ -3,6 +3,7 @@ package commands
 import (
 	"Keyline/internal/authentication/permissions"
 	"Keyline/internal/behaviours"
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"context"
@@ -43,20 +44,19 @@ type AssociateServiceUserPublicKeyResponse struct {
 
 func HandleAssociateServiceUserPublicKey(ctx context.Context, command AssociateServiceUserPublicKey) (*AssociateServiceUserPublicKeyResponse, error) {
 	scope := middlewares.GetScope(ctx)
+	dbContext := ioc.GetDependency[database.Context](scope)
 
-	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(command.VirtualServerName)
-	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().FirstOrErr(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
-	userRepository := ioc.GetDependency[repositories.UserRepository](scope)
 	userFilter := repositories.NewUserFilter().
 		VirtualServerId(virtualServer.Id()).
 		Id(command.ServiceUserId).
 		ServiceUser(true)
-	user, err := userRepository.Single(ctx, userFilter)
+	user, err := dbContext.Users().FirstOrErr(ctx, userFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting user: %w", err)
 	}
@@ -68,15 +68,11 @@ func HandleAssociateServiceUserPublicKey(ctx context.Context, command AssociateS
 		kid = *command.Kid
 	}
 
-	credentialRepository := ioc.GetDependency[repositories.CredentialRepository](scope)
 	credential := repositories.NewCredential(user.Id(), &repositories.CredentialServiceUserKey{
 		Kid:       kid,
 		PublicKey: command.PublicKey,
 	})
-	err = credentialRepository.Insert(ctx, credential)
-	if err != nil {
-		return nil, fmt.Errorf("inserting credential: %w", err)
-	}
+	dbContext.Credentials().Insert(credential)
 
 	return &AssociateServiceUserPublicKeyResponse{
 		Id:  credential.Id(),

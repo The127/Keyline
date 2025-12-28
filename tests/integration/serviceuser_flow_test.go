@@ -2,6 +2,7 @@ package integration
 
 import (
 	"Keyline/internal/commands"
+
 	"github.com/The127/mediatr"
 
 	"github.com/google/uuid"
@@ -34,6 +35,8 @@ var _ = Describe("ServiceUser flow", Ordered, func() {
 		response, err := mediatr.Send[*commands.CreateServiceUserResponse](h.Ctx(), h.Mediator(), req)
 		Expect(err).ToNot(HaveOccurred())
 		serviceUserId = response.Id
+
+		Expect(h.dbContext.SaveChanges(h.ctx)).ToNot(HaveOccurred())
 	})
 
 	It("should associate public key with service user", func() {
@@ -44,6 +47,8 @@ var _ = Describe("ServiceUser flow", Ordered, func() {
 		}
 		_, err := mediatr.Send[*commands.AssociateServiceUserPublicKeyResponse](h.Ctx(), h.Mediator(), req)
 		Expect(err).ToNot(HaveOccurred())
+
+		Expect(h.dbContext.SaveChanges(h.ctx)).ToNot(HaveOccurred())
 	})
 
 	It("should remove public key from service user", func() {
@@ -54,5 +59,7 @@ var _ = Describe("ServiceUser flow", Ordered, func() {
 		}
 		_, err := mediatr.Send[*commands.RemoveServiceUserPublicKeyResponse](h.Ctx(), h.Mediator(), req)
 		Expect(err).ToNot(HaveOccurred())
+
+		Expect(h.dbContext.SaveChanges(h.ctx)).ToNot(HaveOccurred())
 	})
 })

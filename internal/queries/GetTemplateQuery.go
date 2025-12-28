@@ -3,12 +3,14 @@ package queries
 import (
 	"Keyline/internal/authentication/permissions"
 	"Keyline/internal/behaviours"
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"context"
 	"fmt"
-	"github.com/The127/ioc"
 	"time"
+
+	"github.com/The127/ioc"
 
 	"github.com/google/uuid"
 )
@@ -43,27 +45,25 @@ type GetTemplateResult struct {
 
 func HandleGetTemplate(ctx context.Context, query GetTemplate) (*GetTemplateResult, error) {
 	scope := middlewares.GetScope(ctx)
+	dbContext := ioc.GetDependency[database.Context](scope)
 
-	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(query.VirtualServerName)
-	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().FirstOrErr(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
-	templateRepository := ioc.GetDependency[repositories.TemplateRepository](scope)
 	templateFilter := repositories.NewTemplateFilter().
 		VirtualServerId(virtualServer.Id()).
 		TemplateType(query.Type)
-	template, err := templateRepository.Single(ctx, templateFilter)
+	template, err := dbContext.Templates().FirstOrErr(ctx, templateFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting template: %w", err)
 	}
 
-	fileRepository := ioc.GetDependency[repositories.FileRepository](scope)
 	fileFilter := repositories.NewFileFilter().
 		Id(template.FileId())
-	file, err := fileRepository.Single(ctx, fileFilter)
+	file, err := dbContext.Files().FirstOrErr(ctx, fileFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting file: %w", err)
 	}

@@ -3,10 +3,12 @@ package commands
 import (
 	"Keyline/internal/authentication/permissions"
 	"Keyline/internal/behaviours"
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"context"
 	"fmt"
+
 	"github.com/The127/ioc"
 
 	"github.com/google/uuid"
@@ -39,45 +41,37 @@ type AssignRoleToUserResponse struct{}
 
 func HandleAssignRoleToUser(ctx context.Context, command AssignRoleToUser) (*AssignRoleToUserResponse, error) {
 	scope := middlewares.GetScope(ctx)
+	dbContext := ioc.GetDependency[database.Context](scope)
 
-	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(command.VirtualServerName)
-	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().FirstOrErr(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
-	projectRepository := ioc.GetDependency[repositories.ProjectRepository](scope)
 	projectFilter := repositories.NewProjectFilter().VirtualServerId(virtualServer.Id()).Slug(command.ProjectSlug)
-	project, err := projectRepository.Single(ctx, projectFilter)
+	project, err := dbContext.Projects().FirstOrErr(ctx, projectFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting project: %w", err)
 	}
-
-	roleRepository := ioc.GetDependency[repositories.RoleRepository](scope)
 
 	roleFilter := repositories.NewRoleFilter().
 		Id(command.RoleId).
 		VirtualServerId(virtualServer.Id()).
 		ProjectId(project.Id())
 
-	_, err = roleRepository.Single(ctx, roleFilter)
+	_, err = dbContext.Roles().FirstOrErr(ctx, roleFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting role: %w", err)
 	}
 
-	userRepository := ioc.GetDependency[repositories.UserRepository](scope)
-	_, err = userRepository.Single(ctx, repositories.NewUserFilter().Id(command.UserId).VirtualServerId(virtualServer.Id()))
+	_, err = dbContext.Users().FirstOrErr(ctx, repositories.NewUserFilter().Id(command.UserId).VirtualServerId(virtualServer.Id()))
 	if err != nil {
 		return nil, fmt.Errorf("getting user: %w", err)
 	}
 
-	userRoleAssignmentRepository := ioc.GetDependency[repositories.UserRoleAssignmentRepository](scope)
 	userRoleAssignment := repositories.NewUserRoleAssignment(command.UserId, command.RoleId, nil)
-	err = userRoleAssignmentRepository.Insert(ctx, userRoleAssignment)
-	if err != nil {
-		return nil, fmt.Errorf("inserting user role assignment: %w", err)
-	}
+	dbContext.UserRoleAssignments().Insert(userRoleAssignment)
 
 	return &AssignRoleToUserResponse{}, nil
 }

@@ -1,10 +1,12 @@
 package queries
 
 import (
+	"Keyline/internal/database"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"context"
 	"fmt"
+
 	"github.com/The127/ioc"
 )
 
@@ -18,9 +20,9 @@ type AnyVirtualServerExistsResult struct {
 
 func HandleAnyVirtualServerExists(ctx context.Context, _ AnyVirtualServerExists) (*AnyVirtualServerExistsResult, error) {
 	scope := middlewares.GetScope(ctx)
+	dbContext := ioc.GetDependency[database.Context](scope)
 
-	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
-	virtualServer, err := virtualServerRepository.First(ctx, repositories.NewVirtualServerFilter())
+	virtualServer, err := dbContext.VirtualServers().FirstOrNil(ctx, repositories.NewVirtualServerFilter())
 	if err != nil {
 		return nil, fmt.Errorf("searching virtual servers: %w", err)
 	}

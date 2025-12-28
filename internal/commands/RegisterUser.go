@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"Keyline/internal/database"
 	"Keyline/internal/events"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/password"
@@ -8,6 +9,7 @@ import (
 	"Keyline/utils"
 	"context"
 	"fmt"
+
 	"github.com/The127/ioc"
 	"github.com/The127/mediatr"
 
@@ -31,10 +33,10 @@ type RegisterUserResponse struct {
 
 func HandleRegisterUser(ctx context.Context, command RegisterUser) (*RegisterUserResponse, error) {
 	scope := middlewares.GetScope(ctx)
+	dbContext := ioc.GetDependency[database.Context](scope)
 
-	virtualServerRepository := ioc.GetDependency[repositories.VirtualServerRepository](scope)
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(command.VirtualServerName)
-	virtualServer, err := virtualServerRepository.Single(ctx, virtualServerFilter)
+	virtualServer, err := dbContext.VirtualServers().FirstOrErr(ctx, virtualServerFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
@@ -49,33 +51,25 @@ func HandleRegisterUser(ctx context.Context, command RegisterUser) (*RegisterUse
 		return nil, fmt.Errorf("password validation: %w", err)
 	}
 
-	userRepository := ioc.GetDependency[repositories.UserRepository](scope)
 	user := repositories.NewUser(
 		command.Username,
 		command.DisplayName,
 		command.Email,
 		virtualServer.Id(),
 	)
-	err = userRepository.Insert(ctx, user)
-	if err != nil {
-		return nil, fmt.Errorf("inserting user: %w", err)
-	}
+	dbContext.Users().Insert(user)
 
 	hashedPassword := utils.HashPassword(command.Password)
 
-	credentialRepository := ioc.GetDependency[repositories.CredentialRepository](scope)
 	credential := repositories.NewCredential(user.Id(), &repositories.CredentialPasswordDetails{
 		HashedPassword: hashedPassword,
 		Temporary:      false,
 	})
-	err = credentialRepository.Insert(ctx, credential)
-	if err != nil {
-		return nil, fmt.Errorf("inserting credential: %w", err)
-	}
+	dbContext.Credentials().Insert(credential)
 
 	m := ioc.GetDependency[mediatr.Mediator](scope)
 	err = mediatr.SendEvent(ctx, m, events.UserCreatedEvent{
-		UserId: user.Id(),
+		User: user,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("raising event: %w", err)

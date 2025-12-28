@@ -43,50 +43,61 @@ func (m *MockResourceServerRepository) EXPECT() *MockResourceServerRepositoryMoc
 }
 
 // Delete mocks base method.
-func (m *MockResourceServerRepository) Delete(ctx context.Context, id uuid.UUID) error {
+func (m *MockResourceServerRepository) Delete(id uuid.UUID) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", ctx, id)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Delete", id)
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockResourceServerRepositoryMockRecorder) Delete(ctx, id any) *gomock.Call {
+func (mr *MockResourceServerRepositoryMockRecorder) Delete(id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockResourceServerRepository)(nil).Delete), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockResourceServerRepository)(nil).Delete), id)
 }
 
-// First mocks base method.
-func (m *MockResourceServerRepository) First(ctx context.Context, filter repositories.ResourceServerFilter) (*repositories.ResourceServer, error) {
+// FirstOrErr mocks base method.
+func (m *MockResourceServerRepository) FirstOrErr(ctx context.Context, filter *repositories.ResourceServerFilter) (*repositories.ResourceServer, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "First", ctx, filter)
+	ret := m.ctrl.Call(m, "FirstOrErr", ctx, filter)
 	ret0, _ := ret[0].(*repositories.ResourceServer)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// First indicates an expected call of First.
-func (mr *MockResourceServerRepositoryMockRecorder) First(ctx, filter any) *gomock.Call {
+// FirstOrErr indicates an expected call of FirstOrErr.
+func (mr *MockResourceServerRepositoryMockRecorder) FirstOrErr(ctx, filter any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "First", reflect.TypeOf((*MockResourceServerRepository)(nil).First), ctx, filter)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FirstOrErr", reflect.TypeOf((*MockResourceServerRepository)(nil).FirstOrErr), ctx, filter)
+}
+
+// FirstOrNil mocks base method.
+func (m *MockResourceServerRepository) FirstOrNil(ctx context.Context, filter *repositories.ResourceServerFilter) (*repositories.ResourceServer, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FirstOrNil", ctx, filter)
+	ret0, _ := ret[0].(*repositories.ResourceServer)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FirstOrNil indicates an expected call of FirstOrNil.
+func (mr *MockResourceServerRepositoryMockRecorder) FirstOrNil(ctx, filter any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FirstOrNil", reflect.TypeOf((*MockResourceServerRepository)(nil).FirstOrNil), ctx, filter)
 }
 
 // Insert mocks base method.
-func (m *MockResourceServerRepository) Insert(ctx context.Context, resourceServer *repositories.ResourceServer) error {
+func (m *MockResourceServerRepository) Insert(resourceServer *repositories.ResourceServer) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Insert", ctx, resourceServer)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Insert", resourceServer)
 }
 
 // Insert indicates an expected call of Insert.
-func (mr *MockResourceServerRepositoryMockRecorder) Insert(ctx, resourceServer any) *gomock.Call {
+func (mr *MockResourceServerRepositoryMockRecorder) Insert(resourceServer any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockResourceServerRepository)(nil).Insert), ctx, resourceServer)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockResourceServerRepository)(nil).Insert), resourceServer)
 }
 
 // List mocks base method.
-func (m *MockResourceServerRepository) List(ctx context.Context, filter repositories.ResourceServerFilter) ([]*repositories.ResourceServer, int, error) {
+func (m *MockResourceServerRepository) List(ctx context.Context, filter *repositories.ResourceServerFilter) ([]*repositories.ResourceServer, int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "List", ctx, filter)
 	ret0, _ := ret[0].([]*repositories.ResourceServer)
@@ -101,31 +112,14 @@ func (mr *MockResourceServerRepositoryMockRecorder) List(ctx, filter any) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockResourceServerRepository)(nil).List), ctx, filter)
 }
 
-// Single mocks base method.
-func (m *MockResourceServerRepository) Single(ctx context.Context, filter repositories.ResourceServerFilter) (*repositories.ResourceServer, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Single", ctx, filter)
-	ret0, _ := ret[0].(*repositories.ResourceServer)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Single indicates an expected call of Single.
-func (mr *MockResourceServerRepositoryMockRecorder) Single(ctx, filter any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Single", reflect.TypeOf((*MockResourceServerRepository)(nil).Single), ctx, filter)
-}
-
 // Update mocks base method.
-func (m *MockResourceServerRepository) Update(ctx context.Context, resourceServer *repositories.ResourceServer) error {
+func (m *MockResourceServerRepository) Update(resourceServer *repositories.ResourceServer) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Update", ctx, resourceServer)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Update", resourceServer)
 }
 
 // Update indicates an expected call of Update.
-func (mr *MockResourceServerRepositoryMockRecorder) Update(ctx, resourceServer any) *gomock.Call {
+func (mr *MockResourceServerRepositoryMockRecorder) Update(resourceServer any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockResourceServerRepository)(nil).Update), ctx, resourceServer)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockResourceServerRepository)(nil).Update), resourceServer)
 }

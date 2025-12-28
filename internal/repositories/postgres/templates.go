@@ -1,33 +1,82 @@
 package postgres
 
 import (
-	"Keyline/internal/database"
+	"Keyline/internal/change"
 	"Keyline/internal/logging"
-	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
+	"Keyline/internal/repositories/postgres/pghelpers"
 	"Keyline/utils"
 	"context"
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/The127/ioc"
+
+	"github.com/google/uuid"
 
 	"github.com/huandu/go-sqlbuilder"
 )
 
-type templateRepository struct {
+type postgresTemplate struct {
+	postgresBaseModel
+	virtualServerId uuid.UUID
+	fileId          uuid.UUID
+	type_           string
 }
 
-func NewTemplateRepository() repositories.TemplateRepository {
-	return &templateRepository{}
+func mapTemplate(template *repositories.Template) *postgresTemplate {
+	return &postgresTemplate{
+		postgresBaseModel: mapBase(template.BaseModel),
+		virtualServerId:   template.VirtualServerId(),
+		fileId:            template.FileId(),
+		type_:             string(template.TemplateType()),
+	}
 }
 
-func (r *templateRepository) selectQuery(filter repositories.TemplateFilter) *sqlbuilder.SelectBuilder {
+func (t *postgresTemplate) Map() *repositories.Template {
+	return repositories.NewTemplateFromDB(
+		t.MapBase(),
+		t.virtualServerId,
+		t.fileId,
+		repositories.TemplateType(t.type_),
+	)
+}
+
+func (t *postgresTemplate) scan(row pghelpers.Row, additionalPtrs ...any) error {
+	ptrs := []any{
+		&t.id,
+		&t.auditCreatedAt,
+		&t.auditUpdatedAt,
+		&t.xmin,
+		&t.virtualServerId,
+		&t.fileId,
+		&t.type_,
+	}
+
+	ptrs = append(ptrs, additionalPtrs...)
+
+	return row.Scan(ptrs...)
+}
+
+type TemplateRepository struct {
+	db            *sql.DB
+	changeTracker *change.Tracker
+	entityType    int
+}
+
+func NewTemplateRepository(db *sql.DB, changeTracker *change.Tracker, entityType int) *TemplateRepository {
+	return &TemplateRepository{
+		db:            db,
+		changeTracker: changeTracker,
+		entityType:    entityType,
+	}
+}
+
+func (r *TemplateRepository) selectQuery(filter *repositories.TemplateFilter) *sqlbuilder.SelectBuilder {
 	s := sqlbuilder.Select(
 		"id",
 		"audit_created_at",
 		"audit_updated_at",
-		"version",
+		"xmin",
 		"virtual_server_id",
 		"file_id",
 		"type",
@@ -59,8 +108,8 @@ func (r *templateRepository) selectQuery(filter repositories.TemplateFilter) *sq
 	return s
 }
 
-func (r *templateRepository) Single(ctx context.Context, filter repositories.TemplateFilter) (*repositories.Template, error) {
-	template, err := r.First(ctx, filter)
+func (r *TemplateRepository) FirstOrErr(ctx context.Context, filter *repositories.TemplateFilter) (*repositories.Template, error) {
+	template, err := r.FirstOrNil(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -70,26 +119,16 @@ func (r *templateRepository) Single(ctx context.Context, filter repositories.Tem
 	return template, nil
 }
 
-func (r *templateRepository) First(ctx context.Context, filter repositories.TemplateFilter) (*repositories.Template, error) {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
-
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return nil, fmt.Errorf("failed to open tx: %w", err)
-	}
-
+func (r *TemplateRepository) FirstOrNil(ctx context.Context, filter *repositories.TemplateFilter) (*repositories.Template, error) {
 	s := r.selectQuery(filter)
 	s.Limit(1)
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
-	row := tx.QueryRowContext(ctx, query, args...)
+	row := r.db.QueryRowContext(ctx, query, args...)
 
-	template := repositories.Template{
-		ModelBase: repositories.NewModelBase(),
-	}
-	err = row.Scan(template.GetScanPointers()...)
+	template := &postgresTemplate{}
+	err := template.scan(row)
 
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
@@ -99,58 +138,16 @@ func (r *templateRepository) First(ctx context.Context, filter repositories.Temp
 		return nil, fmt.Errorf("scanning row: %w", err)
 	}
 
-	return &template, nil
+	return template.Map(), nil
 }
 
-func (r *templateRepository) Insert(ctx context.Context, template *repositories.Template) error {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
-
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return fmt.Errorf("failed to open tx: %w", err)
-	}
-
-	s := sqlbuilder.InsertInto("templates").
-		Cols(
-			"virtual_server_id",
-			"file_id",
-			"type",
-		).
-		Values(
-			template.VirtualServerId(),
-			template.FileId(),
-			template.TemplateType(),
-		).Returning("id", "audit_created_at", "audit_updated_at", "version")
-
-	query, args := s.Build()
-	logging.Logger.Debug("executing sql: ", query)
-	row := tx.QueryRowContext(ctx, query, args...)
-
-	err = row.Scan(template.InsertPointers()...)
-	if err != nil {
-		return fmt.Errorf("scanning row: %w", err)
-	}
-
-	template.ClearChanges()
-	return nil
-}
-
-func (r *templateRepository) List(ctx context.Context, filter repositories.TemplateFilter) ([]*repositories.Template, int, error) {
-	scope := middlewares.GetScope(ctx)
-	dbService := ioc.GetDependency[database.DbService](scope)
-
-	tx, err := dbService.GetTx()
-	if err != nil {
-		return nil, 0, fmt.Errorf("failed to open tx: %w", err)
-	}
-
+func (r *TemplateRepository) List(ctx context.Context, filter *repositories.TemplateFilter) ([]*repositories.Template, int, error) {
 	s := r.selectQuery(filter)
 	s.SelectMore("count(*) over()")
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
-	rows, err := tx.QueryContext(ctx, query, args...)
+	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("querying rows: %w", err)
 	}
@@ -159,16 +156,54 @@ func (r *templateRepository) List(ctx context.Context, filter repositories.Templ
 	var templates []*repositories.Template
 	var totalCount int
 	for rows.Next() {
-		template := repositories.Template{
-			ModelBase: repositories.NewModelBase(),
-		}
-		err = rows.Scan(append(template.GetScanPointers(), &totalCount)...)
+		template := &postgresTemplate{}
+		err := template.scan(rows, &totalCount)
 		if err != nil {
 			return nil, 0, fmt.Errorf("scanning row: %w", err)
 		}
 
-		templates = append(templates, &template)
+		templates = append(templates, template.Map())
 	}
 
 	return templates, totalCount, nil
+}
+
+func (r *TemplateRepository) Insert(template *repositories.Template) {
+	r.changeTracker.Add(change.NewEntry(change.Added, r.entityType, template))
+}
+
+func (r *TemplateRepository) ExecuteInsert(ctx context.Context, tx *sql.Tx, template *repositories.Template) error {
+	mapped := mapTemplate(template)
+
+	s := sqlbuilder.InsertInto("templates").
+		Cols(
+			"id",
+			"audit_created_at",
+			"audit_updated_at",
+			"virtual_server_id",
+			"file_id",
+			"type",
+		).
+		Values(
+			mapped.id,
+			mapped.auditCreatedAt,
+			mapped.auditUpdatedAt,
+			mapped.virtualServerId,
+			mapped.fileId,
+			mapped.type_,
+		).
+		Returning("xmin")
+
+	query, args := s.Build()
+	logging.Logger.Debug("executing sql: ", query)
+	row := tx.QueryRowContext(ctx, query, args...)
+
+	var xmin uint32
+	err := row.Scan(&xmin)
+	if err != nil {
+		return fmt.Errorf("scanning row: %w", err)
+	}
+
+	template.SetVersion(xmin)
+	return nil
 }
