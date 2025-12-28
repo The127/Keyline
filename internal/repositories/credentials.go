@@ -43,9 +43,13 @@ func NewCredential(userId uuid.UUID, details CredentialDetails) *Credential {
 	}
 }
 
-func NewCredentialFromDB(base BaseModel) *Credential {
+func NewCredentialFromDB(base BaseModel, userId uuid.UUID, _type CredentialType, details any) *Credential {
 	return &Credential{
 		BaseModel: base,
+		List:      change.NewChanges[CredentialChange](),
+		userId:    userId,
+		_type:     _type,
+		details:   details,
 	}
 }
 
@@ -70,99 +74,39 @@ func (c *Credential) SetDetails(details CredentialDetails) {
 }
 
 func (c *Credential) PasswordDetails() (*CredentialPasswordDetails, error) {
-	if c._type != CredentialTypePassword {
-		return nil, fmt.Errorf("expected password credential, got %s: %w", c._type, ErrWrongCredentialCast)
-	}
-
-	result, ok := c.details.(*CredentialPasswordDetails)
+	details, ok := c.details.(*CredentialPasswordDetails)
 	if ok {
-		return result, nil
+		return details, nil
 	}
 
-	detailBytes, ok := c.details.([]byte)
-	if !ok {
-		return nil, fmt.Errorf("cannot access detail bytes: %w", ErrWrongCredentialCast)
-	}
-
-	passwordDetails := CredentialPasswordDetails{}
-	err := json.Unmarshal(detailBytes, &passwordDetails)
-	if err != nil {
-		return nil, fmt.Errorf("cannot unmarshal password details: %w", err)
-	}
-
-	return &passwordDetails, nil
+	return nil, fmt.Errorf("expected password credential, got %s: %w", c._type, ErrWrongCredentialCast)
 }
 
 func (c *Credential) WebauthnDetails() (*CredentialWebauthnDetails, error) {
-	if c._type != CredentialTypeWebauthn {
-		return nil, fmt.Errorf("expected webauthn credential, got %s: %w", c._type, ErrWrongCredentialCast)
-	}
-
-	result, ok := c.details.(*CredentialWebauthnDetails)
+	details, ok := c.details.(*CredentialWebauthnDetails)
 	if ok {
-		return result, nil
+		return details, nil
 	}
 
-	detailBytes, ok := c.details.([]byte)
-	if !ok {
-		return nil, fmt.Errorf("cannot access detail bytes: %w", ErrWrongCredentialCast)
-	}
-
-	webauthnDetails := CredentialWebauthnDetails{}
-	err := json.Unmarshal(detailBytes, &webauthnDetails)
-	if err != nil {
-		return nil, fmt.Errorf("cannot unmarshal webauthn details: %w", err)
-	}
-
-	return &webauthnDetails, nil
+	return nil, fmt.Errorf("expected webauthn credential, got %s: %w", c._type, ErrWrongCredentialCast)
 }
 
 func (c *Credential) TotpDetails() (*CredentialTotpDetails, error) {
-	if c._type != CredentialTypeTotp {
-		return nil, fmt.Errorf("expected totp credential, got %s: %w", c._type, ErrWrongCredentialCast)
-	}
-
-	result, ok := c.details.(*CredentialTotpDetails)
+	details, ok := c.details.(*CredentialTotpDetails)
 	if ok {
-		return result, nil
+		return details, nil
 	}
 
-	detailBytes, ok := c.details.([]byte)
-	if !ok {
-		return nil, fmt.Errorf("cannot access detail bytes: %w", ErrWrongCredentialCast)
-	}
-
-	totpDetails := CredentialTotpDetails{}
-	err := json.Unmarshal(detailBytes, &totpDetails)
-	if err != nil {
-		return nil, fmt.Errorf("cannot unmarshal totp details: %w", err)
-	}
-
-	return &totpDetails, nil
+	return nil, fmt.Errorf("expected totp credential, got %s: %w", c._type, ErrWrongCredentialCast)
 }
 
 func (c *Credential) ServiceUserKeyDetails() (*CredentialServiceUserKey, error) {
-	if c._type != CredentialTypeServiceUserKey {
-		return nil, fmt.Errorf("expected service user key credential, got %s: %w", c._type, ErrWrongCredentialCast)
-	}
-
-	result, ok := c.details.(*CredentialServiceUserKey)
+	details, ok := c.details.(*CredentialServiceUserKey)
 	if ok {
-		return result, nil
+		return details, nil
 	}
 
-	detailBytes, ok := c.details.([]byte)
-	if !ok {
-		return nil, fmt.Errorf("cannot access detail bytes: %w", ErrWrongCredentialCast)
-	}
-
-	serviceUserKeyDetails := CredentialServiceUserKey{}
-	err := json.Unmarshal(detailBytes, &serviceUserKeyDetails)
-	if err != nil {
-		return nil, fmt.Errorf("cannot unmarshal service user key details: %w", err)
-	}
-
-	return &serviceUserKeyDetails, nil
+	return nil, fmt.Errorf("expected service user key credential, got %s: %w", c._type, ErrWrongCredentialCast)
 }
 
 // CredentialType represents a credential type.

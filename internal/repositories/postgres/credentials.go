@@ -8,6 +8,7 @@ import (
 	"Keyline/utils"
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -19,23 +20,70 @@ type postgresCredential struct {
 	postgresBaseModel
 	userId  uuid.UUID
 	type_   string
-	details string
+	details []byte
 }
 
-func mapCredential(credential *repositories.Credential) *postgresCredential {
+func mapCredential(credential *repositories.Credential) (*postgresCredential, error) {
+	detailJson, err := json.Marshal(credential.Details())
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal details: %w", err)
+	}
+
 	return &postgresCredential{
 		postgresBaseModel: mapBase(credential.BaseModel),
 		userId:            credential.UserId(),
 		type_:             string(credential.Type()),
-		details:           "", // TODO
-	}
+		details:           detailJson,
+	}, nil
 }
 
-func (c *postgresCredential) Map() *repositories.Credential {
+func (c *postgresCredential) Map() (*repositories.Credential, error) {
+	var details any
+	credentialType := repositories.CredentialType(c.type_)
+
+	switch credentialType {
+	case repositories.CredentialTypeServiceUserKey:
+		var serviceUserKey repositories.CredentialServiceUserKey
+		err := json.Unmarshal(c.details, &serviceUserKey)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal service user key details: %w", err)
+		}
+		details = &serviceUserKey
+
+	case repositories.CredentialTypePassword:
+		var password repositories.CredentialPasswordDetails
+		err := json.Unmarshal(c.details, &password)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal password details: %w", err)
+		}
+		details = &password
+
+	case repositories.CredentialTypeTotp:
+		var totp repositories.CredentialTotpDetails
+		err := json.Unmarshal(c.details, &totp)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal totp details: %w", err)
+		}
+		details = &totp
+
+	case repositories.CredentialTypeWebauthn:
+		var webauthn repositories.CredentialWebauthnDetails
+		err := json.Unmarshal(c.details, &webauthn)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal webauthn details: %w", err)
+		}
+		details = &webauthn
+
+	default:
+		return nil, fmt.Errorf("unsupported credential type: %s", c.type_)
+	}
+
 	return repositories.NewCredentialFromDB(
 		c.MapBase(),
-		// TODO
-	)
+		c.userId,
+		credentialType,
+		details,
+	), nil
 }
 
 func (c *postgresCredential) scan(row pghelpers.Row, additionalPtrs ...any) error {
@@ -135,7 +183,7 @@ func (r *CredentialRepository) FirstOrNil(ctx context.Context, filter *repositor
 		return nil, fmt.Errorf("scanning row: %w", err)
 	}
 
-	return credential.Map(), nil
+	return credential.Map()
 }
 
 func (r *CredentialRepository) List(ctx context.Context, filter *repositories.CredentialFilter) ([]*repositories.Credential, error) {
@@ -156,7 +204,13 @@ func (r *CredentialRepository) List(ctx context.Context, filter *repositories.Cr
 		if err != nil {
 			return nil, fmt.Errorf("scanning row: %w", err)
 		}
-		credentials = append(credentials, credential.Map())
+
+		mapped, err := credential.Map()
+		if err != nil {
+			return nil, fmt.Errorf("mapping credential: %w", err)
+		}
+
+		credentials = append(credentials, mapped)
 	}
 
 	return credentials, nil
@@ -167,7 +221,10 @@ func (r *CredentialRepository) Insert(credential *repositories.Credential) {
 }
 
 func (r *CredentialRepository) ExecuteInsert(ctx context.Context, tx *sql.Tx, credential *repositories.Credential) error {
-	mapped := mapCredential(credential)
+	mapped, err := mapCredential(credential)
+	if err != nil {
+		return fmt.Errorf("mapping credential: %w", err)
+	}
 
 	s := sqlbuilder.InsertInto("credentials").
 		Cols(
@@ -193,7 +250,7 @@ func (r *CredentialRepository) ExecuteInsert(ctx context.Context, tx *sql.Tx, cr
 	row := tx.QueryRowContext(ctx, query, args...)
 
 	var xmin uint32
-	err := row.Scan(&xmin)
+	err = row.Scan(&xmin)
 	if err != nil {
 		return fmt.Errorf("scanning row: %w", err)
 	}
@@ -212,7 +269,10 @@ func (r *CredentialRepository) ExecuteUpdate(ctx context.Context, tx *sql.Tx, cr
 		return nil
 	}
 
-	mapped := mapCredential(credential)
+	mapped, err := mapCredential(credential)
+	if err != nil {
+		return fmt.Errorf("mapping credential: %w", err)
+	}
 
 	s := sqlbuilder.Update("credentials")
 	s.Where(s.Equal("id", mapped.id))
@@ -237,7 +297,7 @@ func (r *CredentialRepository) ExecuteUpdate(ctx context.Context, tx *sql.Tx, cr
 	row := tx.QueryRowContext(ctx, query, args...)
 
 	var xmin uint32
-	err := row.Scan(&xmin)
+	err = row.Scan(&xmin)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return fmt.Errorf("updating credential: %w", repositories.ErrVersionMismatch)
