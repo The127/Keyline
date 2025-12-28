@@ -1,4 +1,4 @@
--- +migrate Up;
+-- +migrate Up
 
 create table application_user_metadata(
     "id" uuid not null,
