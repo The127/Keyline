@@ -44,7 +44,7 @@ func (r *postgresRole) Map() *repositories.Role {
 }
 
 func (r *postgresRole) scan(row pghelpers.Row, additionalPtrs ...any) error {
-	prts := []any{
+	ptrs := []any{
 		&r.id,
 		&r.auditCreatedAt,
 		&r.auditUpdatedAt,
@@ -55,9 +55,9 @@ func (r *postgresRole) scan(row pghelpers.Row, additionalPtrs ...any) error {
 		&r.description,
 	}
 
-	prts = append(prts, additionalPtrs...)
+	ptrs = append(ptrs, additionalPtrs...)
 
-	return row.Scan(prts...)
+	return row.Scan(ptrs...)
 }
 
 type RoleRepository struct {
