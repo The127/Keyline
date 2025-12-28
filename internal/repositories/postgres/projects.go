@@ -281,7 +281,7 @@ func (r *ProjectRepository) ExecuteDelete(ctx context.Context, tx *sql.Tx, id uu
 
 	query, args := s.Build()
 	logging.Logger.Debug("executing sql: ", query)
-	_, err := r.db.ExecContext(ctx, query, args...)
+	_, err := tx.ExecContext(ctx, query, args...)
 	if err != nil {
 		return fmt.Errorf("executing sql: %w", err)
 	}
