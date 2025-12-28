@@ -224,8 +224,6 @@ func (r *UserRepository) ExecuteInsert(ctx context.Context, tx *sql.Tx, user *re
 
 	if user.VirtualServerId() != uuid.Nil {
 		cols = append(cols, "virtual_server_id")
-	} else {
-		cols = append(cols, "id")
 	}
 
 	s := sqlbuilder.InsertInto("users").
@@ -245,8 +243,6 @@ func (r *UserRepository) ExecuteInsert(ctx context.Context, tx *sql.Tx, user *re
 
 	if user.VirtualServerId() != uuid.Nil {
 		values = append(values, mapped.virtualServerId)
-	} else {
-		values = append(values, mapped.id)
 	}
 
 	s.Values(values...)
