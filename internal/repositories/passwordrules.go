@@ -99,7 +99,8 @@ func NewPasswordRuleFilter() *PasswordRuleFilter {
 }
 
 func (f *PasswordRuleFilter) Clone() *PasswordRuleFilter {
-	return f
+	clone := *f
+	return &clone
 }
 
 func (f *PasswordRuleFilter) VirtualServerId(virtualServerId uuid.UUID) *PasswordRuleFilter {
