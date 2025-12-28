@@ -270,7 +270,7 @@ func (r *ApplicationRepository) ExecuteInsert(ctx context.Context, tx *sql.Tx, a
 	var xmin uint32
 	err := row.Scan(&xmin)
 	if err != nil {
-		return fmt.Errorf("inserting project: %w", err)
+		return fmt.Errorf("inserting application: %w", err)
 	}
 
 	application.SetVersion(xmin)
