@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 )
 
+//goland:noinspection GoUnusedExportedFunction
 func NewConsoleAuditLogger() behaviours.AuditLogger {
 	return &consoleAuditLogger{}
 }

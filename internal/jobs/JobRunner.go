@@ -40,6 +40,7 @@ func WithStartImmediate() JobOption {
 	}
 }
 
+//goland:noinspection GoUnusedExportedFunction
 func WithTimeout(timeout time.Duration) JobOption {
 	return func(j *job) {
 		j.timeout = timeout
