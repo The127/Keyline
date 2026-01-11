@@ -46,7 +46,7 @@ func (v *validator) Validate(ctx context.Context, password string) error {
 
 	var rules []Policy //nolint:prealloc
 	for _, passwordRule := range passwordRules {
-		rule, err := DeserializePolicy(passwordRule.Type(), []byte(passwordRule.Details()))
+		rule, err := DeserializePolicy(passwordRule.Type(), passwordRule.Details())
 		if err != nil {
 			return fmt.Errorf("failed to deserialize password rule: %w", err)
 		}
