@@ -1,6 +1,6 @@
 module Keyline
 
-go 1.25
+go 1.25.0
 
 require (
 	github.com/The127/go-clock v0.0.0-20251223175028-de53998b7f1b
@@ -32,7 +32,7 @@ require (
 	github.com/swaggo/swag v1.16.6
 	go.uber.org/mock v0.6.0
 	go.uber.org/zap v1.27.1
-	golang.org/x/oauth2 v0.35.0
+	golang.org/x/oauth2 v0.36.0
 	gopkg.in/mail.v2 v2.3.1
 )
 
