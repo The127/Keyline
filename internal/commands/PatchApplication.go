@@ -22,6 +22,7 @@ type PatchApplication struct {
 	DisplayName           *string
 	ClaimsMappingScript   *string
 	AccessTokenHeaderType *string
+	DeviceFlowEnabled     *bool
 }
 
 func (a PatchApplication) LogRequest() bool {
@@ -85,6 +86,10 @@ func HandlePatchApplication(ctx context.Context, command PatchApplication) (*Pat
 
 	if command.AccessTokenHeaderType != nil {
 		application.SetAccessTokenHeaderType(*command.AccessTokenHeaderType)
+	}
+
+	if command.DeviceFlowEnabled != nil {
+		application.SetDeviceFlowEnabled(*command.DeviceFlowEnabled)
 	}
 
 	dbContext.Applications().Update(application)

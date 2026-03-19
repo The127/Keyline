@@ -195,6 +195,7 @@ func GetApplication(w http.ResponseWriter, r *http.Request) {
 type PatchApplicationRequestDto struct {
 	DisplayName         *string `json:"displayName"`
 	ClaimsMappingScript *string `json:"customClaimsMappingScript"`
+	DeviceFlowEnabled   *bool   `json:"deviceFlowEnabled"`
 }
 
 // PatchApplication updates fields of a specific application by ID
@@ -246,6 +247,7 @@ func PatchApplication(w http.ResponseWriter, r *http.Request) {
 		ApplicationId:       appId,
 		DisplayName:         utils.TrimSpace(dto.DisplayName),
 		ClaimsMappingScript: dto.ClaimsMappingScript,
+		DeviceFlowEnabled:   dto.DeviceFlowEnabled,
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)
