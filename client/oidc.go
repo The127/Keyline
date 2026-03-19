@@ -1,6 +1,7 @@
 package client
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -15,6 +16,7 @@ var (
 	ErrAccessDenied         = errors.New("access_denied")
 	ErrExpiredToken         = errors.New("expired_token")
 	ErrSlowDown             = errors.New("slow_down")
+	ErrInvalidUserCode      = errors.New("invalid_user_code")
 )
 
 type DeviceAuthorizationResponse struct {
@@ -38,6 +40,9 @@ type DeviceTokenResponse struct {
 type OidcClient interface {
 	BeginDeviceFlow(ctx context.Context, clientId string, scope string) (DeviceAuthorizationResponse, error)
 	PollDeviceToken(ctx context.Context, clientId string, deviceCode string) (DeviceTokenResponse, error)
+	PostActivate(ctx context.Context, userCode string) (loginToken string, err error)
+	VerifyPassword(ctx context.Context, loginToken string, username string, password string) error
+	FinishLogin(ctx context.Context, loginToken string) error
 }
 
 type oidcClient struct {
@@ -123,4 +128,86 @@ func (o *oidcClient) PollDeviceToken(ctx context.Context, clientId string, devic
 	}
 
 	return result, nil
+}
+
+func (o *oidcClient) PostActivate(ctx context.Context, userCode string) (string, error) {
+	formValues := url.Values{"user_code": {userCode}}
+
+	req, err := o.transport.NewOidcRequest(ctx, http.MethodPost, "/activate", strings.NewReader(formValues.Encode()))
+	if err != nil {
+		return "", fmt.Errorf("creating request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	resp, err := o.transport.DoNoRedirect(req)
+	if err != nil {
+		return "", fmt.Errorf("doing request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNotFound {
+		return "", ErrInvalidUserCode
+	}
+	if resp.StatusCode != http.StatusFound {
+		return "", ApiError{Message: resp.Status, Code: resp.StatusCode}
+	}
+
+	location := resp.Header.Get("Location")
+	parsed, err := url.Parse(location)
+	if err != nil {
+		return "", fmt.Errorf("parsing redirect location: %w", err)
+	}
+
+	token := parsed.Query().Get("token")
+	if token == "" {
+		return "", fmt.Errorf("no login token in redirect location")
+	}
+
+	return token, nil
+}
+
+func (o *oidcClient) VerifyPassword(ctx context.Context, loginToken string, username string, password string) error {
+	body, err := json.Marshal(map[string]string{"username": username, "password": password})
+	if err != nil {
+		return fmt.Errorf("marshaling request: %w", err)
+	}
+
+	req, err := o.transport.NewRootRequest(ctx, http.MethodPost, fmt.Sprintf("/logins/%s/verify-password", loginToken), bytes.NewReader(body))
+	if err != nil {
+		return fmt.Errorf("creating request: %w", err)
+	}
+
+	resp, err := o.transport.DoRaw(req)
+	if err != nil {
+		return fmt.Errorf("doing request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusUnauthorized {
+		return fmt.Errorf("invalid credentials")
+	}
+	if resp.StatusCode >= 400 {
+		return ApiError{Message: resp.Status, Code: resp.StatusCode}
+	}
+
+	return nil
+}
+
+func (o *oidcClient) FinishLogin(ctx context.Context, loginToken string) error {
+	req, err := o.transport.NewRootRequest(ctx, http.MethodPost, fmt.Sprintf("/logins/%s/finish-login", loginToken), nil)
+	if err != nil {
+		return fmt.Errorf("creating request: %w", err)
+	}
+
+	resp, err := o.transport.DoNoRedirect(req)
+	if err != nil {
+		return fmt.Errorf("doing request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		return ApiError{Message: resp.Status, Code: resp.StatusCode}
+	}
+
+	return nil
 }

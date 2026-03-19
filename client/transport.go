@@ -122,3 +122,18 @@ func (t *Transport) DoRaw(req *http.Request) (*http.Response, error) {
 	}
 	return response, nil
 }
+
+// DoNoRedirect executes the request without following redirects.
+func (t *Transport) DoNoRedirect(req *http.Request) (*http.Response, error) {
+	noRedirectClient := &http.Client{
+		Transport: t.client.Transport,
+		CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+	response, err := noRedirectClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("doing request: %w", err)
+	}
+	return response, nil
+}

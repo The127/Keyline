@@ -93,6 +93,10 @@ func (h *harness) ApiUrl() string {
 	return h.serverUrl
 }
 
+func (h *harness) Scope() *ioc.DependencyProvider {
+	return h.scope
+}
+
 func newE2eTestHarness(tokenSourceGenerator func(ctx context.Context, url string) oauth2.TokenSource) *harness {
 	ctx := context.Background()
 	dc := ioc.NewDependencyCollection()
