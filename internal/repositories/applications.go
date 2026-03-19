@@ -27,6 +27,7 @@ const (
 	ApplicationChangeRedirectUris
 	ApplicationChangePostLogoutRedirectUris
 	ApplicationChangeSystemApplication
+	ApplicationChangeDeviceFlowEnabled
 )
 
 type Application struct {
@@ -48,6 +49,8 @@ type Application struct {
 
 	claimsMappingScript   *string
 	accessTokenHeaderType string
+
+	deviceFlowEnabled bool
 }
 
 func NewApplication(virtualServerId uuid.UUID, projectId uuid.UUID, name string, displayName string, type_ ApplicationType, redirectUris []string) *Application {
@@ -78,6 +81,7 @@ func NewApplicationFromDB(
 	systemApplication bool,
 	claimsMappingScript *string,
 	accessTokenHeaderType string,
+	deviceFlowEnabled bool,
 ) *Application {
 	return &Application{
 		BaseModel:              base,
@@ -93,6 +97,7 @@ func NewApplicationFromDB(
 		systemApplication:      systemApplication,
 		claimsMappingScript:    claimsMappingScript,
 		accessTokenHeaderType:  accessTokenHeaderType,
+		deviceFlowEnabled:      deviceFlowEnabled,
 	}
 }
 
@@ -209,6 +214,19 @@ func (a *Application) SetSystemApplication(systemApplication bool) {
 
 	a.systemApplication = systemApplication
 	a.TrackChange(ApplicationChangeSystemApplication)
+}
+
+func (a *Application) DeviceFlowEnabled() bool {
+	return a.deviceFlowEnabled
+}
+
+func (a *Application) SetDeviceFlowEnabled(deviceFlowEnabled bool) {
+	if a.deviceFlowEnabled == deviceFlowEnabled {
+		return
+	}
+
+	a.deviceFlowEnabled = deviceFlowEnabled
+	a.TrackChange(ApplicationChangeDeviceFlowEnabled)
 }
 
 type ApplicationFilter struct {
