@@ -13,5 +13,6 @@ type DeviceCodeInfo struct {
 	ClientId          string
 	GrantedScopes     []string
 	Status            string
-	UserId            *string
+	UserId            string
+	UserCode          string
 }
