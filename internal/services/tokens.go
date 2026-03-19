@@ -20,6 +20,8 @@ const (
 	LoginSessionTokenType      TokenType = "login_session"
 	OidcCodeTokenType          TokenType = "oidc_code"
 	OidcRefreshTokenTokenType  TokenType = "oidc_refresh_token"
+	OidcDeviceCodeTokenType    TokenType = "oidc_device_code"
+	OidcUserCodeTokenType      TokenType = "oidc_user_code"
 )
 
 func (t TokenType) Key(token string) string {
@@ -33,6 +35,7 @@ type TokenService interface {
 	UpdateToken(ctx context.Context, tokenType TokenType, token string, value string, expiration time.Duration) error
 	GetToken(ctx context.Context, tokenType TokenType, token string) (string, error)
 	DeleteToken(ctx context.Context, tokenType TokenType, token string) error
+	StoreToken(ctx context.Context, tokenType TokenType, token string, value string, expiration time.Duration) error
 }
 
 type tokenService struct {
@@ -96,6 +99,18 @@ func (t *tokenService) DeleteToken(ctx context.Context, tokenType TokenType, tok
 
 	case err != nil:
 		return fmt.Errorf("deleting token from kv: %w", err)
+	}
+
+	return nil
+}
+
+func (t *tokenService) StoreToken(ctx context.Context, tokenType TokenType, token string, value string, expiration time.Duration) error {
+	scope := middlewares.GetScope(ctx)
+	kvStore := ioc.GetDependency[keyValue.Store](scope)
+
+	err := kvStore.Set(ctx, tokenType.Key(token), value, keyValue.WithExpiration(expiration))
+	if err != nil {
+		return fmt.Errorf("storing token in kv: %w", err)
 	}
 
 	return nil
