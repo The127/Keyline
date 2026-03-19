@@ -28,6 +28,7 @@ type LoginInfo struct {
 	UserId                   uuid.UUID `json:"userId"`
 	OriginalUrl              string    `json:"originalUrl"`
 	TotpSecret               string    `json:"totpSecret"`
+	DeviceCode               string    `json:"deviceCode"`
 }
 
 func NewLoginInfo(virtualServer *repositories.VirtualServer, application *repositories.Application, originalUrl string) LoginInfo {

@@ -544,6 +544,42 @@ func FinishLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if loginInfo.DeviceCode != "" {
+		deviceCodeInfoString, err := tokenService.GetToken(ctx, services.OidcDeviceCodeTokenType, loginInfo.DeviceCode)
+		if err != nil {
+			utils.HandleHttpError(w, fmt.Errorf("getting device code info: %w", err))
+			return
+		}
+
+		var deviceCodeInfo jsonTypes.DeviceCodeInfo
+		if err := json.Unmarshal([]byte(deviceCodeInfoString), &deviceCodeInfo); err != nil {
+			utils.HandleHttpError(w, fmt.Errorf("unmarshaling device code info: %w", err))
+			return
+		}
+
+		userIdStr := loginInfo.UserId
+		deviceCodeInfo.Status = string(jsonTypes.DeviceCodeStatusAuthorized)
+		deviceCodeInfo.UserId = userIdStr.String()
+
+		updatedInfoJson, err := json.Marshal(deviceCodeInfo)
+		if err != nil {
+			utils.HandleHttpError(w, fmt.Errorf("marshaling device code info: %w", err))
+			return
+		}
+
+		if err := tokenService.UpdateToken(ctx, services.OidcDeviceCodeTokenType, loginInfo.DeviceCode, string(updatedInfoJson), 10*time.Minute); err != nil {
+			utils.HandleHttpError(w, fmt.Errorf("updating device code info: %w", err))
+			return
+		}
+
+		if deviceCodeInfo.UserCode != "" {
+			_ = tokenService.DeleteToken(ctx, services.OidcUserCodeTokenType, deviceCodeInfo.UserCode)
+		}
+
+		http.Redirect(w, r, fmt.Sprintf("%s/oidc/%s/activate/success", config.C.Server.ExternalUrl, loginInfo.VirtualServerName), http.StatusFound)
+		return
+	}
+
 	http.Redirect(w, r, loginInfo.OriginalUrl, http.StatusFound)
 }
 

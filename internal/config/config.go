@@ -147,6 +147,7 @@ type InitialProjectConfig struct {
 		HashedSecret           *string
 		RedirectUris           []string
 		PostLogoutRedirectUris []string
+		DeviceFlowEnabled      bool
 	}
 	ResourceServers []struct {
 		Slug        string

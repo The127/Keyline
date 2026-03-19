@@ -24,6 +24,7 @@ type CreateApplicationRequestDto struct {
 	PostLogoutUris        []string `json:"postLogoutUris" validate:"dive,url"`
 	Type                  string   `json:"type" validate:"required,oneof=public confidential"`
 	AccessTokenHeaderType *string  `json:"accessTokenHeaderType" validate:"omitempty,oneof=at+jwt JWT"`
+	DeviceFlowEnabled     bool     `json:"deviceFlowEnabled"`
 }
 
 type CreateApplicationResponseDto struct {
@@ -86,6 +87,7 @@ func CreateApplication(w http.ResponseWriter, r *http.Request) {
 		RedirectUris:           dto.RedirectUris,
 		PostLogoutRedirectUris: utils.EmptyIfNil(dto.PostLogoutUris),
 		AccessTokenHeaderType:  accessTokenHeaderType,
+		DeviceFlowEnabled:      dto.DeviceFlowEnabled,
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -195,6 +197,7 @@ func GetApplication(w http.ResponseWriter, r *http.Request) {
 type PatchApplicationRequestDto struct {
 	DisplayName         *string `json:"displayName"`
 	ClaimsMappingScript *string `json:"customClaimsMappingScript"`
+	DeviceFlowEnabled   *bool   `json:"deviceFlowEnabled"`
 }
 
 // PatchApplication updates fields of a specific application by ID
@@ -246,6 +249,7 @@ func PatchApplication(w http.ResponseWriter, r *http.Request) {
 		ApplicationId:       appId,
 		DisplayName:         utils.TrimSpace(dto.DisplayName),
 		ClaimsMappingScript: dto.ClaimsMappingScript,
+		DeviceFlowEnabled:   dto.DeviceFlowEnabled,
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)

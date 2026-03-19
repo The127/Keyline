@@ -172,6 +172,7 @@ type OpenIdConfigurationResponseDto struct {
 	TokenEndpoint                     string   `json:"token_endpoint"`
 	UserinfoEndpoint                  string   `json:"userinfo_endpoint"`
 	EndSessionEndpoint                string   `json:"end_session_endpoint"`
+	DeviceAuthorizationEndpoint       string   `json:"device_authorization_endpoint"`
 	JwksUri                           string   `json:"jwks_uri"`
 	ResponseTypesSupported            []string `json:"response_types_supported"`
 	SubjectTypesSupported             []string `json:"subject_types_supported"`
@@ -217,18 +218,19 @@ func WellKnownOpenIdConfiguration(w http.ResponseWriter, r *http.Request) {
 	responseDto := OpenIdConfigurationResponseDto{
 		Issuer: fmt.Sprintf("%s/oidc/%s", config.C.Server.ExternalUrl, vsName),
 
-		AuthorizationEndpoint: fmt.Sprintf("%s/oidc/%s/authorize", config.C.Server.ExternalUrl, vsName),
-		TokenEndpoint:         fmt.Sprintf("%s/oidc/%s/token", config.C.Server.ExternalUrl, vsName),
-		UserinfoEndpoint:      fmt.Sprintf("%s/oidc/%s/userinfo", config.C.Server.ExternalUrl, vsName),
-		EndSessionEndpoint:    fmt.Sprintf("%s/oidc/%s/end_session", config.C.Server.ExternalUrl, vsName),
-		JwksUri:               fmt.Sprintf("%s/oidc/%s/.well-known/jwks.json", config.C.Server.ExternalUrl, vsName),
+		AuthorizationEndpoint:       fmt.Sprintf("%s/oidc/%s/authorize", config.C.Server.ExternalUrl, vsName),
+		TokenEndpoint:               fmt.Sprintf("%s/oidc/%s/token", config.C.Server.ExternalUrl, vsName),
+		UserinfoEndpoint:            fmt.Sprintf("%s/oidc/%s/userinfo", config.C.Server.ExternalUrl, vsName),
+		EndSessionEndpoint:          fmt.Sprintf("%s/oidc/%s/end_session", config.C.Server.ExternalUrl, vsName),
+		DeviceAuthorizationEndpoint: fmt.Sprintf("%s/oidc/%s/device", config.C.Server.ExternalUrl, vsName),
+		JwksUri:                     fmt.Sprintf("%s/oidc/%s/.well-known/jwks.json", config.C.Server.ExternalUrl, vsName),
 
 		ResponseTypesSupported:            []string{"code"}, // TODO: maybe support more
 		RequestParameterSupported:         true,
 		SubjectTypesSupported:             []string{"public"},
 		IdTokenSigningAlgValuesSupported:  []string{string(virtualServer.SigningAlgorithm())},
 		TokenEndpointAuthMethodsSupported: []string{"client_secret_basic", "client_secret_post"},
-		GrantTypesSupported:               []string{"authorization_code", "refresh_token", "urn:ietf:params:oauth:grant-type:token-exchange"},
+		GrantTypesSupported:               []string{"authorization_code", "refresh_token", "urn:ietf:params:oauth:grant-type:token-exchange", "urn:ietf:params:oauth:grant-type:device_code"},
 
 		ScopesSupported: []string{"openid", "email", "profile"}, // TODO: get from db
 		ClaimsSupported: []string{"sub", "name", "email"},       // TODO: get from db
@@ -836,6 +838,9 @@ func OidcToken(w http.ResponseWriter, r *http.Request) {
 
 	case "urn:ietf:params:oauth:grant-type:token-exchange":
 		handleTokenExchange(w, r)
+
+	case "urn:ietf:params:oauth:grant-type:device_code":
+		handleDeviceCodeGrant(w, r)
 
 	default:
 		utils.HandleHttpError(w, fmt.Errorf("unsupported grant type: %s", grantType))
@@ -1681,4 +1686,410 @@ func handleTokenExchange(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, fmt.Errorf("encoding response: %w", err))
 		return
 	}
+}
+
+type DeviceAuthorizationResponse struct {
+	DeviceCode              string `json:"device_code"`
+	UserCode                string `json:"user_code"`
+	VerificationUri         string `json:"verification_uri"`
+	VerificationUriComplete string `json:"verification_uri_complete"`
+	ExpiresIn               int    `json:"expires_in"`
+	Interval                int    `json:"interval"`
+}
+
+func generateUserCode() string {
+	const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	b := utils.GetSecureRandomBytes(8)
+	result := make([]byte, 9) // XXXX-XXXX
+	for i := 0; i < 4; i++ {
+		result[i] = chars[int(b[i])%len(chars)]
+	}
+	result[4] = '-'
+	for i := 0; i < 4; i++ {
+		result[5+i] = chars[int(b[4+i])%len(chars)]
+	}
+	return string(result)
+}
+
+func BeginDeviceFlow(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	scope := middlewares.GetScope(ctx)
+
+	err := r.ParseForm()
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	vsName, err := middlewares.GetVirtualServerName(ctx)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	clientId := r.Form.Get("client_id")
+	if clientId == "" {
+		writeOAuthError(w, "invalid_client", "client_id is required")
+		return
+	}
+
+	scopeParam := r.Form.Get("scope")
+	scopes := strings.Split(scopeParam, " ")
+
+	if !slices.Contains(scopes, "openid") {
+		writeOAuthError(w, "invalid_scope", "required openid scope missing")
+		return
+	}
+
+	dbContext := ioc.GetDependency[database.Context](scope)
+
+	virtualServerFilter := repositories.NewVirtualServerFilter().Name(vsName)
+	virtualServer, err := dbContext.VirtualServers().FirstOrNil(ctx, virtualServerFilter)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
+		return
+	}
+	if virtualServer == nil {
+		utils.HandleHttpError(w, fmt.Errorf("virtual server not found"))
+		return
+	}
+
+	applicationFilter := repositories.NewApplicationFilter().
+		VirtualServerId(virtualServer.Id()).
+		Name(clientId)
+	application, err := dbContext.Applications().FirstOrNil(ctx, applicationFilter)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("getting application: %w", err))
+		return
+	}
+	if application == nil {
+		writeOAuthError(w, "invalid_client", "application not found")
+		return
+	}
+
+	if !application.DeviceFlowEnabled() {
+		writeOAuthError(w, "unauthorized_client", "device flow is not enabled for this application")
+		return
+	}
+
+	userCode := generateUserCode()
+
+	deviceCodeInfo := jsonTypes.DeviceCodeInfo{
+		VirtualServerName: vsName,
+		ClientId:          clientId,
+		GrantedScopes:     scopes,
+		Status:            string(jsonTypes.DeviceCodeStatusPending),
+		UserCode:          userCode,
+	}
+
+	deviceCodeInfoJson, err := json.Marshal(deviceCodeInfo)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("marshaling device code info: %w", err))
+		return
+	}
+
+	tokenService := ioc.GetDependency[services.TokenService](scope)
+
+	deviceCode, err := tokenService.GenerateAndStoreToken(ctx, services.OidcDeviceCodeTokenType, string(deviceCodeInfoJson), 10*time.Minute)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("generating device code: %w", err))
+		return
+	}
+
+	err = tokenService.StoreToken(ctx, services.OidcUserCodeTokenType, userCode, deviceCode, 10*time.Minute)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("storing user code: %w", err))
+		return
+	}
+
+	verificationUri := fmt.Sprintf("%s/%s/activate", config.C.Frontend.ExternalUrl, vsName)
+	verificationUriComplete := fmt.Sprintf("%s?user_code=%s", verificationUri, userCode)
+
+	w.Header().Set("Cache-Control", "no-store")
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	response := DeviceAuthorizationResponse{
+		DeviceCode:              deviceCode,
+		UserCode:                userCode,
+		VerificationUri:         verificationUri,
+		VerificationUriComplete: verificationUriComplete,
+		ExpiresIn:               600,
+		Interval:                5,
+	}
+	err = json.NewEncoder(w).Encode(response)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("encoding response: %w", err))
+		return
+	}
+}
+
+func handleDeviceCodeGrant(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	scope := middlewares.GetScope(ctx)
+
+	clientId, clientSecret, hasBasicAuth := r.BasicAuth()
+	if !hasBasicAuth {
+		clientId = r.Form.Get("client_id")
+		clientSecret = ""
+	}
+
+	deviceCode := r.Form.Get("device_code")
+	if deviceCode == "" {
+		writeOAuthError(w, "invalid_request", "device_code is required")
+		return
+	}
+
+	tokenService := ioc.GetDependency[services.TokenService](scope)
+	valueString, err := tokenService.GetToken(ctx, services.OidcDeviceCodeTokenType, deviceCode)
+	if err != nil {
+		writeOAuthError(w, "expired_token", "device code has expired or is invalid")
+		return
+	}
+
+	var deviceCodeInfo jsonTypes.DeviceCodeInfo
+	err = json.Unmarshal([]byte(valueString), &deviceCodeInfo)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("unmarshaling device code info: %w", err))
+		return
+	}
+
+	switch deviceCodeInfo.Status {
+	case string(jsonTypes.DeviceCodeStatusPending):
+		writeOAuthError(w, "authorization_pending", "the authorization request is still pending")
+		return
+	case string(jsonTypes.DeviceCodeStatusDenied):
+		writeOAuthError(w, "access_denied", "the user denied the authorization request")
+		return
+	case string(jsonTypes.DeviceCodeStatusAuthorized):
+		// continue
+	default:
+		writeOAuthError(w, "server_error", "unexpected device code status")
+		return
+	}
+
+	if deviceCodeInfo.ClientId != clientId {
+		writeOAuthError(w, "invalid_client", "client_id mismatch")
+		return
+	}
+
+	userIdStr := deviceCodeInfo.UserId
+	userId, err := uuid.Parse(userIdStr)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("parsing user id: %w", err))
+		return
+	}
+
+	err = tokenService.DeleteToken(ctx, services.OidcDeviceCodeTokenType, deviceCode)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("deleting device code: %w", err))
+		return
+	}
+
+	dbContext := ioc.GetDependency[database.Context](scope)
+
+	virtualServerFilter := repositories.NewVirtualServerFilter().Name(deviceCodeInfo.VirtualServerName)
+	virtualServer, err := dbContext.VirtualServers().FirstOrNil(ctx, virtualServerFilter)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
+		return
+	}
+	if virtualServer == nil {
+		utils.HandleHttpError(w, fmt.Errorf("virtual server not found"))
+		return
+	}
+
+	applicationFilter := repositories.NewApplicationFilter().
+		VirtualServerId(virtualServer.Id()).
+		Name(clientId)
+	application, err := dbContext.Applications().FirstOrNil(ctx, applicationFilter)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("getting application: %w", err))
+		return
+	}
+	if application == nil {
+		utils.HandleHttpError(w, fmt.Errorf("application not found"))
+		return
+	}
+
+	_ = clientSecret // public clients don't need a secret
+
+	userFilter := repositories.NewUserFilter().Id(userId)
+	user, err := dbContext.Users().FirstOrNil(ctx, userFilter)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("getting user: %w", err))
+		return
+	}
+	if user == nil {
+		utils.HandleHttpError(w, fmt.Errorf("user not found"))
+		return
+	}
+
+	keyService := ioc.GetDependency[services.KeyService](scope)
+	keyPair := keyService.GetKey(deviceCodeInfo.VirtualServerName, virtualServer.SigningAlgorithm())
+
+	clockService := ioc.GetDependency[clock.Service](scope)
+	now := clockService.Now()
+
+	tokenDuration := time.Hour
+
+	params := TokenGenerationParams{
+		UserId:                userId,
+		VirtualServerName:     deviceCodeInfo.VirtualServerName,
+		ClientId:              clientId,
+		ApplicationId:         application.Id(),
+		GrantedScopes:         deviceCodeInfo.GrantedScopes,
+		UserDisplayName:       user.DisplayName(),
+		UserPrimaryEmail:      user.PrimaryEmail(),
+		ExternalUrl:           config.C.Server.ExternalUrl,
+		KeyPair:               keyPair,
+		IssuedAt:              now,
+		AccessTokenExpiry:     tokenDuration,
+		IdTokenExpiry:         tokenDuration,
+		RefreshTokenExpiry:    tokenDuration,
+		AccessTokenHeaderType: application.AccessTokenHeaderType(),
+	}
+
+	tokens, err := generateTokens(ctx, params, tokenService)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	w.Header().Set("Cache-Control", "no-store")
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	scopeString := strings.Join(deviceCodeInfo.GrantedScopes, " ")
+	response := CodeFlowResponse{
+		TokenType:    "Bearer",
+		IdToken:      tokens.IdToken,
+		AccessToken:  tokens.AccessToken,
+		RefreshToken: tokens.RefreshToken,
+		Scope:        scopeString,
+		ExpiresIn:    tokens.ExpiresIn,
+	}
+	err = json.NewEncoder(w).Encode(response)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("encoding response: %w", err))
+		return
+	}
+}
+
+func GetActivatePage(w http.ResponseWriter, r *http.Request) {
+	vsName, err := middlewares.GetVirtualServerName(r.Context())
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	redirectUrl := fmt.Sprintf("%s/%s/activate", config.C.Frontend.ExternalUrl, vsName)
+	if userCode := r.URL.Query().Get("user_code"); userCode != "" {
+		redirectUrl += "?user_code=" + url.QueryEscape(userCode)
+	}
+	http.Redirect(w, r, redirectUrl, http.StatusFound)
+}
+
+func PostActivatePage(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	scope := middlewares.GetScope(ctx)
+
+	err := r.ParseForm()
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	vsName, err := middlewares.GetVirtualServerName(ctx)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	userCode := r.Form.Get("user_code")
+	if userCode == "" {
+		http.Error(w, "user_code is required", http.StatusBadRequest)
+		return
+	}
+
+	tokenService := ioc.GetDependency[services.TokenService](scope)
+
+	deviceCode, err := tokenService.GetToken(ctx, services.OidcUserCodeTokenType, userCode)
+	if err != nil {
+		http.Error(w, "Invalid or expired device code. Please request a new one.", http.StatusNotFound)
+		return
+	}
+
+	deviceCodeInfoString, err := tokenService.GetToken(ctx, services.OidcDeviceCodeTokenType, deviceCode)
+	if err != nil {
+		http.Error(w, "Invalid or expired device code. Please request a new one.", http.StatusNotFound)
+		return
+	}
+
+	var deviceCodeInfo jsonTypes.DeviceCodeInfo
+	err = json.Unmarshal([]byte(deviceCodeInfoString), &deviceCodeInfo)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("unmarshaling device code info: %w", err))
+		return
+	}
+
+	if deviceCodeInfo.Status != string(jsonTypes.DeviceCodeStatusPending) {
+		http.Error(w, "This device code has already been used.", http.StatusBadRequest)
+		return
+	}
+
+	dbContext := ioc.GetDependency[database.Context](scope)
+
+	virtualServerFilter := repositories.NewVirtualServerFilter().Name(vsName)
+	virtualServer, err := dbContext.VirtualServers().FirstOrNil(ctx, virtualServerFilter)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
+		return
+	}
+	if virtualServer == nil {
+		utils.HandleHttpError(w, fmt.Errorf("virtual server not found"))
+		return
+	}
+
+	applicationFilter := repositories.NewApplicationFilter().
+		VirtualServerId(virtualServer.Id()).
+		Name(deviceCodeInfo.ClientId)
+	application, err := dbContext.Applications().FirstOrNil(ctx, applicationFilter)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("getting application: %w", err))
+		return
+	}
+	if application == nil {
+		utils.HandleHttpError(w, fmt.Errorf("application not found"))
+		return
+	}
+
+	loginInfo := jsonTypes.NewLoginInfo(virtualServer, application, fmt.Sprintf("%s/oidc/%s/activate", config.C.Server.ExternalUrl, vsName))
+	loginInfo.DeviceCode = deviceCode
+
+	loginInfoString, err := json.Marshal(loginInfo)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("marshaling login info: %w", err))
+		return
+	}
+
+	loginSessionToken, err := tokenService.GenerateAndStoreToken(ctx, services.LoginSessionTokenType, string(loginInfoString), 15*time.Minute)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("generating login session token: %w", err))
+		return
+	}
+
+	redirectUrl := fmt.Sprintf("%s/login?token=%s", config.C.Frontend.ExternalUrl, loginSessionToken)
+	http.Redirect(w, r, redirectUrl, http.StatusFound)
+}
+
+func ActivateSuccess(w http.ResponseWriter, r *http.Request) {
+	vsName, err := middlewares.GetVirtualServerName(r.Context())
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	redirectUrl := fmt.Sprintf("%s/%s/activate/success", config.C.Frontend.ExternalUrl, vsName)
+	http.Redirect(w, r, redirectUrl, http.StatusFound)
 }

@@ -69,6 +69,10 @@ func (t *Transport) NewTenantRequest(ctx context.Context, method string, endpoin
 	return t.NewRootRequest(ctx, method, fmt.Sprintf("/api/virtual-servers/%s%s", t.virtualServer, endpoint), body)
 }
 
+func (t *Transport) NewOidcRequest(ctx context.Context, method string, endpoint string, body io.Reader) (*http.Request, error) {
+	return t.NewRootRequest(ctx, method, fmt.Sprintf("/oidc/%s%s", t.virtualServer, endpoint), body)
+}
+
 func (t *Transport) NewRootRequest(ctx context.Context, method string, endpoint string, body io.Reader) (*http.Request, error) {
 	base, err := url.Parse(t.baseURL)
 	if err != nil {
@@ -107,5 +111,29 @@ func (t *Transport) Do(req *http.Request) (*http.Response, error) {
 		}
 	}
 
+	return response, nil
+}
+
+// DoRaw executes the request and returns the raw response without status code checking.
+func (t *Transport) DoRaw(req *http.Request) (*http.Response, error) {
+	response, err := t.client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("doing request: %w", err)
+	}
+	return response, nil
+}
+
+// DoNoRedirect executes the request without following redirects.
+func (t *Transport) DoNoRedirect(req *http.Request) (*http.Response, error) {
+	noRedirectClient := &http.Client{
+		Transport: t.client.Transport,
+		CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+	response, err := noRedirectClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("doing request: %w", err)
+	}
 	return response, nil
 }

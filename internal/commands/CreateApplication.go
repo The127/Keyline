@@ -27,6 +27,7 @@ type CreateApplication struct {
 
 	HashedSecret          *string
 	AccessTokenHeaderType string
+	DeviceFlowEnabled     bool
 }
 
 func (c CreateApplication) LogRequest() bool {
@@ -88,6 +89,7 @@ func HandleCreateApplication(ctx context.Context, command CreateApplication) (*C
 
 	application.SetPostLogoutRedirectUris(command.PostLogoutRedirectUris)
 	application.SetAccessTokenHeaderType(command.AccessTokenHeaderType)
+	application.SetDeviceFlowEnabled(command.DeviceFlowEnabled)
 
 	dbContext.Applications().Insert(application)
 

@@ -11,7 +11,6 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/lib/pq"
 
 	"github.com/huandu/go-sqlbuilder"
 )
@@ -22,15 +21,23 @@ type postgresAuditLog struct {
 	userId          *uuid.UUID
 	requestType     string
 	request         string
-	response        *pq.ByteaArray
+	response        sql.NullString
 	allowed         bool
-	allowReasonType string
+	allowReasonType sql.NullString
 	allowReason     *string
 }
 
 func mapAuditLog(auditLog *repositories.AuditLog) *postgresAuditLog {
 	return &postgresAuditLog{
 		postgresBaseModel: mapBase(auditLog.BaseModel),
+		virtualServerId:   auditLog.VirtualServerId(),
+		userId:            auditLog.UserId(),
+		requestType:       auditLog.RequestType(),
+		request:           auditLog.Request(),
+		response:          pghelpers.WrapStringPointer(auditLog.Response()),
+		allowed:           auditLog.Allowed(),
+		allowReasonType:   pghelpers.WrapStringPointer(auditLog.AllowReasonType()),
+		allowReason:       auditLog.AllowReason(),
 	}
 }
 
@@ -41,9 +48,9 @@ func (a *postgresAuditLog) Map() *repositories.AuditLog {
 		a.userId,
 		a.requestType,
 		a.request,
-		nil, // TODO
+		pghelpers.UnwrapNullString(a.response),
 		a.allowed,
-		&a.allowReasonType,
+		pghelpers.UnwrapNullString(a.allowReasonType),
 		a.allowReason,
 	)
 }
@@ -153,8 +160,11 @@ func (r *AuditLogRepository) ExecuteInsert(ctx context.Context, tx *sql.Tx, audi
 	mapped := mapAuditLog(auditLog)
 
 	s := sqlbuilder.InsertInto("audit_logs").
-		Cols("virtual_server_id", "user_id", "request_type", "request", "response", "allowed", "allow_reason_type", "allow_reason").
+		Cols("id", "audit_created_at", "audit_updated_at", "virtual_server_id", "user_id", "request_type", "request", "response", "allowed", "allow_reason_type", "allow_reason").
 		Values(
+			mapped.id,
+			mapped.auditCreatedAt,
+			mapped.auditUpdatedAt,
 			mapped.virtualServerId,
 			mapped.userId,
 			mapped.requestType,

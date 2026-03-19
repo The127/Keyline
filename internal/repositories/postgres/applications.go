@@ -29,6 +29,7 @@ type postgresApplication struct {
 	systemApplication      bool
 	claimsMappingScript    sql.NullString
 	accessTokenHeaderType  string
+	deviceFlowEnabled      bool
 }
 
 func mapApplication(a *repositories.Application) *postgresApplication {
@@ -45,6 +46,7 @@ func mapApplication(a *repositories.Application) *postgresApplication {
 		systemApplication:      a.SystemApplication(),
 		claimsMappingScript:    pghelpers.WrapStringPointer(a.ClaimsMappingScript()),
 		accessTokenHeaderType:  a.AccessTokenHeaderType(),
+		deviceFlowEnabled:      a.DeviceFlowEnabled(),
 	}
 }
 
@@ -62,6 +64,7 @@ func (a *postgresApplication) Map() *repositories.Application {
 		a.systemApplication,
 		pghelpers.UnwrapNullString(a.claimsMappingScript),
 		a.accessTokenHeaderType,
+		a.deviceFlowEnabled,
 	)
 }
 
@@ -83,6 +86,7 @@ func (a *postgresApplication) scan(row pghelpers.Row, additionalPtrs ...any) err
 		&a.systemApplication,
 		&a.claimsMappingScript,
 		&a.accessTokenHeaderType,
+		&a.deviceFlowEnabled,
 	}
 
 	ptrs = append(ptrs, additionalPtrs...)
@@ -121,6 +125,7 @@ func (r *ApplicationRepository) selectQuery(filter *repositories.ApplicationFilt
 		"system_application",
 		"claims_mapping_script",
 		"access_token_header_type",
+		"device_flow_enabled",
 	).From("applications")
 
 	if filter.HasName() {
@@ -244,6 +249,7 @@ func (r *ApplicationRepository) ExecuteInsert(ctx context.Context, tx *sql.Tx, a
 			"system_application",
 			"claims_mapping_script",
 			"access_token_header_type",
+			"device_flow_enabled",
 		).
 		Values(
 			mapped.id,
@@ -260,6 +266,7 @@ func (r *ApplicationRepository) ExecuteInsert(ctx context.Context, tx *sql.Tx, a
 			mapped.systemApplication,
 			mapped.claimsMappingScript,
 			mapped.accessTokenHeaderType,
+			mapped.deviceFlowEnabled,
 		).
 		Returning("xmin")
 
@@ -315,6 +322,9 @@ func (r *ApplicationRepository) ExecuteUpdate(ctx context.Context, tx *sql.Tx, a
 
 		case repositories.ApplicationChangeSystemApplication:
 			s.SetMore(s.Assign("system_application", mapped.systemApplication))
+
+		case repositories.ApplicationChangeDeviceFlowEnabled:
+			s.SetMore(s.Assign("device_flow_enabled", mapped.deviceFlowEnabled))
 
 		default:
 			return fmt.Errorf("updating field %v is not supported", field)

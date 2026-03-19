@@ -61,6 +61,10 @@ func Serve(dp *ioc.DependencyProvider, serverConfig config.ServerConfig) {
 	oidcRouter.HandleFunc("/token", handlers.OidcToken).Methods(http.MethodPost, http.MethodOptions)
 	oidcRouter.HandleFunc("/userinfo", handlers.OidcUserinfo).Methods(http.MethodGet, http.MethodPost, http.MethodOptions)
 	oidcRouter.HandleFunc("/end_session", handlers.OidcEndSession).Methods(http.MethodGet, http.MethodOptions)
+	oidcRouter.HandleFunc("/device", handlers.BeginDeviceFlow).Methods(http.MethodPost, http.MethodOptions)
+	oidcRouter.HandleFunc("/activate", handlers.GetActivatePage).Methods(http.MethodGet)
+	oidcRouter.HandleFunc("/activate", handlers.PostActivatePage).Methods(http.MethodPost)
+	oidcRouter.HandleFunc("/activate/success", handlers.ActivateSuccess).Methods(http.MethodGet)
 
 	loginRouter := r.PathPrefix("/logins").Subrouter()
 

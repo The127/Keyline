@@ -56,12 +56,13 @@ type CreateVirtualServerProjectRole struct {
 }
 
 type CreateVirtualServerProjectApplication struct {
-	Name           string
-	DisplayName    string
-	Type           string
-	HashedSecret   *string
-	RedirectUris   []string
-	PostLogoutUris []string
+	Name              string
+	DisplayName       string
+	Type              string
+	HashedSecret      *string
+	RedirectUris      []string
+	PostLogoutUris    []string
+	DeviceFlowEnabled bool
 }
 
 type CreateVirtualServerProject struct {
@@ -162,6 +163,7 @@ func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer)
 				newApp.SetHashedSecret(*app.HashedSecret)
 			}
 			newApp.SetPostLogoutRedirectUris(app.PostLogoutUris)
+			newApp.SetDeviceFlowEnabled(app.DeviceFlowEnabled)
 			dbContext.Applications().Insert(newApp)
 		}
 
