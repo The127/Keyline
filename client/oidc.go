@@ -69,7 +69,7 @@ func (o *oidcClient) BeginDeviceFlow(ctx context.Context, clientId string, scope
 	if err != nil {
 		return DeviceAuthorizationResponse{}, fmt.Errorf("doing request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 
 	var result DeviceAuthorizationResponse
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
@@ -96,7 +96,7 @@ func (o *oidcClient) PollDeviceToken(ctx context.Context, clientId string, devic
 	if err != nil {
 		return DeviceTokenResponse{}, fmt.Errorf("doing request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 
 	if resp.StatusCode == http.StatusBadRequest {
 		var oauthErr struct {
@@ -143,7 +143,7 @@ func (o *oidcClient) PostActivate(ctx context.Context, userCode string) (string,
 	if err != nil {
 		return "", fmt.Errorf("doing request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 
 	if resp.StatusCode == http.StatusNotFound {
 		return "", ErrInvalidUserCode
@@ -181,7 +181,7 @@ func (o *oidcClient) VerifyPassword(ctx context.Context, loginToken string, user
 	if err != nil {
 		return fmt.Errorf("doing request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 
 	if resp.StatusCode == http.StatusUnauthorized {
 		return fmt.Errorf("invalid credentials")
@@ -203,7 +203,7 @@ func (o *oidcClient) FinishLogin(ctx context.Context, loginToken string) error {
 	if err != nil {
 		return fmt.Errorf("doing request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 
 	if resp.StatusCode >= 400 {
 		return ApiError{Message: resp.Status, Code: resp.StatusCode}
