@@ -24,6 +24,7 @@ type CreateApplicationRequestDto struct {
 	PostLogoutUris        []string `json:"postLogoutUris" validate:"dive,url"`
 	Type                  string   `json:"type" validate:"required,oneof=public confidential"`
 	AccessTokenHeaderType *string  `json:"accessTokenHeaderType" validate:"omitempty,oneof=at+jwt JWT"`
+	DeviceFlowEnabled     bool     `json:"deviceFlowEnabled"`
 }
 
 type CreateApplicationResponseDto struct {
@@ -86,6 +87,7 @@ func CreateApplication(w http.ResponseWriter, r *http.Request) {
 		RedirectUris:           dto.RedirectUris,
 		PostLogoutRedirectUris: utils.EmptyIfNil(dto.PostLogoutUris),
 		AccessTokenHeaderType:  accessTokenHeaderType,
+		DeviceFlowEnabled:      dto.DeviceFlowEnabled,
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)
