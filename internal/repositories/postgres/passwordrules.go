@@ -48,6 +48,7 @@ func (r *postgresPasswordRule) scan(row pghelpers.Row, additionalPtrs ...any) er
 		&r.xmin,
 		&r.virtualServerId,
 		&r.type_,
+		&r.details,
 	}
 
 	ptrs = append(ptrs, additionalPtrs...)
