@@ -82,6 +82,7 @@ func DeserializePolicy(ruleType repositories.PasswordRuleType, jsonBytes []byte)
 		if err != nil {
 			return nil, fmt.Errorf("failed to unmarshal min length rule: %w", err)
 		}
+		return &minLengthRule, nil
 
 	case repositories.PasswordRuleTypeMaxLength:
 		var maxLengthRule maxLengthPolicy
@@ -89,6 +90,7 @@ func DeserializePolicy(ruleType repositories.PasswordRuleType, jsonBytes []byte)
 		if err != nil {
 			return nil, fmt.Errorf("failed to unmarshal max length rule: %w", err)
 		}
+		return &maxLengthRule, nil
 
 	case repositories.PasswordRuleTypeDigits:
 		var numberRule minimumNumbersPolicy
@@ -125,6 +127,4 @@ func DeserializePolicy(ruleType repositories.PasswordRuleType, jsonBytes []byte)
 	default:
 		return nil, fmt.Errorf("unknown password rule type: %s", ruleType)
 	}
-
-	panic("unreachable")
 }
