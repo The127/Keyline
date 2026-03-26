@@ -138,6 +138,48 @@ func CreatePasswordRule(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// DeletePasswordRule
+// @summary     Delete a password rule
+// @description Delete a password rule for a virtual server.
+// @tags        Password rules
+// @param       virtualServerName  path   string  true  "Virtual server name"  default(keyline)
+// @param       ruleType  path   string  true  "Rule type"
+// @success     204 "No Content"
+// @failure     400  {string}  string "Bad Request"
+// @router      /api/virtual-servers/{virtualServerName}/password-policies/rules/{ruleType} [delete]
+func DeletePasswordRule(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	vsName, err := middlewares.GetVirtualServerName(ctx)
+	if err != nil {
+		httputil.HandleHttpError(w, err)
+		return
+	}
+
+	vars := mux.Vars(r)
+	ruleTypeString, ok := vars["ruleType"]
+	if !ok {
+		httputil.HandleHttpError(w, fmt.Errorf("ruleType is required: %w", utils.ErrHttpBadRequest))
+		return
+	}
+
+	ruleType := repositories.PasswordRuleType(ruleTypeString)
+
+	scope := middlewares.GetScope(ctx)
+	m := ioc.GetDependency[mediatr.Mediator](scope)
+
+	_, err = mediatr.Send[*commands.DeletePasswordRuleResponse](ctx, m, commands.DeletePasswordRule{
+		VirtualServerName: vsName,
+		Type:              ruleType,
+	})
+	if err != nil {
+		httputil.HandleHttpError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 type PatchPasswordRuleRequestDto map[string]any
 
 // UpdatePasswordRule

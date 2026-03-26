@@ -22,6 +22,7 @@ func Mediator(dc *ioc.DependencyCollection) {
 	mediatr.RegisterHandler(m, queries.HandleListPasswordRules)
 	mediatr.RegisterHandler(m, commands.HandleCreatePasswordRule)
 	mediatr.RegisterHandler(m, commands.HandleUpdatePasswordRule)
+	mediatr.RegisterHandler(m, commands.HandleDeletePasswordRule)
 
 	mediatr.RegisterHandler(m, queries.HandleListTemplates)
 	mediatr.RegisterHandler(m, queries.HandleGetTemplate)
