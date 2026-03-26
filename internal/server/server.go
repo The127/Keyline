@@ -166,8 +166,13 @@ func mapApiRoutes(r *mux.Router) {
 	vsApiRouter.HandleFunc("/users/{userId}/passkeys/register/start", handlers.PasskeyCreateChallenge).Methods(http.MethodPost, http.MethodOptions)
 	vsApiRouter.HandleFunc("/users/{userId}/passkeys/register/finish", handlers.PasskeyValidateCreateChallengeResponse).Methods(http.MethodPost, http.MethodOptions)
 	vsApiRouter.HandleFunc("/users/{userId}/passkeys", handlers.ListPasskeys).Methods(http.MethodGet, http.MethodOptions)
+	vsApiRouter.HandleFunc("/users/{userId}/change-password", handlers.ChangeOwnPassword).Methods(http.MethodPut, http.MethodOptions)
 
+	vsApiRouter.HandleFunc("/groups", handlers.CreateGroup).Methods(http.MethodPost, http.MethodOptions)
 	vsApiRouter.HandleFunc("/groups", handlers.ListGroups).Methods(http.MethodGet, http.MethodOptions)
+	vsApiRouter.HandleFunc("/groups/{groupId}", handlers.GetGroup).Methods(http.MethodGet, http.MethodOptions)
+	vsApiRouter.HandleFunc("/groups/{groupId}", handlers.PatchGroup).Methods(http.MethodPatch, http.MethodOptions)
+	vsApiRouter.HandleFunc("/groups/{groupId}", handlers.DeleteGroup).Methods(http.MethodDelete, http.MethodOptions)
 
 	vsApiRouter.HandleFunc("/projects", handlers.CreateProject).Methods(http.MethodPost, http.MethodOptions)
 	vsApiRouter.HandleFunc("/projects", handlers.ListProjects).Methods(http.MethodGet, http.MethodOptions)
@@ -176,6 +181,8 @@ func mapApiRoutes(r *mux.Router) {
 	vsApiRouter.HandleFunc("/projects/{projectSlug}/roles", handlers.CreateRole).Methods(http.MethodPost, http.MethodOptions)
 	vsApiRouter.HandleFunc("/projects/{projectSlug}/roles", handlers.ListRoles).Methods(http.MethodGet, http.MethodOptions)
 	vsApiRouter.HandleFunc("/projects/{projectSlug}/roles/{roleId}", handlers.GetRoleById).Methods(http.MethodGet, http.MethodOptions)
+	vsApiRouter.HandleFunc("/projects/{projectSlug}/roles/{roleId}", handlers.PatchRole).Methods(http.MethodPatch, http.MethodOptions)
+	vsApiRouter.HandleFunc("/projects/{projectSlug}/roles/{roleId}", handlers.DeleteRole).Methods(http.MethodDelete, http.MethodOptions)
 	vsApiRouter.HandleFunc("/projects/{projectSlug}/roles/{roleId}/assign", handlers.AssignRole).Methods(http.MethodPost, http.MethodOptions)
 	vsApiRouter.HandleFunc("/projects/{projectSlug}/roles/{roleId}/users", handlers.ListUsersInRole).Methods(http.MethodGet, http.MethodOptions)
 
@@ -188,10 +195,14 @@ func mapApiRoutes(r *mux.Router) {
 	vsApiRouter.HandleFunc("/projects/{projectSlug}/resource-servers", handlers.CreateResourceServer).Methods(http.MethodPost, http.MethodOptions)
 	vsApiRouter.HandleFunc("/projects/{projectSlug}/resource-servers", handlers.ListResourceServers).Methods(http.MethodGet, http.MethodOptions)
 	vsApiRouter.HandleFunc("/projects/{projectSlug}/resource-servers/{resourceServerId}", handlers.GetResourceServer).Methods(http.MethodGet, http.MethodOptions)
+	vsApiRouter.HandleFunc("/projects/{projectSlug}/resource-servers/{resourceServerId}", handlers.PatchResourceServer).Methods(http.MethodPatch, http.MethodOptions)
+	vsApiRouter.HandleFunc("/projects/{projectSlug}/resource-servers/{resourceServerId}", handlers.DeleteResourceServer).Methods(http.MethodDelete, http.MethodOptions)
 
 	vsApiRouter.HandleFunc("/projects/{projectSlug}/resource-servers/{resourceServerId}/scopes", handlers.CreateResourceServerScope).Methods(http.MethodPost, http.MethodOptions)
 	vsApiRouter.HandleFunc("/projects/{projectSlug}/resource-servers/{resourceServerId}/scopes", handlers.ListResourceServerScopes).Methods(http.MethodGet, http.MethodOptions)
 	vsApiRouter.HandleFunc("/projects/{projectSlug}/resource-servers/{resourceServerId}/scopes/{scopeId}", handlers.GetResourceServerScope).Methods(http.MethodGet, http.MethodOptions)
+	vsApiRouter.HandleFunc("/projects/{projectSlug}/resource-servers/{resourceServerId}/scopes/{scopeId}", handlers.PatchResourceServerScope).Methods(http.MethodPatch, http.MethodOptions)
+	vsApiRouter.HandleFunc("/projects/{projectSlug}/resource-servers/{resourceServerId}/scopes/{scopeId}", handlers.DeleteResourceServerScope).Methods(http.MethodDelete, http.MethodOptions)
 
 	vsApiRouter.HandleFunc("/audit", handlers.ListAuditLog).Methods(http.MethodGet, http.MethodOptions)
 

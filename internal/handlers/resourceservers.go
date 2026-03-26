@@ -154,6 +154,113 @@ func ListResourceServers(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+type PatchResourceServerRequestDto struct {
+	Name        *string `json:"name"`
+	Description *string `json:"description"`
+}
+
+// PatchResourceServer updates a resource server
+// @Summary Patch resource server
+// @Description Update a resource server by ID
+// @Tags Resource servers
+// @Accept json
+// @Param vsName path string true "Virtual server name"  default(keyline)
+// @Param projectSlug path string true "Project slug"
+// @Param resourceServerId path string true "Resource server ID (UUID)"
+// @Param request body PatchResourceServerRequestDto true "Resource server data"
+// @Success 204 {string} string "No Content"
+// @Failure 400
+// @Failure 404 "Resource server not found"
+// @Router /api/virtual-servers/{vsName}/projects/{projectSlug}/resource-servers/{resourceServerId} [patch]
+func PatchResourceServer(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	vsName, err := middlewares.GetVirtualServerName(ctx)
+	if err != nil {
+		httputil.HandleHttpError(w, err)
+		return
+	}
+
+	vars := mux.Vars(r)
+	projectSlug := vars["projectSlug"]
+
+	resourceServerIdString := vars["resourceServerId"]
+	resourceServerId, err := uuid.Parse(resourceServerIdString)
+	if err != nil {
+		httputil.HandleHttpError(w, utils.ErrInvalidUuid)
+		return
+	}
+
+	var dto PatchResourceServerRequestDto
+	err = json.NewDecoder(r.Body).Decode(&dto)
+	if err != nil {
+		httputil.HandleHttpError(w, err)
+		return
+	}
+
+	scope := middlewares.GetScope(ctx)
+	m := ioc.GetDependency[mediatr.Mediator](scope)
+
+	_, err = mediatr.Send[*commands.PatchResourceServerResponse](ctx, m, commands.PatchResourceServer{
+		VirtualServerName: vsName,
+		ProjectSlug:       projectSlug,
+		ResourceServerId:  resourceServerId,
+		Name:              dto.Name,
+		Description:       dto.Description,
+	})
+	if err != nil {
+		httputil.HandleHttpError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// DeleteResourceServer deletes a resource server
+// @Summary Delete resource server
+// @Description Delete a resource server by ID from a project
+// @Tags Resource servers
+// @Param vsName path string true "Virtual server name"  default(keyline)
+// @Param projectSlug path string true "Project slug"
+// @Param resourceServerId path string true "Resource server ID (UUID)"
+// @Success 204 {string} string "No Content"
+// @Failure 400
+// @Router /api/virtual-servers/{vsName}/projects/{projectSlug}/resource-servers/{resourceServerId} [delete]
+func DeleteResourceServer(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	vsName, err := middlewares.GetVirtualServerName(ctx)
+	if err != nil {
+		httputil.HandleHttpError(w, err)
+		return
+	}
+
+	vars := mux.Vars(r)
+	projectSlug := vars["projectSlug"]
+
+	resourceServerIdString := vars["resourceServerId"]
+	resourceServerId, err := uuid.Parse(resourceServerIdString)
+	if err != nil {
+		httputil.HandleHttpError(w, utils.ErrInvalidUuid)
+		return
+	}
+
+	scope := middlewares.GetScope(ctx)
+	m := ioc.GetDependency[mediatr.Mediator](scope)
+
+	_, err = mediatr.Send[*commands.DeleteResourceServerResponse](ctx, m, commands.DeleteResourceServer{
+		VirtualServerName: vsName,
+		ProjectSlug:       projectSlug,
+		ResourceServerId:  resourceServerId,
+	})
+	if err != nil {
+		httputil.HandleHttpError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 type GetResourceServerResponseDto struct {
 	Id          uuid.UUID `json:"id"`
 	Slug        string    `json:"slug"`

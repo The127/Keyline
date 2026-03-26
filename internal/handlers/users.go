@@ -1150,3 +1150,68 @@ func ListPasskeys(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
+type ChangeOwnPasswordRequestDto struct {
+	CurrentPassword string `json:"currentPassword" validate:"required"`
+	NewPassword     string `json:"newPassword" validate:"required"`
+}
+
+// ChangeOwnPassword allows a user to change their own password
+// @Summary Change own password
+// @Description Change the authenticated user's password (requires current password)
+// @Tags Users
+// @Accept json
+// @Param vsName path string true "Virtual server name"  default(keyline)
+// @Param userId path string true "User ID (UUID)"
+// @Param body body handlers.ChangeOwnPasswordRequestDto true "Password data"
+// @Security BearerAuth
+// @Success 204 {string} string "No Content"
+// @Failure 400 {string} string "Bad Request"
+// @Failure 401 {string} string "Unauthorized"
+// @Router /api/virtual-servers/{vsName}/users/{userId}/change-password [put]
+func ChangeOwnPassword(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	vsName, err := middlewares.GetVirtualServerName(ctx)
+	if err != nil {
+		httputil.HandleHttpError(w, err)
+		return
+	}
+
+	vars := mux.Vars(r)
+	userIdString := vars["userId"]
+	userId, err := uuid.Parse(userIdString)
+	if err != nil {
+		httputil.HandleHttpError(w, utils.ErrInvalidUuid)
+		return
+	}
+
+	var dto ChangeOwnPasswordRequestDto
+	err = json.NewDecoder(r.Body).Decode(&dto)
+	if err != nil {
+		httputil.HandleHttpError(w, err)
+		return
+	}
+
+	err = utils.ValidateDto(dto)
+	if err != nil {
+		httputil.HandleHttpError(w, err)
+		return
+	}
+
+	scope := middlewares.GetScope(ctx)
+	m := ioc.GetDependency[mediatr.Mediator](scope)
+
+	_, err = mediatr.Send[*commands.ChangeOwnPasswordResponse](ctx, m, commands.ChangeOwnPassword{
+		VirtualServerName: vsName,
+		UserId:            userId,
+		CurrentPassword:   dto.CurrentPassword,
+		NewPassword:       dto.NewPassword,
+	})
+	if err != nil {
+		httputil.HandleHttpError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}

@@ -30,10 +30,12 @@ var VirtualServerAdminPermissions = []permissions.Permission{
 
 	permissions.ResourceServerCreate,
 	permissions.ResourceServerUpdate,
+	permissions.ResourceServerDelete,
 	permissions.ResourceServerView,
 
 	permissions.ResourceServerScopeCreate,
 	permissions.ResourceServerScopeUpdate,
+	permissions.ResourceServerScopeDelete,
 	permissions.ResourceServerScopeView,
 
 	permissions.AuditView,
@@ -43,10 +45,14 @@ var VirtualServerAdminPermissions = []permissions.Permission{
 	permissions.ApplicationUpdate,
 	permissions.ApplicationView,
 
+	permissions.GroupCreate,
+	permissions.GroupUpdate,
+	permissions.GroupDelete,
 	permissions.GroupView,
 
 	permissions.RoleCreate,
 	permissions.RoleUpdate,
+	permissions.RoleDelete,
 	permissions.RoleAssign,
 	permissions.RoleView,
 

@@ -188,6 +188,131 @@ func ListResourceServerScopes(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+type PatchResourceServerScopeRequestDto struct {
+	Name        *string `json:"name"`
+	Description *string `json:"description"`
+}
+
+// PatchResourceServerScope updates a resource server scope
+// @Summary Patch resource server scope
+// @Description Update a resource server scope by ID
+// @Tags Resource server scopes
+// @Accept json
+// @Param vsName path string true "Virtual server name"  default(keyline)
+// @Param projectSlug path string true "Project slug"
+// @Param resourceServerId path string true "Resource server ID (UUID)"
+// @Param scopeId path string true "Scope ID (UUID)"
+// @Param request body PatchResourceServerScopeRequestDto true "Scope data"
+// @Success 204 {string} string "No Content"
+// @Failure 400
+// @Failure 404 "Scope not found"
+// @Router /api/virtual-servers/{vsName}/projects/{projectSlug}/resource-servers/{resourceServerId}/scopes/{scopeId} [patch]
+func PatchResourceServerScope(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	vsName, err := middlewares.GetVirtualServerName(ctx)
+	if err != nil {
+		httputil.HandleHttpError(w, err)
+		return
+	}
+
+	vars := mux.Vars(r)
+	projectSlug := vars["projectSlug"]
+
+	resourceServerIdString := vars["resourceServerId"]
+	resourceServerId, err := uuid.Parse(resourceServerIdString)
+	if err != nil {
+		httputil.HandleHttpError(w, utils.ErrInvalidUuid)
+		return
+	}
+
+	scopeIdString := vars["scopeId"]
+	scopeId, err := uuid.Parse(scopeIdString)
+	if err != nil {
+		httputil.HandleHttpError(w, utils.ErrInvalidUuid)
+		return
+	}
+
+	var dto PatchResourceServerScopeRequestDto
+	err = json.NewDecoder(r.Body).Decode(&dto)
+	if err != nil {
+		httputil.HandleHttpError(w, err)
+		return
+	}
+
+	scope := middlewares.GetScope(ctx)
+	m := ioc.GetDependency[mediatr.Mediator](scope)
+
+	_, err = mediatr.Send[*commands.PatchResourceServerScopeResponse](ctx, m, commands.PatchResourceServerScope{
+		VirtualServerName: vsName,
+		ProjectSlug:       projectSlug,
+		ResourceServerId:  resourceServerId,
+		ScopeId:           scopeId,
+		Name:              dto.Name,
+		Description:       dto.Description,
+	})
+	if err != nil {
+		httputil.HandleHttpError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// DeleteResourceServerScope deletes a resource server scope
+// @Summary Delete resource server scope
+// @Description Delete a resource server scope by ID
+// @Tags Resource server scopes
+// @Param vsName path string true "Virtual server name"  default(keyline)
+// @Param projectSlug path string true "Project slug"
+// @Param resourceServerId path string true "Resource server ID (UUID)"
+// @Param scopeId path string true "Scope ID (UUID)"
+// @Success 204 {string} string "No Content"
+// @Failure 400
+// @Router /api/virtual-servers/{vsName}/projects/{projectSlug}/resource-servers/{resourceServerId}/scopes/{scopeId} [delete]
+func DeleteResourceServerScope(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	vsName, err := middlewares.GetVirtualServerName(ctx)
+	if err != nil {
+		httputil.HandleHttpError(w, err)
+		return
+	}
+
+	vars := mux.Vars(r)
+	projectSlug := vars["projectSlug"]
+
+	resourceServerIdString := vars["resourceServerId"]
+	resourceServerId, err := uuid.Parse(resourceServerIdString)
+	if err != nil {
+		httputil.HandleHttpError(w, utils.ErrInvalidUuid)
+		return
+	}
+
+	scopeIdString := vars["scopeId"]
+	scopeId, err := uuid.Parse(scopeIdString)
+	if err != nil {
+		httputil.HandleHttpError(w, utils.ErrInvalidUuid)
+		return
+	}
+
+	scope := middlewares.GetScope(ctx)
+	m := ioc.GetDependency[mediatr.Mediator](scope)
+
+	_, err = mediatr.Send[*commands.DeleteResourceServerScopeResponse](ctx, m, commands.DeleteResourceServerScope{
+		VirtualServerName: vsName,
+		ProjectSlug:       projectSlug,
+		ResourceServerId:  resourceServerId,
+		ScopeId:           scopeId,
+	})
+	if err != nil {
+		httputil.HandleHttpError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 type GetResourceServerScopeResponseDto struct {
 	Id          uuid.UUID `json:"id"`
 	Scope       string    `json:"scope"`

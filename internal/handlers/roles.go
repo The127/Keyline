@@ -238,6 +238,115 @@ func CreateRole(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+type PatchRoleRequestDto struct {
+	Name        *string `json:"name"`
+	Description *string `json:"description"`
+}
+
+// PatchRole
+// @summary     Update role
+// @description Update a role's name and/or description.
+// @tags        Roles
+// @accept      application/json
+// @param       virtualServerName  path  string  true  "Virtual server name"  default(keyline)
+// @param       projectSlug        path  string  true  "Project slug"
+// @param       roleId             path  string  true  "Role ID (UUID)"
+// @param       body               body  handlers.PatchRoleRequestDto  true  "Role data"
+// @security    BearerAuth
+// @success     204  {string}  string "No Content"
+// @failure     400  {string}  string "Bad Request"
+// @failure     404  {string}  string "Not Found"
+// @router      /api/virtual-servers/{virtualServerName}/projects/{projectSlug}/roles/{roleId} [patch]
+func PatchRole(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	vsName, err := middlewares.GetVirtualServerName(ctx)
+	if err != nil {
+		httputil.HandleHttpError(w, err)
+		return
+	}
+
+	vars := mux.Vars(r)
+	projectSlug := vars["projectSlug"]
+
+	roleIdString := vars["roleId"]
+	roleId, err := uuid.Parse(roleIdString)
+	if err != nil {
+		httputil.HandleHttpError(w, utils.ErrInvalidUuid)
+		return
+	}
+
+	var dto PatchRoleRequestDto
+	err = json.NewDecoder(r.Body).Decode(&dto)
+	if err != nil {
+		httputil.HandleHttpError(w, err)
+		return
+	}
+
+	scope := middlewares.GetScope(ctx)
+	m := ioc.GetDependency[mediatr.Mediator](scope)
+
+	_, err = mediatr.Send[*commands.PatchRoleResponse](ctx, m, commands.PatchRole{
+		VirtualServerName: vsName,
+		ProjectSlug:       projectSlug,
+		RoleId:            roleId,
+		Name:              dto.Name,
+		Description:       dto.Description,
+	})
+	if err != nil {
+		httputil.HandleHttpError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// DeleteRole
+// @summary     Delete role
+// @description Delete a role by its ID within a project.
+// @tags        Roles
+// @param       virtualServerName  path  string  true  "Virtual server name"  default(keyline)
+// @param       projectSlug        path  string  true  "Project slug"
+// @param       roleId             path  string  true  "Role ID (UUID)"
+// @security    BearerAuth
+// @success     204  {string}  string "No Content"
+// @failure     400  {string}  string "Bad Request"
+// @router      /api/virtual-servers/{virtualServerName}/projects/{projectSlug}/roles/{roleId} [delete]
+func DeleteRole(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	vsName, err := middlewares.GetVirtualServerName(ctx)
+	if err != nil {
+		httputil.HandleHttpError(w, err)
+		return
+	}
+
+	vars := mux.Vars(r)
+	projectSlug := vars["projectSlug"]
+
+	roleIdString := vars["roleId"]
+	roleId, err := uuid.Parse(roleIdString)
+	if err != nil {
+		httputil.HandleHttpError(w, utils.ErrInvalidUuid)
+		return
+	}
+
+	scope := middlewares.GetScope(ctx)
+	m := ioc.GetDependency[mediatr.Mediator](scope)
+
+	_, err = mediatr.Send[*commands.DeleteRoleResponse](ctx, m, commands.DeleteRole{
+		VirtualServerName: vsName,
+		ProjectSlug:       projectSlug,
+		RoleId:            roleId,
+	})
+	if err != nil {
+		httputil.HandleHttpError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 type AssignRoleRequestDto struct {
 	UserId uuid.UUID `json:"userId" validate:"required,uuid=4"`
 }

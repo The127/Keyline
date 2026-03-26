@@ -12,10 +12,14 @@ const (
 	ApplicationUpdate Permission = "application:update"
 	ApplicationView   Permission = "application:view"
 
-	GroupView Permission = "group:view"
+	GroupCreate Permission = "group:create"
+	GroupUpdate Permission = "group:update"
+	GroupDelete Permission = "group:delete"
+	GroupView   Permission = "group:view"
 
 	RoleCreate Permission = "role:create"
 	RoleUpdate Permission = "role:update"
+	RoleDelete Permission = "role:delete"
 	RoleAssign Permission = "role:assign"
 	RoleView   Permission = "role:view"
 
@@ -45,9 +49,11 @@ const (
 
 	ResourceServerCreate Permission = "resource_server:create"
 	ResourceServerUpdate Permission = "resource_server:update"
+	ResourceServerDelete Permission = "resource_server:delete"
 	ResourceServerView   Permission = "resource_server:view"
 
 	ResourceServerScopeCreate Permission = "resource_server_scope:create"
 	ResourceServerScopeUpdate Permission = "resource_server_scope:update"
+	ResourceServerScopeDelete Permission = "resource_server_scope:delete"
 	ResourceServerScopeView   Permission = "resource_server_scope:view"
 )

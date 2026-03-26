@@ -91,4 +91,26 @@ var _ = Describe("ResourceServer flow", Ordered, func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(resp.Name).To(Equal("Updated Test Resource Server"))
 	})
+
+	It("should delete resource server successfully", func() {
+		cmd := commands.DeleteResourceServer{
+			VirtualServerName: h.VirtualServer(),
+			ProjectSlug:       projectSlug,
+			ResourceServerId:  resourceServerId,
+		}
+		_, err := mediatr.Send[*commands.DeleteResourceServerResponse](h.Ctx(), h.Mediator(), cmd)
+		Expect(err).ToNot(HaveOccurred())
+
+		Expect(h.dbContext.SaveChanges(h.ctx)).ToNot(HaveOccurred())
+	})
+
+	It("should handle delete of non-existent resource server gracefully", func() {
+		cmd := commands.DeleteResourceServer{
+			VirtualServerName: h.VirtualServer(),
+			ProjectSlug:       projectSlug,
+			ResourceServerId:  uuid.New(),
+		}
+		_, err := mediatr.Send[*commands.DeleteResourceServerResponse](h.Ctx(), h.Mediator(), cmd)
+		Expect(err).ToNot(HaveOccurred())
+	})
 })

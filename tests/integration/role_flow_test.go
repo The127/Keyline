@@ -91,4 +91,39 @@ var _ = Describe("Role flow", Ordered, func() {
 		Expect(resp.Name).To(Equal("Updated Name"))
 		Expect(resp.Description).To(Equal("Updated Description"))
 	})
+
+	It("should delete role successfully", func() {
+		cmd := commands.DeleteRole{
+			VirtualServerName: h.VirtualServer(),
+			ProjectSlug:       projectSlug,
+			RoleId:            roleId,
+		}
+		_, err := mediatr.Send[*commands.DeleteRoleResponse](h.Ctx(), h.Mediator(), cmd)
+		Expect(err).ToNot(HaveOccurred())
+
+		Expect(h.dbContext.SaveChanges(h.ctx)).ToNot(HaveOccurred())
+	})
+
+	It("should not find deleted role in list", func() {
+		req := queries.ListRoles{
+			VirtualServerName: h.VirtualServer(),
+			ProjectSlug:       projectSlug,
+			SearchText:        "Updated Name",
+		}
+		response, err := mediatr.Send[*queries.ListRolesResponse](h.Ctx(), h.Mediator(), req)
+		Expect(err).ToNot(HaveOccurred())
+		for _, item := range response.Items {
+			Expect(item.Id).ToNot(Equal(roleId))
+		}
+	})
+
+	It("should handle delete of non-existent role gracefully", func() {
+		cmd := commands.DeleteRole{
+			VirtualServerName: h.VirtualServer(),
+			ProjectSlug:       projectSlug,
+			RoleId:            uuid.New(),
+		}
+		_, err := mediatr.Send[*commands.DeleteRoleResponse](h.Ctx(), h.Mediator(), cmd)
+		Expect(err).ToNot(HaveOccurred())
+	})
 })

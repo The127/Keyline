@@ -30,6 +30,7 @@ func Mediator(dc *ioc.DependencyCollection) {
 	mediatr.RegisterHandler(m, commands.HandleCreateUser)
 	mediatr.RegisterHandler(m, commands.HandleVerifyEmail)
 	mediatr.RegisterHandler(m, commands.HandleSetPassword)
+	mediatr.RegisterHandler(m, commands.HandleChangeOwnPassword)
 	mediatr.RegisterHandler(m, queries.HandleGetUserQuery)
 	mediatr.RegisterHandler(m, commands.HandlePatchUser)
 	mediatr.RegisterHandler(m, queries.HandleListUsers)
@@ -45,10 +46,13 @@ func Mediator(dc *ioc.DependencyCollection) {
 
 	mediatr.RegisterHandler(m, commands.HandleCreateResourceServer)
 	mediatr.RegisterHandler(m, commands.HandlePatchResourceServer)
+	mediatr.RegisterHandler(m, commands.HandleDeleteResourceServer)
 	mediatr.RegisterHandler(m, queries.HandleListResourceServers)
 	mediatr.RegisterHandler(m, queries.HandleGetResourceServer)
 
 	mediatr.RegisterHandler(m, commands.HandleCreateResourceServerScope)
+	mediatr.RegisterHandler(m, commands.HandlePatchResourceServerScope)
+	mediatr.RegisterHandler(m, commands.HandleDeleteResourceServerScope)
 	mediatr.RegisterHandler(m, queries.HandleListResourceServerScopes)
 	mediatr.RegisterHandler(m, queries.HandleGetResourceServerScope)
 
@@ -67,10 +71,15 @@ func Mediator(dc *ioc.DependencyCollection) {
 	mediatr.RegisterHandler(m, queries.HandleGetRole)
 	mediatr.RegisterHandler(m, commands.HandleCreateRole)
 	mediatr.RegisterHandler(m, commands.HandlePatchRole)
+	mediatr.RegisterHandler(m, commands.HandleDeleteRole)
 	mediatr.RegisterHandler(m, commands.HandleAssignRoleToUser)
 	mediatr.RegisterHandler(m, queries.HandleListUsersInRole)
 
 	mediatr.RegisterHandler(m, queries.HandleListGroups)
+	mediatr.RegisterHandler(m, queries.HandleGetGroup)
+	mediatr.RegisterHandler(m, commands.HandleCreateGroup)
+	mediatr.RegisterHandler(m, commands.HandlePatchGroup)
+	mediatr.RegisterHandler(m, commands.HandleDeleteGroup)
 
 	mediatr.RegisterHandler(m, queries.HandleListAuditEntries)
 
