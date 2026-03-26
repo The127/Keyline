@@ -1,10 +1,10 @@
 package handlers
 
 import (
+	"Keyline/internal/httputil"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
 	"Keyline/internal/services"
-	"Keyline/utils"
 	"fmt"
 	"net/http"
 
@@ -39,7 +39,7 @@ func Debug(w http.ResponseWriter, r *http.Request) {
 		data,
 	)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 

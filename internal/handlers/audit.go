@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"Keyline/internal/httputil"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/queries"
 	"Keyline/utils"
@@ -53,13 +54,13 @@ func ListAuditLog(w http.ResponseWriter, r *http.Request) {
 
 	queryOps, err := ParseQueryOps(r)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -72,7 +73,7 @@ func ListAuditLog(w http.ResponseWriter, r *http.Request) {
 		OrderedQuery:      queryOps.ToOrderedQuery(),
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 	}
 
 	items := utils.MapSlice(auditEntries.Items, func(x queries.ListAuditEntriesResponseItem) ListAuditLogResponseDto {
@@ -100,7 +101,7 @@ func ListAuditLog(w http.ResponseWriter, r *http.Request) {
 		auditEntries.TotalCount,
 	))
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 }

@@ -3,6 +3,7 @@ package handlers
 import (
 	"Keyline/internal/commands"
 	"Keyline/internal/config"
+	"Keyline/internal/httputil"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/queries"
 	"Keyline/utils"
@@ -91,13 +92,13 @@ func CreateVirtualServer(w http.ResponseWriter, r *http.Request) {
 	var dto CreateVirtualServerRequestDto
 	err := json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	err = utils.ValidateDto(dto)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 	m := ioc.GetDependency[mediatr.Mediator](scope)
@@ -167,7 +168,7 @@ func CreateVirtualServer(w http.ResponseWriter, r *http.Request) {
 		}),
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -200,7 +201,7 @@ func GetVirtualServer(w http.ResponseWriter, r *http.Request) {
 
 	vsName, err := middlewares.GetVirtualServerName(r.Context())
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -209,7 +210,7 @@ func GetVirtualServer(w http.ResponseWriter, r *http.Request) {
 		VirtualServerName: vsName,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -228,7 +229,7 @@ func GetVirtualServer(w http.ResponseWriter, r *http.Request) {
 		UpdatedAt:                response.UpdatedAt,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 	}
 }
 
@@ -252,7 +253,7 @@ func GetVirtualServerPublicInfo(w http.ResponseWriter, r *http.Request) {
 
 	vsName, err := middlewares.GetVirtualServerName(r.Context())
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -262,7 +263,7 @@ func GetVirtualServerPublicInfo(w http.ResponseWriter, r *http.Request) {
 		VirtualServerName: vsName,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -275,7 +276,7 @@ func GetVirtualServerPublicInfo(w http.ResponseWriter, r *http.Request) {
 		RegistrationEnabled: response.RegistrationEnabled,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 	}
 }
 
@@ -303,14 +304,14 @@ func PatchVirtualServer(w http.ResponseWriter, r *http.Request) {
 
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	var dto PatchVirtualServerRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -321,7 +322,7 @@ func PatchVirtualServer(w http.ResponseWriter, r *http.Request) {
 	}
 	_, err = mediatr.Send[*commands.PatchVirtualServerResponse](ctx, m, command)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 

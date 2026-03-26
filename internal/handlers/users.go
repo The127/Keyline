@@ -5,6 +5,7 @@ import (
 	"Keyline/internal/commands"
 	"Keyline/internal/config"
 	"Keyline/internal/database"
+	"Keyline/internal/httputil"
 	"Keyline/internal/jsonTypes"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/queries"
@@ -40,13 +41,13 @@ var (
 func VerifyEmail(w http.ResponseWriter, r *http.Request) {
 	vsName, err := middlewares.GetVirtualServerName(r.Context())
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	token := r.URL.Query().Get("token")
 	if token == "" {
-		utils.HandleHttpError(w, ErrMissingEmailVerificationToken)
+		httputil.HandleHttpError(w, ErrMissingEmailVerificationToken)
 		return
 	}
 
@@ -58,7 +59,7 @@ func VerifyEmail(w http.ResponseWriter, r *http.Request) {
 		Token:             token,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -87,20 +88,20 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	var dto RegisterUserRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	err = utils.ValidateDto(dto)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -115,7 +116,7 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 		Email:             dto.Email,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -153,20 +154,20 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	var dto CreateUserRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	err = utils.ValidateDto(dto)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -181,7 +182,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		EmailVerified:     dto.EmailVerified,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -192,7 +193,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 			Temporary:   dto.Password.Temporary,
 		})
 		if err != nil {
-			utils.HandleHttpError(w, err)
+			httputil.HandleHttpError(w, err)
 		}
 	}
 
@@ -202,7 +203,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		Id: createUserResponse.Id,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 }
@@ -236,13 +237,13 @@ func ListUsers(w http.ResponseWriter, r *http.Request) {
 
 	queryOps, err := ParseQueryOps(r)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -256,7 +257,7 @@ func ListUsers(w http.ResponseWriter, r *http.Request) {
 		SearchText:        queryOps.Search,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -278,7 +279,7 @@ func ListUsers(w http.ResponseWriter, r *http.Request) {
 		users.TotalCount,
 	))
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 }
@@ -309,7 +310,7 @@ func GetUserById(w http.ResponseWriter, r *http.Request) {
 
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -318,7 +319,7 @@ func GetUserById(w http.ResponseWriter, r *http.Request) {
 
 	userId, err := uuid.Parse(userIdString)
 	if err != nil {
-		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+		httputil.HandleHttpError(w, utils.ErrInvalidUuid)
 		return
 	}
 
@@ -329,7 +330,7 @@ func GetUserById(w http.ResponseWriter, r *http.Request) {
 	}
 	queryResult, err := mediatr.Send[*queries.GetUserQueryResult](ctx, m, query)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -349,7 +350,7 @@ func GetUserById(w http.ResponseWriter, r *http.Request) {
 
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 	}
 }
 
@@ -371,20 +372,20 @@ func GetUserApplicationMetadata(w http.ResponseWriter, r *http.Request) {
 
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	vars := mux.Vars(r)
 	userId, err := uuid.Parse(vars["userId"])
 	if err != nil {
-		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+		httputil.HandleHttpError(w, utils.ErrInvalidUuid)
 		return
 	}
 
 	appId, err := uuid.Parse(vars["appId"])
 	if err != nil {
-		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+		httputil.HandleHttpError(w, utils.ErrInvalidUuid)
 		return
 	}
 
@@ -396,7 +397,7 @@ func GetUserApplicationMetadata(w http.ResponseWriter, r *http.Request) {
 	}
 	response, err := mediatr.Send[*queries.GetUserMetadataResult](ctx, m, query)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -405,7 +406,7 @@ func GetUserApplicationMetadata(w http.ResponseWriter, r *http.Request) {
 	for _, v := range response.ApplicationMetadata {
 		err := json.Unmarshal([]byte(v), &responseDto)
 		if err != nil {
-			utils.HandleHttpError(w, err)
+			httputil.HandleHttpError(w, err)
 			return
 		}
 	}
@@ -414,7 +415,7 @@ func GetUserApplicationMetadata(w http.ResponseWriter, r *http.Request) {
 
 	err = json.NewEncoder(w).Encode(responseDto)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 	}
 }
 
@@ -436,14 +437,14 @@ func GetUserGlobalMetadata(w http.ResponseWriter, r *http.Request) {
 
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	vars := mux.Vars(r)
 	userId, err := uuid.Parse(vars["userId"])
 	if err != nil {
-		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+		httputil.HandleHttpError(w, utils.ErrInvalidUuid)
 		return
 	}
 
@@ -455,7 +456,7 @@ func GetUserGlobalMetadata(w http.ResponseWriter, r *http.Request) {
 	}
 	response, err := mediatr.Send[*queries.GetUserMetadataResult](ctx, m, query)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -464,7 +465,7 @@ func GetUserGlobalMetadata(w http.ResponseWriter, r *http.Request) {
 	if response.Metadata != "" {
 		err := json.Unmarshal([]byte(response.Metadata), &responseDto)
 		if err != nil {
-			utils.HandleHttpError(w, err)
+			httputil.HandleHttpError(w, err)
 			return
 		}
 	}
@@ -473,7 +474,7 @@ func GetUserGlobalMetadata(w http.ResponseWriter, r *http.Request) {
 
 	err = json.NewEncoder(w).Encode(responseDto)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 	}
 }
 
@@ -497,14 +498,14 @@ func GetUserMetadata(w http.ResponseWriter, r *http.Request) {
 
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	vars := mux.Vars(r)
 	userId, err := uuid.Parse(vars["userId"])
 	if err != nil {
-		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+		httputil.HandleHttpError(w, utils.ErrInvalidUuid)
 		return
 	}
 
@@ -517,7 +518,7 @@ func GetUserMetadata(w http.ResponseWriter, r *http.Request) {
 	}
 	response, err := mediatr.Send[*queries.GetUserMetadataResult](ctx, m, query)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -526,7 +527,7 @@ func GetUserMetadata(w http.ResponseWriter, r *http.Request) {
 	if response.Metadata != "" {
 		err := json.Unmarshal([]byte(response.Metadata), &responseDto.Metadata)
 		if err != nil {
-			utils.HandleHttpError(w, err)
+			httputil.HandleHttpError(w, err)
 			return
 		}
 	}
@@ -539,7 +540,7 @@ func GetUserMetadata(w http.ResponseWriter, r *http.Request) {
 		var appMetadata map[string]any
 		err := json.Unmarshal([]byte(metadata), &appMetadata)
 		if err != nil {
-			utils.HandleHttpError(w, err)
+			httputil.HandleHttpError(w, err)
 			return
 		}
 		responseDto.ApplicationMetadata[appName] = appMetadata
@@ -549,7 +550,7 @@ func GetUserMetadata(w http.ResponseWriter, r *http.Request) {
 
 	err = json.NewEncoder(w).Encode(responseDto)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 	}
 }
 
@@ -571,20 +572,20 @@ func UpdateUserGlobalMetadata(w http.ResponseWriter, r *http.Request) {
 
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	vars := mux.Vars(r)
 	userId, err := uuid.Parse(vars["userId"])
 	if err != nil {
-		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+		httputil.HandleHttpError(w, utils.ErrInvalidUuid)
 	}
 
 	var dto UpdateUserGlobalMetadataRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -595,7 +596,7 @@ func UpdateUserGlobalMetadata(w http.ResponseWriter, r *http.Request) {
 		Metadata:          dto,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -622,21 +623,21 @@ func PatchUserGlobalMetadata(w http.ResponseWriter, r *http.Request) {
 
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	vars := mux.Vars(r)
 	userId, err := uuid.Parse(vars["userId"])
 	if err != nil {
-		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+		httputil.HandleHttpError(w, utils.ErrInvalidUuid)
 		return
 	}
 
 	var dto PatchUserGlobalMetadataRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -647,7 +648,7 @@ func PatchUserGlobalMetadata(w http.ResponseWriter, r *http.Request) {
 		Metadata:          dto,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -673,27 +674,27 @@ func UpdateUserApplicationMetadata(w http.ResponseWriter, r *http.Request) {
 
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	vars := mux.Vars(r)
 	userId, err := uuid.Parse(vars["userId"])
 	if err != nil {
-		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+		httputil.HandleHttpError(w, utils.ErrInvalidUuid)
 		return
 	}
 
 	appId, err := uuid.Parse(vars["appId"])
 	if err != nil {
-		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+		httputil.HandleHttpError(w, utils.ErrInvalidUuid)
 		return
 	}
 
 	var dto UpdateUserApplicationMetadataRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -705,7 +706,7 @@ func UpdateUserApplicationMetadata(w http.ResponseWriter, r *http.Request) {
 		Metadata:          dto,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -733,27 +734,27 @@ func PatchUserApplicationMetadata(w http.ResponseWriter, r *http.Request) {
 
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	vars := mux.Vars(r)
 	userId, err := uuid.Parse(vars["userId"])
 	if err != nil {
-		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+		httputil.HandleHttpError(w, utils.ErrInvalidUuid)
 		return
 	}
 
 	appId, err := uuid.Parse(vars["appId"])
 	if err != nil {
-		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+		httputil.HandleHttpError(w, utils.ErrInvalidUuid)
 		return
 	}
 
 	var dto PatchUserApplicationMetadataRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 	}
 
 	m := ioc.GetDependency[mediatr.Mediator](scope)
@@ -764,7 +765,7 @@ func PatchUserApplicationMetadata(w http.ResponseWriter, r *http.Request) {
 		Metadata:          dto,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -792,7 +793,7 @@ func PatchUser(w http.ResponseWriter, r *http.Request) {
 
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -800,14 +801,14 @@ func PatchUser(w http.ResponseWriter, r *http.Request) {
 	userIdString := vars["userId"]
 	userId, err := uuid.Parse(userIdString)
 	if err != nil {
-		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+		httputil.HandleHttpError(w, utils.ErrInvalidUuid)
 		return
 	}
 
 	var dto PatchUserRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -819,7 +820,7 @@ func PatchUser(w http.ResponseWriter, r *http.Request) {
 	}
 	_, err = mediatr.Send[*commands.PatchUserResponse](ctx, m, command)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -849,19 +850,19 @@ func CreateServiceUser(w http.ResponseWriter, r *http.Request) {
 
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	var dto CreateServiceUserRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 	}
 
 	err = utils.ValidateDto(dto)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -873,7 +874,7 @@ func CreateServiceUser(w http.ResponseWriter, r *http.Request) {
 		Username:          dto.Username,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -882,7 +883,7 @@ func CreateServiceUser(w http.ResponseWriter, r *http.Request) {
 		Id: response.Id,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 }
@@ -910,25 +911,25 @@ func AssociateServiceUserPublicKey(w http.ResponseWriter, r *http.Request) {
 
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	vars := mux.Vars(r)
 	serviceUserId, err := uuid.Parse(vars["serviceUserId"])
 	if err != nil {
-		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+		httputil.HandleHttpError(w, utils.ErrInvalidUuid)
 	}
 
 	var dto AssociateServiceUserPublicKeyRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 	}
 
 	err = utils.ValidateDto(dto)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -941,7 +942,7 @@ func AssociateServiceUserPublicKey(w http.ResponseWriter, r *http.Request) {
 		PublicKey:         dto.PublicKey,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -950,7 +951,7 @@ func AssociateServiceUserPublicKey(w http.ResponseWriter, r *http.Request) {
 		Kid: response.Kid,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 }
@@ -971,20 +972,20 @@ func PasskeyCreateChallenge(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	userId, err := uuid.Parse(vars["userId"])
 	if err != nil {
-		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+		httputil.HandleHttpError(w, utils.ErrInvalidUuid)
 		return
 	}
 
 	currentUser := authentication.GetCurrentUser(ctx)
 	if currentUser.UserId != userId {
-		utils.HandleHttpError(w, fmt.Errorf("not allowed to create a challenge for another user: %w", utils.ErrHttpUnauthorized))
+		httputil.HandleHttpError(w, fmt.Errorf("not allowed to create a challenge for another user: %w", utils.ErrHttpUnauthorized))
 		return
 	}
 
 	userFilter := repositories.NewUserFilter().Id(userId)
 	user, err := dbContext.Users().FirstOrErr(ctx, userFilter)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -998,14 +999,14 @@ func PasskeyCreateChallenge(w http.ResponseWriter, r *http.Request) {
 
 	challengeJson, err := json.Marshal(challenge)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	kvStore := ioc.GetDependency[keyValue.Store](scope)
 	err = kvStore.Set(ctx, "passkey_challenge:"+challenge.Id.String(), string(challengeJson), keyValue.WithExpiration(time.Minute*5))
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -1019,7 +1020,7 @@ func PasskeyCreateChallenge(w http.ResponseWriter, r *http.Request) {
 		DisplayName: user.DisplayName(),
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 }
@@ -1050,27 +1051,27 @@ func PasskeyValidateCreateChallengeResponse(w http.ResponseWriter, r *http.Reque
 	vars := mux.Vars(r)
 	userId, err := uuid.Parse(vars["userId"])
 	if err != nil {
-		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+		httputil.HandleHttpError(w, utils.ErrInvalidUuid)
 		return
 	}
 
 	currentUser := authentication.GetCurrentUser(ctx)
 
 	if currentUser.UserId != userId {
-		utils.HandleHttpError(w, fmt.Errorf("not allowed to validate a challenge for another user: %w", utils.ErrHttpUnauthorized))
+		httputil.HandleHttpError(w, fmt.Errorf("not allowed to validate a challenge for another user: %w", utils.ErrHttpUnauthorized))
 		return
 	}
 
 	var dto PasskeyValidateChallengeRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	err = utils.ValidateDto(dto)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -1079,7 +1080,7 @@ func PasskeyValidateCreateChallengeResponse(w http.ResponseWriter, r *http.Reque
 
 	pubKey, err := base64.RawURLEncoding.DecodeString(dto.WebauthnResponse.Response.PublicKey)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -1110,7 +1111,7 @@ func ListPasskeys(w http.ResponseWriter, r *http.Request) {
 
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -1118,7 +1119,7 @@ func ListPasskeys(w http.ResponseWriter, r *http.Request) {
 	userIdString := vars["userId"]
 	userId, err := uuid.Parse(userIdString)
 	if err != nil {
-		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+		httputil.HandleHttpError(w, utils.ErrInvalidUuid)
 		return
 	}
 
@@ -1129,7 +1130,7 @@ func ListPasskeys(w http.ResponseWriter, r *http.Request) {
 		UserId:            userId,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -1145,7 +1146,7 @@ func ListPasskeys(w http.ResponseWriter, r *http.Request) {
 		Items: items,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 }

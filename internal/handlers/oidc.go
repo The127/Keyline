@@ -3,6 +3,7 @@ package handlers
 import (
 	"Keyline/internal/config"
 	"Keyline/internal/database"
+	"Keyline/internal/httputil"
 	"Keyline/internal/jsonTypes"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/repositories"
@@ -99,7 +100,7 @@ func trimLeadingZeros(b []byte) []byte {
 func WellKnownJwks(w http.ResponseWriter, r *http.Request) {
 	vsName, err := middlewares.GetVirtualServerName(r.Context())
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -110,7 +111,7 @@ func WellKnownJwks(w http.ResponseWriter, r *http.Request) {
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(vsName)
 	virtualServer, err := dbContext.VirtualServers().FirstOrNil(r.Context(), virtualServerFilter)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
 		return
 	}
 
@@ -150,7 +151,7 @@ func WellKnownJwks(w http.ResponseWriter, r *http.Request) {
 		})
 
 	default:
-		utils.HandleHttpError(w, fmt.Errorf("unsupported signing algorithm: %s", virtualServer.SigningAlgorithm()))
+		httputil.HandleHttpError(w, fmt.Errorf("unsupported signing algorithm: %s", virtualServer.SigningAlgorithm()))
 		return
 	}
 
@@ -161,7 +162,7 @@ func WellKnownJwks(w http.ResponseWriter, r *http.Request) {
 		Keys: keys,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 }
@@ -199,7 +200,7 @@ func WellKnownOpenIdConfiguration(w http.ResponseWriter, r *http.Request) {
 
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -207,11 +208,11 @@ func WellKnownOpenIdConfiguration(w http.ResponseWriter, r *http.Request) {
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(vsName)
 	virtualServer, err := dbContext.VirtualServers().FirstOrNil(ctx, virtualServerFilter)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
 		return
 	}
 	if virtualServer == nil {
-		utils.HandleHttpError(w, fmt.Errorf("virtual server not found"))
+		httputil.HandleHttpError(w, fmt.Errorf("virtual server not found"))
 		return
 	}
 
@@ -241,7 +242,7 @@ func WellKnownOpenIdConfiguration(w http.ResponseWriter, r *http.Request) {
 
 	err = json.NewEncoder(w).Encode(responseDto)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 }
@@ -284,13 +285,13 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 
 	err := r.ParseForm()
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -312,7 +313,7 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 	if requestParam != "" {
 		token, _, err := new(jwt.Parser).ParseUnverified(requestParam, jwt.MapClaims{})
 		if err != nil {
-			utils.HandleHttpError(w, fmt.Errorf("parsing request parameter: %w", err))
+			httputil.HandleHttpError(w, fmt.Errorf("parsing request parameter: %w", err))
 			return
 		}
 
@@ -348,12 +349,12 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(vsName)
 	virtualServer, err := dbContext.VirtualServers().FirstOrNil(ctx, virtualServerFilter)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
 		return
 	}
 
 	if virtualServer == nil {
-		utils.HandleHttpError(w, fmt.Errorf("virtual server not found"))
+		httputil.HandleHttpError(w, fmt.Errorf("virtual server not found"))
 		return
 	}
 
@@ -362,17 +363,17 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 		VirtualServerId(virtualServer.Id())
 	application, err := dbContext.Applications().FirstOrNil(ctx, applicationFilter)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting application: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("getting application: %w", err))
 		return
 	}
 
 	if application == nil {
-		utils.HandleHttpError(w, fmt.Errorf("application not found"))
+		httputil.HandleHttpError(w, fmt.Errorf("application not found"))
 		return
 	}
 
 	if application.RedirectUris() == nil || len(application.RedirectUris()) == 0 {
-		utils.HandleHttpError(w, fmt.Errorf("application has no redirect uris"))
+		httputil.HandleHttpError(w, fmt.Errorf("application has no redirect uris"))
 		return
 	}
 
@@ -394,7 +395,7 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !slices.Contains(authRequest.Scopes, "openid") {
-		utils.HandleHttpError(w, fmt.Errorf("required openid scope missing"))
+		httputil.HandleHttpError(w, fmt.Errorf("required openid scope missing"))
 		return
 	}
 
@@ -410,19 +411,19 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 
 		codeInfoString, err := json.Marshal(codeInfo)
 		if err != nil {
-			utils.HandleHttpError(w, fmt.Errorf("marshaling code info: %w", err))
+			httputil.HandleHttpError(w, fmt.Errorf("marshaling code info: %w", err))
 			return
 		}
 
 		code, err := tokenService.GenerateAndStoreToken(ctx, services.OidcCodeTokenType, string(codeInfoString), time.Minute)
 		if err != nil {
-			utils.HandleHttpError(w, fmt.Errorf("generating code: %w", err))
+			httputil.HandleHttpError(w, fmt.Errorf("generating code: %w", err))
 			return
 		}
 
 		redirectUri, err := url.Parse(authRequest.RedirectUri)
 		if err != nil {
-			utils.HandleHttpError(w, fmt.Errorf("parsing redirect uri: %w", err))
+			httputil.HandleHttpError(w, fmt.Errorf("parsing redirect uri: %w", err))
 			return
 		}
 
@@ -453,13 +454,13 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 
 	loginInfoString, err := json.Marshal(loginInfo)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("marshaling login info: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("marshaling login info: %w", err))
 		return
 	}
 
 	loginSessionToken, err := tokenService.GenerateAndStoreToken(ctx, services.LoginSessionTokenType, string(loginInfoString), time.Minute*15)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("generating login session token: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("generating login session token: %w", err))
 		return
 	}
 
@@ -474,7 +475,7 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 func errorRedirect(w http.ResponseWriter, r *http.Request, authRequest AuthorizationRequest, oidcError OidcError) {
 	errorUrl, err := url.Parse(authRequest.RedirectUri)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("parsing redirect uri: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("parsing redirect uri: %w", err))
 		return
 	}
 
@@ -516,7 +517,7 @@ func OidcEndSession(w http.ResponseWriter, r *http.Request) {
 
 	err := r.ParseForm()
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -524,14 +525,14 @@ func OidcEndSession(w http.ResponseWriter, r *http.Request) {
 
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(vsName)
 	virtualServer, err := dbContext.VirtualServers().FirstOrNil(r.Context(), virtualServerFilter)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
 		return
 	}
 
@@ -540,7 +541,7 @@ func OidcEndSession(w http.ResponseWriter, r *http.Request) {
 
 	idTokenString := r.Form.Get("id_token_hint")
 	if idTokenString == "" {
-		utils.HandleHttpError(w, fmt.Errorf("id token hint not found"))
+		httputil.HandleHttpError(w, fmt.Errorf("id token hint not found"))
 		return
 	}
 
@@ -558,35 +559,35 @@ func OidcEndSession(w http.ResponseWriter, r *http.Request) {
 		return keyPair.PublicKey(), nil
 	})
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("parsing id token: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("parsing id token: %w", err))
 		return
 	}
 
 	if !idToken.Valid {
-		utils.HandleHttpError(w, fmt.Errorf("id token is not valid"))
+		httputil.HandleHttpError(w, fmt.Errorf("id token is not valid"))
 		return
 	}
 
 	idTokenClaims := idToken.Claims.(jwt.MapClaims)
 	clientId, err := extractClientIdFromJwt(idTokenClaims)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("extracting client id from id token: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("extracting client id from id token: %w", err))
 		return
 	}
 
 	if clientId == "" {
-		utils.HandleHttpError(w, fmt.Errorf("client id not found"))
+		httputil.HandleHttpError(w, fmt.Errorf("client id not found"))
 		return
 	}
 
 	applicationFilter := repositories.NewApplicationFilter().Name(clientId)
 	application, err := dbContext.Applications().FirstOrNil(ctx, applicationFilter)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting application: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("getting application: %w", err))
 		return
 	}
 	if application == nil {
-		utils.HandleHttpError(w, fmt.Errorf("application not found"))
+		httputil.HandleHttpError(w, fmt.Errorf("application not found"))
 		return
 	}
 
@@ -596,19 +597,19 @@ func OidcEndSession(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !slices.Contains(application.PostLogoutRedirectUris(), redirectUriString) {
-		utils.HandleHttpError(w, fmt.Errorf("redirect uri not found"))
+		httputil.HandleHttpError(w, fmt.Errorf("redirect uri not found"))
 		return
 	}
 
 	err = middlewares.DeleteSession(w, r, vsName)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	redirectUri, err := url.Parse(redirectUriString)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("parsing redirect uri: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("parsing redirect uri: %w", err))
 		return
 	}
 
@@ -672,14 +673,14 @@ func OidcUserinfo(w http.ResponseWriter, r *http.Request) {
 
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(vsName)
 	virtualServer, err := dbContext.VirtualServers().FirstOrNil(r.Context(), virtualServerFilter)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
 		return
 	}
 
@@ -688,23 +689,23 @@ func OidcUserinfo(w http.ResponseWriter, r *http.Request) {
 
 	err = r.ParseForm()
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	bearer, err := extractAccessToken(r)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("extracting access token: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("extracting access token: %w", err))
 		return
 	}
 	if bearer == "" {
-		utils.HandleHttpError(w, fmt.Errorf("authorization header not found"))
+		httputil.HandleHttpError(w, fmt.Errorf("authorization header not found"))
 		return
 	}
 
 	tokenString := strings.TrimPrefix(bearer, "Bearer ")
 	if tokenString == "" {
-		utils.HandleHttpError(w, fmt.Errorf("token not found"))
+		httputil.HandleHttpError(w, fmt.Errorf("token not found"))
 		return
 	}
 
@@ -712,30 +713,30 @@ func OidcUserinfo(w http.ResponseWriter, r *http.Request) {
 		return keyPair.PublicKey(), nil
 	})
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("parsing token: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("parsing token: %w", err))
 		return
 	}
 
 	subject, err := tokenJwt.Claims.GetSubject()
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting subject: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("getting subject: %w", err))
 		return
 	}
 
 	userId, err := uuid.Parse(subject)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("parsing subject: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("parsing subject: %w", err))
 		return
 	}
 
 	userFilter := repositories.NewUserFilter().Id(userId).VirtualServerId(virtualServer.Id())
 	user, err := dbContext.Users().FirstOrNil(ctx, userFilter)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting user: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("getting user: %w", err))
 		return
 	}
 	if user == nil {
-		utils.HandleHttpError(w, fmt.Errorf("user not found"))
+		httputil.HandleHttpError(w, fmt.Errorf("user not found"))
 		return
 	}
 
@@ -748,7 +749,7 @@ func OidcUserinfo(w http.ResponseWriter, r *http.Request) {
 
 	scopes, err := extractScopes(tokenJwt)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("extracting scopes: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("extracting scopes: %w", err))
 		return
 	}
 
@@ -763,7 +764,7 @@ func OidcUserinfo(w http.ResponseWriter, r *http.Request) {
 
 	err = json.NewEncoder(w).Encode(tempResult)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 }
@@ -823,7 +824,7 @@ func extractAccessToken(r *http.Request) (string, error) {
 func OidcToken(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -843,7 +844,7 @@ func OidcToken(w http.ResponseWriter, r *http.Request) {
 		handleDeviceCodeGrant(w, r)
 
 	default:
-		utils.HandleHttpError(w, fmt.Errorf("unsupported grant type: %s", grantType))
+		httputil.HandleHttpError(w, fmt.Errorf("unsupported grant type: %s", grantType))
 		return
 	}
 }
@@ -909,7 +910,7 @@ func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 	var codeInfo jsonTypes.CodeInfo
 	err = json.Unmarshal([]byte(valueString), &codeInfo)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("unmarshaling code info: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("unmarshaling code info: %w", err))
 		return
 	}
 
@@ -920,7 +921,7 @@ func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 
 	_, err = authenticateApplication(ctx, clientId, clientSecret)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("authenticating application: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("authenticating application: %w", err))
 		return
 	}
 
@@ -929,11 +930,11 @@ func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 	userFilter := repositories.NewUserFilter().Id(codeInfo.UserId)
 	user, err := dbContext.Users().FirstOrNil(ctx, userFilter)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting user: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("getting user: %w", err))
 		return
 	}
 	if user == nil {
-		utils.HandleHttpError(w, fmt.Errorf("user not found"))
+		httputil.HandleHttpError(w, fmt.Errorf("user not found"))
 		return
 	}
 
@@ -945,7 +946,7 @@ func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(codeInfo.VirtualServerName)
 	virtualServer, err := dbContext.VirtualServers().FirstOrNil(r.Context(), virtualServerFilter)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
 		return
 	}
 
@@ -954,11 +955,11 @@ func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 		Name(clientId)
 	application, err := dbContext.Applications().FirstOrNil(ctx, applicationFilter)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting application: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("getting application: %w", err))
 		return
 	}
 	if application == nil {
-		utils.HandleHttpError(w, fmt.Errorf("application not found"))
+		httputil.HandleHttpError(w, fmt.Errorf("application not found"))
 		return
 	}
 
@@ -988,13 +989,13 @@ func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 
 	tokens, err := generateTokens(ctx, params, tokenService)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	err = tokenService.DeleteToken(ctx, services.OidcCodeTokenType, code)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("deleting code: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("deleting code: %w", err))
 		return
 	}
 
@@ -1013,7 +1014,7 @@ func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 	}
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("encoding response: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("encoding response: %w", err))
 		return
 	}
 }
@@ -1335,21 +1336,21 @@ func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 
 	_, err := authenticateApplication(ctx, clientId, clientSecret)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("authenticating application: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("authenticating application: %w", err))
 		return
 	}
 
 	tokenService := ioc.GetDependency[services.TokenService](scope)
 	refreshTokenInfoString, err := tokenService.GetToken(ctx, services.OidcRefreshTokenTokenType, r.Form.Get("refresh_token"))
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting refresh token: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("getting refresh token: %w", err))
 		return
 	}
 
 	var refreshTokenInfo jsonTypes.RefreshTokenInfo
 	err = json.Unmarshal([]byte(refreshTokenInfoString), &refreshTokenInfo)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("unmarshaling refresh token info: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("unmarshaling refresh token info: %w", err))
 		return
 	}
 
@@ -1360,7 +1361,7 @@ func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 
 	err = tokenService.DeleteToken(ctx, services.OidcRefreshTokenTokenType, r.Form.Get("refresh_token"))
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("deleting refresh token: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("deleting refresh token: %w", err))
 		return
 	}
 
@@ -1369,11 +1370,11 @@ func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 	userFilter := repositories.NewUserFilter().Id(refreshTokenInfo.UserId)
 	user, err := dbContext.Users().FirstOrNil(ctx, userFilter)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting user: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("getting user: %w", err))
 		return
 	}
 	if user == nil {
-		utils.HandleHttpError(w, fmt.Errorf("user not found"))
+		httputil.HandleHttpError(w, fmt.Errorf("user not found"))
 		return
 	}
 
@@ -1383,7 +1384,7 @@ func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(refreshTokenInfo.VirtualServerName)
 	virtualServer, err := dbContext.VirtualServers().FirstOrNil(r.Context(), virtualServerFilter)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
 		return
 	}
 
@@ -1392,11 +1393,11 @@ func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 		Name(clientId)
 	application, err := dbContext.Applications().FirstOrNil(ctx, applicationFilter)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting application: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("getting application: %w", err))
 		return
 	}
 	if application == nil {
-		utils.HandleHttpError(w, fmt.Errorf("application not found"))
+		httputil.HandleHttpError(w, fmt.Errorf("application not found"))
 		return
 	}
 
@@ -1424,7 +1425,7 @@ func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 
 	tokens, err := generateTokens(ctx, params, tokenService)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -1441,7 +1442,7 @@ func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 	}
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("encoding response: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("encoding response: %w", err))
 		return
 	}
 }
@@ -1457,17 +1458,17 @@ func handleTokenExchange(w http.ResponseWriter, r *http.Request) {
 	subjectTokenType := r.Form.Get("subject_token_type")
 
 	if subjectToken == "" {
-		utils.HandleHttpError(w, fmt.Errorf("missing subject token"))
+		httputil.HandleHttpError(w, fmt.Errorf("missing subject token"))
 		return
 	}
 
 	if subjectTokenType == "" {
-		utils.HandleHttpError(w, fmt.Errorf("missing subject token type"))
+		httputil.HandleHttpError(w, fmt.Errorf("missing subject token type"))
 		return
 	}
 
 	if subjectTokenType != "urn:ietf:params:oauth:token-type:access_token" {
-		utils.HandleHttpError(w, fmt.Errorf("unsupported subject token type: %s", subjectTokenType))
+		httputil.HandleHttpError(w, fmt.Errorf("unsupported subject token type: %s", subjectTokenType))
 	}
 
 	ctx := r.Context()
@@ -1476,18 +1477,18 @@ func handleTokenExchange(w http.ResponseWriter, r *http.Request) {
 
 	virtualServerName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting virtual server name: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("getting virtual server name: %w", err))
 		return
 	}
 
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(virtualServerName)
 	virtualServer, err := dbContext.VirtualServers().FirstOrNil(ctx, virtualServerFilter)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
 		return
 	}
 	if virtualServer == nil {
-		utils.HandleHttpError(w, fmt.Errorf("virtual server not found"))
+		httputil.HandleHttpError(w, fmt.Errorf("virtual server not found"))
 		return
 	}
 
@@ -1596,17 +1597,17 @@ func handleTokenExchange(w http.ResponseWriter, r *http.Request) {
 		return pubKey, nil
 	})
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("parsing subject token: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("parsing subject token: %w", err))
 		return
 	}
 	if !token.Valid {
-		utils.HandleHttpError(w, fmt.Errorf("invalid subject token"))
+		httputil.HandleHttpError(w, fmt.Errorf("invalid subject token"))
 		return
 	}
 
 	subject, err := token.Claims.GetSubject()
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting subject: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("getting subject: %w", err))
 		return
 	}
 
@@ -1615,21 +1616,21 @@ func handleTokenExchange(w http.ResponseWriter, r *http.Request) {
 		Username(subject)
 	user, err := dbContext.Users().FirstOrNil(ctx, userFilter)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting user: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("getting user: %w", err))
 		return
 	}
 	if user == nil {
-		utils.HandleHttpError(w, fmt.Errorf("user not found"))
+		httputil.HandleHttpError(w, fmt.Errorf("user not found"))
 		return
 	}
 
 	audience, err := token.Claims.GetAudience()
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting audience: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("getting audience: %w", err))
 		return
 	}
 	if len(audience) != 1 {
-		utils.HandleHttpError(w, fmt.Errorf("expected audience to be a single string"))
+		httputil.HandleHttpError(w, fmt.Errorf("expected audience to be a single string"))
 	}
 
 	applicationName := audience[0]
@@ -1642,11 +1643,11 @@ func handleTokenExchange(w http.ResponseWriter, r *http.Request) {
 		Name(applicationName)
 	application, err := dbContext.Applications().FirstOrNil(ctx, applicationFilter)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting application: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("getting application: %w", err))
 		return
 	}
 	if application == nil {
-		utils.HandleHttpError(w, fmt.Errorf("application not found"))
+		httputil.HandleHttpError(w, fmt.Errorf("application not found"))
 		return
 	}
 
@@ -1669,7 +1670,7 @@ func handleTokenExchange(w http.ResponseWriter, r *http.Request) {
 		HeaderType:        application.AccessTokenHeaderType(),
 	})
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("generating access token: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("generating access token: %w", err))
 		return
 	}
 
@@ -1683,7 +1684,7 @@ func handleTokenExchange(w http.ResponseWriter, r *http.Request) {
 	}
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("encoding response: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("encoding response: %w", err))
 		return
 	}
 }
@@ -1717,13 +1718,13 @@ func BeginDeviceFlow(w http.ResponseWriter, r *http.Request) {
 
 	err := r.ParseForm()
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -1746,11 +1747,11 @@ func BeginDeviceFlow(w http.ResponseWriter, r *http.Request) {
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(vsName)
 	virtualServer, err := dbContext.VirtualServers().FirstOrNil(ctx, virtualServerFilter)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
 		return
 	}
 	if virtualServer == nil {
-		utils.HandleHttpError(w, fmt.Errorf("virtual server not found"))
+		httputil.HandleHttpError(w, fmt.Errorf("virtual server not found"))
 		return
 	}
 
@@ -1759,7 +1760,7 @@ func BeginDeviceFlow(w http.ResponseWriter, r *http.Request) {
 		Name(clientId)
 	application, err := dbContext.Applications().FirstOrNil(ctx, applicationFilter)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting application: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("getting application: %w", err))
 		return
 	}
 	if application == nil {
@@ -1784,7 +1785,7 @@ func BeginDeviceFlow(w http.ResponseWriter, r *http.Request) {
 
 	deviceCodeInfoJson, err := json.Marshal(deviceCodeInfo)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("marshaling device code info: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("marshaling device code info: %w", err))
 		return
 	}
 
@@ -1792,13 +1793,13 @@ func BeginDeviceFlow(w http.ResponseWriter, r *http.Request) {
 
 	deviceCode, err := tokenService.GenerateAndStoreToken(ctx, services.OidcDeviceCodeTokenType, string(deviceCodeInfoJson), 10*time.Minute)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("generating device code: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("generating device code: %w", err))
 		return
 	}
 
 	err = tokenService.StoreToken(ctx, services.OidcUserCodeTokenType, userCode, deviceCode, 10*time.Minute)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("storing user code: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("storing user code: %w", err))
 		return
 	}
 
@@ -1819,7 +1820,7 @@ func BeginDeviceFlow(w http.ResponseWriter, r *http.Request) {
 	}
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("encoding response: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("encoding response: %w", err))
 		return
 	}
 }
@@ -1850,7 +1851,7 @@ func handleDeviceCodeGrant(w http.ResponseWriter, r *http.Request) {
 	var deviceCodeInfo jsonTypes.DeviceCodeInfo
 	err = json.Unmarshal([]byte(valueString), &deviceCodeInfo)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("unmarshaling device code info: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("unmarshaling device code info: %w", err))
 		return
 	}
 
@@ -1876,13 +1877,13 @@ func handleDeviceCodeGrant(w http.ResponseWriter, r *http.Request) {
 	userIdStr := deviceCodeInfo.UserId
 	userId, err := uuid.Parse(userIdStr)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("parsing user id: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("parsing user id: %w", err))
 		return
 	}
 
 	err = tokenService.DeleteToken(ctx, services.OidcDeviceCodeTokenType, deviceCode)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("deleting device code: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("deleting device code: %w", err))
 		return
 	}
 
@@ -1891,11 +1892,11 @@ func handleDeviceCodeGrant(w http.ResponseWriter, r *http.Request) {
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(deviceCodeInfo.VirtualServerName)
 	virtualServer, err := dbContext.VirtualServers().FirstOrNil(ctx, virtualServerFilter)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
 		return
 	}
 	if virtualServer == nil {
-		utils.HandleHttpError(w, fmt.Errorf("virtual server not found"))
+		httputil.HandleHttpError(w, fmt.Errorf("virtual server not found"))
 		return
 	}
 
@@ -1904,11 +1905,11 @@ func handleDeviceCodeGrant(w http.ResponseWriter, r *http.Request) {
 		Name(clientId)
 	application, err := dbContext.Applications().FirstOrNil(ctx, applicationFilter)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting application: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("getting application: %w", err))
 		return
 	}
 	if application == nil {
-		utils.HandleHttpError(w, fmt.Errorf("application not found"))
+		httputil.HandleHttpError(w, fmt.Errorf("application not found"))
 		return
 	}
 
@@ -1917,11 +1918,11 @@ func handleDeviceCodeGrant(w http.ResponseWriter, r *http.Request) {
 	userFilter := repositories.NewUserFilter().Id(userId)
 	user, err := dbContext.Users().FirstOrNil(ctx, userFilter)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting user: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("getting user: %w", err))
 		return
 	}
 	if user == nil {
-		utils.HandleHttpError(w, fmt.Errorf("user not found"))
+		httputil.HandleHttpError(w, fmt.Errorf("user not found"))
 		return
 	}
 
@@ -1952,7 +1953,7 @@ func handleDeviceCodeGrant(w http.ResponseWriter, r *http.Request) {
 
 	tokens, err := generateTokens(ctx, params, tokenService)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -1971,7 +1972,7 @@ func handleDeviceCodeGrant(w http.ResponseWriter, r *http.Request) {
 	}
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("encoding response: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("encoding response: %w", err))
 		return
 	}
 }
@@ -1979,7 +1980,7 @@ func handleDeviceCodeGrant(w http.ResponseWriter, r *http.Request) {
 func GetActivatePage(w http.ResponseWriter, r *http.Request) {
 	vsName, err := middlewares.GetVirtualServerName(r.Context())
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -1996,13 +1997,13 @@ func PostActivatePage(w http.ResponseWriter, r *http.Request) {
 
 	err := r.ParseForm()
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -2029,7 +2030,7 @@ func PostActivatePage(w http.ResponseWriter, r *http.Request) {
 	var deviceCodeInfo jsonTypes.DeviceCodeInfo
 	err = json.Unmarshal([]byte(deviceCodeInfoString), &deviceCodeInfo)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("unmarshaling device code info: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("unmarshaling device code info: %w", err))
 		return
 	}
 
@@ -2043,11 +2044,11 @@ func PostActivatePage(w http.ResponseWriter, r *http.Request) {
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(vsName)
 	virtualServer, err := dbContext.VirtualServers().FirstOrNil(ctx, virtualServerFilter)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
 		return
 	}
 	if virtualServer == nil {
-		utils.HandleHttpError(w, fmt.Errorf("virtual server not found"))
+		httputil.HandleHttpError(w, fmt.Errorf("virtual server not found"))
 		return
 	}
 
@@ -2056,11 +2057,11 @@ func PostActivatePage(w http.ResponseWriter, r *http.Request) {
 		Name(deviceCodeInfo.ClientId)
 	application, err := dbContext.Applications().FirstOrNil(ctx, applicationFilter)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting application: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("getting application: %w", err))
 		return
 	}
 	if application == nil {
-		utils.HandleHttpError(w, fmt.Errorf("application not found"))
+		httputil.HandleHttpError(w, fmt.Errorf("application not found"))
 		return
 	}
 
@@ -2069,13 +2070,13 @@ func PostActivatePage(w http.ResponseWriter, r *http.Request) {
 
 	loginInfoString, err := json.Marshal(loginInfo)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("marshaling login info: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("marshaling login info: %w", err))
 		return
 	}
 
 	loginSessionToken, err := tokenService.GenerateAndStoreToken(ctx, services.LoginSessionTokenType, string(loginInfoString), 15*time.Minute)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("generating login session token: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("generating login session token: %w", err))
 		return
 	}
 
@@ -2086,7 +2087,7 @@ func PostActivatePage(w http.ResponseWriter, r *http.Request) {
 func ActivateSuccess(w http.ResponseWriter, r *http.Request) {
 	vsName, err := middlewares.GetVirtualServerName(r.Context())
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 

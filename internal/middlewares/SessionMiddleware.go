@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"Keyline/internal/config"
+	"Keyline/internal/httputil"
 	"Keyline/utils"
 	"context"
 	"errors"
@@ -51,7 +52,7 @@ func SessionMiddleware() mux.MiddlewareFunc {
 
 			vsName, err := GetVirtualServerName(ctx)
 			if err != nil {
-				utils.HandleHttpError(w, fmt.Errorf("getting virtual server name: %w", err))
+				httputil.HandleHttpError(w, fmt.Errorf("getting virtual server name: %w", err))
 				return
 			}
 
@@ -62,26 +63,26 @@ func SessionMiddleware() mux.MiddlewareFunc {
 				return
 
 			case err != nil:
-				utils.HandleHttpError(w, fmt.Errorf("getting session cookie: %w", err))
+				httputil.HandleHttpError(w, fmt.Errorf("getting session cookie: %w", err))
 				return
 			}
 
 			token, err := utils.DecodeSplitToken(sessionCookie.Value)
 			if err != nil {
-				utils.HandleHttpError(w, fmt.Errorf("decoding split token: %w", err))
+				httputil.HandleHttpError(w, fmt.Errorf("decoding split token: %w", err))
 				return
 			}
 
 			tokenId, err := uuid.Parse(token.Id())
 			if err != nil {
-				utils.HandleHttpError(w, fmt.Errorf("decoding token id: %w", err))
+				httputil.HandleHttpError(w, fmt.Errorf("decoding token id: %w", err))
 				return
 			}
 
 			sessionService := ioc.GetDependency[SessionService](scope)
 			session, err := sessionService.GetSession(ctx, vsName, tokenId)
 			if err != nil {
-				utils.HandleHttpError(w, fmt.Errorf("getting session: %w", err))
+				httputil.HandleHttpError(w, fmt.Errorf("getting session: %w", err))
 				return
 			}
 

@@ -44,6 +44,10 @@ test:
     @echo "🧪 Running unit tests..."
     go test -race -count=1 ./...
 
+arch:
+    @echo "🏛️ Running architecture tests..."
+    go test -race -count=1 ./tests/architecture/...
+
 integration:
     @echo "🔬 Running integration tests..."
     go test -race -count=1 -tags=integration ./tests/integration/...
@@ -86,6 +90,7 @@ ci fix="":
     just fmt
     just lint {{fix}}
     just test
+    just arch
     just integration
     just e2e
     @echo "✅ All checks passed."

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"Keyline/internal/httputil"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/queries"
 	"Keyline/internal/repositories"
@@ -44,14 +45,14 @@ func GetTemplate(w http.ResponseWriter, r *http.Request) {
 
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	vars := mux.Vars(r)
 	templateType, ok := vars["templateType"]
 	if !ok {
-		utils.HandleHttpError(w, utils.ErrTemplateNotFound)
+		httputil.HandleHttpError(w, utils.ErrTemplateNotFound)
 		return
 	}
 
@@ -62,7 +63,7 @@ func GetTemplate(w http.ResponseWriter, r *http.Request) {
 	}
 	queryResult, err := mediatr.Send[*queries.GetTemplateResult](ctx, m, query)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -79,7 +80,7 @@ func GetTemplate(w http.ResponseWriter, r *http.Request) {
 
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 	}
 }
 
@@ -101,13 +102,13 @@ func ListTemplates(w http.ResponseWriter, r *http.Request) {
 
 	queryOps, err := ParseQueryOps(r)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -121,7 +122,7 @@ func ListTemplates(w http.ResponseWriter, r *http.Request) {
 		SearchText:        queryOps.Search,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -141,6 +142,6 @@ func ListTemplates(w http.ResponseWriter, r *http.Request) {
 		templates.TotalCount,
 	))
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 	}
 }

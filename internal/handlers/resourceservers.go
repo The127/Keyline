@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"Keyline/internal/commands"
+	"Keyline/internal/httputil"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/queries"
 	"Keyline/utils"
@@ -39,7 +40,7 @@ func CreateResourceServer(w http.ResponseWriter, r *http.Request) {
 
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -49,13 +50,13 @@ func CreateResourceServer(w http.ResponseWriter, r *http.Request) {
 	requestDto := CreateResourceServerRequestDto{}
 	err = json.NewDecoder(r.Body).Decode(&requestDto)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	err = utils.ValidateDto(requestDto)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -70,7 +71,7 @@ func CreateResourceServer(w http.ResponseWriter, r *http.Request) {
 		Description:       requestDto.Description,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -107,13 +108,13 @@ func ListResourceServers(w http.ResponseWriter, r *http.Request) {
 
 	queryOps, err := ParseQueryOps(r)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -128,7 +129,7 @@ func ListResourceServers(w http.ResponseWriter, r *http.Request) {
 		ProjectSlug:       projectSlug,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -148,7 +149,7 @@ func ListResourceServers(w http.ResponseWriter, r *http.Request) {
 		resourceServers.TotalCount,
 	))
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 }
@@ -181,7 +182,7 @@ func GetResourceServer(w http.ResponseWriter, r *http.Request) {
 
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -191,7 +192,7 @@ func GetResourceServer(w http.ResponseWriter, r *http.Request) {
 	resourceServerIdString := vars["resourceServerId"]
 	resourceServerId, err := uuid.Parse(resourceServerIdString)
 	if err != nil {
-		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+		httputil.HandleHttpError(w, utils.ErrInvalidUuid)
 		return
 	}
 
@@ -204,7 +205,7 @@ func GetResourceServer(w http.ResponseWriter, r *http.Request) {
 		ResourceServerId:  resourceServerId,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -219,7 +220,7 @@ func GetResourceServer(w http.ResponseWriter, r *http.Request) {
 		UpdatedAt:   resourceServer.UpdatedAt,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 }

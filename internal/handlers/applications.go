@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"Keyline/internal/commands"
+	"Keyline/internal/httputil"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/queries"
 	"Keyline/internal/repositories"
@@ -50,7 +51,7 @@ func CreateApplication(w http.ResponseWriter, r *http.Request) {
 
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -60,13 +61,13 @@ func CreateApplication(w http.ResponseWriter, r *http.Request) {
 	var dto CreateApplicationRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	err = utils.ValidateDto(dto)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -90,7 +91,7 @@ func CreateApplication(w http.ResponseWriter, r *http.Request) {
 		DeviceFlowEnabled:      dto.DeviceFlowEnabled,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -102,7 +103,7 @@ func CreateApplication(w http.ResponseWriter, r *http.Request) {
 		Secret: response.Secret,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 	}
 }
 
@@ -142,7 +143,7 @@ func GetApplication(w http.ResponseWriter, r *http.Request) {
 
 	vsName, err := middlewares.GetVirtualServerName(r.Context())
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -152,7 +153,7 @@ func GetApplication(w http.ResponseWriter, r *http.Request) {
 	appIdString := vars["appId"]
 	appId, err := uuid.Parse(appIdString)
 	if err != nil {
-		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+		httputil.HandleHttpError(w, utils.ErrInvalidUuid)
 		return
 	}
 
@@ -165,7 +166,7 @@ func GetApplication(w http.ResponseWriter, r *http.Request) {
 		ApplicationId:     appId,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -190,7 +191,7 @@ func GetApplication(w http.ResponseWriter, r *http.Request) {
 		UpdatedAt:              application.UpdatedAt,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 	}
 }
 
@@ -220,7 +221,7 @@ func PatchApplication(w http.ResponseWriter, r *http.Request) {
 
 	vsName, err := middlewares.GetVirtualServerName(r.Context())
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -230,13 +231,13 @@ func PatchApplication(w http.ResponseWriter, r *http.Request) {
 	appIdString := vars["appId"]
 	appId, err := uuid.Parse(appIdString)
 	if err != nil {
-		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+		httputil.HandleHttpError(w, utils.ErrInvalidUuid)
 	}
 
 	var dto PatchApplicationRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -252,7 +253,7 @@ func PatchApplication(w http.ResponseWriter, r *http.Request) {
 		DeviceFlowEnabled:   dto.DeviceFlowEnabled,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -276,7 +277,7 @@ func DeleteApplication(w http.ResponseWriter, r *http.Request) {
 
 	vsName, err := middlewares.GetVirtualServerName(r.Context())
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -286,7 +287,7 @@ func DeleteApplication(w http.ResponseWriter, r *http.Request) {
 	appIdString := vars["appId"]
 	appId, err := uuid.Parse(appIdString)
 	if err != nil {
-		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+		httputil.HandleHttpError(w, utils.ErrInvalidUuid)
 	}
 
 	scope := middlewares.GetScope(ctx)
@@ -298,7 +299,7 @@ func DeleteApplication(w http.ResponseWriter, r *http.Request) {
 		ApplicationId:     appId,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -337,13 +338,13 @@ func ListApplications(w http.ResponseWriter, r *http.Request) {
 
 	queryOps, err := ParseQueryOps(r)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	vsName, err := middlewares.GetVirtualServerName(r.Context())
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -361,7 +362,7 @@ func ListApplications(w http.ResponseWriter, r *http.Request) {
 		SearchText:        queryOps.Search,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -383,7 +384,7 @@ func ListApplications(w http.ResponseWriter, r *http.Request) {
 		applications.TotalCount,
 	))
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 }

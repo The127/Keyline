@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"Keyline/internal/httputil"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/queries"
 	"Keyline/utils"
@@ -41,13 +42,13 @@ func ListGroups(w http.ResponseWriter, r *http.Request) {
 
 	queryOps, err := ParseQueryOps(r)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -61,7 +62,7 @@ func ListGroups(w http.ResponseWriter, r *http.Request) {
 		SearchText:        queryOps.Search,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 	}
 
 	items := utils.MapSlice(groups.Items, func(x queries.ListGroupsResponseItem) ListGroupsResponseDto {
@@ -80,6 +81,6 @@ func ListGroups(w http.ResponseWriter, r *http.Request) {
 		groups.TotalCount,
 	))
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 	}
 }

@@ -1,11 +1,9 @@
 package utils
 
 import (
-	"Keyline/internal/config"
-	"Keyline/internal/logging"
 	"errors"
 	"fmt"
-	"net/http"
+	"log"
 )
 
 var ErrHttpUnauthorized = errors.New("unauthorized")
@@ -32,44 +30,10 @@ var ErrInvalidUuid = fmt.Errorf("invalid uuid: %w", ErrHttpBadRequest)
 
 var ErrHttpConflict = errors.New("conflict")
 
-func HandleHttpError(w http.ResponseWriter, err error) {
-	var status int
-	var msg string
-
-	switch {
-	case errors.Is(err, ErrHttpBadRequest):
-		status = http.StatusBadRequest
-		msg = err.Error()
-
-	case errors.Is(err, ErrHttpUnauthorized):
-		status = http.StatusUnauthorized
-		msg = err.Error()
-
-	case errors.Is(err, ErrHttpNotFound):
-		status = http.StatusNotFound
-		msg = err.Error()
-
-	case errors.Is(err, ErrHttpConflict):
-		status = http.StatusConflict
-		msg = err.Error()
-
-	default:
-		status = http.StatusInternalServerError
-		if config.IsProduction() {
-			msg = "internal server error"
-		} else {
-			msg = err.Error()
-		}
-	}
-
-	logging.Logger.Errorf("HTTP ERROR: %s: %v", msg, err)
-	http.Error(w, msg, status)
-}
-
 func PanicOnError(f func() error, msg string) {
 	err := f()
 	if err != nil {
-		logging.Logger.Fatalf("%s: %v", msg, err)
+		log.Panicf("%s: %v", msg, err)
 	}
 }
 

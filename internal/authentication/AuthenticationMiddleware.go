@@ -4,6 +4,7 @@ import (
 	"Keyline/internal/authentication/permissions"
 	"Keyline/internal/authentication/roles"
 	"Keyline/internal/config"
+	"Keyline/internal/httputil"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/services"
 	"Keyline/utils"
@@ -74,7 +75,7 @@ func Middleware() mux.MiddlewareFunc {
 
 			vsName, err := middlewares.GetVirtualServerName(ctx)
 			if err != nil {
-				utils.HandleHttpError(w, err)
+				httputil.HandleHttpError(w, err)
 				return
 			}
 
@@ -83,7 +84,7 @@ func Middleware() mux.MiddlewareFunc {
 			if authorizationHeader != "" {
 				currentUser, err = extractUserFromBearerToken(ctx, authorizationHeader, vsName)
 				if err != nil {
-					utils.HandleHttpError(w, fmt.Errorf("extracting user from bearer token: %w", err))
+					httputil.HandleHttpError(w, fmt.Errorf("extracting user from bearer token: %w", err))
 					return
 				}
 			}

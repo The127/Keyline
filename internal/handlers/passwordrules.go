@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"Keyline/internal/commands"
+	"Keyline/internal/httputil"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/queries"
 	"Keyline/internal/repositories"
@@ -43,7 +44,7 @@ func ListPasswordRules(w http.ResponseWriter, r *http.Request) {
 
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -54,7 +55,7 @@ func ListPasswordRules(w http.ResponseWriter, r *http.Request) {
 		VirtualServerName: vsName,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -64,7 +65,7 @@ func ListPasswordRules(w http.ResponseWriter, r *http.Request) {
 		details := make(map[string]any)
 		err = json.Unmarshal(rule.Details, &details)
 		if err != nil {
-			utils.HandleHttpError(w, err)
+			httputil.HandleHttpError(w, err)
 			return
 		}
 
@@ -79,7 +80,7 @@ func ListPasswordRules(w http.ResponseWriter, r *http.Request) {
 
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 }
@@ -105,19 +106,19 @@ func CreatePasswordRule(w http.ResponseWriter, r *http.Request) {
 
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	var requestDto CreatePasswordRuleRequestDto
 	err = json.NewDecoder(r.Body).Decode(&requestDto)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 	}
 
 	err = utils.ValidateDto(requestDto)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -130,7 +131,7 @@ func CreatePasswordRule(w http.ResponseWriter, r *http.Request) {
 		Details:           requestDto.Details,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -155,14 +156,14 @@ func UpdatePasswordRule(w http.ResponseWriter, r *http.Request) {
 
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	vars := mux.Vars(r)
 	ruleTypeString, ok := vars["ruleType"]
 	if !ok {
-		utils.HandleHttpError(w, fmt.Errorf("ruleType is required: %w", utils.ErrHttpBadRequest))
+		httputil.HandleHttpError(w, fmt.Errorf("ruleType is required: %w", utils.ErrHttpBadRequest))
 		return
 	}
 
@@ -171,7 +172,7 @@ func UpdatePasswordRule(w http.ResponseWriter, r *http.Request) {
 	var requestDto PatchPasswordRuleRequestDto
 	err = json.NewDecoder(r.Body).Decode(&requestDto)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -184,7 +185,7 @@ func UpdatePasswordRule(w http.ResponseWriter, r *http.Request) {
 		Details:           requestDto,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 

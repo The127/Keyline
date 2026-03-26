@@ -4,6 +4,7 @@ import (
 	"Keyline/internal/commands"
 	"Keyline/internal/config"
 	"Keyline/internal/database"
+	"Keyline/internal/httputil"
 	"Keyline/internal/jsonTypes"
 	"Keyline/internal/messages"
 	"Keyline/internal/middlewares"
@@ -247,13 +248,13 @@ func VerifyPassword(w http.ResponseWriter, r *http.Request) {
 	var dto VerifyPasswordRequestDto
 	err := json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	err = utils.ValidateDto(dto)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -294,7 +295,7 @@ func VerifyPassword(w http.ResponseWriter, r *http.Request) {
 		return nil
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -337,7 +338,7 @@ func VerifyEmailToken(w http.ResponseWriter, r *http.Request) {
 		return nil
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -368,13 +369,13 @@ func OnboardTotp(w http.ResponseWriter, r *http.Request) {
 	var dto OnboardTotpRequestDto
 	err := json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	err = utils.ValidateDto(dto)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -403,7 +404,7 @@ func OnboardTotp(w http.ResponseWriter, r *http.Request) {
 		return nil
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -433,13 +434,13 @@ func VerifyTotp(w http.ResponseWriter, r *http.Request) {
 	var dto VerifyTotpRequestDto
 	err := json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	err = utils.ValidateDto(dto)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -490,7 +491,7 @@ func VerifyTotp(w http.ResponseWriter, r *http.Request) {
 		return nil
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -523,7 +524,7 @@ func FinishLogin(w http.ResponseWriter, r *http.Request) {
 	var loginInfo jsonTypes.LoginInfo
 	err = json.Unmarshal([]byte(rawTokenData), &loginInfo)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -534,26 +535,26 @@ func FinishLogin(w http.ResponseWriter, r *http.Request) {
 
 	err = middlewares.CreateSession(w, r, loginInfo.VirtualServerName, loginInfo.UserId)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	err = tokenService.DeleteToken(ctx, services.LoginSessionTokenType, loginToken)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	if loginInfo.DeviceCode != "" {
 		deviceCodeInfoString, err := tokenService.GetToken(ctx, services.OidcDeviceCodeTokenType, loginInfo.DeviceCode)
 		if err != nil {
-			utils.HandleHttpError(w, fmt.Errorf("getting device code info: %w", err))
+			httputil.HandleHttpError(w, fmt.Errorf("getting device code info: %w", err))
 			return
 		}
 
 		var deviceCodeInfo jsonTypes.DeviceCodeInfo
 		if err := json.Unmarshal([]byte(deviceCodeInfoString), &deviceCodeInfo); err != nil {
-			utils.HandleHttpError(w, fmt.Errorf("unmarshaling device code info: %w", err))
+			httputil.HandleHttpError(w, fmt.Errorf("unmarshaling device code info: %w", err))
 			return
 		}
 
@@ -563,12 +564,12 @@ func FinishLogin(w http.ResponseWriter, r *http.Request) {
 
 		updatedInfoJson, err := json.Marshal(deviceCodeInfo)
 		if err != nil {
-			utils.HandleHttpError(w, fmt.Errorf("marshaling device code info: %w", err))
+			httputil.HandleHttpError(w, fmt.Errorf("marshaling device code info: %w", err))
 			return
 		}
 
 		if err := tokenService.UpdateToken(ctx, services.OidcDeviceCodeTokenType, loginInfo.DeviceCode, string(updatedInfoJson), 10*time.Minute); err != nil {
-			utils.HandleHttpError(w, fmt.Errorf("updating device code info: %w", err))
+			httputil.HandleHttpError(w, fmt.Errorf("updating device code info: %w", err))
 			return
 		}
 
@@ -634,7 +635,7 @@ func ResetTemporaryPassword(w http.ResponseWriter, r *http.Request) {
 		return nil
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -669,7 +670,7 @@ func ResendEmailVerification(w http.ResponseWriter, r *http.Request) {
 	var loginInfo jsonTypes.LoginInfo
 	err = json.Unmarshal([]byte(rawTokenData), &loginInfo)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -681,7 +682,7 @@ func ResendEmailVerification(w http.ResponseWriter, r *http.Request) {
 	// retrigger email verification sending
 	token, err := tokenService.GenerateAndStoreToken(ctx, services.EmailVerificationTokenType, loginInfo.UserId.String(), time.Minute*15)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("storing email verification token: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("storing email verification token: %w", err))
 		return
 	}
 
@@ -700,7 +701,7 @@ func ResendEmailVerification(w http.ResponseWriter, r *http.Request) {
 		},
 	)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("templating email verification mail: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("templating email verification mail: %w", err))
 		return
 	}
 
@@ -709,7 +710,7 @@ func ResendEmailVerification(w http.ResponseWriter, r *http.Request) {
 	userFilter := repositories.NewUserFilter().Id(loginInfo.UserId)
 	user, err := dbContext.Users().FirstOrNil(ctx, userFilter)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting user: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("getting user: %w", err))
 		return
 	}
 
@@ -722,7 +723,7 @@ func ResendEmailVerification(w http.ResponseWriter, r *http.Request) {
 
 	outboxMessage, err := repositories.NewOutboxMessage(message)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("creating email outbox message: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("creating email outbox message: %w", err))
 		return
 	}
 
@@ -753,14 +754,14 @@ func StartPasskeyLogin(w http.ResponseWriter, r *http.Request) {
 
 	challengeJson, err := json.Marshal(challenge)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	kvStore := ioc.GetDependency[keyValue.Store](scope)
 	err = kvStore.Set(ctx, "passkey_login:"+challenge.Id.String(), string(challengeJson), keyValue.WithExpiration(time.Minute*5))
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -771,7 +772,7 @@ func StartPasskeyLogin(w http.ResponseWriter, r *http.Request) {
 		Challenge: challenge.Challenge,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 }
@@ -803,13 +804,13 @@ func FinishPasskeyLogin(w http.ResponseWriter, r *http.Request) {
 	var dto FinishPasskeyLoginRequestDto
 	err := json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	err = utils.ValidateDto(dto)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -818,25 +819,25 @@ func FinishPasskeyLogin(w http.ResponseWriter, r *http.Request) {
 	challengeKey := "passkey_login:" + dto.Id.String()
 	challengeJson, err := kvStore.Get(ctx, challengeKey)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("challenge expired or missing"))
+		httputil.HandleHttpError(w, fmt.Errorf("challenge expired or missing"))
 		return
 	}
 
 	var challenge jsonTypes.PasskeyLoginChallenge
 	if err := json.Unmarshal([]byte(challengeJson), &challenge); err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	// validate challenge
 	if challenge.LoginSessionToken != loginToken {
-		utils.HandleHttpError(w, fmt.Errorf("challenge mismatch"))
+		httputil.HandleHttpError(w, fmt.Errorf("challenge mismatch"))
 		return
 	}
 
 	clientDataBytes, err := base64.StdEncoding.DecodeString(dto.WebauthnResponse.Response.ClientDataJSON)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -846,35 +847,35 @@ func FinishPasskeyLogin(w http.ResponseWriter, r *http.Request) {
 		Origin    string `json:"origin"`
 	}
 	if err := json.Unmarshal(clientDataBytes, &clientData); err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	if clientData.Type != "webauthn.get" {
-		utils.HandleHttpError(w, fmt.Errorf("invalid clientData type"))
+		httputil.HandleHttpError(w, fmt.Errorf("invalid clientData type"))
 		return
 	}
 
 	challengeFromClient, err := base64.RawURLEncoding.DecodeString(clientData.Challenge)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	actualChallenge, err := base64.StdEncoding.DecodeString(challenge.Challenge)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	if !bytes.Equal(challengeFromClient, actualChallenge) {
-		utils.HandleHttpError(w, fmt.Errorf("challenge mismatch: %w", utils.ErrHttpUnauthorized))
+		httputil.HandleHttpError(w, fmt.Errorf("challenge mismatch: %w", utils.ErrHttpUnauthorized))
 		return
 	}
 
 	authData, err := base64.RawURLEncoding.DecodeString(dto.WebauthnResponse.Response.AuthenticatorData)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -885,13 +886,13 @@ func FinishPasskeyLogin(w http.ResponseWriter, r *http.Request) {
 		Type(repositories.CredentialTypeWebauthn)
 	credential, err := dbContext.Credentials().FirstOrErr(ctx, credentialFilter)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	credentialDetails, err := credential.WebauthnDetails()
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -902,19 +903,19 @@ func FinishPasskeyLogin(w http.ResponseWriter, r *http.Request) {
 
 	sigBytes, err := base64.RawURLEncoding.DecodeString(dto.WebauthnResponse.Response.Signature)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("invalid signature encoding: %w", err))
+		httputil.HandleHttpError(w, fmt.Errorf("invalid signature encoding: %w", err))
 		return
 	}
 
 	pubKey, err := x509.ParsePKIXPublicKey(credentialDetails.PublicKey)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	err = validateSignature(pubKey, credentialDetails.PublicKeyAlgorithm, signedData, sigBytes)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -924,7 +925,7 @@ func FinishPasskeyLogin(w http.ResponseWriter, r *http.Request) {
 		return nil
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 

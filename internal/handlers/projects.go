@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"Keyline/internal/commands"
+	"Keyline/internal/httputil"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/queries"
 	"Keyline/utils"
@@ -43,20 +44,20 @@ func CreateProject(w http.ResponseWriter, r *http.Request) {
 
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	var dto CreateProjectRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	err = utils.ValidateDto(dto)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -70,7 +71,7 @@ func CreateProject(w http.ResponseWriter, r *http.Request) {
 		Description:       dto.Description,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -81,7 +82,7 @@ func CreateProject(w http.ResponseWriter, r *http.Request) {
 		Id: response.Id,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 }
@@ -116,13 +117,13 @@ func ListProjects(w http.ResponseWriter, r *http.Request) {
 
 	queryOps, err := ParseQueryOps(r)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -136,7 +137,7 @@ func ListProjects(w http.ResponseWriter, r *http.Request) {
 		SearchText:        queryOps.Search,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -157,7 +158,7 @@ func ListProjects(w http.ResponseWriter, r *http.Request) {
 		projects.TotalCount,
 	))
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 }
@@ -178,7 +179,7 @@ func GetProject(w http.ResponseWriter, r *http.Request) {
 
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -193,7 +194,7 @@ func GetProject(w http.ResponseWriter, r *http.Request) {
 		ProjectSlug:       projectSlug,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -208,7 +209,7 @@ func GetProject(w http.ResponseWriter, r *http.Request) {
 		UpdatedAt:   resp.UpdatedAt,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 }

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"Keyline/internal/commands"
+	"Keyline/internal/httputil"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/queries"
 	"Keyline/utils"
@@ -43,7 +44,7 @@ func GetRoleById(w http.ResponseWriter, r *http.Request) {
 
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -53,7 +54,7 @@ func GetRoleById(w http.ResponseWriter, r *http.Request) {
 	roleIdString := vars["roleId"]
 	roleId, err := uuid.Parse(roleIdString)
 	if err != nil {
-		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+		httputil.HandleHttpError(w, utils.ErrInvalidUuid)
 		return
 	}
 
@@ -65,7 +66,7 @@ func GetRoleById(w http.ResponseWriter, r *http.Request) {
 	}
 	queryResult, err := mediatr.Send[*queries.GetRoleQueryResult](ctx, m, query)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -82,7 +83,7 @@ func GetRoleById(w http.ResponseWriter, r *http.Request) {
 
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 	}
 }
 
@@ -117,13 +118,13 @@ func ListRoles(w http.ResponseWriter, r *http.Request) {
 
 	queryOps, err := ParseQueryOps(r)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -141,7 +142,7 @@ func ListRoles(w http.ResponseWriter, r *http.Request) {
 		SearchText:        queryOps.Search,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -161,7 +162,7 @@ func ListRoles(w http.ResponseWriter, r *http.Request) {
 		roles.TotalCount,
 	))
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 }
@@ -192,7 +193,7 @@ func CreateRole(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -202,13 +203,13 @@ func CreateRole(w http.ResponseWriter, r *http.Request) {
 	var dto CreateRoleRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	err = utils.ValidateDto(dto)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -222,7 +223,7 @@ func CreateRole(w http.ResponseWriter, r *http.Request) {
 		Description:       dto.Description,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -233,7 +234,7 @@ func CreateRole(w http.ResponseWriter, r *http.Request) {
 		Id: response.Id,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 	}
 }
 
@@ -260,7 +261,7 @@ func AssignRole(w http.ResponseWriter, r *http.Request) {
 
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -270,20 +271,20 @@ func AssignRole(w http.ResponseWriter, r *http.Request) {
 	roleIdString := vars["roleId"]
 	roleId, err := uuid.Parse(roleIdString)
 	if err != nil {
-		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+		httputil.HandleHttpError(w, utils.ErrInvalidUuid)
 		return
 	}
 
 	var dto AssignRoleRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	err = utils.ValidateDto(dto)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -297,7 +298,7 @@ func AssignRole(w http.ResponseWriter, r *http.Request) {
 		UserId:            dto.UserId,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -335,13 +336,13 @@ func ListUsersInRole(w http.ResponseWriter, r *http.Request) {
 
 	queryOps, err := ParseQueryOps(r)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -351,7 +352,7 @@ func ListUsersInRole(w http.ResponseWriter, r *http.Request) {
 	roleIdString := vars["roleId"]
 	roleId, err := uuid.Parse(roleIdString)
 	if err != nil {
-		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+		httputil.HandleHttpError(w, utils.ErrInvalidUuid)
 	}
 
 	scope := middlewares.GetScope(ctx)
@@ -365,7 +366,7 @@ func ListUsersInRole(w http.ResponseWriter, r *http.Request) {
 		OrderedQuery:      queryOps.ToOrderedQuery(),
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -386,6 +387,6 @@ func ListUsersInRole(w http.ResponseWriter, r *http.Request) {
 		users.TotalCount,
 	))
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 	}
 }

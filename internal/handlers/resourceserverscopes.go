@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"Keyline/internal/commands"
+	"Keyline/internal/httputil"
 	"Keyline/internal/middlewares"
 	"Keyline/internal/queries"
 	"Keyline/utils"
@@ -45,7 +46,7 @@ func CreateResourceServerScope(w http.ResponseWriter, r *http.Request) {
 
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -55,20 +56,20 @@ func CreateResourceServerScope(w http.ResponseWriter, r *http.Request) {
 	resourceServerIdString := vars["resourceServerId"]
 	resourceServerId, err := uuid.Parse(resourceServerIdString)
 	if err != nil {
-		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+		httputil.HandleHttpError(w, utils.ErrInvalidUuid)
 		return
 	}
 
 	var dto CreateResourceServerScopeRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	err = utils.ValidateDto(dto)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -84,7 +85,7 @@ func CreateResourceServerScope(w http.ResponseWriter, r *http.Request) {
 		Description:       dto.Description,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -95,7 +96,7 @@ func CreateResourceServerScope(w http.ResponseWriter, r *http.Request) {
 		Id: response.Id,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 }
@@ -131,13 +132,13 @@ func ListResourceServerScopes(w http.ResponseWriter, r *http.Request) {
 
 	queryOps, err := ParseQueryOps(r)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -147,7 +148,7 @@ func ListResourceServerScopes(w http.ResponseWriter, r *http.Request) {
 	resourceServerIdString := vars["resourceServerId"]
 	resourceServerId, err := uuid.Parse(resourceServerIdString)
 	if err != nil {
-		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+		httputil.HandleHttpError(w, utils.ErrInvalidUuid)
 	}
 
 	scope := middlewares.GetScope(ctx)
@@ -162,7 +163,7 @@ func ListResourceServerScopes(w http.ResponseWriter, r *http.Request) {
 		SearchText:        queryOps.Search,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -182,7 +183,7 @@ func ListResourceServerScopes(w http.ResponseWriter, r *http.Request) {
 		scopes.TotalCount,
 	))
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 }
@@ -216,7 +217,7 @@ func GetResourceServerScope(w http.ResponseWriter, r *http.Request) {
 
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 
@@ -226,14 +227,14 @@ func GetResourceServerScope(w http.ResponseWriter, r *http.Request) {
 	resourceServerIdString := vars["resourceServerId"]
 	resourceServerId, err := uuid.Parse(resourceServerIdString)
 	if err != nil {
-		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+		httputil.HandleHttpError(w, utils.ErrInvalidUuid)
 		return
 	}
 
 	scopeIdString := vars["scopeId"]
 	scopeId, err := uuid.Parse(scopeIdString)
 	if err != nil {
-		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+		httputil.HandleHttpError(w, utils.ErrInvalidUuid)
 		return
 	}
 
@@ -247,7 +248,7 @@ func GetResourceServerScope(w http.ResponseWriter, r *http.Request) {
 		ScopeId:           scopeId,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -261,7 +262,7 @@ func GetResourceServerScope(w http.ResponseWriter, r *http.Request) {
 		UpdatedAt:   scopeResponse.UpdatedAt,
 	})
 	if err != nil {
-		utils.HandleHttpError(w, err)
+		httputil.HandleHttpError(w, err)
 		return
 	}
 }
