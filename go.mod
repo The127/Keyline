@@ -7,7 +7,7 @@ require (
 	github.com/The127/ioc v0.0.0-20251106160055-64edcb05f08d
 	github.com/The127/mediatr v0.0.0-20251106154229-12859853c010
 	github.com/dop251/goja v0.0.0-20251008123653-cf18d89f3cf6
-	github.com/go-crypt/crypt v0.4.10
+	github.com/go-crypt/crypt v0.4.12
 	github.com/go-playground/validator/v10 v10.30.2
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/uuid v1.6.0
