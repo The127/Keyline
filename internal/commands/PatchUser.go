@@ -18,6 +18,7 @@ type PatchUser struct {
 	VirtualServerName string
 	UserId            uuid.UUID
 	DisplayName       *string
+	EmailVerified     *bool
 }
 
 func (a PatchUser) LogRequest() bool {
@@ -56,6 +57,10 @@ func HandlePatchUser(ctx context.Context, command PatchUser) (*PatchUserResponse
 
 	if command.DisplayName != nil {
 		user.SetDisplayName(*command.DisplayName)
+	}
+
+	if command.EmailVerified != nil {
+		user.SetEmailVerified(*command.EmailVerified)
 	}
 
 	dbContext.Users().Update(user)
