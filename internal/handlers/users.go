@@ -772,7 +772,8 @@ func PatchUserApplicationMetadata(w http.ResponseWriter, r *http.Request) {
 }
 
 type PatchUserRequestDto struct {
-	DisplayName *string `json:"displayName"`
+	DisplayName   *string `json:"displayName"`
+	EmailVerified *bool   `json:"emailVerified"`
 }
 
 // PatchUser updates fields of a user.
@@ -816,6 +817,7 @@ func PatchUser(w http.ResponseWriter, r *http.Request) {
 		UserId:            userId,
 		VirtualServerName: vsName,
 		DisplayName:       utils.TrimSpace(dto.DisplayName),
+		EmailVerified:     dto.EmailVerified,
 	}
 	_, err = mediatr.Send[*commands.PatchUserResponse](ctx, m, command)
 	if err != nil {
