@@ -41,6 +41,8 @@ definitions:
         - at+jwt
         - JWT
         type: string
+      deviceFlowEnabled:
+        type: boolean
       displayName:
         maxLength: 255
         minLength: 1
@@ -687,6 +689,8 @@ definitions:
         items:
           type: string
         type: array
+      device_authorization_endpoint:
+        type: string
       end_session_endpoint:
         type: string
       grant_types_supported:
@@ -836,6 +840,8 @@ definitions:
     properties:
       customClaimsMappingScript:
         type: string
+      deviceFlowEnabled:
+        type: boolean
       displayName:
         type: string
     type: object
@@ -852,6 +858,10 @@ definitions:
     properties:
       displayName:
         type: string
+      email:
+        type: string
+      emailVerified:
+        type: boolean
     type: object
   handlers.PatchVirtualServerRequestDto:
     properties:

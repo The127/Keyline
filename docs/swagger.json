@@ -3306,6 +3306,9 @@
                         "JWT"
                     ]
                 },
+                "deviceFlowEnabled": {
+                    "type": "boolean"
+                },
                 "displayName": {
                     "type": "string",
                     "maxLength": 255,
@@ -4252,6 +4255,9 @@
                         "type": "string"
                     }
                 },
+                "device_authorization_endpoint": {
+                    "type": "string"
+                },
                 "end_session_endpoint": {
                     "type": "string"
                 },
@@ -4482,6 +4488,9 @@
                 "customClaimsMappingScript": {
                     "type": "string"
                 },
+                "deviceFlowEnabled": {
+                    "type": "boolean"
+                },
                 "displayName": {
                     "type": "string"
                 }
@@ -4504,6 +4513,12 @@
             "properties": {
                 "displayName": {
                     "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "emailVerified": {
+                    "type": "boolean"
                 }
             }
         },

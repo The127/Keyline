@@ -3314,6 +3314,9 @@ const docTemplate = `{
                         "JWT"
                     ]
                 },
+                "deviceFlowEnabled": {
+                    "type": "boolean"
+                },
                 "displayName": {
                     "type": "string",
                     "maxLength": 255,
@@ -4260,6 +4263,9 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
+                "device_authorization_endpoint": {
+                    "type": "string"
+                },
                 "end_session_endpoint": {
                     "type": "string"
                 },
@@ -4490,6 +4496,9 @@ const docTemplate = `{
                 "customClaimsMappingScript": {
                     "type": "string"
                 },
+                "deviceFlowEnabled": {
+                    "type": "boolean"
+                },
                 "displayName": {
                     "type": "string"
                 }
@@ -4512,6 +4521,12 @@ const docTemplate = `{
             "properties": {
                 "displayName": {
                     "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "emailVerified": {
+                    "type": "boolean"
                 }
             }
         },
