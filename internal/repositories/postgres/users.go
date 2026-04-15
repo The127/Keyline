@@ -287,6 +287,9 @@ func (r *UserRepository) ExecuteUpdate(ctx context.Context, tx *sql.Tx, user *re
 		case repositories.UserChangeEmailVerified:
 			s.SetMore(s.Assign("email_verified", mapped.emailVerified))
 
+		case repositories.UserChangePrimaryEmail:
+			s.SetMore(s.Assign("primary_email", mapped.primaryEmail))
+
 		default:
 			return fmt.Errorf("updating field %v is not supported", field)
 		}

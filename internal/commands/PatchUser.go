@@ -19,6 +19,7 @@ type PatchUser struct {
 	UserId            uuid.UUID
 	DisplayName       *string
 	EmailVerified     *bool
+	Email             *string
 }
 
 func (a PatchUser) LogRequest() bool {
@@ -61,6 +62,10 @@ func HandlePatchUser(ctx context.Context, command PatchUser) (*PatchUserResponse
 
 	if command.EmailVerified != nil {
 		user.SetEmailVerified(*command.EmailVerified)
+	}
+
+	if command.Email != nil {
+		user.SetEmail(*command.Email)
 	}
 
 	dbContext.Users().Update(user)

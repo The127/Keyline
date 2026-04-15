@@ -13,6 +13,7 @@ type UserChange int
 const (
 	UserChangeDisplayName UserChange = iota
 	UserChangeEmailVerified
+	UserChangePrimaryEmail
 	UserChangeMetadata
 )
 
@@ -111,6 +112,15 @@ func (m *User) IsServiceUser() bool {
 
 func (m *User) PrimaryEmail() string {
 	return m.primaryEmail
+}
+
+func (m *User) SetPrimaryEmail(primaryEmail string) {
+	if m.primaryEmail == primaryEmail {
+		return
+	}
+
+	m.primaryEmail = primaryEmail
+	m.TrackChange(UserChangePrimaryEmail)
 }
 
 func (m *User) EmailVerified() bool {
