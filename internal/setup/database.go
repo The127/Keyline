@@ -1,10 +1,10 @@
 package setup
 
 import (
-	"Keyline/internal/config"
-	"Keyline/internal/database"
-	"Keyline/internal/database/postgres"
-	"Keyline/internal/logging"
+	"github.com/The127/Keyline/internal/config"
+	"github.com/The127/Keyline/internal/database"
+	"github.com/The127/Keyline/internal/database/postgres"
+	"github.com/The127/Keyline/internal/logging"
 	"context"
 	"fmt"
 

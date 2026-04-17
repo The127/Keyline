@@ -1,10 +1,10 @@
 package setup
 
 import (
-	"Keyline/internal/behaviours"
-	"Keyline/internal/commands"
-	"Keyline/internal/events"
-	"Keyline/internal/queries"
+	"github.com/The127/Keyline/internal/behaviours"
+	"github.com/The127/Keyline/internal/commands"
+	"github.com/The127/Keyline/internal/events"
+	"github.com/The127/Keyline/internal/queries"
 
 	"github.com/The127/ioc"
 	"github.com/The127/mediatr"

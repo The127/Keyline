@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"Keyline/internal/queries"
+	"github.com/The127/Keyline/internal/queries"
 	"fmt"
 	"net/http"
 	"strconv"

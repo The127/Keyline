@@ -1,7 +1,7 @@
 package client
 
 import (
-	"Keyline/internal/handlers"
+	"github.com/The127/Keyline/internal/handlers"
 	"bytes"
 	"context"
 	"encoding/json"

@@ -1,4 +1,4 @@
-module Keyline
+module github.com/The127/Keyline
 
 go 1.25.0
 

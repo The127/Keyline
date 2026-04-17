@@ -1,12 +1,12 @@
 package commands
 
 import (
-	"Keyline/internal/database"
-	"Keyline/internal/events"
-	"Keyline/internal/middlewares"
-	"Keyline/internal/password"
-	"Keyline/internal/repositories"
-	"Keyline/utils"
+	"github.com/The127/Keyline/internal/database"
+	"github.com/The127/Keyline/internal/events"
+	"github.com/The127/Keyline/internal/middlewares"
+	"github.com/The127/Keyline/internal/password"
+	"github.com/The127/Keyline/internal/repositories"
+	"github.com/The127/Keyline/utils"
 	"context"
 	"fmt"
 

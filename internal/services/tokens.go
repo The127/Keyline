@@ -1,9 +1,9 @@
 package services
 
 import (
-	"Keyline/internal/middlewares"
-	"Keyline/internal/services/keyValue"
-	"Keyline/utils"
+	"github.com/The127/Keyline/internal/middlewares"
+	"github.com/The127/Keyline/internal/services/keyValue"
+	"github.com/The127/Keyline/utils"
 	"context"
 	"encoding/base64"
 	"errors"

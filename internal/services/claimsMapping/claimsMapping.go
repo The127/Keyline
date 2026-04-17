@@ -1,10 +1,10 @@
 package claimsMapping
 
 import (
-	"Keyline/internal/database"
-	"Keyline/internal/logging"
-	"Keyline/internal/middlewares"
-	"Keyline/internal/repositories"
+	"github.com/The127/Keyline/internal/database"
+	"github.com/The127/Keyline/internal/logging"
+	"github.com/The127/Keyline/internal/middlewares"
+	"github.com/The127/Keyline/internal/repositories"
 	"context"
 	"fmt"
 

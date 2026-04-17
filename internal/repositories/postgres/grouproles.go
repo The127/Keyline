@@ -1,7 +1,7 @@
 package postgres
 
 import (
-	"Keyline/internal/change"
+	"github.com/The127/Keyline/internal/change"
 	"database/sql"
 )
 

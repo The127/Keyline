@@ -1,7 +1,7 @@
 package postgres
 
 import (
-	"Keyline/internal/repositories"
+	"github.com/The127/Keyline/internal/repositories"
 	"time"
 
 	"github.com/google/uuid"

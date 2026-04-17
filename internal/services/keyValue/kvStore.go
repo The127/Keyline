@@ -1,8 +1,8 @@
 package keyValue
 
 import (
-	"Keyline/internal/config"
-	"Keyline/internal/middlewares"
+	"github.com/The127/Keyline/internal/config"
+	"github.com/The127/Keyline/internal/middlewares"
 	"context"
 	"errors"
 	"fmt"

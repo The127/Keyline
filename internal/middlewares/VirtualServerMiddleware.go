@@ -1,7 +1,7 @@
 package middlewares
 
 import (
-	"Keyline/internal/config"
+	"github.com/The127/Keyline/internal/config"
 	"context"
 	"errors"
 	"net/http"

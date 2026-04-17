@@ -1,10 +1,10 @@
 package handlers
 
 import (
-	"Keyline/internal/middlewares"
-	"Keyline/internal/queries"
-	"Keyline/internal/repositories"
-	"Keyline/utils"
+	"github.com/The127/Keyline/internal/middlewares"
+	"github.com/The127/Keyline/internal/queries"
+	"github.com/The127/Keyline/internal/repositories"
+	"github.com/The127/Keyline/utils"
 	"encoding/json"
 	"net/http"
 	"time"

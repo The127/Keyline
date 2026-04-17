@@ -1,10 +1,10 @@
 package commands
 
 import (
-	"Keyline/internal/database"
-	"Keyline/internal/middlewares"
-	"Keyline/internal/repositories"
-	"Keyline/internal/services"
+	"github.com/The127/Keyline/internal/database"
+	"github.com/The127/Keyline/internal/middlewares"
+	"github.com/The127/Keyline/internal/repositories"
+	"github.com/The127/Keyline/internal/services"
 	"context"
 	"fmt"
 

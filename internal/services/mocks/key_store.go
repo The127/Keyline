@@ -10,8 +10,8 @@
 package mocks
 
 import (
-	config "Keyline/internal/config"
-	services "Keyline/internal/services"
+	config "github.com/The127/Keyline/internal/config"
+	services "github.com/The127/Keyline/internal/services"
 	reflect "reflect"
 
 	gomock "go.uber.org/mock/gomock"

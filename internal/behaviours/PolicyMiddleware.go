@@ -1,13 +1,13 @@
 package behaviours
 
 import (
-	"Keyline/internal/authentication"
-	"Keyline/internal/authentication/permissions"
-	"Keyline/internal/authentication/roles"
-	"Keyline/internal/database"
-	"Keyline/internal/middlewares"
-	"Keyline/internal/repositories"
-	"Keyline/utils"
+	"github.com/The127/Keyline/internal/authentication"
+	"github.com/The127/Keyline/internal/authentication/permissions"
+	"github.com/The127/Keyline/internal/authentication/roles"
+	"github.com/The127/Keyline/internal/database"
+	"github.com/The127/Keyline/internal/middlewares"
+	"github.com/The127/Keyline/internal/repositories"
+	"github.com/The127/Keyline/utils"
 	"context"
 	"fmt"
 

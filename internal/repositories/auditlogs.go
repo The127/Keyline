@@ -1,7 +1,7 @@
 package repositories
 
 import (
-	"Keyline/utils"
+	"github.com/The127/Keyline/utils"
 	"context"
 	"encoding/json"
 	"fmt"

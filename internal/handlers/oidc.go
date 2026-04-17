@@ -1,14 +1,14 @@
 package handlers
 
 import (
-	"Keyline/internal/config"
-	"Keyline/internal/database"
-	"Keyline/internal/jsonTypes"
-	"Keyline/internal/middlewares"
-	"Keyline/internal/repositories"
-	"Keyline/internal/services"
-	"Keyline/internal/services/claimsMapping"
-	"Keyline/utils"
+	"github.com/The127/Keyline/internal/config"
+	"github.com/The127/Keyline/internal/database"
+	"github.com/The127/Keyline/internal/jsonTypes"
+	"github.com/The127/Keyline/internal/middlewares"
+	"github.com/The127/Keyline/internal/repositories"
+	"github.com/The127/Keyline/internal/services"
+	"github.com/The127/Keyline/internal/services/claimsMapping"
+	"github.com/The127/Keyline/utils"
 	"context"
 	"crypto/rsa"
 	"crypto/x509"

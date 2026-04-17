@@ -1,8 +1,8 @@
 package middlewares
 
 import (
-	"Keyline/internal/config"
-	"Keyline/utils"
+	"github.com/The127/Keyline/internal/config"
+	"github.com/The127/Keyline/utils"
 	"context"
 	"errors"
 	"fmt"

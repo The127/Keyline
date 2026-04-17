@@ -1,8 +1,8 @@
 package client
 
 import (
-	"Keyline/internal/handlers"
-	"Keyline/utils"
+	"github.com/The127/Keyline/internal/handlers"
+	"github.com/The127/Keyline/utils"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"

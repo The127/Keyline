@@ -1,7 +1,7 @@
 package middlewares
 
 import (
-	"Keyline/internal/logging"
+	"github.com/The127/Keyline/internal/logging"
 	"net/http"
 
 	"github.com/gorilla/mux"
