@@ -316,8 +316,11 @@ func PatchVirtualServer(w http.ResponseWriter, r *http.Request) {
 
 	m := ioc.GetDependency[mediatr.Mediator](scope)
 	command := commands.PatchVirtualServer{
-		VirtualServerName: vsName,
-		DisplayName:       utils.TrimSpace(dto.DisplayName),
+		VirtualServerName:        vsName,
+		DisplayName:              utils.TrimSpace(dto.DisplayName),
+		EnableRegistration:       dto.EnableRegistration,
+		Require2fa:               dto.Require2fa,
+		RequireEmailVerification: dto.RequireEmailVerification,
 	}
 	_, err = mediatr.Send[*commands.PatchVirtualServerResponse](ctx, m, command)
 	if err != nil {
