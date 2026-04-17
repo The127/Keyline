@@ -21,8 +21,8 @@ type UserClient interface {
 	List(ctx context.Context, params ListUserParams) (handlers.PagedUsersResponseDto, error)
 	Get(ctx context.Context, id uuid.UUID) (handlers.GetUserByIdResponseDto, error)
 	Patch(ctx context.Context, id uuid.UUID, dto handlers.PatchUserRequestDto) error
-	CreateServiceUser(ctx context.Context, dto handlers.CreateServiceUserRequestDto) (handlers.CreateServiceUserResponseDto, error)
-	AssociateServiceUserPublicKey(ctx context.Context, serviceUserID uuid.UUID, dto handlers.AssociateServiceUserPublicKeyRequestDto) (handlers.AssociateServiceUserPublicKeyResponseDto, error)
+	CreateServiceUser(ctx context.Context, username string) (uuid.UUID, error)
+	AssociateServiceUserPublicKey(ctx context.Context, serviceUserID uuid.UUID, publicKeyPEM string) (string, error)
 }
 
 func NewUserClient(transport *Transport) UserClient {
@@ -104,51 +104,51 @@ func (c *userClient) Patch(ctx context.Context, id uuid.UUID, dto handlers.Patch
 	return nil
 }
 
-func (c *userClient) CreateServiceUser(ctx context.Context, dto handlers.CreateServiceUserRequestDto) (handlers.CreateServiceUserResponseDto, error) {
-	jsonBytes, err := json.Marshal(dto)
+func (c *userClient) CreateServiceUser(ctx context.Context, username string) (uuid.UUID, error) {
+	jsonBytes, err := json.Marshal(handlers.CreateServiceUserRequestDto{Username: username})
 	if err != nil {
-		return handlers.CreateServiceUserResponseDto{}, fmt.Errorf("marshaling dto: %w", err)
+		return uuid.UUID{}, fmt.Errorf("marshaling dto: %w", err)
 	}
 
 	request, err := c.transport.NewTenantRequest(ctx, http.MethodPost, "/users/service-users", bytes.NewBuffer(jsonBytes))
 	if err != nil {
-		return handlers.CreateServiceUserResponseDto{}, fmt.Errorf("creating request: %w", err)
+		return uuid.UUID{}, fmt.Errorf("creating request: %w", err)
 	}
 
 	response, err := c.transport.Do(request)
 	if err != nil {
-		return handlers.CreateServiceUserResponseDto{}, fmt.Errorf("doing request: %w", err)
+		return uuid.UUID{}, fmt.Errorf("doing request: %w", err)
 	}
 
 	var responseDto handlers.CreateServiceUserResponseDto
 	if err := json.NewDecoder(response.Body).Decode(&responseDto); err != nil {
-		return handlers.CreateServiceUserResponseDto{}, fmt.Errorf("decoding response: %w", err)
+		return uuid.UUID{}, fmt.Errorf("decoding response: %w", err)
 	}
 
-	return responseDto, nil
+	return responseDto.Id, nil
 }
 
-func (c *userClient) AssociateServiceUserPublicKey(ctx context.Context, serviceUserID uuid.UUID, dto handlers.AssociateServiceUserPublicKeyRequestDto) (handlers.AssociateServiceUserPublicKeyResponseDto, error) {
-	jsonBytes, err := json.Marshal(dto)
+func (c *userClient) AssociateServiceUserPublicKey(ctx context.Context, serviceUserID uuid.UUID, publicKeyPEM string) (string, error) {
+	jsonBytes, err := json.Marshal(handlers.AssociateServiceUserPublicKeyRequestDto{PublicKey: publicKeyPEM})
 	if err != nil {
-		return handlers.AssociateServiceUserPublicKeyResponseDto{}, fmt.Errorf("marshaling dto: %w", err)
+		return "", fmt.Errorf("marshaling dto: %w", err)
 	}
 
 	endpoint := fmt.Sprintf("/users/service-users/%s/keys", serviceUserID)
 	request, err := c.transport.NewTenantRequest(ctx, http.MethodPost, endpoint, bytes.NewBuffer(jsonBytes))
 	if err != nil {
-		return handlers.AssociateServiceUserPublicKeyResponseDto{}, fmt.Errorf("creating request: %w", err)
+		return "", fmt.Errorf("creating request: %w", err)
 	}
 
 	response, err := c.transport.Do(request)
 	if err != nil {
-		return handlers.AssociateServiceUserPublicKeyResponseDto{}, fmt.Errorf("doing request: %w", err)
+		return "", fmt.Errorf("doing request: %w", err)
 	}
 
 	var responseDto handlers.AssociateServiceUserPublicKeyResponseDto
 	if err := json.NewDecoder(response.Body).Decode(&responseDto); err != nil {
-		return handlers.AssociateServiceUserPublicKeyResponseDto{}, fmt.Errorf("decoding response: %w", err)
+		return "", fmt.Errorf("decoding response: %w", err)
 	}
 
-	return responseDto, nil
+	return responseDto.Kid, nil
 }
