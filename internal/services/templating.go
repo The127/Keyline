@@ -1,9 +1,9 @@
 package services
 
 import (
-	"Keyline/internal/database"
-	"Keyline/internal/middlewares"
-	"Keyline/internal/repositories"
+	"github.com/The127/Keyline/internal/database"
+	"github.com/The127/Keyline/internal/middlewares"
+	"github.com/The127/Keyline/internal/repositories"
 	"bytes"
 	"context"
 	"fmt"

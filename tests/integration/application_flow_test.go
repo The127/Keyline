@@ -1,10 +1,10 @@
 package integration
 
 import (
-	"Keyline/internal/commands"
-	"Keyline/internal/queries"
-	"Keyline/internal/repositories"
-	"Keyline/utils"
+	"github.com/The127/Keyline/internal/commands"
+	"github.com/The127/Keyline/internal/queries"
+	"github.com/The127/Keyline/internal/repositories"
+	"github.com/The127/Keyline/utils"
 
 	"github.com/The127/mediatr"
 

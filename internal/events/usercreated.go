@@ -1,13 +1,13 @@
 package events
 
 import (
-	"Keyline/internal/config"
-	db "Keyline/internal/database"
-	"Keyline/internal/messages"
-	"Keyline/internal/middlewares"
-	"Keyline/internal/repositories"
-	"Keyline/internal/services"
-	"Keyline/templates"
+	"github.com/The127/Keyline/internal/config"
+	db "github.com/The127/Keyline/internal/database"
+	"github.com/The127/Keyline/internal/messages"
+	"github.com/The127/Keyline/internal/middlewares"
+	"github.com/The127/Keyline/internal/repositories"
+	"github.com/The127/Keyline/internal/services"
+	"github.com/The127/Keyline/templates"
 	"context"
 	"fmt"
 	"time"

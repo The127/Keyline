@@ -1,18 +1,18 @@
 package server
 
 import (
-	"Keyline/internal/authentication"
-	"Keyline/internal/config"
-	"Keyline/internal/handlers"
-	"Keyline/internal/logging"
-	"Keyline/internal/middlewares"
+	"github.com/The127/Keyline/internal/authentication"
+	"github.com/The127/Keyline/internal/config"
+	"github.com/The127/Keyline/internal/handlers"
+	"github.com/The127/Keyline/internal/logging"
+	"github.com/The127/Keyline/internal/middlewares"
 	"fmt"
 	"net/http"
 
 	"github.com/The127/ioc"
 	httpSwagger "github.com/swaggo/http-swagger"
 
-	_ "Keyline/docs"
+	_ "github.com/The127/Keyline/docs"
 
 	gh "github.com/gorilla/handlers"
 

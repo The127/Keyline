@@ -1,15 +1,15 @@
 package setup
 
 import (
-	"Keyline/internal/behaviours"
-	"Keyline/internal/caching"
-	"Keyline/internal/config"
-	"Keyline/internal/middlewares"
-	"Keyline/internal/password"
-	"Keyline/internal/services"
-	"Keyline/internal/services/audit"
-	"Keyline/internal/services/claimsMapping"
-	"Keyline/internal/services/keyValue"
+	"github.com/The127/Keyline/internal/behaviours"
+	"github.com/The127/Keyline/internal/caching"
+	"github.com/The127/Keyline/internal/config"
+	"github.com/The127/Keyline/internal/middlewares"
+	"github.com/The127/Keyline/internal/password"
+	"github.com/The127/Keyline/internal/services"
+	"github.com/The127/Keyline/internal/services/audit"
+	"github.com/The127/Keyline/internal/services/claimsMapping"
+	"github.com/The127/Keyline/internal/services/keyValue"
 	"fmt"
 
 	"github.com/The127/ioc"

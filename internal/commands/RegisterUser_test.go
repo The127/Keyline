@@ -1,14 +1,14 @@
 package commands
 
 import (
-	"Keyline/internal/database"
-	"Keyline/internal/middlewares"
-	mocks2 "Keyline/internal/mocks"
-	"Keyline/internal/password"
-	"Keyline/internal/password/mock"
-	"Keyline/internal/repositories"
-	"Keyline/internal/repositories/mocks"
-	"Keyline/utils"
+	"github.com/The127/Keyline/internal/database"
+	"github.com/The127/Keyline/internal/middlewares"
+	mocks2 "github.com/The127/Keyline/internal/mocks"
+	"github.com/The127/Keyline/internal/password"
+	"github.com/The127/Keyline/internal/password/mock"
+	"github.com/The127/Keyline/internal/repositories"
+	"github.com/The127/Keyline/internal/repositories/mocks"
+	"github.com/The127/Keyline/utils"
 	"context"
 	"testing"
 	"time"

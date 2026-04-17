@@ -1,7 +1,7 @@
 package password
 
 import (
-	"Keyline/internal/repositories"
+	"github.com/The127/Keyline/internal/repositories"
 	_ "embed"
 	"fmt"
 	"strings"

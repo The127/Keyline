@@ -1,7 +1,7 @@
 package config
 
 import (
-	"Keyline/internal/retry"
+	"github.com/The127/Keyline/internal/retry"
 	"flag"
 	"fmt"
 	"log"

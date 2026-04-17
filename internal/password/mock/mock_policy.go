@@ -10,7 +10,7 @@
 package mock
 
 import (
-	repositories "Keyline/internal/repositories"
+	repositories "github.com/The127/Keyline/internal/repositories"
 	reflect "reflect"
 
 	gomock "go.uber.org/mock/gomock"

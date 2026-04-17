@@ -1,8 +1,8 @@
 package utils
 
 import (
-	"Keyline/internal/config"
-	"Keyline/internal/logging"
+	"github.com/The127/Keyline/internal/config"
+	"github.com/The127/Keyline/internal/logging"
 	"errors"
 	"fmt"
 	"net/http"

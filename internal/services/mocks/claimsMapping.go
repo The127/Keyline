@@ -10,7 +10,7 @@
 package mocks
 
 import (
-	claimsMapping "Keyline/internal/services/claimsMapping"
+	claimsMapping "github.com/The127/Keyline/internal/services/claimsMapping"
 	context "context"
 	reflect "reflect"
 

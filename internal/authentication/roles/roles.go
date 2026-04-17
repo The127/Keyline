@@ -1,7 +1,7 @@
 package roles
 
 import (
-	"Keyline/internal/authentication/permissions"
+	"github.com/The127/Keyline/internal/authentication/permissions"
 )
 
 type Role string

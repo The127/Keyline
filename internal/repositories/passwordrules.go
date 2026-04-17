@@ -1,8 +1,8 @@
 package repositories
 
 import (
-	"Keyline/internal/change"
-	"Keyline/utils"
+	"github.com/The127/Keyline/internal/change"
+	"github.com/The127/Keyline/utils"
 	"context"
 	"fmt"
 

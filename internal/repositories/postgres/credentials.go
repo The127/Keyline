@@ -1,11 +1,11 @@
 package postgres
 
 import (
-	"Keyline/internal/change"
-	"Keyline/internal/logging"
-	"Keyline/internal/repositories"
-	"Keyline/internal/repositories/postgres/pghelpers"
-	"Keyline/utils"
+	"github.com/The127/Keyline/internal/change"
+	"github.com/The127/Keyline/internal/logging"
+	"github.com/The127/Keyline/internal/repositories"
+	"github.com/The127/Keyline/internal/repositories/postgres/pghelpers"
+	"github.com/The127/Keyline/utils"
 	"context"
 	"database/sql"
 	"encoding/json"

@@ -1,10 +1,10 @@
 package handlers
 
 import (
-	"Keyline/internal/middlewares"
-	"Keyline/internal/repositories"
-	"Keyline/internal/services"
-	"Keyline/utils"
+	"github.com/The127/Keyline/internal/middlewares"
+	"github.com/The127/Keyline/internal/repositories"
+	"github.com/The127/Keyline/internal/services"
+	"github.com/The127/Keyline/utils"
 	"fmt"
 	"net/http"
 

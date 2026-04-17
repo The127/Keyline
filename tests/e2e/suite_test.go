@@ -3,7 +3,7 @@
 package e2e
 
 import (
-	"Keyline/internal/logging"
+	"github.com/The127/Keyline/internal/logging"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"

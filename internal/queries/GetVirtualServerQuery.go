@@ -1,12 +1,12 @@
 package queries
 
 import (
-	"Keyline/internal/authentication/permissions"
-	"Keyline/internal/behaviours"
-	"Keyline/internal/config"
-	"Keyline/internal/database"
-	"Keyline/internal/middlewares"
-	"Keyline/internal/repositories"
+	"github.com/The127/Keyline/internal/authentication/permissions"
+	"github.com/The127/Keyline/internal/behaviours"
+	"github.com/The127/Keyline/internal/config"
+	"github.com/The127/Keyline/internal/database"
+	"github.com/The127/Keyline/internal/middlewares"
+	"github.com/The127/Keyline/internal/repositories"
 	"context"
 	"time"
 

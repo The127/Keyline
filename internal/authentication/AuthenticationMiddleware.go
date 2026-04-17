@@ -1,12 +1,12 @@
 package authentication
 
 import (
-	"Keyline/internal/authentication/permissions"
-	"Keyline/internal/authentication/roles"
-	"Keyline/internal/config"
-	"Keyline/internal/middlewares"
-	"Keyline/internal/services"
-	"Keyline/utils"
+	"github.com/The127/Keyline/internal/authentication/permissions"
+	"github.com/The127/Keyline/internal/authentication/roles"
+	"github.com/The127/Keyline/internal/config"
+	"github.com/The127/Keyline/internal/middlewares"
+	"github.com/The127/Keyline/internal/services"
+	"github.com/The127/Keyline/utils"
 	"context"
 	"fmt"
 	"net/http"

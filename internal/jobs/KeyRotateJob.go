@@ -1,13 +1,13 @@
 package jobs
 
 import (
-	"Keyline/internal/config"
-	"Keyline/internal/database"
-	"Keyline/internal/logging"
-	"Keyline/internal/middlewares"
-	"Keyline/internal/repositories"
-	"Keyline/internal/services"
-	"Keyline/utils"
+	"github.com/The127/Keyline/internal/config"
+	"github.com/The127/Keyline/internal/database"
+	"github.com/The127/Keyline/internal/logging"
+	"github.com/The127/Keyline/internal/middlewares"
+	"github.com/The127/Keyline/internal/repositories"
+	"github.com/The127/Keyline/internal/services"
+	"github.com/The127/Keyline/utils"
 	"context"
 	"fmt"
 	"time"
