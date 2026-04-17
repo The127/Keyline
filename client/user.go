@@ -21,6 +21,8 @@ type UserClient interface {
 	List(ctx context.Context, params ListUserParams) (handlers.PagedUsersResponseDto, error)
 	Get(ctx context.Context, id uuid.UUID) (handlers.GetUserByIdResponseDto, error)
 	Patch(ctx context.Context, id uuid.UUID, dto handlers.PatchUserRequestDto) error
+	CreateServiceUser(ctx context.Context, dto handlers.CreateServiceUserRequestDto) (handlers.CreateServiceUserResponseDto, error)
+	AssociateServiceUserPublicKey(ctx context.Context, serviceUserID uuid.UUID, dto handlers.AssociateServiceUserPublicKeyRequestDto) (handlers.AssociateServiceUserPublicKeyResponseDto, error)
 }
 
 func NewUserClient(transport *Transport) UserClient {
@@ -100,4 +102,53 @@ func (c *userClient) Patch(ctx context.Context, id uuid.UUID, dto handlers.Patch
 	}
 
 	return nil
+}
+
+func (c *userClient) CreateServiceUser(ctx context.Context, dto handlers.CreateServiceUserRequestDto) (handlers.CreateServiceUserResponseDto, error) {
+	jsonBytes, err := json.Marshal(dto)
+	if err != nil {
+		return handlers.CreateServiceUserResponseDto{}, fmt.Errorf("marshaling dto: %w", err)
+	}
+
+	request, err := c.transport.NewTenantRequest(ctx, http.MethodPost, "/users/service-users", bytes.NewBuffer(jsonBytes))
+	if err != nil {
+		return handlers.CreateServiceUserResponseDto{}, fmt.Errorf("creating request: %w", err)
+	}
+
+	response, err := c.transport.Do(request)
+	if err != nil {
+		return handlers.CreateServiceUserResponseDto{}, fmt.Errorf("doing request: %w", err)
+	}
+
+	var responseDto handlers.CreateServiceUserResponseDto
+	if err := json.NewDecoder(response.Body).Decode(&responseDto); err != nil {
+		return handlers.CreateServiceUserResponseDto{}, fmt.Errorf("decoding response: %w", err)
+	}
+
+	return responseDto, nil
+}
+
+func (c *userClient) AssociateServiceUserPublicKey(ctx context.Context, serviceUserID uuid.UUID, dto handlers.AssociateServiceUserPublicKeyRequestDto) (handlers.AssociateServiceUserPublicKeyResponseDto, error) {
+	jsonBytes, err := json.Marshal(dto)
+	if err != nil {
+		return handlers.AssociateServiceUserPublicKeyResponseDto{}, fmt.Errorf("marshaling dto: %w", err)
+	}
+
+	endpoint := fmt.Sprintf("/users/service-users/%s/keys", serviceUserID)
+	request, err := c.transport.NewTenantRequest(ctx, http.MethodPost, endpoint, bytes.NewBuffer(jsonBytes))
+	if err != nil {
+		return handlers.AssociateServiceUserPublicKeyResponseDto{}, fmt.Errorf("creating request: %w", err)
+	}
+
+	response, err := c.transport.Do(request)
+	if err != nil {
+		return handlers.AssociateServiceUserPublicKeyResponseDto{}, fmt.Errorf("doing request: %w", err)
+	}
+
+	var responseDto handlers.AssociateServiceUserPublicKeyResponseDto
+	if err := json.NewDecoder(response.Body).Decode(&responseDto); err != nil {
+		return handlers.AssociateServiceUserPublicKeyResponseDto{}, fmt.Errorf("decoding response: %w", err)
+	}
+
+	return responseDto, nil
 }
