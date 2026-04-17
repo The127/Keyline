@@ -46,6 +46,7 @@ type GetApplicationResult struct {
 	PostLogoutUris      []string
 	SystemApplication   bool
 	ClaimsMappingScript *string
+	DeviceFlowEnabled   bool
 	CreatedAt           time.Time
 	UpdatedAt           time.Time
 }
@@ -91,6 +92,7 @@ func HandleGetApplication(ctx context.Context, query GetApplication) (*GetApplic
 		PostLogoutUris:      application.PostLogoutRedirectUris(),
 		SystemApplication:   application.SystemApplication(),
 		ClaimsMappingScript: application.ClaimsMappingScript(),
+		DeviceFlowEnabled:   application.DeviceFlowEnabled(),
 		CreatedAt:           application.AuditCreatedAt(),
 		UpdatedAt:           application.AuditUpdatedAt(),
 	}, nil

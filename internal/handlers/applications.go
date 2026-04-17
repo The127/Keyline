@@ -119,6 +119,8 @@ type GetApplicationResponseDto struct {
 
 	ClaimsMappingScript *string `json:"customClaimsMappingScript"`
 
+	DeviceFlowEnabled bool `json:"deviceFlowEnabled"`
+
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }
@@ -186,6 +188,7 @@ func GetApplication(w http.ResponseWriter, r *http.Request) {
 		PostLogoutRedirectUris: application.PostLogoutUris,
 		SystemApplication:      application.SystemApplication,
 		ClaimsMappingScript:    application.ClaimsMappingScript,
+		DeviceFlowEnabled:      application.DeviceFlowEnabled,
 		CreatedAt:              application.CreatedAt,
 		UpdatedAt:              application.UpdatedAt,
 	})
