@@ -149,12 +149,16 @@ func CreateSession(w http.ResponseWriter, r *http.Request, vsName string, userId
 	return nil
 }
 
+func ClearSessionCookie(w http.ResponseWriter, vsName string) {
+	setCookie(w, GetSessionCookieName(vsName), "", -1)
+}
+
 func setCookie(w http.ResponseWriter, name string, value string, maxAge int) {
 	cookie := http.Cookie{
 		Name:     name,
 		Value:    value,
 		Path:     "/",
-		Domain:   config.C.Server.ExternalUrl,
+		Domain:   config.C.Server.ExternalDomain,
 		MaxAge:   maxAge,
 		Secure:   true,
 		HttpOnly: true,
