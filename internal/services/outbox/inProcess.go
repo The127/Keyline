@@ -1,8 +1,8 @@
 package outbox
 
 import (
-	"Keyline/internal/middlewares"
-	"Keyline/internal/repositories"
+	"github.com/The127/Keyline/internal/middlewares"
+	"github.com/The127/Keyline/internal/repositories"
 	"context"
 	"fmt"
 

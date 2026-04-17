@@ -10,7 +10,7 @@
 package mocks
 
 import (
-	repositories "Keyline/internal/repositories"
+	repositories "github.com/The127/Keyline/internal/repositories"
 	context "context"
 	reflect "reflect"
 

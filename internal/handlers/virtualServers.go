@@ -1,11 +1,11 @@
 package handlers
 
 import (
-	"Keyline/internal/commands"
-	"Keyline/internal/config"
-	"Keyline/internal/middlewares"
-	"Keyline/internal/queries"
-	"Keyline/utils"
+	"github.com/The127/Keyline/internal/commands"
+	"github.com/The127/Keyline/internal/config"
+	"github.com/The127/Keyline/internal/middlewares"
+	"github.com/The127/Keyline/internal/queries"
+	"github.com/The127/Keyline/utils"
 	"encoding/json"
 	"net/http"
 	"time"

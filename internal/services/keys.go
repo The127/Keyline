@@ -1,8 +1,8 @@
 package services
 
 import (
-	"Keyline/internal/caching"
-	"Keyline/internal/config"
+	"github.com/The127/Keyline/internal/caching"
+	"github.com/The127/Keyline/internal/config"
 	"context"
 	"crypto"
 	"crypto/ed25519"

@@ -1,9 +1,9 @@
 package repositories
 
 import (
-	"Keyline/internal/change"
-	"Keyline/internal/config"
-	"Keyline/utils"
+	"github.com/The127/Keyline/internal/change"
+	"github.com/The127/Keyline/internal/config"
+	"github.com/The127/Keyline/utils"
 	"context"
 
 	"github.com/google/uuid"

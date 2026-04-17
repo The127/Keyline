@@ -1,7 +1,7 @@
 package jsonTypes
 
 import (
-	"Keyline/internal/repositories"
+	"github.com/The127/Keyline/internal/repositories"
 
 	"github.com/google/uuid"
 )

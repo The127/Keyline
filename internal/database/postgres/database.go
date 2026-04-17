@@ -1,9 +1,9 @@
 package postgres
 
 import (
-	"Keyline/internal/config"
-	db "Keyline/internal/database"
-	"Keyline/internal/logging"
+	"github.com/The127/Keyline/internal/config"
+	db "github.com/The127/Keyline/internal/database"
+	"github.com/The127/Keyline/internal/logging"
 	"context"
 	"database/sql"
 	"embed"

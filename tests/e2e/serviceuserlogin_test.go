@@ -1,7 +1,7 @@
 package e2e
 
 import (
-	"Keyline/internal/commands"
+	"github.com/The127/Keyline/internal/commands"
 	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"

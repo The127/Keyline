@@ -1,7 +1,7 @@
 package messages
 
 import (
-	"Keyline/internal/repositories"
+	"github.com/The127/Keyline/internal/repositories"
 	"encoding/json"
 
 	"github.com/google/uuid"

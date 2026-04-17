@@ -1,12 +1,12 @@
 package commands
 
 import (
-	"Keyline/internal/database"
-	"Keyline/internal/middlewares"
-	"Keyline/internal/mocks"
-	"Keyline/internal/repositories"
-	repoMocks "Keyline/internal/repositories/mocks"
-	"Keyline/utils"
+	"github.com/The127/Keyline/internal/database"
+	"github.com/The127/Keyline/internal/middlewares"
+	"github.com/The127/Keyline/internal/mocks"
+	"github.com/The127/Keyline/internal/repositories"
+	repoMocks "github.com/The127/Keyline/internal/repositories/mocks"
+	"github.com/The127/Keyline/utils"
 	"context"
 	"errors"
 	"testing"

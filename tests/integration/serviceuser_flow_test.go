@@ -1,7 +1,7 @@
 package integration
 
 import (
-	"Keyline/internal/commands"
+	"github.com/The127/Keyline/internal/commands"
 
 	"github.com/The127/mediatr"
 
