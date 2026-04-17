@@ -119,6 +119,24 @@ func Serve(dp *ioc.DependencyProvider, serverConfig config.ServerConfig) {
 }
 
 func mapApiRoutes(r *mux.Router) {
+	sessionsRouter := r.PathPrefix("/api/sessions").Subrouter()
+	sessionsRouter.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			origin := r.Header.Get("Origin")
+			w.Header().Set("Access-Control-Allow-Methods", "GET, DELETE")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+			w.Header().Set("Access-Control-Allow-Credentials", "true")
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+			if r.Method == http.MethodOptions {
+				w.WriteHeader(http.StatusNoContent)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	})
+	sessionsRouter.HandleFunc("", handlers.ListActiveSessions).Methods(http.MethodGet, http.MethodOptions)
+	sessionsRouter.HandleFunc("/{vsName}", handlers.DeleteActiveSession).Methods(http.MethodDelete, http.MethodOptions)
+
 	apiRouter := r.PathPrefix("/api").Subrouter()
 
 	apiRouter.Use(gh.CORS(
