@@ -3,6 +3,7 @@ package setup
 import (
 	"github.com/The127/Keyline/internal/config"
 	"github.com/The127/Keyline/internal/database"
+	"github.com/The127/Keyline/internal/database/memory"
 	"github.com/The127/Keyline/internal/database/postgres"
 	"github.com/The127/Keyline/internal/logging"
 	"context"
@@ -24,6 +25,9 @@ func Database(dc *ioc.DependencyCollection, c config.DatabaseConfig) (database.D
 		if err != nil {
 			return nil, fmt.Errorf("connecting to postgres: %w", err)
 		}
+
+	case config.DatabaseModeMemory:
+		db = memory.NewMemoryDatabase()
 
 	default:
 		panic("database mode missing or not supported")

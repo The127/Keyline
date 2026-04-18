@@ -29,6 +29,7 @@ type DatabaseMode string
 const (
 	DatabaseModePostgres DatabaseMode = "postgres"
 	DatabaseModeSqlite   DatabaseMode = "sqlite"
+	DatabaseModeMemory   DatabaseMode = "memory"
 )
 
 // CacheMode has the following constants: CacheModeMemory, CacheModeRedis
@@ -569,6 +570,9 @@ func setDatabaseDefaultsOrPanic() {
 
 	case DatabaseModeSqlite:
 		setSqliteDefaultsOrPanic()
+
+	case DatabaseModeMemory:
+		// no-op: in-memory database has no connection parameters
 
 	default:
 		panic("database mode missing or not supported")
