@@ -2,6 +2,7 @@ package integration
 
 import (
 	"github.com/The127/Keyline/internal/commands"
+	"github.com/The127/Keyline/internal/config"
 	"github.com/The127/Keyline/internal/queries"
 	"github.com/The127/Keyline/utils"
 
@@ -13,82 +14,92 @@ import (
 	"github.com/onsi/gomega/gstruct"
 )
 
-var _ = Describe("Role flow", Ordered, func() {
-	var h *harness
+func init() {
+	for _, backend := range testBackends {
+		backend := backend
+		Describe("Role flow ["+backend.name+"]", Ordered, func() {
+			var h *harness
 
-	projectSlug := "test-project"
-	var roleId uuid.UUID
+			projectSlug := "test-project"
+			var roleId uuid.UUID
 
-	BeforeAll(func() {
-		h = newIntegrationTestHarness()
+			BeforeAll(func() {
+				if backend.dbMode == config.DatabaseModePostgres && !postgresBackendAvailable() {
+					Skip("Postgres not available")
+				}
+				h = newIntegrationTestHarness(backend.dbMode)
 
-		req := commands.CreateProject{
-			VirtualServerName: h.VirtualServer(),
-			Slug:              projectSlug,
-			Name:              "Name",
-			Description:       "Description",
-		}
-		_, err := mediatr.Send[*commands.CreateProjectResponse](h.Ctx(), h.Mediator(), req)
-		Expect(err).ToNot(HaveOccurred())
+				req := commands.CreateProject{
+					VirtualServerName: h.VirtualServer(),
+					Slug:              projectSlug,
+					Name:              "Name",
+					Description:       "Description",
+				}
+				_, err := mediatr.Send[*commands.CreateProjectResponse](h.Ctx(), h.Mediator(), req)
+				Expect(err).ToNot(HaveOccurred())
 
-		Expect(h.dbContext.SaveChanges(h.ctx)).ToNot(HaveOccurred())
-	})
+				Expect(h.dbContext.SaveChanges(h.ctx)).ToNot(HaveOccurred())
+			})
 
-	AfterAll(func() {
-		h.Close()
-	})
+			AfterAll(func() {
+				if h != nil {
+					h.Close()
+				}
+			})
 
-	It("should create a role successfully", func() {
-		req := commands.CreateRole{
-			VirtualServerName: h.VirtualServer(),
-			ProjectSlug:       projectSlug,
-			Name:              "test-role",
-			Description:       "Description",
-		}
-		response, err := mediatr.Send[*commands.CreateRoleResponse](h.Ctx(), h.Mediator(), req)
-		Expect(err).ToNot(HaveOccurred())
-		roleId = response.Id
+			It("should create a role successfully", func() {
+				req := commands.CreateRole{
+					VirtualServerName: h.VirtualServer(),
+					ProjectSlug:       projectSlug,
+					Name:              "test-role",
+					Description:       "Description",
+				}
+				response, err := mediatr.Send[*commands.CreateRoleResponse](h.Ctx(), h.Mediator(), req)
+				Expect(err).ToNot(HaveOccurred())
+				roleId = response.Id
 
-		Expect(h.dbContext.SaveChanges(h.ctx)).ToNot(HaveOccurred())
-	})
+				Expect(h.dbContext.SaveChanges(h.ctx)).ToNot(HaveOccurred())
+			})
 
-	It("should list roles successfully", func() {
-		req := queries.ListRoles{
-			VirtualServerName: h.VirtualServer(),
-			ProjectSlug:       projectSlug,
-			SearchText:        "test-role",
-		}
-		response, err := mediatr.Send[*queries.ListRolesResponse](h.Ctx(), h.Mediator(), req)
-		Expect(err).ToNot(HaveOccurred())
-		Expect(response.Items).To(ContainElement(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
-			"Id":   Equal(roleId),
-			"Name": Equal("test-role"),
-		})))
-	})
+			It("should list roles successfully", func() {
+				req := queries.ListRoles{
+					VirtualServerName: h.VirtualServer(),
+					ProjectSlug:       projectSlug,
+					SearchText:        "test-role",
+				}
+				response, err := mediatr.Send[*queries.ListRolesResponse](h.Ctx(), h.Mediator(), req)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(response.Items).To(ContainElement(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
+					"Id":   Equal(roleId),
+					"Name": Equal("test-role"),
+				})))
+			})
 
-	It("should patch role successfully", func() {
-		cmd := commands.PatchRole{
-			VirtualServerName: h.VirtualServer(),
-			ProjectSlug:       projectSlug,
-			RoleId:            roleId,
-			Name:              utils.Ptr("Updated Name"),
-			Description:       utils.Ptr("Updated Description"),
-		}
-		_, err := mediatr.Send[*commands.PatchRoleResponse](h.Ctx(), h.Mediator(), cmd)
-		Expect(err).ToNot(HaveOccurred())
+			It("should patch role successfully", func() {
+				cmd := commands.PatchRole{
+					VirtualServerName: h.VirtualServer(),
+					ProjectSlug:       projectSlug,
+					RoleId:            roleId,
+					Name:              utils.Ptr("Updated Name"),
+					Description:       utils.Ptr("Updated Description"),
+				}
+				_, err := mediatr.Send[*commands.PatchRoleResponse](h.Ctx(), h.Mediator(), cmd)
+				Expect(err).ToNot(HaveOccurred())
 
-		Expect(h.dbContext.SaveChanges(h.ctx)).ToNot(HaveOccurred())
-	})
+				Expect(h.dbContext.SaveChanges(h.ctx)).ToNot(HaveOccurred())
+			})
 
-	It("should reflect updated values", func() {
-		req := queries.GetRoleQuery{
-			VirtualServerName: h.VirtualServer(),
-			ProjectSlug:       projectSlug,
-			RoleId:            roleId,
-		}
-		resp, err := mediatr.Send[*queries.GetRoleQueryResult](h.Ctx(), h.Mediator(), req)
-		Expect(err).ToNot(HaveOccurred())
-		Expect(resp.Name).To(Equal("Updated Name"))
-		Expect(resp.Description).To(Equal("Updated Description"))
-	})
-})
+			It("should reflect updated values", func() {
+				req := queries.GetRoleQuery{
+					VirtualServerName: h.VirtualServer(),
+					ProjectSlug:       projectSlug,
+					RoleId:            roleId,
+				}
+				resp, err := mediatr.Send[*queries.GetRoleQueryResult](h.Ctx(), h.Mediator(), req)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(resp.Name).To(Equal("Updated Name"))
+				Expect(resp.Description).To(Equal("Updated Description"))
+			})
+		})
+	}
+}

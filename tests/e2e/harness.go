@@ -39,6 +39,7 @@ type harness struct {
 	ctx       context.Context
 	setTime   clock.TimeSetterFn
 	dbName    string
+	dbMode    config.DatabaseMode
 	scope     *ioc.DependencyProvider
 	serverUrl string
 }
@@ -64,6 +65,12 @@ func (h *harness) Close() {
 	dbConnection := ioc.GetDependency[database.Database](h.scope)
 	utils.PanicOnError(h.scope.Close, "closing scope")
 	utils.PanicOnError(dbConnection.Close, "closing db connection in test")
+
+	// For Postgres we need to drop the temporary database we created.
+	// For memory there is nothing to tear down.
+	if h.dbMode != config.DatabaseModePostgres {
+		return
+	}
 
 	pc := config.PostgresConfig{
 		Database: "postgres",
@@ -97,39 +104,54 @@ func (h *harness) Scope() *ioc.DependencyProvider {
 	return h.scope
 }
 
-func newE2eTestHarness(tokenSourceGenerator func(ctx context.Context, url string) oauth2.TokenSource) *harness {
+func newE2eTestHarness(dbMode config.DatabaseMode, tokenSourceGenerator func(ctx context.Context, url string) oauth2.TokenSource) *harness {
 	ctx := context.Background()
 	dc := ioc.NewDependencyCollection()
 	clockService, timeSetter := clock.NewMockClock(time.Now())
 
-	sqlbuilder.DefaultFlavor = sqlbuilder.PostgreSQL
+	var dbName string
+	var c config.DatabaseConfig
 
-	dbName := strings.ReplaceAll("keyline_test_"+uuid.New().String(), "-", "")
-	c := config.DatabaseConfig{
-		Mode: config.DatabaseModePostgres,
-		Postgres: config.PostgresConfig{
-			Database: "postgres",
-			Host:     "localhost",
-			Port:     5732,
-			Username: "user",
-			Password: "password",
-			SslMode:  "disable",
-		},
+	switch dbMode {
+	case config.DatabaseModePostgres:
+		sqlbuilder.DefaultFlavor = sqlbuilder.PostgreSQL
+
+		dbName = strings.ReplaceAll("keyline_test_"+uuid.New().String(), "-", "")
+		c = config.DatabaseConfig{
+			Mode: config.DatabaseModePostgres,
+			Postgres: config.PostgresConfig{
+				Database: "postgres",
+				Host:     "localhost",
+				Port:     5732,
+				Username: "user",
+				Password: "password",
+				SslMode:  "disable",
+			},
+		}
+
+		initDb, err := postgres.ConnectToDatabase(c.Postgres)
+		if err != nil {
+			panic(err)
+		}
+
+		createQuery := fmt.Sprintf("create database %s;", dbName)
+		_, err = initDb.Exec(createQuery)
+		if err != nil {
+			panic(err)
+		}
+		utils.PanicOnError(initDb.Close, "closing initial db connection in test")
+
+		c.Postgres.Database = dbName
+
+	case config.DatabaseModeMemory:
+		c = config.DatabaseConfig{
+			Mode: config.DatabaseModeMemory,
+		}
+
+	default:
+		panic(fmt.Sprintf("unsupported database mode in test harness: %s", dbMode))
 	}
 
-	initDb, err := postgres.ConnectToDatabase(c.Postgres)
-	if err != nil {
-		panic(err)
-	}
-
-	createQuery := fmt.Sprintf("create database %s;", dbName)
-	_, err = initDb.Exec(createQuery)
-	if err != nil {
-		panic(err)
-	}
-	utils.PanicOnError(initDb.Close, "closing initial db connection in test")
-
-	c.Postgres.Database = dbName
 	db, err := setup.Database(dc, c)
 	if err != nil {
 		panic(fmt.Errorf("failed to create test database: %w", err))
@@ -145,16 +167,26 @@ func newE2eTestHarness(tokenSourceGenerator func(ctx context.Context, url string
 	})
 	setup.OutboxDelivery(dc, config.QueueModeNoop)
 
-	vaultPath := fmt.Sprintf("%s/", uuid.New().String())
-	setup.KeyServices(dc, config.KeyStoreConfig{
-		Mode: config.KeyStoreModeVault,
-		Vault: config.VaultKeyStoreConfig{
-			Address: "http://localhost:8222",
-			Token:   "myroot",
-			Mount:   "secret",
-			Prefix:  vaultPath,
-		},
-	})
+	// Postgres harness uses Vault key storage (requires a running Vault instance);
+	// Memory harness uses the in-process memory key store to stay dependency-free.
+	var keyStoreConfig config.KeyStoreConfig
+	if dbMode == config.DatabaseModePostgres {
+		vaultPath := fmt.Sprintf("%s/", uuid.New().String())
+		keyStoreConfig = config.KeyStoreConfig{
+			Mode: config.KeyStoreModeVault,
+			Vault: config.VaultKeyStoreConfig{
+				Address: "http://localhost:8222",
+				Token:   "myroot",
+				Mount:   "secret",
+				Prefix:  vaultPath,
+			},
+		}
+	} else {
+		keyStoreConfig = config.KeyStoreConfig{
+			Mode: config.KeyStoreModeMemory,
+		}
+	}
+	setup.KeyServices(dc, keyStoreConfig)
 
 	setup.Caching(dc, config.CacheModeMemory)
 	setup.Services(dc)
@@ -192,6 +224,7 @@ func newE2eTestHarness(tokenSourceGenerator func(ctx context.Context, url string
 		ctx:       ctx,
 		setTime:   timeSetter,
 		dbName:    dbName,
+		dbMode:    dbMode,
 		serverUrl: serverConfig.ExternalUrl,
 	}
 }

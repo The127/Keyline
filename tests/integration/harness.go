@@ -29,6 +29,7 @@ type harness struct {
 	ctx       context.Context
 	setTime   clock.TimeSetterFn
 	dbName    string
+	dbMode    config.DatabaseMode
 	dbContext db2.Context
 }
 
@@ -36,6 +37,12 @@ func (h *harness) Close() {
 	dbConnection := ioc.GetDependency[db2.Database](h.scope)
 	utils.PanicOnError(h.scope.Close, "closing scope")
 	utils.PanicOnError(dbConnection.Close, "closing db connection in test")
+
+	// For Postgres we need to drop the temporary database we created.
+	// For memory there is nothing to tear down.
+	if h.dbMode != config.DatabaseModePostgres {
+		return
+	}
 
 	pc := config.PostgresConfig{
 		Database: "postgres",
@@ -77,39 +84,54 @@ func (h *harness) Mediator() mediatr.Mediator {
 	return h.m
 }
 
-func newIntegrationTestHarness() *harness {
+func newIntegrationTestHarness(dbMode config.DatabaseMode) *harness {
 	ctx := context.Background()
 	dc := ioc.NewDependencyCollection()
 	c, timeSetter := clock.NewMockClock(time.Now())
 
-	sqlbuilder.DefaultFlavor = sqlbuilder.PostgreSQL
+	var dbName string
+	var dbc config.DatabaseConfig
 
-	dbName := strings.ReplaceAll("keyline_test_"+uuid.New().String(), "-", "")
-	dbc := config.DatabaseConfig{
-		Mode: config.DatabaseModePostgres,
-		Postgres: config.PostgresConfig{
-			Database: "postgres",
-			Host:     "localhost",
-			Port:     5732,
-			Username: "user",
-			Password: "password",
-			SslMode:  "disable",
-		},
+	switch dbMode {
+	case config.DatabaseModePostgres:
+		sqlbuilder.DefaultFlavor = sqlbuilder.PostgreSQL
+
+		dbName = strings.ReplaceAll("keyline_test_"+uuid.New().String(), "-", "")
+		dbc = config.DatabaseConfig{
+			Mode: config.DatabaseModePostgres,
+			Postgres: config.PostgresConfig{
+				Database: "postgres",
+				Host:     "localhost",
+				Port:     5732,
+				Username: "user",
+				Password: "password",
+				SslMode:  "disable",
+			},
+		}
+
+		initDb, err := postgres.ConnectToDatabase(dbc.Postgres)
+		if err != nil {
+			panic(err)
+		}
+
+		createQuery := fmt.Sprintf("create database %s;", dbName)
+		_, err = initDb.Exec(createQuery)
+		if err != nil {
+			panic(err)
+		}
+		utils.PanicOnError(initDb.Close, "closing initial db connection in test")
+
+		dbc.Postgres.Database = dbName
+
+	case config.DatabaseModeMemory:
+		dbc = config.DatabaseConfig{
+			Mode: config.DatabaseModeMemory,
+		}
+
+	default:
+		panic(fmt.Sprintf("unsupported database mode in test harness: %s", dbMode))
 	}
 
-	initDb, err := postgres.ConnectToDatabase(dbc.Postgres)
-	if err != nil {
-		panic(err)
-	}
-
-	createQuery := fmt.Sprintf("create database %s;", dbName)
-	_, err = initDb.Exec(createQuery)
-	if err != nil {
-		panic(err)
-	}
-	utils.PanicOnError(initDb.Close, "closing initial db connection in test")
-
-	dbc.Postgres.Database = dbName
 	db, err := setup.Database(dc, dbc)
 	if err != nil {
 		panic(fmt.Errorf("failed to create test database: %w", err))
@@ -159,6 +181,7 @@ func newIntegrationTestHarness() *harness {
 		ctx:       ctx,
 		setTime:   timeSetter,
 		dbName:    dbName,
+		dbMode:    dbMode,
 		dbContext: dbContext,
 	}
 }
