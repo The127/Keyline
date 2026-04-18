@@ -22,3 +22,11 @@ func (i PagingInfo) Apply(s *sqlbuilder.SelectBuilder) {
 func (i PagingInfo) offset() int {
 	return (i.page - 1) * i.size
 }
+
+func (i PagingInfo) Page() int {
+	return i.page
+}
+
+func (i PagingInfo) Size() int {
+	return i.size
+}

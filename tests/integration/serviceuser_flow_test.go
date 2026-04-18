@@ -2,6 +2,7 @@ package integration
 
 import (
 	"github.com/The127/Keyline/internal/commands"
+	"github.com/The127/Keyline/internal/config"
 
 	"github.com/The127/mediatr"
 
@@ -16,51 +17,61 @@ const (
 	ed25519PrivateKey = "-----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW\nQyNTUxOQAAACD99cY11g+lad1ap1kvMSs3hbBoWcJ1fzrzxMVQVx42EAAAAIh9iJMufYiT\nLgAAAAtzc2gtZWQyNTUxOQAAACD99cY11g+lad1ap1kvMSs3hbBoWcJ1fzrzxMVQVx42EA\nAAAEDmse+LYEH5FGuuCy9T4UIVFG+isPPii6vXXNtah36Evf31xjXWD6Vp3VqnWS8xKzeF\nsGhZwnV/OvPExVBXHjYQAAAAAAECAwQF\n-----END OPENSSH PRIVATE KEY-----\n"
 )
 
-var _ = Describe("ServiceUser flow", Ordered, func() {
-	var h *harness
-	var serviceUserId uuid.UUID
+func init() {
+	for _, backend := range testBackends {
+		backend := backend
+		Describe("ServiceUser flow ["+backend.name+"]", Ordered, func() {
+			var h *harness
+			var serviceUserId uuid.UUID
 
-	BeforeAll(func() {
-		h = newIntegrationTestHarness()
-	})
+			BeforeAll(func() {
+				if backend.dbMode == config.DatabaseModePostgres && !postgresBackendAvailable() {
+					Skip("Postgres not available")
+				}
+				h = newIntegrationTestHarness(backend.dbMode)
+			})
 
-	AfterAll(func() {
-		h.Close()
-	})
+			AfterAll(func() {
+				if h != nil {
+					h.Close()
+				}
+			})
 
-	It("should create a service user successfully", func() {
-		req := commands.CreateServiceUser{
-			VirtualServerName: h.VirtualServer(),
-			Username:          "service-user",
-		}
-		response, err := mediatr.Send[*commands.CreateServiceUserResponse](h.Ctx(), h.Mediator(), req)
-		Expect(err).ToNot(HaveOccurred())
-		serviceUserId = response.Id
+			It("should create a service user successfully", func() {
+				req := commands.CreateServiceUser{
+					VirtualServerName: h.VirtualServer(),
+					Username:          "service-user",
+				}
+				response, err := mediatr.Send[*commands.CreateServiceUserResponse](h.Ctx(), h.Mediator(), req)
+				Expect(err).ToNot(HaveOccurred())
+				serviceUserId = response.Id
 
-		Expect(h.dbContext.SaveChanges(h.ctx)).ToNot(HaveOccurred())
-	})
+				Expect(h.dbContext.SaveChanges(h.ctx)).ToNot(HaveOccurred())
+			})
 
-	It("should associate public key with service user", func() {
-		req := commands.AssociateServiceUserPublicKey{
-			VirtualServerName: h.VirtualServer(),
-			ServiceUserId:     serviceUserId,
-			PublicKey:         ed25519PublicKey,
-		}
-		_, err := mediatr.Send[*commands.AssociateServiceUserPublicKeyResponse](h.Ctx(), h.Mediator(), req)
-		Expect(err).ToNot(HaveOccurred())
+			It("should associate public key with service user", func() {
+				req := commands.AssociateServiceUserPublicKey{
+					VirtualServerName: h.VirtualServer(),
+					ServiceUserId:     serviceUserId,
+					PublicKey:         ed25519PublicKey,
+				}
+				_, err := mediatr.Send[*commands.AssociateServiceUserPublicKeyResponse](h.Ctx(), h.Mediator(), req)
+				Expect(err).ToNot(HaveOccurred())
 
-		Expect(h.dbContext.SaveChanges(h.ctx)).ToNot(HaveOccurred())
-	})
+				Expect(h.dbContext.SaveChanges(h.ctx)).ToNot(HaveOccurred())
+			})
 
-	It("should remove public key from service user", func() {
-		req := commands.RemoveServiceUserPublicKey{
-			VirtualServerName: h.VirtualServer(),
-			ServiceUserId:     serviceUserId,
-			PublicKey:         ed25519PublicKey,
-		}
-		_, err := mediatr.Send[*commands.RemoveServiceUserPublicKeyResponse](h.Ctx(), h.Mediator(), req)
-		Expect(err).ToNot(HaveOccurred())
+			It("should remove public key from service user", func() {
+				req := commands.RemoveServiceUserPublicKey{
+					VirtualServerName: h.VirtualServer(),
+					ServiceUserId:     serviceUserId,
+					PublicKey:         ed25519PublicKey,
+				}
+				_, err := mediatr.Send[*commands.RemoveServiceUserPublicKeyResponse](h.Ctx(), h.Mediator(), req)
+				Expect(err).ToNot(HaveOccurred())
 
-		Expect(h.dbContext.SaveChanges(h.ctx)).ToNot(HaveOccurred())
-	})
-})
+				Expect(h.dbContext.SaveChanges(h.ctx)).ToNot(HaveOccurred())
+			})
+		})
+	}
+}
