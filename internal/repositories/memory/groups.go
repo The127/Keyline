@@ -56,7 +56,7 @@ func (r *GroupRepository) filtered(filter *repositories.GroupFilter) []*reposito
 }
 
 func (r *GroupRepository) FirstOrErr(_ context.Context, filter *repositories.GroupFilter) (*repositories.Group, error) {
-	result, err := r.FirstOrNil(nil, filter)
+	result, err := r.FirstOrNil(context.TODO(), filter)
 	if err != nil {
 		return nil, err
 	}

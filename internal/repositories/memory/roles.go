@@ -59,7 +59,7 @@ func (r *RoleRepository) filtered(filter *repositories.RoleFilter) []*repositori
 }
 
 func (r *RoleRepository) FirstOrErr(_ context.Context, filter *repositories.RoleFilter) (*repositories.Role, error) {
-	result, err := r.FirstOrNil(nil, filter)
+	result, err := r.FirstOrNil(context.TODO(), filter)
 	if err != nil {
 		return nil, err
 	}

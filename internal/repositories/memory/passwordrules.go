@@ -47,7 +47,7 @@ func (r *PasswordRuleRepository) filtered(filter *repositories.PasswordRuleFilte
 }
 
 func (r *PasswordRuleRepository) FirstOrErr(_ context.Context, filter *repositories.PasswordRuleFilter) (*repositories.PasswordRule, error) {
-	result, err := r.FirstOrNil(nil, filter)
+	result, err := r.FirstOrNil(context.TODO(), filter)
 	if err != nil {
 		return nil, err
 	}

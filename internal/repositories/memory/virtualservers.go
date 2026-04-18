@@ -47,7 +47,7 @@ func (r *VirtualServerRepository) filtered(filter *repositories.VirtualServerFil
 }
 
 func (r *VirtualServerRepository) FirstOrErr(_ context.Context, filter *repositories.VirtualServerFilter) (*repositories.VirtualServer, error) {
-	result, err := r.FirstOrNil(nil, filter)
+	result, err := r.FirstOrNil(context.TODO(), filter)
 	if err != nil {
 		return nil, err
 	}

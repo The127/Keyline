@@ -59,7 +59,7 @@ func (r *ResourceServerScopeRepository) filtered(filter *repositories.ResourceSe
 }
 
 func (r *ResourceServerScopeRepository) FirstOrErr(_ context.Context, filter *repositories.ResourceServerScopeFilter) (*repositories.ResourceServerScope, error) {
-	result, err := r.FirstOrNil(nil, filter)
+	result, err := r.FirstOrNil(context.TODO(), filter)
 	if err != nil {
 		return nil, err
 	}

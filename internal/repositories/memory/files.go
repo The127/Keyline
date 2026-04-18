@@ -34,7 +34,7 @@ func (r *FileRepository) matches(f *repositories.File, filter *repositories.File
 }
 
 func (r *FileRepository) FirstOrErr(_ context.Context, filter *repositories.FileFilter) (*repositories.File, error) {
-	result, err := r.FirstOrNil(nil, filter)
+	result, err := r.FirstOrNil(context.TODO(), filter)
 	if err != nil {
 		return nil, err
 	}

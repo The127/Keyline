@@ -40,7 +40,7 @@ func (r *SessionRepository) matches(s *repositories.Session, filter *repositorie
 }
 
 func (r *SessionRepository) FirstOrErr(_ context.Context, filter *repositories.SessionFilter) (*repositories.Session, error) {
-	result, err := r.FirstOrNil(nil, filter)
+	result, err := r.FirstOrNil(context.TODO(), filter)
 	if err != nil {
 		return nil, err
 	}

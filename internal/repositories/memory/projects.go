@@ -56,7 +56,7 @@ func (r *ProjectRepository) filtered(filter *repositories.ProjectFilter) []*repo
 }
 
 func (r *ProjectRepository) FirstOrErr(_ context.Context, filter *repositories.ProjectFilter) (*repositories.Project, error) {
-	result, err := r.FirstOrNil(nil, filter)
+	result, err := r.FirstOrNil(context.TODO(), filter)
 	if err != nil {
 		return nil, err
 	}
