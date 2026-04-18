@@ -13,6 +13,7 @@ import (
 type ProjectClient interface {
 	Create(ctx context.Context, input api.CreateProjectRequestDto) (api.CreateProjectResponseDto, error)
 	Get(ctx context.Context, slug string) (api.GetProjectResponseDto, error)
+	Application(projectSlug string) ApplicationClient
 }
 
 func NewProjectClient(transport *Transport) ProjectClient {
@@ -46,6 +47,10 @@ func (c *projectClient) Create(ctx context.Context, input api.CreateProjectReque
 	}
 
 	return responseDto, nil
+}
+
+func (c *projectClient) Application(projectSlug string) ApplicationClient {
+	return NewApplicationClient(c.transport, projectSlug)
 }
 
 func (c *projectClient) Get(ctx context.Context, slug string) (api.GetProjectResponseDto, error) {
