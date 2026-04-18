@@ -2,7 +2,7 @@ package server
 
 import (
 	"github.com/The127/Keyline/internal/authentication"
-	"github.com/The127/Keyline/internal/config"
+	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/handlers"
 	"github.com/The127/Keyline/internal/logging"
 	"github.com/The127/Keyline/internal/middlewares"

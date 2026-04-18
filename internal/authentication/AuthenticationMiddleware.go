@@ -3,7 +3,7 @@ package authentication
 import (
 	"github.com/The127/Keyline/internal/authentication/permissions"
 	"github.com/The127/Keyline/internal/authentication/roles"
-	"github.com/The127/Keyline/internal/config"
+	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/services"
 	"github.com/The127/Keyline/utils"

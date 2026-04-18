@@ -3,7 +3,7 @@ package setup
 import (
 	"github.com/The127/Keyline/internal/behaviours"
 	"github.com/The127/Keyline/internal/caching"
-	"github.com/The127/Keyline/internal/config"
+	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/password"
 	"github.com/The127/Keyline/internal/services"

@@ -1,7 +1,7 @@
 package e2e
 
 import (
-	"github.com/The127/Keyline/internal/config"
+	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/database/postgres"
 )
 

@@ -1,7 +1,7 @@
 package setup
 
 import (
-	"github.com/The127/Keyline/internal/config"
+	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/database/memory"
 	"github.com/The127/Keyline/internal/database/postgres"

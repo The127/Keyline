@@ -1,7 +1,7 @@
 package setup
 
 import (
-	"github.com/The127/Keyline/internal/config"
+	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/services/outbox"
 
 	"github.com/The127/ioc"

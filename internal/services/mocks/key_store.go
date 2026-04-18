@@ -10,7 +10,7 @@
 package mocks
 
 import (
-	config "github.com/The127/Keyline/internal/config"
+	config "github.com/The127/Keyline/config"
 	services "github.com/The127/Keyline/internal/services"
 	reflect "reflect"
 

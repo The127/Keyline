@@ -2,7 +2,7 @@ package services
 
 import (
 	"github.com/The127/Keyline/internal/caching"
-	"github.com/The127/Keyline/internal/config"
+	"github.com/The127/Keyline/config"
 	"context"
 	"crypto"
 	"crypto/ed25519"

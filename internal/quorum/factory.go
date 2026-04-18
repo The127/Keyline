@@ -1,7 +1,7 @@
 package quorum
 
 import (
-	"github.com/The127/Keyline/internal/config"
+	"github.com/The127/Keyline/config"
 	"context"
 	"fmt"
 )

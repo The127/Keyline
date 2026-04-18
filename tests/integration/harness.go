@@ -3,7 +3,7 @@ package integration
 import (
 	"github.com/The127/Keyline/internal/authentication"
 	"github.com/The127/Keyline/internal/commands"
-	"github.com/The127/Keyline/internal/config"
+	"github.com/The127/Keyline/config"
 	db2 "github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/database/postgres"
 	"github.com/The127/Keyline/internal/logging"

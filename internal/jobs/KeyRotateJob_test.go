@@ -1,7 +1,7 @@
 package jobs
 
 import (
-	"github.com/The127/Keyline/internal/config"
+	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/logging"
 	"github.com/The127/Keyline/internal/services"
 	"github.com/The127/Keyline/internal/services/mocks"

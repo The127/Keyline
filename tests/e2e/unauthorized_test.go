@@ -2,7 +2,7 @@ package e2e
 
 import (
 	"github.com/The127/Keyline/client"
-	"github.com/The127/Keyline/internal/config"
+	"github.com/The127/Keyline/config"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

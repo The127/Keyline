@@ -2,7 +2,7 @@ package repositories
 
 import (
 	"github.com/The127/Keyline/internal/change"
-	"github.com/The127/Keyline/internal/config"
+	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/utils"
 	"context"
 

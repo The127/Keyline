@@ -2,7 +2,7 @@ package e2e
 
 import (
 	"github.com/The127/Keyline/internal/commands"
-	"github.com/The127/Keyline/internal/config"
+	"github.com/The127/Keyline/config"
 	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"
