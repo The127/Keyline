@@ -107,14 +107,12 @@ func extractUserFromBearerToken(ctx context.Context, authorizationHeader string,
 
 	keyService := ioc.GetDependency[services.KeyService](scope)
 
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
-		// TODO: use the key id to get the key and refactor key infrastructure
-		keyPair, err := keyService.GetKey(vsName, config.SigningAlgorithm(token.Header["alg"].(string)))
-		if err != nil {
-			return nil, err
-		}
-		return keyPair.PublicKey(), nil
-	})
+	// TODO: use the key id to get the key and refactor key infrastructure
+	token, err := parseTokenWithVS(tokenString, keyService, vsName)
+	if err != nil && vsName != config.C.InitialVirtualServer.Name {
+		// system:system-admin tokens are issued by the initial VS and must work across all VSes
+		token, err = parseTokenWithVS(tokenString, keyService, config.C.InitialVirtualServer.Name)
+	}
 	if err != nil {
 		return CurrentUser{}, fmt.Errorf("parsing token [%s]: %w", err.Error(), utils.ErrHttpUnauthorized)
 	}
@@ -194,4 +192,14 @@ func SystemUser() CurrentUser {
 	user := NewCurrentUser(uuid.Nil)
 	assignPermissionsToUser(&user, roles.SystemUser)
 	return user
+}
+
+func parseTokenWithVS(tokenString string, keyService services.KeyService, vsName string) (*jwt.Token, error) {
+	return jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
+		keyPair, err := keyService.GetKey(vsName, config.SigningAlgorithm(token.Header["alg"].(string)))
+		if err != nil {
+			return nil, err
+		}
+		return keyPair.PublicKey(), nil
+	})
 }
