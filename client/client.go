@@ -5,6 +5,7 @@ type Client interface {
 	VirtualServer() VirtualServerClient
 	User() UserClient
 	Oidc() OidcClient
+	Project() ProjectClient
 }
 
 type client struct {
@@ -31,4 +32,8 @@ func (c *client) User() UserClient {
 
 func (c *client) Oidc() OidcClient {
 	return NewOidcClient(c.transport)
+}
+
+func (c *client) Project() ProjectClient {
+	return NewProjectClient(c.transport)
 }

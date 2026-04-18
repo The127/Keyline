@@ -1,7 +1,7 @@
 package client
 
 import (
-	"github.com/The127/Keyline/internal/handlers"
+	"github.com/The127/Keyline/api"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -9,11 +9,27 @@ import (
 	"net/http"
 )
 
+// VirtualServerState holds the fields of a virtual server relevant to reconciliation.
+type VirtualServerState struct {
+	DisplayName              string `json:"displayName"`
+	RegistrationEnabled      bool   `json:"registrationEnabled"`
+	Require2fa               bool   `json:"require2fa"`
+	RequireEmailVerification bool   `json:"requireEmailVerification"`
+}
+
+// PatchVirtualServerInput holds the fields that can be patched on a virtual server.
+type PatchVirtualServerInput struct {
+	DisplayName              *string `json:"displayName"`
+	EnableRegistration       *bool   `json:"enableRegistration"`
+	Require2fa               *bool   `json:"require2fa"`
+	RequireEmailVerification *bool   `json:"requireEmailVerification"`
+}
+
 type VirtualServerClient interface {
-	Create(ctx context.Context, dto handlers.CreateVirtualServerRequestDto) error
-	Get(ctx context.Context) (handlers.GetVirtualServerResponseDto, error)
-	GetPublicInfo(ctx context.Context) (handlers.GetVirtualServerListResponseDto, error)
-	Patch(ctx context.Context, dto handlers.PatchVirtualServerRequestDto) error
+	Create(ctx context.Context, dto api.CreateVirtualServerRequestDto) error
+	Get(ctx context.Context) (VirtualServerState, error)
+	GetPublicInfo(ctx context.Context) (api.GetVirtualServerListResponseDto, error)
+	Patch(ctx context.Context, input PatchVirtualServerInput) error
 }
 
 func NewVirtualServerClient(transport *Transport) VirtualServerClient {
@@ -26,7 +42,7 @@ type virtualServerClient struct {
 	transport *Transport
 }
 
-func (c *virtualServerClient) Create(ctx context.Context, dto handlers.CreateVirtualServerRequestDto) error {
+func (c *virtualServerClient) Create(ctx context.Context, dto api.CreateVirtualServerRequestDto) error {
 	jsonBytes, err := json.Marshal(dto)
 	if err != nil {
 		return fmt.Errorf("marshaling dto: %w", err)
@@ -45,51 +61,50 @@ func (c *virtualServerClient) Create(ctx context.Context, dto handlers.CreateVir
 	return nil
 }
 
-func (c *virtualServerClient) Get(ctx context.Context) (handlers.GetVirtualServerResponseDto, error) {
+func (c *virtualServerClient) Get(ctx context.Context) (VirtualServerState, error) {
 	endpoint := ""
 
 	request, err := c.transport.NewTenantRequest(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
-		return handlers.GetVirtualServerResponseDto{}, fmt.Errorf("creating request: %w", err)
+		return VirtualServerState{}, fmt.Errorf("creating request: %w", err)
 	}
 
 	response, err := c.transport.Do(request)
 	if err != nil {
-		return handlers.GetVirtualServerResponseDto{}, fmt.Errorf("doing request: %w", err)
+		return VirtualServerState{}, fmt.Errorf("doing request: %w", err)
 	}
 
-	var responseDto handlers.GetVirtualServerResponseDto
-	err = json.NewDecoder(response.Body).Decode(&responseDto)
-	if err != nil {
-		return handlers.GetVirtualServerResponseDto{}, fmt.Errorf("decoding response: %w", err)
+	var state VirtualServerState
+	if err := json.NewDecoder(response.Body).Decode(&state); err != nil {
+		return VirtualServerState{}, fmt.Errorf("decoding response: %w", err)
 	}
 
-	return responseDto, nil
+	return state, nil
 }
 
-func (c *virtualServerClient) GetPublicInfo(ctx context.Context) (handlers.GetVirtualServerListResponseDto, error) {
+func (c *virtualServerClient) GetPublicInfo(ctx context.Context) (api.GetVirtualServerListResponseDto, error) {
 	endpoint := "/public-info"
 
 	request, err := c.transport.NewTenantRequest(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
-		return handlers.GetVirtualServerListResponseDto{}, fmt.Errorf("creating request: %w", err)
+		return api.GetVirtualServerListResponseDto{}, fmt.Errorf("creating request: %w", err)
 	}
 
 	response, err := c.transport.Do(request)
 	if err != nil {
-		return handlers.GetVirtualServerListResponseDto{}, fmt.Errorf("doing request: %w", err)
+		return api.GetVirtualServerListResponseDto{}, fmt.Errorf("doing request: %w", err)
 	}
 
-	var responseDto handlers.GetVirtualServerListResponseDto
+	var responseDto api.GetVirtualServerListResponseDto
 	err = json.NewDecoder(response.Body).Decode(&responseDto)
 	if err != nil {
-		return handlers.GetVirtualServerListResponseDto{}, fmt.Errorf("decoding response: %w", err)
+		return api.GetVirtualServerListResponseDto{}, fmt.Errorf("decoding response: %w", err)
 	}
 
 	return responseDto, nil
 }
 
-func (c *virtualServerClient) Patch(ctx context.Context, dto handlers.PatchVirtualServerRequestDto) error {
+func (c *virtualServerClient) Patch(ctx context.Context, dto PatchVirtualServerInput) error {
 	endpoint := ""
 
 	jsonBytes, err := json.Marshal(dto)

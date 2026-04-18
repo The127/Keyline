@@ -1,7 +1,7 @@
 package client
 
 import (
-	"github.com/The127/Keyline/internal/handlers"
+	"github.com/The127/Keyline/api"
 	"github.com/The127/Keyline/utils"
 	"encoding/json"
 	"fmt"
@@ -24,7 +24,7 @@ func TestApplicationClientSuite(t *testing.T) {
 
 func (s *ApplicationClientSuite) TestCreateApplication_HappyPath() {
 	// arrange
-	request := handlers.CreateApplicationRequestDto{
+	request := api.CreateApplicationRequestDto{
 		Name:           "applicationName",
 		DisplayName:    "displayName",
 		RedirectUris:   []string{"http://localhost:8080/callback"},
@@ -32,7 +32,7 @@ func (s *ApplicationClientSuite) TestCreateApplication_HappyPath() {
 		Type:           "confidential",
 	}
 
-	response := handlers.CreateApplicationResponseDto{
+	response := api.CreateApplicationResponseDto{
 		Id:     uuid.New(),
 		Secret: utils.Ptr("secret"),
 	}
@@ -41,7 +41,7 @@ func (s *ApplicationClientSuite) TestCreateApplication_HappyPath() {
 		s.Equal(http.MethodPost, r.Method)
 		s.Equal("/api/virtual-servers/test/applications", r.URL.Path)
 
-		var requestDto handlers.CreateApplicationRequestDto
+		var requestDto api.CreateApplicationRequestDto
 		err := json.NewDecoder(r.Body).Decode(&requestDto)
 		s.NoError(err)
 		s.Equal(request, requestDto)
@@ -68,8 +68,8 @@ func (s *ApplicationClientSuite) TestListApplications_HappyPath() {
 		Size: 11,
 	}
 
-	response := handlers.PagedApplicationsResponseDto{
-		Items: []handlers.ListApplicationsResponseDto{
+	response := api.PagedApplicationsResponseDto{
+		Items: []api.ListApplicationsResponseDto{
 			{
 				Id:                uuid.New(),
 				Name:              "name",
@@ -78,7 +78,7 @@ func (s *ApplicationClientSuite) TestListApplications_HappyPath() {
 				SystemApplication: false,
 			},
 		},
-		Pagination: &handlers.Pagination{
+		Pagination: &api.Pagination{
 			Page:       1,
 			Size:       11,
 			TotalPages: 2,
@@ -109,7 +109,7 @@ func (s *ApplicationClientSuite) TestGetApplication_HappyPath() {
 	// arrange
 	requestId := uuid.New()
 
-	response := handlers.GetApplicationResponseDto{
+	response := api.GetApplicationResponseDto{
 		Id:                uuid.UUID{},
 		Name:              "name",
 		DisplayName:       "displayName",
@@ -158,7 +158,7 @@ func (s *ApplicationClientSuite) TestDeleteApplication_HappyPath() {
 func (s *ApplicationClientSuite) TestPatchApplication_HappyPath() {
 	// arrange
 	requestId := uuid.New()
-	request := handlers.PatchApplicationRequestDto{
+	request := api.PatchApplicationRequestDto{
 		DisplayName:         utils.Ptr("New display name"),
 		ClaimsMappingScript: nil,
 	}
@@ -167,7 +167,7 @@ func (s *ApplicationClientSuite) TestPatchApplication_HappyPath() {
 		s.Equal(http.MethodPatch, r.Method)
 		s.Equal(fmt.Sprintf("/api/virtual-servers/test/applications/%s", requestId), r.URL.Path)
 
-		var requestDto handlers.PatchApplicationRequestDto
+		var requestDto api.PatchApplicationRequestDto
 		err := json.NewDecoder(r.Body).Decode(&requestDto)
 		s.NoError(err)
 		s.Equal(request, requestDto)

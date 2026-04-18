@@ -1,38 +1,20 @@
 package handlers
 
 import (
+	"github.com/The127/Keyline/api"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/queries"
 	"github.com/The127/Keyline/utils"
 	"encoding/json"
 	"net/http"
-	"time"
 
 	"github.com/The127/ioc"
 	"github.com/The127/mediatr"
-
-	"github.com/google/uuid"
 )
 
-type PagedAuditLogResponseDto struct {
-	Items      []ListAuditLogResponseDto `json:"items"`
-	Pagination Pagination                `json:"pagination"`
-}
-
-type ListAuditLogResponseDto struct {
-	Id     uuid.UUID  `json:"id"`
-	UserId *uuid.UUID `json:"userId"`
-
-	RequestType  string          `json:"requestType"`
-	RequestData  map[string]any  `json:"requestData"`
-	ResponseData *map[string]any `json:"responseData"`
-
-	Allowed         bool            `json:"allowed"`
-	AllowReasonType *string         `json:"allowReasonType"`
-	AllowReason     *map[string]any `json:"allowReason"`
-
-	CreatedAt time.Time `json:"createdAt"`
-}
+// Type aliases to keep handler code compiling.
+type PagedAuditLogResponseDto = api.PagedAuditLogResponseDto
+type ListAuditLogResponseDto = api.ListAuditLogResponseDto
 
 // ListAuditLog
 // @summary     List audit log entries

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"github.com/The127/Keyline/api"
 	"github.com/The127/Keyline/internal/commands"
 	"github.com/The127/Keyline/internal/config"
 	"github.com/The127/Keyline/internal/middlewares"
@@ -8,72 +9,22 @@ import (
 	"github.com/The127/Keyline/utils"
 	"encoding/json"
 	"net/http"
-	"time"
 
 	"github.com/The127/ioc"
 	"github.com/The127/mediatr"
-
-	"github.com/google/uuid"
 )
 
-type CreateVirtualServerRequestDtoAdminDto struct {
-	Username     string   `json:"username" validate:"required,min=1,max=255"`
-	DisplayName  string   `json:"displayName" validate:"required,min=1,max=255"`
-	PrimaryEmail string   `json:"primaryEmail" validate:"required,email"`
-	PasswordHash string   `json:"passwordHash" validate:"required"`
-	Roles        []string `json:"roles"`
-}
-
-type CreateVirtualServerRequestDtoServiceUserDto struct {
-	Username  string   `json:"username" validate:"required,min=1,max=255"`
-	Roles     []string `json:"roles"`
-	PublicKey struct {
-		Pem string `json:"pem" validate:"required"`
-		Kid string `json:"kid" validate:"required"`
-	} `json:"publicKey" validate:"required"`
-}
-
-type CreateVirtualServerRequestDtoProjectDtoRoleDto struct {
-	Name        string `json:"name" validate:"required,min=1,max=255"`
-	Description string `json:"description"`
-}
-
-type CreateVirtualServerRequestDtoProjectDtoApplicationDto struct {
-	Name           string   `json:"name" validate:"required,min=1,max=255"`
-	DisplayName    string   `json:"displayName" validate:"required,min=1,max=255"`
-	Type           string   `json:"type" validate:"required,oneof=public confidential"`
-	HashedSecret   *string  `json:"hashedSecret"`
-	RedirectUris   []string `json:"redirectUris" validate:"required,dive,url,min=1"`
-	PostLogoutUris []string `json:"postLogoutUris" validate:"dive,url"`
-}
-
-type CreateVirtualServerRequestDtoProjectDtoResourceServerDto struct {
-	Slug        string `json:"slug" validate:"required,min=1,max=255"`
-	Name        string `json:"name" validate:"required,min=1,max=255"`
-	Description string `json:"description"`
-}
-
-type CreateVirtualServerRequestDtoProjectDto struct {
-	Slug        string `json:"slug" validate:"required,min=1,max=255"`
-	Name        string `json:"name" validate:"required,min=1,max=255"`
-	Description string `json:"description"`
-
-	Roles           []CreateVirtualServerRequestDtoProjectDtoRoleDto           `json:"roles"`
-	Applications    []CreateVirtualServerRequestDtoProjectDtoApplicationDto    `json:"applications"`
-	ResourceServers []CreateVirtualServerRequestDtoProjectDtoResourceServerDto `json:"resourceServers"`
-}
-
-type CreateVirtualServerRequestDto struct {
-	Name               string  `json:"name" validate:"required,min=1,max=255,alphanum"`
-	DisplayName        string  `json:"displayName" validate:"required,min=1,max=255"`
-	EnableRegistration bool    `json:"enableRegistration"`
-	SigningAlgorithm   *string `json:"signingAlgorithm" validate:"oneof=RS256 EdDSA"`
-	Require2fa         bool    `json:"require2fa"`
-
-	Admin        *CreateVirtualServerRequestDtoAdminDto        `json:"admin"`
-	ServiceUsers []CreateVirtualServerRequestDtoServiceUserDto `json:"serviceUsers"`
-	Projects     []CreateVirtualServerRequestDtoProjectDto     `json:"projects"`
-}
+// Type aliases to keep handler code compiling.
+type CreateVirtualServerRequestDtoAdminDto = api.CreateVirtualServerRequestDtoAdminDto
+type CreateVirtualServerRequestDtoServiceUserDto = api.CreateVirtualServerRequestDtoServiceUserDto
+type CreateVirtualServerRequestDtoProjectDtoRoleDto = api.CreateVirtualServerRequestDtoProjectDtoRoleDto
+type CreateVirtualServerRequestDtoProjectDtoApplicationDto = api.CreateVirtualServerRequestDtoProjectDtoApplicationDto
+type CreateVirtualServerRequestDtoProjectDtoResourceServerDto = api.CreateVirtualServerRequestDtoProjectDtoResourceServerDto
+type CreateVirtualServerRequestDtoProjectDto = api.CreateVirtualServerRequestDtoProjectDto
+type CreateVirtualServerRequestDto = api.CreateVirtualServerRequestDto
+type GetVirtualServerResponseDto = api.GetVirtualServerResponseDto
+type GetVirtualServerListResponseDto = api.GetVirtualServerListResponseDto
+type PatchVirtualServerRequestDto = api.PatchVirtualServerRequestDto
 
 // CreateVirtualServer creates a new virtual server.
 // @Summary      Create virtual server
@@ -174,18 +125,6 @@ func CreateVirtualServer(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-type GetVirtualServerResponseDto struct {
-	Id                       uuid.UUID `json:"id"`
-	Name                     string    `json:"name"`
-	DisplayName              string    `json:"displayName"`
-	RegistrationEnabled      bool      `json:"registrationEnabled"`
-	Require2fa               bool      `json:"require2fa"`
-	RequireEmailVerification bool      `json:"requireEmailVerification"`
-	SigningAlgorithm         string    `json:"signingAlgorithm"`
-	CreatedAt                time.Time `json:"createdAt"`
-	UpdatedAt                time.Time `json:"updatedAt"`
-}
-
 // GetVirtualServer returns details of a virtual server.
 // @Summary      Get virtual server
 // @Tags         Admin
@@ -232,12 +171,6 @@ func GetVirtualServer(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-type GetVirtualServerListResponseDto struct {
-	Name                string `json:"name"`
-	DisplayName         string `json:"displayName"`
-	RegistrationEnabled bool   `json:"registrationEnabled"`
-}
-
 // GetVirtualServerPublicInfo returns public info of a virtual server.
 // @Summary      Get virtual server public info
 // @Tags         Admin
@@ -277,14 +210,6 @@ func GetVirtualServerPublicInfo(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		utils.HandleHttpError(w, err)
 	}
-}
-
-type PatchVirtualServerRequestDto struct {
-	DisplayName *string `json:"displayName"`
-
-	EnableRegistration       *bool `json:"enableRegistration"`
-	Require2fa               *bool `json:"require2fa"`
-	RequireEmailVerification *bool `json:"requireEmailVerification"`
 }
 
 // PatchVirtualServer patches a virtual server.

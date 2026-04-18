@@ -1,6 +1,7 @@
 package client
 
 import (
+	"github.com/The127/Keyline/api"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -19,23 +20,9 @@ var (
 	ErrInvalidUserCode      = errors.New("invalid_user_code")
 )
 
-type DeviceAuthorizationResponse struct {
-	DeviceCode              string `json:"device_code"`
-	UserCode                string `json:"user_code"`
-	VerificationUri         string `json:"verification_uri"`
-	VerificationUriComplete string `json:"verification_uri_complete"`
-	ExpiresIn               int    `json:"expires_in"`
-	Interval                int    `json:"interval"`
-}
-
-type DeviceTokenResponse struct {
-	TokenType    string `json:"token_type"`
-	IdToken      string `json:"id_token"`
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
-	Scope        string `json:"scope"`
-	ExpiresIn    int    `json:"expires_in"`
-}
+// DeviceAuthorizationResponse and DeviceTokenResponse are re-exported from api package.
+type DeviceAuthorizationResponse = api.DeviceAuthorizationResponse
+type DeviceTokenResponse = api.DeviceTokenResponse
 
 type OidcClient interface {
 	BeginDeviceFlow(ctx context.Context, clientId string, scope string) (DeviceAuthorizationResponse, error)

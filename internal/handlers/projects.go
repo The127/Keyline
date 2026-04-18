@@ -1,30 +1,26 @@
 package handlers
 
 import (
+	"github.com/The127/Keyline/api"
 	"github.com/The127/Keyline/internal/commands"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/queries"
 	"github.com/The127/Keyline/utils"
 	"encoding/json"
 	"net/http"
-	"time"
 
 	"github.com/The127/ioc"
 	"github.com/The127/mediatr"
 
-	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
 
-type CreateProjectRequestDto struct {
-	Slug        string `json:"slug" validate:"required,min=1,max=255"`
-	Name        string `json:"name" validate:"required,min=1,max=255"`
-	Description string `json:"description"`
-}
-
-type CreateProjectResponseDto struct {
-	Id uuid.UUID `json:"id"`
-}
+// Type aliases to keep handler code compiling.
+type CreateProjectRequestDto = api.CreateProjectRequestDto
+type CreateProjectResponseDto = api.CreateProjectResponseDto
+type PagedProjectsResponseDto = api.PagedProjectsResponseDto
+type ListProjectsResponseDto = api.ListProjectsResponseDto
+type GetProjectResponseDto = api.GetProjectResponseDto
 
 // CreateProject creates a new project
 // @Summary Create project
@@ -84,15 +80,6 @@ func CreateProject(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, err)
 		return
 	}
-}
-
-type PagedProjectsResponseDto = PagedResponseDto[ListProjectsResponseDto]
-
-type ListProjectsResponseDto struct {
-	Id            uuid.UUID `json:"id"`
-	Slug          string    `json:"slug"`
-	Name          string    `json:"name"`
-	SystemProject bool      `json:"systemProject"`
 }
 
 // ListProjects lists projects in a virtual server
@@ -160,17 +147,6 @@ func ListProjects(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, err)
 		return
 	}
-}
-
-type GetProjectResponseDto struct {
-	Id            uuid.UUID `json:"id"`
-	Slug          string    `json:"slug"`
-	Name          string    `json:"name"`
-	Description   string    `json:"description"`
-	SystemProject bool      `json:"systemProject"`
-
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
 }
 
 func GetProject(w http.ResponseWriter, r *http.Request) {

@@ -1,7 +1,7 @@
 package client
 
 import (
-	"github.com/The127/Keyline/internal/handlers"
+	"github.com/The127/Keyline/api"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -18,10 +18,10 @@ type ListApplicationParams struct {
 }
 
 type ApplicationClient interface {
-	Create(ctx context.Context, dto handlers.CreateApplicationRequestDto) (handlers.CreateApplicationResponseDto, error)
-	List(ctx context.Context, params ListApplicationParams) (handlers.PagedApplicationsResponseDto, error)
-	Get(ctx context.Context, id uuid.UUID) (handlers.GetApplicationResponseDto, error)
-	Patch(ctx context.Context, id uuid.UUID, dto handlers.PatchApplicationRequestDto) error
+	Create(ctx context.Context, dto api.CreateApplicationRequestDto) (api.CreateApplicationResponseDto, error)
+	List(ctx context.Context, params ListApplicationParams) (api.PagedApplicationsResponseDto, error)
+	Get(ctx context.Context, id uuid.UUID) (api.GetApplicationResponseDto, error)
+	Patch(ctx context.Context, id uuid.UUID, dto api.PatchApplicationRequestDto) error
 	Delete(ctx context.Context, id uuid.UUID) error
 }
 
@@ -35,34 +35,34 @@ type application struct {
 	transport *Transport
 }
 
-func (a *application) Create(ctx context.Context, dto handlers.CreateApplicationRequestDto) (handlers.CreateApplicationResponseDto, error) {
+func (a *application) Create(ctx context.Context, dto api.CreateApplicationRequestDto) (api.CreateApplicationResponseDto, error) {
 	endpoint := "/applications"
 
 	jsonBytes, err := json.Marshal(dto)
 	if err != nil {
-		return handlers.CreateApplicationResponseDto{}, fmt.Errorf("marshaling dto: %w", err)
+		return api.CreateApplicationResponseDto{}, fmt.Errorf("marshaling dto: %w", err)
 	}
 
 	request, err := a.transport.NewTenantRequest(ctx, http.MethodPost, endpoint, bytes.NewBuffer(jsonBytes))
 	if err != nil {
-		return handlers.CreateApplicationResponseDto{}, fmt.Errorf("creating request: %w", err)
+		return api.CreateApplicationResponseDto{}, fmt.Errorf("creating request: %w", err)
 	}
 
 	response, err := a.transport.Do(request)
 	if err != nil {
-		return handlers.CreateApplicationResponseDto{}, fmt.Errorf("doing request: %w", err)
+		return api.CreateApplicationResponseDto{}, fmt.Errorf("doing request: %w", err)
 	}
 
-	var responseDto handlers.CreateApplicationResponseDto
+	var responseDto api.CreateApplicationResponseDto
 	err = json.NewDecoder(response.Body).Decode(&responseDto)
 	if err != nil {
-		return handlers.CreateApplicationResponseDto{}, fmt.Errorf("decoding response: %w", err)
+		return api.CreateApplicationResponseDto{}, fmt.Errorf("decoding response: %w", err)
 	}
 
 	return responseDto, nil
 }
 
-func (a *application) List(ctx context.Context, params ListApplicationParams) (handlers.PagedApplicationsResponseDto, error) {
+func (a *application) List(ctx context.Context, params ListApplicationParams) (api.PagedApplicationsResponseDto, error) {
 	values := url.Values{}
 	values.Add("page", fmt.Sprintf("%d", params.Page))
 	values.Add("size", fmt.Sprintf("%d", params.Size))
@@ -71,40 +71,40 @@ func (a *application) List(ctx context.Context, params ListApplicationParams) (h
 
 	request, err := a.transport.NewTenantRequest(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
-		return handlers.PagedApplicationsResponseDto{}, fmt.Errorf("creating request: %w", err)
+		return api.PagedApplicationsResponseDto{}, fmt.Errorf("creating request: %w", err)
 	}
 
 	response, err := a.transport.Do(request)
 	if err != nil {
-		return handlers.PagedApplicationsResponseDto{}, fmt.Errorf("doing request: %w", err)
+		return api.PagedApplicationsResponseDto{}, fmt.Errorf("doing request: %w", err)
 	}
 
-	var responseDto handlers.PagedApplicationsResponseDto
+	var responseDto api.PagedApplicationsResponseDto
 	err = json.NewDecoder(response.Body).Decode(&responseDto)
 	if err != nil {
-		return handlers.PagedApplicationsResponseDto{}, fmt.Errorf("decoding response: %w", err)
+		return api.PagedApplicationsResponseDto{}, fmt.Errorf("decoding response: %w", err)
 	}
 
 	return responseDto, nil
 }
 
-func (a *application) Get(ctx context.Context, id uuid.UUID) (handlers.GetApplicationResponseDto, error) {
+func (a *application) Get(ctx context.Context, id uuid.UUID) (api.GetApplicationResponseDto, error) {
 	endpoint := fmt.Sprintf("/applications/%s", id.String())
 
 	request, err := a.transport.NewTenantRequest(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
-		return handlers.GetApplicationResponseDto{}, fmt.Errorf("creating request: %w", err)
+		return api.GetApplicationResponseDto{}, fmt.Errorf("creating request: %w", err)
 	}
 
 	response, err := a.transport.Do(request)
 	if err != nil {
-		return handlers.GetApplicationResponseDto{}, fmt.Errorf("doing request: %w", err)
+		return api.GetApplicationResponseDto{}, fmt.Errorf("doing request: %w", err)
 	}
 
-	var responseDto handlers.GetApplicationResponseDto
+	var responseDto api.GetApplicationResponseDto
 	err = json.NewDecoder(response.Body).Decode(&responseDto)
 	if err != nil {
-		return handlers.GetApplicationResponseDto{}, fmt.Errorf("decoding response: %w", err)
+		return api.GetApplicationResponseDto{}, fmt.Errorf("decoding response: %w", err)
 	}
 
 	return responseDto, nil
@@ -126,7 +126,7 @@ func (a *application) Delete(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
-func (a *application) Patch(ctx context.Context, id uuid.UUID, dto handlers.PatchApplicationRequestDto) error {
+func (a *application) Patch(ctx context.Context, id uuid.UUID, dto api.PatchApplicationRequestDto) error {
 	endpoint := fmt.Sprintf("/applications/%s", id.String())
 
 	jsonBytes, err := json.Marshal(dto)

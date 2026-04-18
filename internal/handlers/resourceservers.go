@@ -1,13 +1,13 @@
 package handlers
 
 import (
+	"github.com/The127/Keyline/api"
 	"github.com/The127/Keyline/internal/commands"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/queries"
 	"github.com/The127/Keyline/utils"
 	"encoding/json"
 	"net/http"
-	"time"
 
 	"github.com/The127/ioc"
 	"github.com/The127/mediatr"
@@ -16,11 +16,11 @@ import (
 	"github.com/gorilla/mux"
 )
 
-type CreateResourceServerRequestDto struct {
-	Slug        string `json:"slug" validate:"required,min=1,max=255"`
-	Name        string `json:"name" validate:"required"`
-	Description string `json:"description"`
-}
+// Type aliases to keep handler code compiling.
+type CreateResourceServerRequestDto = api.CreateResourceServerRequestDto
+type PagedResourceServersResponseDto = api.PagedResourceServersResponseDto
+type ListResourceServersResponseDto = api.ListResourceServersResponseDto
+type GetResourceServerResponseDto = api.GetResourceServerResponseDto
 
 // CreateResourceServer creates a new resource server (API/(micro-)service) in a project
 // @Summary Create resource server
@@ -75,14 +75,6 @@ func CreateResourceServer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
-}
-
-type PagedResourceServersResponseDto = PagedResponseDto[ListResourceServersResponseDto]
-
-type ListResourceServersResponseDto struct {
-	Id   uuid.UUID `json:"id"`
-	Slug string    `json:"slug"`
-	Name string    `json:"name"`
 }
 
 // ListResourceServers lists resource servers in a project
@@ -151,15 +143,6 @@ func ListResourceServers(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, err)
 		return
 	}
-}
-
-type GetResourceServerResponseDto struct {
-	Id          uuid.UUID `json:"id"`
-	Slug        string    `json:"slug"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	CreatedAt   time.Time `json:"createdAt"`
-	UpdatedAt   time.Time `json:"updatedAt"`
 }
 
 // GetResourceServer retrieves details of a specific resource server by ID

@@ -1,14 +1,13 @@
 package client
 
 import (
-	"github.com/The127/Keyline/internal/handlers"
+	"github.com/The127/Keyline/api"
 	"github.com/The127/Keyline/utils"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -23,7 +22,7 @@ func TestVirtualServerClientSuite(t *testing.T) {
 
 func (s *VirtualServerClientSuite) TestCreate_HappyPath() {
 	// arrange
-	request := handlers.CreateVirtualServerRequestDto{
+	request := api.CreateVirtualServerRequestDto{
 		Name:               "name",
 		DisplayName:        "Display Name",
 		EnableRegistration: false,
@@ -35,7 +34,7 @@ func (s *VirtualServerClientSuite) TestCreate_HappyPath() {
 		s.Equal(http.MethodPost, r.Method)
 		s.Equal("/api/virtual-servers", r.URL.Path)
 
-		var requestDto handlers.CreateVirtualServerRequestDto
+		var requestDto api.CreateVirtualServerRequestDto
 		err := json.NewDecoder(r.Body).Decode(&requestDto)
 		s.NoError(err)
 		s.Equal(request, requestDto)
@@ -55,11 +54,8 @@ func (s *VirtualServerClientSuite) TestCreate_HappyPath() {
 
 func (s *VirtualServerClientSuite) TestGet_HappyPath() {
 	// arrange
-	response := handlers.GetVirtualServerResponseDto{
-		Id:                       uuid.New(),
-		Name:                     "name",
+	response := VirtualServerState{
 		DisplayName:              "Display Name",
-		SigningAlgorithm:         "EdDSA",
 		Require2fa:               false,
 		RequireEmailVerification: false,
 		RegistrationEnabled:      false,
@@ -86,7 +82,7 @@ func (s *VirtualServerClientSuite) TestGet_HappyPath() {
 
 func (s *VirtualServerClientSuite) TestGetPublic_InfoHappyPath() {
 	// arrange
-	response := handlers.GetVirtualServerListResponseDto{
+	response := api.GetVirtualServerListResponseDto{
 		Name:                "name",
 		DisplayName:         "Display Name",
 		RegistrationEnabled: false,
@@ -113,7 +109,7 @@ func (s *VirtualServerClientSuite) TestGetPublic_InfoHappyPath() {
 
 func (s *VirtualServerClientSuite) TestPatch_HappyPath() {
 	// arrange
-	request := handlers.PatchVirtualServerRequestDto{
+	request := PatchVirtualServerInput{
 		DisplayName:              utils.Ptr("New display name"),
 		EnableRegistration:       utils.Ptr(true),
 		Require2fa:               utils.Ptr(false),
@@ -124,7 +120,7 @@ func (s *VirtualServerClientSuite) TestPatch_HappyPath() {
 		s.Equal(http.MethodPatch, r.Method)
 		s.Equal("/api/virtual-servers/test", r.URL.Path)
 
-		var requestDto handlers.PatchVirtualServerRequestDto
+		var requestDto PatchVirtualServerInput
 		err := json.NewDecoder(r.Body).Decode(&requestDto)
 		s.NoError(err)
 		s.Equal(request, requestDto)

@@ -1,13 +1,13 @@
 package handlers
 
 import (
+	"github.com/The127/Keyline/api"
 	"github.com/The127/Keyline/internal/commands"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/queries"
 	"github.com/The127/Keyline/utils"
 	"encoding/json"
 	"net/http"
-	"time"
 
 	"github.com/The127/ioc"
 	"github.com/The127/mediatr"
@@ -16,13 +16,15 @@ import (
 	"github.com/gorilla/mux"
 )
 
-type GetRoleByIdResponseDto struct {
-	Id          uuid.UUID `json:"id"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	CreatedAt   time.Time `json:"createdAt"`
-	UpdatedAt   time.Time `json:"updatedAt"`
-}
+// Type aliases to keep handler code compiling.
+type GetRoleByIdResponseDto = api.GetRoleByIdResponseDto
+type PagedRolesResponseDto = api.PagedRolesResponseDto
+type ListRolesResponseDto = api.ListRolesResponseDto
+type CreateRoleRequestDto = api.CreateRoleRequestDto
+type CreateRoleResponseDto = api.CreateRoleResponseDto
+type AssignRoleRequestDto = api.AssignRoleRequestDto
+type PagedUsersInRoleResponseDto = api.PagedUsersInRoleResponseDto
+type ListUsersInRoleResponseDto = api.ListUsersInRoleResponseDto
 
 // GetRoleById
 // @summary     Get role
@@ -84,16 +86,6 @@ func GetRoleById(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		utils.HandleHttpError(w, err)
 	}
-}
-
-type PagedRolesResponseDto struct {
-	Items      []ListRolesResponseDto `json:"items"`
-	Pagination Pagination             `json:"pagination"`
-}
-
-type ListRolesResponseDto struct {
-	Id   uuid.UUID `json:"id"`
-	Name string    `json:"name"`
 }
 
 // ListRoles
@@ -166,15 +158,6 @@ func ListRoles(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-type CreateRoleRequestDto struct {
-	Name        string `json:"name" validate:"required,min=1,max=255"`
-	Description string `json:"description" validate:"max=1024"`
-}
-
-type CreateRoleResponseDto struct {
-	Id uuid.UUID `json:"id"`
-}
-
 // CreateRole
 // @summary     Create role
 // @description Create a new role within a project.
@@ -235,10 +218,6 @@ func CreateRole(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		utils.HandleHttpError(w, err)
 	}
-}
-
-type AssignRoleRequestDto struct {
-	UserId uuid.UUID `json:"userId" validate:"required,uuid=4"`
 }
 
 // AssignRole
@@ -302,14 +281,6 @@ func AssignRole(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
-}
-
-type PagedUsersInRoleResponseDto = PagedResponseDto[ListUsersInRoleResponseDto]
-
-type ListUsersInRoleResponseDto struct {
-	Id          uuid.UUID `json:"id"`
-	Username    string    `json:"username"`
-	DisplayName string    `json:"displayName"`
 }
 
 // ListUsersInRole lists users in a role

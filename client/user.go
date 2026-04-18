@@ -1,7 +1,7 @@
 package client
 
 import (
-	"github.com/The127/Keyline/internal/handlers"
+	"github.com/The127/Keyline/api"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -18,9 +18,9 @@ type ListUserParams struct {
 }
 
 type UserClient interface {
-	List(ctx context.Context, params ListUserParams) (handlers.PagedUsersResponseDto, error)
-	Get(ctx context.Context, id uuid.UUID) (handlers.GetUserByIdResponseDto, error)
-	Patch(ctx context.Context, id uuid.UUID, dto handlers.PatchUserRequestDto) error
+	List(ctx context.Context, params ListUserParams) (api.PagedUsersResponseDto, error)
+	Get(ctx context.Context, id uuid.UUID) (api.GetUserByIdResponseDto, error)
+	Patch(ctx context.Context, id uuid.UUID, dto api.PatchUserRequestDto) error
 	CreateServiceUser(ctx context.Context, username string) (uuid.UUID, error)
 	AssociateServiceUserPublicKey(ctx context.Context, serviceUserID uuid.UUID, publicKeyPEM string) (string, error)
 }
@@ -35,7 +35,7 @@ type userClient struct {
 	transport *Transport
 }
 
-func (c *userClient) List(ctx context.Context, params ListUserParams) (handlers.PagedUsersResponseDto, error) {
+func (c *userClient) List(ctx context.Context, params ListUserParams) (api.PagedUsersResponseDto, error) {
 	values := url.Values{}
 	values.Add("page", fmt.Sprintf("%d", params.Page))
 	values.Add("size", fmt.Sprintf("%d", params.Size))
@@ -44,46 +44,46 @@ func (c *userClient) List(ctx context.Context, params ListUserParams) (handlers.
 
 	request, err := c.transport.NewTenantRequest(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
-		return handlers.PagedUsersResponseDto{}, fmt.Errorf("creating request: %w", err)
+		return api.PagedUsersResponseDto{}, fmt.Errorf("creating request: %w", err)
 	}
 
 	response, err := c.transport.Do(request)
 	if err != nil {
-		return handlers.PagedUsersResponseDto{}, fmt.Errorf("doing request: %w", err)
+		return api.PagedUsersResponseDto{}, fmt.Errorf("doing request: %w", err)
 	}
 
-	var responseDto handlers.PagedUsersResponseDto
+	var responseDto api.PagedUsersResponseDto
 	err = json.NewDecoder(response.Body).Decode(&responseDto)
 	if err != nil {
-		return handlers.PagedUsersResponseDto{}, fmt.Errorf("decoding response: %w", err)
+		return api.PagedUsersResponseDto{}, fmt.Errorf("decoding response: %w", err)
 	}
 
 	return responseDto, nil
 }
 
-func (c *userClient) Get(ctx context.Context, id uuid.UUID) (handlers.GetUserByIdResponseDto, error) {
+func (c *userClient) Get(ctx context.Context, id uuid.UUID) (api.GetUserByIdResponseDto, error) {
 	endpoint := fmt.Sprintf("/users/%s", id.String())
 
 	request, err := c.transport.NewTenantRequest(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
-		return handlers.GetUserByIdResponseDto{}, fmt.Errorf("creating request: %w", err)
+		return api.GetUserByIdResponseDto{}, fmt.Errorf("creating request: %w", err)
 	}
 
 	response, err := c.transport.Do(request)
 	if err != nil {
-		return handlers.GetUserByIdResponseDto{}, fmt.Errorf("doing request: %w", err)
+		return api.GetUserByIdResponseDto{}, fmt.Errorf("doing request: %w", err)
 	}
 
-	var responseDto handlers.GetUserByIdResponseDto
+	var responseDto api.GetUserByIdResponseDto
 	err = json.NewDecoder(response.Body).Decode(&responseDto)
 	if err != nil {
-		return handlers.GetUserByIdResponseDto{}, fmt.Errorf("decoding response: %w", err)
+		return api.GetUserByIdResponseDto{}, fmt.Errorf("decoding response: %w", err)
 	}
 
 	return responseDto, nil
 }
 
-func (c *userClient) Patch(ctx context.Context, id uuid.UUID, dto handlers.PatchUserRequestDto) error {
+func (c *userClient) Patch(ctx context.Context, id uuid.UUID, dto api.PatchUserRequestDto) error {
 	endpoint := fmt.Sprintf("/users/%s", id.String())
 
 	jsonBytes, err := json.Marshal(dto)
@@ -105,7 +105,7 @@ func (c *userClient) Patch(ctx context.Context, id uuid.UUID, dto handlers.Patch
 }
 
 func (c *userClient) CreateServiceUser(ctx context.Context, username string) (uuid.UUID, error) {
-	jsonBytes, err := json.Marshal(handlers.CreateServiceUserRequestDto{Username: username})
+	jsonBytes, err := json.Marshal(api.CreateServiceUserRequestDto{Username: username})
 	if err != nil {
 		return uuid.UUID{}, fmt.Errorf("marshaling dto: %w", err)
 	}
@@ -120,7 +120,7 @@ func (c *userClient) CreateServiceUser(ctx context.Context, username string) (uu
 		return uuid.UUID{}, fmt.Errorf("doing request: %w", err)
 	}
 
-	var responseDto handlers.CreateServiceUserResponseDto
+	var responseDto api.CreateServiceUserResponseDto
 	if err := json.NewDecoder(response.Body).Decode(&responseDto); err != nil {
 		return uuid.UUID{}, fmt.Errorf("decoding response: %w", err)
 	}
@@ -129,7 +129,7 @@ func (c *userClient) CreateServiceUser(ctx context.Context, username string) (uu
 }
 
 func (c *userClient) AssociateServiceUserPublicKey(ctx context.Context, serviceUserID uuid.UUID, publicKeyPEM string) (string, error) {
-	jsonBytes, err := json.Marshal(handlers.AssociateServiceUserPublicKeyRequestDto{PublicKey: publicKeyPEM})
+	jsonBytes, err := json.Marshal(api.AssociateServiceUserPublicKeyRequestDto{PublicKey: publicKeyPEM})
 	if err != nil {
 		return "", fmt.Errorf("marshaling dto: %w", err)
 	}
@@ -145,7 +145,7 @@ func (c *userClient) AssociateServiceUserPublicKey(ctx context.Context, serviceU
 		return "", fmt.Errorf("doing request: %w", err)
 	}
 
-	var responseDto handlers.AssociateServiceUserPublicKeyResponseDto
+	var responseDto api.AssociateServiceUserPublicKeyResponseDto
 	if err := json.NewDecoder(response.Body).Decode(&responseDto); err != nil {
 		return "", fmt.Errorf("decoding response: %w", err)
 	}

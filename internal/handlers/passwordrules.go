@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"github.com/The127/Keyline/api"
 	"github.com/The127/Keyline/internal/commands"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/queries"
@@ -13,19 +14,14 @@ import (
 	"github.com/The127/ioc"
 	"github.com/The127/mediatr"
 
-	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
 
-type PagedPasswordRuleResponseDto struct {
-	Items []ListPasswordRulesResponseDto `json:"items"`
-}
-
-type ListPasswordRulesResponseDto struct {
-	Id      uuid.UUID      `json:"id"`
-	Type    string         `json:"type"`
-	Details map[string]any `json:"details"`
-}
+// Type aliases to keep handler code compiling.
+type PagedPasswordRuleResponseDto = api.PagedPasswordRuleResponseDto
+type ListPasswordRulesResponseDto = api.ListPasswordRulesResponseDto
+type CreatePasswordRuleRequestDto = api.CreatePasswordRuleRequestDto
+type PatchPasswordRuleRequestDto = api.PatchPasswordRuleRequestDto
 
 // ListPasswordRules
 // @summary     List password rules
@@ -84,11 +80,6 @@ func ListPasswordRules(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-type CreatePasswordRuleRequestDto struct {
-	Type    string                 `json:"type" validate:"required"`
-	Details map[string]interface{} `json:"details" validate:"required"`
-}
-
 // CreatePasswordRule
 // @summary     Create password rule
 // @description Create a password rule for a virtual server.
@@ -136,8 +127,6 @@ func CreatePasswordRule(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusNoContent)
 }
-
-type PatchPasswordRuleRequestDto map[string]any
 
 // UpdatePasswordRule
 // @summary     Update a password rule

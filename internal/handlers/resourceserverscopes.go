@@ -1,13 +1,13 @@
 package handlers
 
 import (
+	"github.com/The127/Keyline/api"
 	"github.com/The127/Keyline/internal/commands"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/queries"
 	"github.com/The127/Keyline/utils"
 	"encoding/json"
 	"net/http"
-	"time"
 
 	"github.com/The127/ioc"
 	"github.com/The127/mediatr"
@@ -16,15 +16,12 @@ import (
 	"github.com/gorilla/mux"
 )
 
-type CreateResourceServerScopeRequestDto struct {
-	Scope       string `json:"scope" validate:"required,min=1,max=255"`
-	Name        string `json:"name" validate:"required,min=1,max=255"`
-	Description string `json:"description"`
-}
-
-type CreateResourceServerScopeResponseDto struct {
-	Id uuid.UUID `json:"id"`
-}
+// Type aliases to keep handler code compiling.
+type CreateResourceServerScopeRequestDto = api.CreateResourceServerScopeRequestDto
+type CreateResourceServerScopeResponseDto = api.CreateResourceServerScopeResponseDto
+type PagedResourceServerScopeResponseDto = api.PagedResourceServerScopeResponseDto
+type ListResourceServerScopesResponseDto = api.ListResourceServerScopesResponseDto
+type GetResourceServerScopeResponseDto = api.GetResourceServerScopeResponseDto
 
 // CreateResourceServerScope creates a new scope for a resource server
 // @Summary Create resource server scope
@@ -98,14 +95,6 @@ func CreateResourceServerScope(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, err)
 		return
 	}
-}
-
-type PagedResourceServerScopeResponseDto = PagedResponseDto[ListResourceServerScopesResponseDto]
-
-type ListResourceServerScopesResponseDto struct {
-	Id    uuid.UUID `json:"id"`
-	Scope string    `json:"scope"`
-	Name  string    `json:"name"`
 }
 
 // ListResourceServerScopes lists resource server scopes
@@ -185,15 +174,6 @@ func ListResourceServerScopes(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, err)
 		return
 	}
-}
-
-type GetResourceServerScopeResponseDto struct {
-	Id          uuid.UUID `json:"id"`
-	Scope       string    `json:"scope"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	CreatedAt   time.Time `json:"createdAt"`
-	UpdatedAt   time.Time `json:"updatedAt"`
 }
 
 // GetResourceServerScope retrieves details of a specific resource server scope by ID

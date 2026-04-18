@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"github.com/The127/Keyline/api"
 	"github.com/The127/Keyline/internal/authentication"
 	"github.com/The127/Keyline/internal/commands"
 	"github.com/The127/Keyline/internal/config"
@@ -23,6 +24,31 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
+
+// Type aliases to keep handler code compiling.
+type RegisterUserRequestDto = api.RegisterUserRequestDto
+type CreateUserRequestDto = api.CreateUserRequestDto
+type CreateUserRequestDtoPasword = api.CreateUserRequestDtoPasword
+type CreateUserResponseDto = api.CreateUserResponseDto
+type ListUsersResponseDto = api.ListUsersResponseDto
+type PagedUsersResponseDto = api.PagedUsersResponseDto
+type GetUserByIdResponseDto = api.GetUserByIdResponseDto
+type GetUserApplicationMetadataResponseDto = api.GetUserApplicationMetadataResponseDto
+type GetUserGlobalMetadataResponseDto = api.GetUserGlobalMetadataResponseDto
+type GetUserMetadataResponseDto = api.GetUserMetadataResponseDto
+type UpdateUserGlobalMetadataRequestDto = api.UpdateUserGlobalMetadataRequestDto
+type PatchUserGlobalMetadataRequestDto = api.PatchUserGlobalMetadataRequestDto
+type UpdateUserApplicationMetadataRequestDto = api.UpdateUserApplicationMetadataRequestDto
+type PatchUserApplicationMetadataRequestDto = api.PatchUserApplicationMetadataRequestDto
+type PatchUserRequestDto = api.PatchUserRequestDto
+type CreateServiceUserRequestDto = api.CreateServiceUserRequestDto
+type CreateServiceUserResponseDto = api.CreateServiceUserResponseDto
+type AssociateServiceUserPublicKeyRequestDto = api.AssociateServiceUserPublicKeyRequestDto
+type AssociateServiceUserPublicKeyResponseDto = api.AssociateServiceUserPublicKeyResponseDto
+type PasskeyCreateChallengeResponseDto = api.PasskeyCreateChallengeResponseDto
+type PasskeyValidateChallengeRequestDto = api.PasskeyValidateChallengeRequestDto
+type ListPasskeyResponseDto = api.ListPasskeyResponseDto
+type PagedListPasskeyResponseDto = api.PagedListPasskeyResponseDto
 
 var (
 	ErrMissingEmailVerificationToken = fmt.Errorf("missing email verification token: %w", utils.ErrHttpBadRequest)
@@ -63,13 +89,6 @@ func VerifyEmail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Redirect(w, r, fmt.Sprintf("%s/%s/email-verified", config.C.Frontend.ExternalUrl, vsName), http.StatusFound)
-}
-
-type RegisterUserRequestDto struct {
-	Username    string `json:"username" validate:"required,min=1,max=255"`
-	DisplayName string `json:"displayName" validate:"required,min=1,max=255"`
-	Password    string `json:"password" validate:"required"`
-	Email       string `json:"email" validate:"required"`
 }
 
 // RegisterUser registers a new user.
@@ -120,23 +139,6 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
-}
-
-type CreateUserRequestDto struct {
-	Username      string                       `json:"username" validate:"required"`
-	DisplayName   string                       `json:"displayName" validate:"required"`
-	Email         string                       `json:"email" validate:"required"`
-	EmailVerified bool                         `json:"emailVerified" validate:"required"`
-	Password      *CreateUserRequestDtoPasword `json:"password"`
-}
-
-type CreateUserRequestDtoPasword struct {
-	Plain     string `json:"plain" validate:"required"`
-	Temporary bool   `json:"temporary"`
-}
-
-type CreateUserResponseDto struct {
-	Id uuid.UUID `json:"id"`
 }
 
 // CreateUser creates a new user.
@@ -207,19 +209,6 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-type ListUsersResponseDto struct {
-	Id            uuid.UUID `json:"id"`
-	Username      string    `json:"username"`
-	DisplayName   string    `json:"displayName"`
-	PrimaryEmail  string    `json:"primaryEmail"`
-	IsServiceUser bool      `json:"isServiceUser"`
-}
-
-type PagedUsersResponseDto struct {
-	Items      []ListUsersResponseDto `json:"items"`
-	Pagination Pagination             `json:"pagination"`
-}
-
 // ListUsers returns users with optional paging/search.
 // @Summary      List users
 // @Tags         Users
@@ -283,17 +272,6 @@ func ListUsers(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-type GetUserByIdResponseDto struct {
-	Id            uuid.UUID `json:"id"`
-	Username      string    `json:"username"`
-	DisplayName   string    `json:"displayName"`
-	PrimaryEmail  string    `json:"primaryEmail"`
-	EmailVerified bool      `json:"emailVerified"`
-	IsServiceUser bool      `json:"isServiceUser"`
-	CreatedAt     time.Time `json:"createdAt"`
-	UpdatedAt     time.Time `json:"updatedAt"`
-}
-
 // GetUserById returns a user by ID.
 // @Summary      Get user
 // @Tags         Users
@@ -352,8 +330,6 @@ func GetUserById(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, err)
 	}
 }
-
-type GetUserApplicationMetadataResponseDto map[string]any
 
 // GetUserApplicationMetadata returns a users application metadata.
 // @Summary      Get users application metadata
@@ -418,8 +394,6 @@ func GetUserApplicationMetadata(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-type GetUserGlobalMetadataResponseDto map[string]any
-
 // GetUserGlobalMetadata returns a users metadata (only the global metadata).
 // @Summary      Get user metadata (only global)
 // @Tags         Users
@@ -475,11 +449,6 @@ func GetUserGlobalMetadata(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		utils.HandleHttpError(w, err)
 	}
-}
-
-type GetUserMetadataResponseDto struct {
-	Metadata            map[string]any `json:"metadata,omitempty"`
-	ApplicationMetadata map[string]any `json:"applicationMetadata,omitempty"`
 }
 
 // GetUserMetadata returns a users metadata.
@@ -553,8 +522,6 @@ func GetUserMetadata(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-type UpdateUserGlobalMetadataRequestDto map[string]any
-
 // UpdateUserGlobalMetadata updates a users metadata.
 // @Summary      Update a user metadata
 // @Tags         Users
@@ -601,8 +568,6 @@ func UpdateUserGlobalMetadata(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusNoContent)
 }
-
-type PatchUserGlobalMetadataRequestDto map[string]any
 
 // PatchUserGlobalMetadata patch a users metadata.
 // @Summary      Patch a user metadata using JSON Merge Patch (RFC 7396)
@@ -653,8 +618,6 @@ func PatchUserGlobalMetadata(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 }
-
-type UpdateUserApplicationMetadataRequestDto map[string]any
 
 // UpdateUserApplicationMetadata updates a users application metadata.
 // @Summary      Update a users application metadata
@@ -711,8 +674,6 @@ func UpdateUserApplicationMetadata(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusNoContent)
 }
-
-type PatchUserApplicationMetadataRequestDto map[string]any
 
 // PatchUserApplicationMetadata patch a users application metadata.
 // @Summary      Patch a users application metadata using JSON Merge Patch (RFC 7396)
@@ -771,11 +732,6 @@ func PatchUserApplicationMetadata(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-type PatchUserRequestDto struct {
-	DisplayName   *string `json:"displayName"`
-	EmailVerified *bool   `json:"emailVerified"`
-}
-
 // PatchUser updates fields of a user.
 // @Summary      Patch user
 // @Tags         Users
@@ -826,14 +782,6 @@ func PatchUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
-}
-
-type CreateServiceUserRequestDto struct {
-	Username string `json:"username" validate:"required,min=1,max=255"`
-}
-
-type CreateServiceUserResponseDto struct {
-	Id uuid.UUID `json:"id"`
 }
 
 // CreateServiceUser create a service user.
@@ -887,14 +835,6 @@ func CreateServiceUser(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, err)
 		return
 	}
-}
-
-type AssociateServiceUserPublicKeyRequestDto struct {
-	PublicKey string `json:"publicKey" validate:"required"`
-}
-
-type AssociateServiceUserPublicKeyResponseDto struct {
-	Kid string `json:"kid"`
 }
 
 // AssociateServiceUserPublicKey associates a public key with a service user.
@@ -955,14 +895,6 @@ func AssociateServiceUserPublicKey(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, err)
 		return
 	}
-}
-
-type PasskeyCreateChallengeResponseDto struct {
-	Id          uuid.UUID `json:"id"`
-	Challenge   string    `json:"challenge" validate:"required"`
-	UserId      uuid.UUID `json:"userId"`
-	Username    string    `json:"username"`
-	DisplayName string    `json:"displayName"`
 }
 
 func PasskeyCreateChallenge(w http.ResponseWriter, r *http.Request) {
@@ -1026,24 +958,6 @@ func PasskeyCreateChallenge(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-type PasskeyValidateChallengeRequestDto struct {
-	Id               uuid.UUID `json:"id" validate:"required"`
-	WebauthnResponse struct {
-		Id       string `json:"id"`
-		RawId    string `json:"rawId"`
-		Response struct {
-			ClientDataJSON     string   `json:"clientDataJSON"`
-			AuthenticatorData  string   `json:"authenticatorData"`
-			Transports         []string `json:"transports"`
-			PublicKey          string   `json:"publicKey"`
-			PublicKeyAlgorithm int      `json:"publicKeyAlgorithm"`
-			AttestationObject  string   `json:"attestationObject"`
-		} `json:"response"`
-		AuthenticatorAttachment string `json:"authenticatorAttachment"`
-		Type                    string `json:"type"`
-	} `json:"webauthnResponse" validate:"required"`
-}
-
 func PasskeyValidateCreateChallengeResponse(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	scope := middlewares.GetScope(ctx)
@@ -1096,14 +1010,6 @@ func PasskeyValidateCreateChallengeResponse(w http.ResponseWriter, r *http.Reque
 	_ = kvStore.Delete(ctx, "passkey_challenge:"+dto.Id.String())
 
 	w.WriteHeader(http.StatusNoContent)
-}
-
-type ListPasskeyResponseDto struct {
-	Id uuid.UUID `json:"id"`
-}
-
-type PagedListPasskeyResponseDto struct {
-	Items []ListPasskeyResponseDto `json:"items"`
 }
 
 func ListPasskeys(w http.ResponseWriter, r *http.Request) {
