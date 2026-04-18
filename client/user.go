@@ -51,6 +51,7 @@ func (c *userClient) List(ctx context.Context, params ListUserParams) (api.Paged
 	if err != nil {
 		return api.PagedUsersResponseDto{}, fmt.Errorf("doing request: %w", err)
 	}
+	defer response.Body.Close() //nolint:errcheck
 
 	var responseDto api.PagedUsersResponseDto
 	err = json.NewDecoder(response.Body).Decode(&responseDto)
@@ -73,6 +74,7 @@ func (c *userClient) Get(ctx context.Context, id uuid.UUID) (api.GetUserByIdResp
 	if err != nil {
 		return api.GetUserByIdResponseDto{}, fmt.Errorf("doing request: %w", err)
 	}
+	defer response.Body.Close() //nolint:errcheck
 
 	var responseDto api.GetUserByIdResponseDto
 	err = json.NewDecoder(response.Body).Decode(&responseDto)
@@ -96,10 +98,11 @@ func (c *userClient) Patch(ctx context.Context, id uuid.UUID, dto api.PatchUserR
 		return fmt.Errorf("creating request: %w", err)
 	}
 
-	_, err = c.transport.Do(request)
+	response, err := c.transport.Do(request)
 	if err != nil {
 		return fmt.Errorf("doing request: %w", err)
 	}
+	defer response.Body.Close() //nolint:errcheck
 
 	return nil
 }
@@ -119,6 +122,7 @@ func (c *userClient) CreateServiceUser(ctx context.Context, username string) (uu
 	if err != nil {
 		return uuid.UUID{}, fmt.Errorf("doing request: %w", err)
 	}
+	defer response.Body.Close() //nolint:errcheck
 
 	var responseDto api.CreateServiceUserResponseDto
 	if err := json.NewDecoder(response.Body).Decode(&responseDto); err != nil {
@@ -144,6 +148,7 @@ func (c *userClient) AssociateServiceUserPublicKey(ctx context.Context, serviceU
 	if err != nil {
 		return "", fmt.Errorf("doing request: %w", err)
 	}
+	defer response.Body.Close() //nolint:errcheck
 
 	var responseDto api.AssociateServiceUserPublicKeyResponseDto
 	if err := json.NewDecoder(response.Body).Decode(&responseDto); err != nil {

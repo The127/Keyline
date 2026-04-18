@@ -52,6 +52,7 @@ func (a *application) Create(ctx context.Context, dto api.CreateApplicationReque
 	if err != nil {
 		return api.CreateApplicationResponseDto{}, fmt.Errorf("doing request: %w", err)
 	}
+	defer response.Body.Close() //nolint:errcheck
 
 	var responseDto api.CreateApplicationResponseDto
 	err = json.NewDecoder(response.Body).Decode(&responseDto)
@@ -78,6 +79,7 @@ func (a *application) List(ctx context.Context, params ListApplicationParams) (a
 	if err != nil {
 		return api.PagedApplicationsResponseDto{}, fmt.Errorf("doing request: %w", err)
 	}
+	defer response.Body.Close() //nolint:errcheck
 
 	var responseDto api.PagedApplicationsResponseDto
 	err = json.NewDecoder(response.Body).Decode(&responseDto)
@@ -100,6 +102,7 @@ func (a *application) Get(ctx context.Context, id uuid.UUID) (api.GetApplication
 	if err != nil {
 		return api.GetApplicationResponseDto{}, fmt.Errorf("doing request: %w", err)
 	}
+	defer response.Body.Close() //nolint:errcheck
 
 	var responseDto api.GetApplicationResponseDto
 	err = json.NewDecoder(response.Body).Decode(&responseDto)
@@ -118,10 +121,11 @@ func (a *application) Delete(ctx context.Context, id uuid.UUID) error {
 		return fmt.Errorf("creating request: %w", err)
 	}
 
-	_, err = a.transport.Do(request)
+	response, err := a.transport.Do(request)
 	if err != nil {
 		return fmt.Errorf("doing request: %w", err)
 	}
+	defer response.Body.Close() //nolint:errcheck
 
 	return nil
 }
@@ -139,10 +143,11 @@ func (a *application) Patch(ctx context.Context, id uuid.UUID, dto api.PatchAppl
 		return fmt.Errorf("creating request: %w", err)
 	}
 
-	_, err = a.transport.Do(request)
+	response, err := a.transport.Do(request)
 	if err != nil {
 		return fmt.Errorf("doing request: %w", err)
 	}
+	defer response.Body.Close() //nolint:errcheck
 
 	return nil
 }
