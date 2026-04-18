@@ -22,6 +22,8 @@ import (
 	"github.com/The127/go-clock"
 
 	vault "github.com/hashicorp/vault/api"
+
+	"github.com/The127/Keyline/utils"
 )
 
 type KeyAlgorithmStrategy interface {
@@ -699,7 +701,7 @@ func (k *KeyPair) ExpiresAt() time.Time {
 //go:generate mockgen -destination=./mocks/key_service.go -package=mocks Keyline/internal/services KeyService
 type KeyService interface {
 	Generate(clockService clock.Service, virtualServerName string, algorithm config.SigningAlgorithm) (KeyPair, error)
-	GetKey(virtualServerName string, algorithm config.SigningAlgorithm) KeyPair
+	GetKey(virtualServerName string, algorithm config.SigningAlgorithm) (KeyPair, error)
 }
 
 type keyServiceImpl struct {
@@ -729,16 +731,16 @@ func (s *keyServiceImpl) Generate(clockService clock.Service, virtualServerName 
 	return keyPair, nil
 }
 
-func (s *keyServiceImpl) GetKey(virtualServerName string, algorithm config.SigningAlgorithm) KeyPair {
+func (s *keyServiceImpl) GetKey(virtualServerName string, algorithm config.SigningAlgorithm) (KeyPair, error) {
 	keyPair, ok := s.cache.TryGet(virtualServerName)
 	if !ok {
 		keyPairs, err := s.store.GetAllForAlgorithm(virtualServerName, algorithm)
 		if err != nil {
-			panic(fmt.Errorf("getting key pairs: %w", err))
+			return KeyPair{}, fmt.Errorf("getting key pairs: %w", err)
 		}
 
 		if len(keyPairs) == 0 {
-			panic(fmt.Errorf("no key pairs found for virtual server %s", virtualServerName))
+			return KeyPair{}, fmt.Errorf("no signing keys for virtual server %s: %w", virtualServerName, utils.ErrHttpServiceUnavailable)
 		}
 
 		keyPair = keyPairs[0]
@@ -746,8 +748,8 @@ func (s *keyServiceImpl) GetKey(virtualServerName string, algorithm config.Signi
 	}
 
 	if keyPair.Algorithm() != algorithm {
-		panic(fmt.Errorf("key pair algorithm does not match requested algorithm: %s != %s (multiple keys are not implemented yet)", keyPair.Algorithm(), algorithm))
+		return KeyPair{}, fmt.Errorf("key pair algorithm mismatch: %s != %s", keyPair.Algorithm(), algorithm)
 	}
 
-	return keyPair
+	return keyPair, nil
 }

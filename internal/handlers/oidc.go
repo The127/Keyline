@@ -115,7 +115,11 @@ func WellKnownJwks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	keyPair := keyService.GetKey(vsName, virtualServer.SigningAlgorithm())
+	keyPair, err := keyService.GetKey(vsName, virtualServer.SigningAlgorithm())
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
 
 	kid := keyPair.GetKid()
 
@@ -537,7 +541,11 @@ func OidcEndSession(w http.ResponseWriter, r *http.Request) {
 	}
 
 	keyService := ioc.GetDependency[services.KeyService](scope)
-	keyPair := keyService.GetKey(vsName, virtualServer.SigningAlgorithm())
+	keyPair, err := keyService.GetKey(vsName, virtualServer.SigningAlgorithm())
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
 
 	idTokenString := r.Form.Get("id_token_hint")
 	if idTokenString == "" {
@@ -685,7 +693,11 @@ func OidcUserinfo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	keyService := ioc.GetDependency[services.KeyService](scope)
-	keyPair := keyService.GetKey(vsName, virtualServer.SigningAlgorithm())
+	keyPair, err := keyService.GetKey(vsName, virtualServer.SigningAlgorithm())
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
 
 	err = r.ParseForm()
 	if err != nil {
@@ -964,7 +976,11 @@ func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 	}
 
 	keyService := ioc.GetDependency[services.KeyService](scope)
-	keyPair := keyService.GetKey(codeInfo.VirtualServerName, virtualServer.SigningAlgorithm())
+	keyPair, err := keyService.GetKey(codeInfo.VirtualServerName, virtualServer.SigningAlgorithm())
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
 
 	tokenDuration := time.Hour // TODO: make this configurable per virtual server
 
@@ -1402,7 +1418,11 @@ func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	keyService := ioc.GetDependency[services.KeyService](scope)
-	keyPair := keyService.GetKey(refreshTokenInfo.VirtualServerName, virtualServer.SigningAlgorithm())
+	keyPair, err := keyService.GetKey(refreshTokenInfo.VirtualServerName, virtualServer.SigningAlgorithm())
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
 
 	tokenDuration := time.Hour // TODO: make this configurable per virtual server
 
@@ -1652,7 +1672,11 @@ func handleTokenExchange(w http.ResponseWriter, r *http.Request) {
 	}
 
 	keyService := ioc.GetDependency[services.KeyService](scope)
-	keyPair := keyService.GetKey(virtualServerName, virtualServer.SigningAlgorithm())
+	keyPair, err := keyService.GetKey(virtualServerName, virtualServer.SigningAlgorithm())
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
 
 	clockService := ioc.GetDependency[clock.Service](scope)
 	now := clockService.Now()
@@ -1918,7 +1942,11 @@ func handleDeviceCodeGrant(w http.ResponseWriter, r *http.Request) {
 	}
 
 	keyService := ioc.GetDependency[services.KeyService](scope)
-	keyPair := keyService.GetKey(deviceCodeInfo.VirtualServerName, virtualServer.SigningAlgorithm())
+	keyPair, err := keyService.GetKey(deviceCodeInfo.VirtualServerName, virtualServer.SigningAlgorithm())
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
 
 	clockService := ioc.GetDependency[clock.Service](scope)
 	now := clockService.Now()

@@ -58,11 +58,12 @@ func (mr *MockKeyServiceMockRecorder) Generate(clockService, virtualServerName, 
 }
 
 // GetKey mocks base method.
-func (m *MockKeyService) GetKey(virtualServerName string, algorithm config.SigningAlgorithm) services.KeyPair {
+func (m *MockKeyService) GetKey(virtualServerName string, algorithm config.SigningAlgorithm) (services.KeyPair, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetKey", virtualServerName, algorithm)
 	ret0, _ := ret[0].(services.KeyPair)
-	return ret0
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // GetKey indicates an expected call of GetKey.
