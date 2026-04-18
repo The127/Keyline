@@ -32,6 +32,8 @@ var ErrInvalidUuid = fmt.Errorf("invalid uuid: %w", ErrHttpBadRequest)
 
 var ErrHttpConflict = errors.New("conflict")
 
+var ErrHttpServiceUnavailable = errors.New("service unavailable")
+
 func HandleHttpError(w http.ResponseWriter, err error) {
 	var status int
 	var msg string
@@ -51,6 +53,10 @@ func HandleHttpError(w http.ResponseWriter, err error) {
 
 	case errors.Is(err, ErrHttpConflict):
 		status = http.StatusConflict
+		msg = err.Error()
+
+	case errors.Is(err, ErrHttpServiceUnavailable):
+		status = http.StatusServiceUnavailable
 		msg = err.Error()
 
 	default:

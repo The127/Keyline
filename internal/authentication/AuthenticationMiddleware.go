@@ -109,7 +109,10 @@ func extractUserFromBearerToken(ctx context.Context, authorizationHeader string,
 
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
 		// TODO: use the key id to get the key and refactor key infrastructure
-		keyPair := keyService.GetKey(vsName, config.SigningAlgorithm(token.Header["alg"].(string)))
+		keyPair, err := keyService.GetKey(vsName, config.SigningAlgorithm(token.Header["alg"].(string)))
+		if err != nil {
+			return nil, err
+		}
 		return keyPair.PublicKey(), nil
 	})
 	if err != nil {
