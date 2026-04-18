@@ -16,6 +16,7 @@ const (
 
 	RoleCreate Permission = "role:create"
 	RoleUpdate Permission = "role:update"
+	RoleDelete Permission = "role:delete"
 	RoleAssign Permission = "role:assign"
 	RoleView   Permission = "role:view"
 

@@ -33,6 +33,11 @@ type CreateRoleResponseDto struct {
 	Id uuid.UUID `json:"id"`
 }
 
+type PatchRoleRequestDto struct {
+	Name        *string `json:"name,omitempty"`
+	Description *string `json:"description,omitempty"`
+}
+
 type AssignRoleRequestDto struct {
 	UserId uuid.UUID `json:"userId" validate:"required,uuid=4"`
 }

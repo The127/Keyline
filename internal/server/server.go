@@ -194,6 +194,8 @@ func mapApiRoutes(r *mux.Router) {
 	vsApiRouter.HandleFunc("/projects/{projectSlug}/roles", handlers.CreateRole).Methods(http.MethodPost, http.MethodOptions)
 	vsApiRouter.HandleFunc("/projects/{projectSlug}/roles", handlers.ListRoles).Methods(http.MethodGet, http.MethodOptions)
 	vsApiRouter.HandleFunc("/projects/{projectSlug}/roles/{roleId}", handlers.GetRoleById).Methods(http.MethodGet, http.MethodOptions)
+	vsApiRouter.HandleFunc("/projects/{projectSlug}/roles/{roleId}", handlers.PatchRole).Methods(http.MethodPatch, http.MethodOptions)
+	vsApiRouter.HandleFunc("/projects/{projectSlug}/roles/{roleId}", handlers.DeleteRole).Methods(http.MethodDelete, http.MethodOptions)
 	vsApiRouter.HandleFunc("/projects/{projectSlug}/roles/{roleId}/assign", handlers.AssignRole).Methods(http.MethodPost, http.MethodOptions)
 	vsApiRouter.HandleFunc("/projects/{projectSlug}/roles/{roleId}/users", handlers.ListUsersInRole).Methods(http.MethodGet, http.MethodOptions)
 

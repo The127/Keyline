@@ -67,6 +67,7 @@ func Mediator(dc *ioc.DependencyCollection) {
 	mediatr.RegisterHandler(m, queries.HandleGetRole)
 	mediatr.RegisterHandler(m, commands.HandleCreateRole)
 	mediatr.RegisterHandler(m, commands.HandlePatchRole)
+	mediatr.RegisterHandler(m, commands.HandleDeleteRole)
 	mediatr.RegisterHandler(m, commands.HandleAssignRoleToUser)
 	mediatr.RegisterHandler(m, queries.HandleListUsersInRole)
 

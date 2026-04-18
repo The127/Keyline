@@ -14,6 +14,7 @@ type ProjectClient interface {
 	Create(ctx context.Context, input api.CreateProjectRequestDto) (api.CreateProjectResponseDto, error)
 	Get(ctx context.Context, slug string) (api.GetProjectResponseDto, error)
 	Application(projectSlug string) ApplicationClient
+	Role(projectSlug string) RoleClient
 }
 
 func NewProjectClient(transport *Transport) ProjectClient {
@@ -51,6 +52,10 @@ func (c *projectClient) Create(ctx context.Context, input api.CreateProjectReque
 
 func (c *projectClient) Application(projectSlug string) ApplicationClient {
 	return NewApplicationClient(c.transport, projectSlug)
+}
+
+func (c *projectClient) Role(projectSlug string) RoleClient {
+	return NewRoleClient(c.transport, projectSlug)
 }
 
 func (c *projectClient) Get(ctx context.Context, slug string) (api.GetProjectResponseDto, error) {
