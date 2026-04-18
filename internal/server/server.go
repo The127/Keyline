@@ -157,7 +157,7 @@ func mapApiRoutes(r *mux.Router) {
 	vsApiRouter.HandleFunc("", handlers.GetVirtualServer).Methods(http.MethodGet, http.MethodOptions)
 	vsApiRouter.HandleFunc("/public-info", handlers.GetVirtualServerPublicInfo).Methods(http.MethodGet, http.MethodOptions)
 	vsApiRouter.HandleFunc("/health", handlers.VirtualServerHealth).Methods(http.MethodGet, http.MethodOptions)
-	vsApiRouter.HandleFunc("/", handlers.PatchVirtualServer).Methods(http.MethodPatch, http.MethodOptions)
+	vsApiRouter.HandleFunc("", handlers.PatchVirtualServer).Methods(http.MethodPatch, http.MethodOptions)
 
 	vsApiRouter.HandleFunc("/password-policies/rules", handlers.ListPasswordRules).Methods(http.MethodGet, http.MethodOptions)
 	vsApiRouter.HandleFunc("/password-policies/rules/{ruleType}", handlers.CreatePasswordRule).Methods(http.MethodPost, http.MethodOptions)
