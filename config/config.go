@@ -62,68 +62,72 @@ var SupportedSigningAlgorithms = []SigningAlgorithm{
 }
 
 type Config struct {
-	Server   ServerConfig
+	Server   ServerConfig `yaml:"server"`
 	Frontend struct {
-		ExternalUrl string
-	}
-	Database             DatabaseConfig
-	InitialVirtualServer struct {
-		Name                  string
-		DisplayName           string
-		EnableRegistration    bool
-		SigningAlgorithm      SigningAlgorithm
-		CreateSystemAdminRole bool
-		CreateAdmin           bool
-		Admin                 struct {
-			Username     string
-			DisplayName  string
-			PrimaryEmail string
-			PasswordHash string
-			Roles        []string
-		}
-		ServiceUsers []struct {
-			Username  string
-			Roles     []string
-			PublicKey struct {
-				Pem string
-				Kid string
-			}
-		}
-		Projects []InitialProjectConfig
-		Mail     struct {
-			Host     string
-			Port     int
-			Username string
-			Password string
-		}
-	}
-	KeyStore KeyStoreConfig
-	Cache    struct {
-		Mode  CacheMode
+		ExternalUrl string `yaml:"externalUrl"`
+	} `yaml:"frontend"`
+	Database             DatabaseConfig             `yaml:"database"`
+	InitialVirtualServer InitialVirtualServerConfig `yaml:"initialVirtualServer"`
+	KeyStore             KeyStoreConfig             `yaml:"keyStore"`
+	Cache                struct {
+		Mode  CacheMode `yaml:"mode"`
 		Redis struct {
-			Host     string
-			Port     int
-			Username string
-			Password string
-			Database int
-		}
-	}
-	LeaderElection LeaderElectionConfig
+			Host     string `yaml:"host"`
+			Port     int    `yaml:"port"`
+			Username string `yaml:"username"`
+			Password string `yaml:"password"`
+			Database int    `yaml:"database"`
+		} `yaml:"redis"`
+	} `yaml:"cache"`
+	LeaderElection LeaderElectionConfig `yaml:"leaderElection"`
+}
+
+type InitialVirtualServerConfig struct {
+	Name                  string           `yaml:"name"`
+	DisplayName           string           `yaml:"displayName"`
+	EnableRegistration    bool             `yaml:"enableRegistration"`
+	SigningAlgorithm      SigningAlgorithm  `yaml:"signingAlgorithm"`
+	CreateSystemAdminRole bool             `yaml:"createSystemAdminRole"`
+	CreateAdmin           bool             `yaml:"createAdmin"`
+	Admin                 struct {
+		Username     string   `yaml:"username"`
+		DisplayName  string   `yaml:"displayName"`
+		PrimaryEmail string   `yaml:"primaryEmail"`
+		PasswordHash string   `yaml:"passwordHash"`
+		Roles        []string `yaml:"roles"`
+	} `yaml:"admin"`
+	ServiceUsers []ServiceUserConfig    `yaml:"serviceUsers"`
+	Projects     []InitialProjectConfig `yaml:"projects"`
+	Mail         struct {
+		Host     string `yaml:"host"`
+		Port     int    `yaml:"port"`
+		Username string `yaml:"username"`
+		Password string `yaml:"password"`
+	} `yaml:"mail"`
+}
+
+type ServiceUserConfig struct {
+	Username  string `yaml:"username"`
+	Roles     []string `yaml:"roles"`
+	PublicKey struct {
+		Pem string `yaml:"pem"`
+		Kid string `yaml:"kid"`
+	} `yaml:"publicKey"`
 }
 
 type KeyStoreConfig struct {
-	Mode      KeyStoreMode
-	Vault     VaultKeyStoreConfig
+	Mode      KeyStoreMode          `yaml:"mode"`
+	Vault     VaultKeyStoreConfig   `yaml:"vault"`
 	Directory struct {
-		Path string
-	}
+		Path string `yaml:"path"`
+	} `yaml:"directory"`
 }
 
 type VaultKeyStoreConfig struct {
-	Address string
-	Token   string
-	Mount   string
-	Prefix  string
+	Address string `yaml:"address"`
+	Token   string `yaml:"token"`
+	Mount   string `yaml:"mount"`
+	Prefix  string `yaml:"prefix,omitempty"`
 }
 
 type LeaderElectionMode string
@@ -134,71 +138,71 @@ const (
 )
 
 type InitialProjectConfig struct {
-	Slug        string
-	Name        string
-	Description string
+	Slug        string `yaml:"slug"`
+	Name        string `yaml:"name"`
+	Description string `yaml:"description"`
 	Roles       []struct {
-		Name        string
-		Description string
-	}
+		Name        string `yaml:"name"`
+		Description string `yaml:"description"`
+	} `yaml:"roles"`
 	Applications []struct {
-		Name                   string
-		DisplayName            string
-		Type                   string
-		HashedSecret           *string
-		RedirectUris           []string
-		PostLogoutRedirectUris []string
-		DeviceFlowEnabled      bool
-	}
+		Name                   string   `yaml:"name"`
+		DisplayName            string   `yaml:"displayName"`
+		Type                   string   `yaml:"type"`
+		HashedSecret           *string  `yaml:"hashedSecret,omitempty"`
+		RedirectUris           []string `yaml:"redirectUris"`
+		PostLogoutRedirectUris []string `yaml:"postLogoutRedirectUris"`
+		DeviceFlowEnabled      bool     `yaml:"deviceFlowEnabled"`
+	} `yaml:"applications"`
 	ResourceServers []struct {
-		Slug        string
-		Name        string
-		Description string
-	}
+		Slug        string `yaml:"slug"`
+		Name        string `yaml:"name"`
+		Description string `yaml:"description"`
+	} `yaml:"resourceServers"`
 }
 
 type LeaderElectionConfig struct {
-	Mode LeaderElectionMode
-	Raft LeaderElectionRaftConfig
+	Mode LeaderElectionMode     `yaml:"mode"`
+	Raft LeaderElectionRaftConfig `yaml:"raft"`
 }
 
 type LeaderElectionRaftConfig struct {
-	Host        string
-	Port        int
-	Id          string
-	InitiatorId string
-	Nodes       []RaftNode
+	Host        string     `yaml:"host"`
+	Port        int        `yaml:"port"`
+	Id          string     `yaml:"id"`
+	InitiatorId string     `yaml:"initiatorId"`
+	Nodes       []RaftNode `yaml:"nodes"`
 }
 
 type RaftNode struct {
-	Id      string
-	Address string
+	Id      string `yaml:"id"`
+	Address string `yaml:"address"`
 }
 
 type ServerConfig struct {
-	ExternalUrl    string
-	ExternalDomain string
-	Host           string
-	Port           int
-	ApiPort        int
-	AllowedOrigins []string
+	ExternalUrl    string   `yaml:"externalUrl"`
+	ExternalDomain string   `yaml:"externalDomain"`
+	Host           string   `yaml:"host"`
+	Port           int      `yaml:"port"`
+	ApiPort        int      `yaml:"apiPort"`
+	AllowedOrigins []string `yaml:"allowedOrigins"`
 }
 
 type DatabaseConfig struct {
-	Mode     DatabaseMode
-	Postgres PostgresConfig
+	Mode     DatabaseMode   `yaml:"mode"`
+	Postgres PostgresConfig `yaml:"postgres"`
 	Sqlite   struct {
-		Database string
-	}
+		Database string `yaml:"database"`
+	} `yaml:"sqlite"`
 }
 
 type PostgresConfig struct {
-	Database string
-	Host     string
-	Port     int
-	Username string
-	Password string
-	SslMode  string
+	Database string `yaml:"database"`
+	Host     string `yaml:"host"`
+	Port     int    `yaml:"port"`
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
+	SslMode  string `yaml:"sslMode"`
 }
 
 var configFilePath string
