@@ -15,7 +15,7 @@ RUN go mod download
 COPY . .
 
 # Build binary
-RUN go build -o api ./cmd/api
+RUN go build -o /bin/api ./cmd/api
 
 # ---- Runtime stage ----
 FROM alpine:3.22.1 AS runtime
@@ -23,7 +23,7 @@ FROM alpine:3.22.1 AS runtime
 WORKDIR /app
 
 # Copy binary from builder
-COPY --from=builder /app/api /app/api
+COPY --from=builder /bin/api /app/api
 
 # Expose port (adjust if needed)
 EXPOSE 8080
