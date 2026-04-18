@@ -29,7 +29,7 @@ func (r *OutboxMessageRepository) List(_ context.Context, filter *repositories.O
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	var result []*repositories.OutboxMessage
+	result := make([]*repositories.OutboxMessage, 0, len(r.store))
 	for _, m := range r.store {
 		if filter.HasId() && m.Id() != filter.GetId() {
 			continue

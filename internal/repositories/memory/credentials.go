@@ -81,7 +81,7 @@ func (r *CredentialRepository) filtered(filter *repositories.CredentialFilter) [
 }
 
 func (r *CredentialRepository) FirstOrErr(_ context.Context, filter *repositories.CredentialFilter) (*repositories.Credential, error) {
-	result, err := r.FirstOrNil(nil, filter)
+	result, err := r.FirstOrNil(context.TODO(), filter)
 	if err != nil {
 		return nil, err
 	}
