@@ -25,18 +25,20 @@ type ApplicationClient interface {
 	Delete(ctx context.Context, id uuid.UUID) error
 }
 
-func NewApplicationClient(transport *Transport) ApplicationClient {
+func NewApplicationClient(transport *Transport, projectSlug string) ApplicationClient {
 	return &application{
-		transport: transport,
+		transport:   transport,
+		projectSlug: projectSlug,
 	}
 }
 
 type application struct {
-	transport *Transport
+	transport   *Transport
+	projectSlug string
 }
 
 func (a *application) Create(ctx context.Context, dto api.CreateApplicationRequestDto) (api.CreateApplicationResponseDto, error) {
-	endpoint := "/applications"
+	endpoint := fmt.Sprintf("/projects/%s/applications", a.projectSlug)
 
 	jsonBytes, err := json.Marshal(dto)
 	if err != nil {
@@ -68,7 +70,7 @@ func (a *application) List(ctx context.Context, params ListApplicationParams) (a
 	values.Add("page", fmt.Sprintf("%d", params.Page))
 	values.Add("size", fmt.Sprintf("%d", params.Size))
 
-	endpoint := fmt.Sprintf("/applications?%s", values.Encode())
+	endpoint := fmt.Sprintf("/projects/%s/applications?%s", a.projectSlug, values.Encode())
 
 	request, err := a.transport.NewTenantRequest(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
@@ -91,7 +93,7 @@ func (a *application) List(ctx context.Context, params ListApplicationParams) (a
 }
 
 func (a *application) Get(ctx context.Context, id uuid.UUID) (api.GetApplicationResponseDto, error) {
-	endpoint := fmt.Sprintf("/applications/%s", id.String())
+	endpoint := fmt.Sprintf("/projects/%s/applications/%s", a.projectSlug, id.String())
 
 	request, err := a.transport.NewTenantRequest(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
@@ -114,7 +116,7 @@ func (a *application) Get(ctx context.Context, id uuid.UUID) (api.GetApplication
 }
 
 func (a *application) Delete(ctx context.Context, id uuid.UUID) error {
-	endpoint := fmt.Sprintf("/applications/%s", id.String())
+	endpoint := fmt.Sprintf("/projects/%s/applications/%s", a.projectSlug, id.String())
 
 	request, err := a.transport.NewTenantRequest(ctx, http.MethodDelete, endpoint, nil)
 	if err != nil {
@@ -131,7 +133,7 @@ func (a *application) Delete(ctx context.Context, id uuid.UUID) error {
 }
 
 func (a *application) Patch(ctx context.Context, id uuid.UUID, dto api.PatchApplicationRequestDto) error {
-	endpoint := fmt.Sprintf("/applications/%s", id.String())
+	endpoint := fmt.Sprintf("/projects/%s/applications/%s", a.projectSlug, id.String())
 
 	jsonBytes, err := json.Marshal(dto)
 	if err != nil {

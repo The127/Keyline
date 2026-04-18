@@ -1,14 +1,14 @@
 package client
 
 import (
-	"github.com/The127/Keyline/api"
-	"github.com/The127/Keyline/utils"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/The127/Keyline/api"
+	"github.com/The127/Keyline/utils"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
 )
@@ -39,7 +39,7 @@ func (s *ApplicationClientSuite) TestCreateApplication_HappyPath() {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		s.Equal(http.MethodPost, r.Method)
-		s.Equal("/api/virtual-servers/test/applications", r.URL.Path)
+		s.Equal("/api/virtual-servers/test/projects/my-project/applications", r.URL.Path)
 
 		var requestDto api.CreateApplicationRequestDto
 		err := json.NewDecoder(r.Body).Decode(&requestDto)
@@ -51,7 +51,7 @@ func (s *ApplicationClientSuite) TestCreateApplication_HappyPath() {
 	}))
 	defer server.Close()
 
-	testee := NewClient(server.URL, "test").Application()
+	testee := NewClient(server.URL, "test").Project().Application("my-project")
 
 	// act
 	responseDto, err := testee.Create(s.T().Context(), request)
@@ -88,14 +88,14 @@ func (s *ApplicationClientSuite) TestListApplications_HappyPath() {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		s.Equal(http.MethodGet, r.Method)
-		s.Equal("/api/virtual-servers/test/applications", r.URL.Path)
+		s.Equal("/api/virtual-servers/test/projects/my-project/applications", r.URL.Path)
 
 		err := json.NewEncoder(w).Encode(response)
 		s.NoError(err)
 	}))
 	defer server.Close()
 
-	testee := NewClient(server.URL, "test").Application()
+	testee := NewClient(server.URL, "test").Project().Application("my-project")
 
 	// act
 	responseDto, err := testee.List(s.T().Context(), requestParams)
@@ -119,14 +119,14 @@ func (s *ApplicationClientSuite) TestGetApplication_HappyPath() {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		s.Equal(http.MethodGet, r.Method)
-		s.Equal(fmt.Sprintf("/api/virtual-servers/test/applications/%s", requestId), r.URL.Path)
+		s.Equal(fmt.Sprintf("/api/virtual-servers/test/projects/my-project/applications/%s", requestId), r.URL.Path)
 
 		err := json.NewEncoder(w).Encode(response)
 		s.NoError(err)
 	}))
 	defer server.Close()
 
-	testee := NewClient(server.URL, "test").Application()
+	testee := NewClient(server.URL, "test").Project().Application("my-project")
 
 	// act
 	responseDto, err := testee.Get(s.T().Context(), requestId)
@@ -142,11 +142,11 @@ func (s *ApplicationClientSuite) TestDeleteApplication_HappyPath() {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		s.Equal(http.MethodDelete, r.Method)
-		s.Equal(fmt.Sprintf("/api/virtual-servers/test/applications/%s", requestId), r.URL.Path)
+		s.Equal(fmt.Sprintf("/api/virtual-servers/test/projects/my-project/applications/%s", requestId), r.URL.Path)
 	}))
 	defer server.Close()
 
-	testee := NewClient(server.URL, "test").Application()
+	testee := NewClient(server.URL, "test").Project().Application("my-project")
 
 	// act
 	err := testee.Delete(s.T().Context(), requestId)
@@ -165,7 +165,7 @@ func (s *ApplicationClientSuite) TestPatchApplication_HappyPath() {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		s.Equal(http.MethodPatch, r.Method)
-		s.Equal(fmt.Sprintf("/api/virtual-servers/test/applications/%s", requestId), r.URL.Path)
+		s.Equal(fmt.Sprintf("/api/virtual-servers/test/projects/my-project/applications/%s", requestId), r.URL.Path)
 
 		var requestDto api.PatchApplicationRequestDto
 		err := json.NewDecoder(r.Body).Decode(&requestDto)
@@ -176,7 +176,7 @@ func (s *ApplicationClientSuite) TestPatchApplication_HappyPath() {
 	}))
 	defer server.Close()
 
-	testee := NewClient(server.URL, "test").Application()
+	testee := NewClient(server.URL, "test").Project().Application("my-project")
 
 	// act
 	err := testee.Patch(s.T().Context(), requestId, request)
