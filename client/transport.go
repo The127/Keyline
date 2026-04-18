@@ -55,7 +55,7 @@ func NewTransport(baseUrl string, virtualServer string, options ...TransportOpti
 	transport := &Transport{
 		baseURL:       baseUrl,
 		virtualServer: virtualServer,
-		client:        http.DefaultClient,
+		client:        &http.Client{Transport: http.DefaultTransport},
 	}
 
 	for _, option := range options {
