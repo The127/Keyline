@@ -55,8 +55,8 @@ func (r *ProjectRepository) filtered(filter *repositories.ProjectFilter) []*repo
 	return result
 }
 
-func (r *ProjectRepository) FirstOrErr(_ context.Context, filter *repositories.ProjectFilter) (*repositories.Project, error) {
-	result, err := r.FirstOrNil(context.TODO(), filter)
+func (r *ProjectRepository) FirstOrErr(ctx context.Context, filter *repositories.ProjectFilter) (*repositories.Project, error) {
+	result, err := r.FirstOrNil(ctx, filter)
 	if err != nil {
 		return nil, err
 	}

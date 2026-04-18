@@ -58,8 +58,8 @@ func (r *UserRepository) filtered(filter *repositories.UserFilter) []*repositori
 	return result
 }
 
-func (r *UserRepository) FirstOrErr(_ context.Context, filter *repositories.UserFilter) (*repositories.User, error) {
-	result, err := r.FirstOrNil(context.TODO(), filter)
+func (r *UserRepository) FirstOrErr(ctx context.Context, filter *repositories.UserFilter) (*repositories.User, error) {
+	result, err := r.FirstOrNil(ctx, filter)
 	if err != nil {
 		return nil, err
 	}

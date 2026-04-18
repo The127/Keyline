@@ -46,8 +46,8 @@ func (r *TemplateRepository) filtered(filter *repositories.TemplateFilter) []*re
 	return result
 }
 
-func (r *TemplateRepository) FirstOrErr(_ context.Context, filter *repositories.TemplateFilter) (*repositories.Template, error) {
-	result, err := r.FirstOrNil(context.TODO(), filter)
+func (r *TemplateRepository) FirstOrErr(ctx context.Context, filter *repositories.TemplateFilter) (*repositories.Template, error) {
+	result, err := r.FirstOrNil(ctx, filter)
 	if err != nil {
 		return nil, err
 	}

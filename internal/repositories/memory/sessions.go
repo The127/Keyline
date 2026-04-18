@@ -39,8 +39,8 @@ func (r *SessionRepository) matches(s *repositories.Session, filter *repositorie
 	return true
 }
 
-func (r *SessionRepository) FirstOrErr(_ context.Context, filter *repositories.SessionFilter) (*repositories.Session, error) {
-	result, err := r.FirstOrNil(context.TODO(), filter)
+func (r *SessionRepository) FirstOrErr(ctx context.Context, filter *repositories.SessionFilter) (*repositories.Session, error) {
+	result, err := r.FirstOrNil(ctx, filter)
 	if err != nil {
 		return nil, err
 	}

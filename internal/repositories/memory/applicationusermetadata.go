@@ -52,8 +52,8 @@ func (r *ApplicationUserMetadataRepository) filtered(filter *repositories.Applic
 	return result
 }
 
-func (r *ApplicationUserMetadataRepository) FirstOrErr(_ context.Context, filter *repositories.ApplicationUserMetadataFilter) (*repositories.ApplicationUserMetadata, error) {
-	result, err := r.FirstOrNil(context.TODO(), filter)
+func (r *ApplicationUserMetadataRepository) FirstOrErr(ctx context.Context, filter *repositories.ApplicationUserMetadataFilter) (*repositories.ApplicationUserMetadata, error) {
+	result, err := r.FirstOrNil(ctx, filter)
 	if err != nil {
 		return nil, err
 	}

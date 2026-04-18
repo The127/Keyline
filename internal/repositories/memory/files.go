@@ -33,8 +33,8 @@ func (r *FileRepository) matches(f *repositories.File, filter *repositories.File
 	return true
 }
 
-func (r *FileRepository) FirstOrErr(_ context.Context, filter *repositories.FileFilter) (*repositories.File, error) {
-	result, err := r.FirstOrNil(context.TODO(), filter)
+func (r *FileRepository) FirstOrErr(ctx context.Context, filter *repositories.FileFilter) (*repositories.File, error) {
+	result, err := r.FirstOrNil(ctx, filter)
 	if err != nil {
 		return nil, err
 	}

@@ -80,8 +80,8 @@ func (r *CredentialRepository) filtered(filter *repositories.CredentialFilter) [
 	return result
 }
 
-func (r *CredentialRepository) FirstOrErr(_ context.Context, filter *repositories.CredentialFilter) (*repositories.Credential, error) {
-	result, err := r.FirstOrNil(context.TODO(), filter)
+func (r *CredentialRepository) FirstOrErr(ctx context.Context, filter *repositories.CredentialFilter) (*repositories.Credential, error) {
+	result, err := r.FirstOrNil(ctx, filter)
 	if err != nil {
 		return nil, err
 	}

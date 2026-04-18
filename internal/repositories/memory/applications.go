@@ -64,8 +64,8 @@ func (r *ApplicationRepository) filtered(filter *repositories.ApplicationFilter)
 	return result
 }
 
-func (r *ApplicationRepository) FirstOrErr(_ context.Context, filter *repositories.ApplicationFilter) (*repositories.Application, error) {
-	result, err := r.FirstOrNil(context.TODO(), filter)
+func (r *ApplicationRepository) FirstOrErr(ctx context.Context, filter *repositories.ApplicationFilter) (*repositories.Application, error) {
+	result, err := r.FirstOrNil(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
