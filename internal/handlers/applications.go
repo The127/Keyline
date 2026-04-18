@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"github.com/The127/Keyline/api"
 	"github.com/The127/Keyline/internal/commands"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/queries"
@@ -8,7 +9,6 @@ import (
 	"github.com/The127/Keyline/utils"
 	"encoding/json"
 	"net/http"
-	"time"
 
 	"github.com/The127/ioc"
 	"github.com/The127/mediatr"
@@ -16,21 +16,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
-
-type CreateApplicationRequestDto struct {
-	Name                  string   `json:"name" validate:"required,min=1,max=255"`
-	DisplayName           string   `json:"displayName" validate:"required,min=1,max=255"`
-	RedirectUris          []string `json:"redirectUris" validate:"required,dive,url,min=1"`
-	PostLogoutUris        []string `json:"postLogoutUris" validate:"dive,url"`
-	Type                  string   `json:"type" validate:"required,oneof=public confidential"`
-	AccessTokenHeaderType *string  `json:"accessTokenHeaderType" validate:"omitempty,oneof=at+jwt JWT"`
-	DeviceFlowEnabled     bool     `json:"deviceFlowEnabled"`
-}
-
-type CreateApplicationResponseDto struct {
-	Id     uuid.UUID `json:"id"`
-	Secret *string   `json:"secret,omitempty"`
-}
 
 // CreateApplication creates a new application (OIDC client) in a project
 // @Summary Create application
@@ -57,7 +42,7 @@ func CreateApplication(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	projectSlug := vars["projectSlug"]
 
-	var dto CreateApplicationRequestDto
+	var dto api.CreateApplicationRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -97,32 +82,13 @@ func CreateApplication(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 
-	err = json.NewEncoder(w).Encode(CreateApplicationResponseDto{
+	err = json.NewEncoder(w).Encode(api.CreateApplicationResponseDto{
 		Id:     response.Id,
 		Secret: response.Secret,
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)
 	}
-}
-
-type GetApplicationResponseDto struct {
-	Id          uuid.UUID `json:"id"`
-	Name        string    `json:"name"`
-	DisplayName string    `json:"displayName"`
-	Type        string    `json:"type"`
-
-	RedirectUris           []string `json:"redirectUris"`
-	PostLogoutRedirectUris []string `json:"postLogoutRedirectUris"`
-
-	SystemApplication bool `json:"systemApplication"`
-
-	ClaimsMappingScript *string `json:"customClaimsMappingScript"`
-
-	DeviceFlowEnabled bool `json:"deviceFlowEnabled"`
-
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
 }
 
 // GetApplication retrieves details of a specific application by ID
@@ -179,7 +145,7 @@ func GetApplication(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
-	err = json.NewEncoder(w).Encode(GetApplicationResponseDto{
+	err = json.NewEncoder(w).Encode(api.GetApplicationResponseDto{
 		Id:                     application.Id,
 		Name:                   application.Name,
 		DisplayName:            application.DisplayName,
@@ -195,12 +161,6 @@ func GetApplication(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		utils.HandleHttpError(w, err)
 	}
-}
-
-type PatchApplicationRequestDto struct {
-	DisplayName         *string `json:"displayName"`
-	ClaimsMappingScript *string `json:"customClaimsMappingScript"`
-	DeviceFlowEnabled   *bool   `json:"deviceFlowEnabled"`
 }
 
 // PatchApplication updates fields of a specific application by ID
@@ -236,7 +196,7 @@ func PatchApplication(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, utils.ErrInvalidUuid)
 	}
 
-	var dto PatchApplicationRequestDto
+	var dto api.PatchApplicationRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -308,16 +268,6 @@ func DeleteApplication(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-type PagedApplicationsResponseDto = PagedResponseDto[ListApplicationsResponseDto]
-
-type ListApplicationsResponseDto struct {
-	Id                uuid.UUID `json:"id"`
-	Name              string    `json:"name"`
-	DisplayName       string    `json:"displayName"`
-	Type              string    `json:"type"`
-	SystemApplication bool      `json:"systemApplication"`
-}
-
 // ListApplications lists applications in a project
 // @Summary List applications
 // @Description Retrieve a paginated list of applications (OIDC clients)
@@ -368,8 +318,8 @@ func ListApplications(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	items := utils.MapSlice(applications.Items, func(x queries.ListApplicationsResponseItem) ListApplicationsResponseDto {
-		return ListApplicationsResponseDto{
+	items := utils.MapSlice(applications.Items, func(x queries.ListApplicationsResponseItem) api.ListApplicationsResponseDto {
+		return api.ListApplicationsResponseDto{
 			Id:                x.Id,
 			Name:              x.Name,
 			DisplayName:       x.DisplayName,

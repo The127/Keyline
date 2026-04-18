@@ -1,30 +1,19 @@
 package handlers
 
 import (
+	"github.com/The127/Keyline/api"
 	"github.com/The127/Keyline/internal/commands"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/queries"
 	"github.com/The127/Keyline/utils"
 	"encoding/json"
 	"net/http"
-	"time"
 
 	"github.com/The127/ioc"
 	"github.com/The127/mediatr"
 
-	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
-
-type CreateProjectRequestDto struct {
-	Slug        string `json:"slug" validate:"required,min=1,max=255"`
-	Name        string `json:"name" validate:"required,min=1,max=255"`
-	Description string `json:"description"`
-}
-
-type CreateProjectResponseDto struct {
-	Id uuid.UUID `json:"id"`
-}
 
 // CreateProject creates a new project
 // @Summary Create project
@@ -47,7 +36,7 @@ func CreateProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var dto CreateProjectRequestDto
+	var dto api.CreateProjectRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -77,22 +66,13 @@ func CreateProject(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 
-	err = json.NewEncoder(w).Encode(CreateProjectResponseDto{
+	err = json.NewEncoder(w).Encode(api.CreateProjectResponseDto{
 		Id: response.Id,
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
 	}
-}
-
-type PagedProjectsResponseDto = PagedResponseDto[ListProjectsResponseDto]
-
-type ListProjectsResponseDto struct {
-	Id            uuid.UUID `json:"id"`
-	Slug          string    `json:"slug"`
-	Name          string    `json:"name"`
-	SystemProject bool      `json:"systemProject"`
 }
 
 // ListProjects lists projects in a virtual server
@@ -140,8 +120,8 @@ func ListProjects(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	items := utils.MapSlice(projects.Items, func(x queries.ListProjectsResponseItem) ListProjectsResponseDto {
-		return ListProjectsResponseDto{
+	items := utils.MapSlice(projects.Items, func(x queries.ListProjectsResponseItem) api.ListProjectsResponseDto {
+		return api.ListProjectsResponseDto{
 			Id:            x.Id,
 			Slug:          x.Slug,
 			Name:          x.Name,
@@ -160,17 +140,6 @@ func ListProjects(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, err)
 		return
 	}
-}
-
-type GetProjectResponseDto struct {
-	Id            uuid.UUID `json:"id"`
-	Slug          string    `json:"slug"`
-	Name          string    `json:"name"`
-	Description   string    `json:"description"`
-	SystemProject bool      `json:"systemProject"`
-
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
 }
 
 func GetProject(w http.ResponseWriter, r *http.Request) {
@@ -199,7 +168,7 @@ func GetProject(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	err = json.NewEncoder(w).Encode(GetProjectResponseDto{
+	err = json.NewEncoder(w).Encode(api.GetProjectResponseDto{
 		Id:          resp.Id,
 		Slug:        resp.Slug,
 		Name:        resp.Name,

@@ -1,13 +1,13 @@
 package handlers
 
 import (
+	"github.com/The127/Keyline/api"
 	"github.com/The127/Keyline/internal/commands"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/queries"
 	"github.com/The127/Keyline/utils"
 	"encoding/json"
 	"net/http"
-	"time"
 
 	"github.com/The127/ioc"
 	"github.com/The127/mediatr"
@@ -15,16 +15,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
-
-type CreateResourceServerScopeRequestDto struct {
-	Scope       string `json:"scope" validate:"required,min=1,max=255"`
-	Name        string `json:"name" validate:"required,min=1,max=255"`
-	Description string `json:"description"`
-}
-
-type CreateResourceServerScopeResponseDto struct {
-	Id uuid.UUID `json:"id"`
-}
 
 // CreateResourceServerScope creates a new scope for a resource server
 // @Summary Create resource server scope
@@ -59,7 +49,7 @@ func CreateResourceServerScope(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var dto CreateResourceServerScopeRequestDto
+	var dto api.CreateResourceServerScopeRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -91,21 +81,13 @@ func CreateResourceServerScope(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 
-	err = json.NewEncoder(w).Encode(CreateResourceServerScopeResponseDto{
+	err = json.NewEncoder(w).Encode(api.CreateResourceServerScopeResponseDto{
 		Id: response.Id,
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
 	}
-}
-
-type PagedResourceServerScopeResponseDto = PagedResponseDto[ListResourceServerScopesResponseDto]
-
-type ListResourceServerScopesResponseDto struct {
-	Id    uuid.UUID `json:"id"`
-	Scope string    `json:"scope"`
-	Name  string    `json:"name"`
 }
 
 // ListResourceServerScopes lists resource server scopes
@@ -166,8 +148,8 @@ func ListResourceServerScopes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	items := utils.MapSlice(scopes.Items, func(x queries.ListResourceServerScopesResponseItem) ListResourceServerScopesResponseDto {
-		return ListResourceServerScopesResponseDto{
+	items := utils.MapSlice(scopes.Items, func(x queries.ListResourceServerScopesResponseItem) api.ListResourceServerScopesResponseDto {
+		return api.ListResourceServerScopesResponseDto{
 			Id:    x.Id,
 			Name:  x.Name,
 			Scope: x.Scope,
@@ -185,15 +167,6 @@ func ListResourceServerScopes(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, err)
 		return
 	}
-}
-
-type GetResourceServerScopeResponseDto struct {
-	Id          uuid.UUID `json:"id"`
-	Scope       string    `json:"scope"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	CreatedAt   time.Time `json:"createdAt"`
-	UpdatedAt   time.Time `json:"updatedAt"`
 }
 
 // GetResourceServerScope retrieves details of a specific resource server scope by ID
@@ -252,7 +225,7 @@ func GetResourceServerScope(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	err = json.NewEncoder(w).Encode(GetResourceServerScopeResponseDto{
+	err = json.NewEncoder(w).Encode(api.GetResourceServerScopeResponseDto{
 		Id:          scopeResponse.Id,
 		Scope:       scopeResponse.Scope,
 		Name:        scopeResponse.Name,

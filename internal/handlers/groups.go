@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"github.com/The127/Keyline/api"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/queries"
 	"github.com/The127/Keyline/utils"
@@ -9,16 +10,7 @@ import (
 
 	"github.com/The127/ioc"
 	"github.com/The127/mediatr"
-
-	"github.com/google/uuid"
 )
-
-type PagedGroupsResponseDto = PagedResponseDto[ListGroupsResponseDto]
-
-type ListGroupsResponseDto struct {
-	Id   uuid.UUID `json:"id"`
-	Name string    `json:"name"`
-}
 
 // ListGroups lists groups in a virtual server
 // @Summary List groups
@@ -64,8 +56,8 @@ func ListGroups(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, err)
 	}
 
-	items := utils.MapSlice(groups.Items, func(x queries.ListGroupsResponseItem) ListGroupsResponseDto {
-		return ListGroupsResponseDto{
+	items := utils.MapSlice(groups.Items, func(x queries.ListGroupsResponseItem) api.ListGroupsResponseDto {
+		return api.ListGroupsResponseDto{
 			Id:   x.Id,
 			Name: x.Name,
 		}

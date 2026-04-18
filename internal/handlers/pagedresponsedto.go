@@ -1,21 +1,11 @@
 package handlers
 
-type PagedResponseDto[T any] struct {
-	Items      []T         `json:"items"`
-	Pagination *Pagination `json:"pagination"`
-}
+import "github.com/The127/Keyline/api"
 
-type Pagination struct {
-	Size       int `json:"size"`
-	Page       int `json:"page"`
-	TotalPages int `json:"totalPages"`
-	TotalItems int `json:"totalItems"`
-}
-
-func NewPagedResponseDto[T any](items []T, queryOps *QueryOps, totalItems int) PagedResponseDto[T] {
-	var pagination *Pagination
+func NewPagedResponseDto[T any](items []T, queryOps *QueryOps, totalItems int) api.PagedResponseDto[T] {
+	var pagination *api.Pagination
 	if queryOps.PageSize > 0 {
-		pagination = &Pagination{
+		pagination = &api.Pagination{
 			Size:       queryOps.PageSize,
 			Page:       queryOps.Page,
 			TotalPages: totalItems/queryOps.PageSize + 1,
@@ -23,7 +13,7 @@ func NewPagedResponseDto[T any](items []T, queryOps *QueryOps, totalItems int) P
 		}
 	}
 
-	return PagedResponseDto[T]{
+	return api.PagedResponseDto[T]{
 		Items:      items,
 		Pagination: pagination,
 	}

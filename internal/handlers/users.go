@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"github.com/The127/Keyline/api"
 	"github.com/The127/Keyline/internal/authentication"
 	"github.com/The127/Keyline/internal/commands"
 	"github.com/The127/Keyline/internal/config"
@@ -65,13 +66,6 @@ func VerifyEmail(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, fmt.Sprintf("%s/%s/email-verified", config.C.Frontend.ExternalUrl, vsName), http.StatusFound)
 }
 
-type RegisterUserRequestDto struct {
-	Username    string `json:"username" validate:"required,min=1,max=255"`
-	DisplayName string `json:"displayName" validate:"required,min=1,max=255"`
-	Password    string `json:"password" validate:"required"`
-	Email       string `json:"email" validate:"required"`
-}
-
 // RegisterUser registers a new user.
 // @Summary      Register user
 // @Tags         Users
@@ -91,7 +85,7 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var dto RegisterUserRequestDto
+	var dto api.RegisterUserRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -122,23 +116,6 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-type CreateUserRequestDto struct {
-	Username      string                       `json:"username" validate:"required"`
-	DisplayName   string                       `json:"displayName" validate:"required"`
-	Email         string                       `json:"email" validate:"required"`
-	EmailVerified bool                         `json:"emailVerified" validate:"required"`
-	Password      *CreateUserRequestDtoPasword `json:"password"`
-}
-
-type CreateUserRequestDtoPasword struct {
-	Plain     string `json:"plain" validate:"required"`
-	Temporary bool   `json:"temporary"`
-}
-
-type CreateUserResponseDto struct {
-	Id uuid.UUID `json:"id"`
-}
-
 // CreateUser creates a new user.
 // @Summary      Create user
 // @Tags         Users
@@ -157,7 +134,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var dto CreateUserRequestDto
+	var dto api.CreateUserRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -198,26 +175,13 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	err = json.NewEncoder(w).Encode(CreateUserResponseDto{
+	err = json.NewEncoder(w).Encode(api.CreateUserResponseDto{
 		Id: createUserResponse.Id,
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
 	}
-}
-
-type ListUsersResponseDto struct {
-	Id            uuid.UUID `json:"id"`
-	Username      string    `json:"username"`
-	DisplayName   string    `json:"displayName"`
-	PrimaryEmail  string    `json:"primaryEmail"`
-	IsServiceUser bool      `json:"isServiceUser"`
-}
-
-type PagedUsersResponseDto struct {
-	Items      []ListUsersResponseDto `json:"items"`
-	Pagination Pagination             `json:"pagination"`
 }
 
 // ListUsers returns users with optional paging/search.
@@ -260,8 +224,8 @@ func ListUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	items := utils.MapSlice(users.Items, func(x queries.ListUsersResponseItem) ListUsersResponseDto {
-		return ListUsersResponseDto{
+	items := utils.MapSlice(users.Items, func(x queries.ListUsersResponseItem) api.ListUsersResponseDto {
+		return api.ListUsersResponseDto{
 			Id:            x.Id,
 			Username:      x.Username,
 			DisplayName:   x.DisplayName,
@@ -281,17 +245,6 @@ func ListUsers(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, err)
 		return
 	}
-}
-
-type GetUserByIdResponseDto struct {
-	Id            uuid.UUID `json:"id"`
-	Username      string    `json:"username"`
-	DisplayName   string    `json:"displayName"`
-	PrimaryEmail  string    `json:"primaryEmail"`
-	EmailVerified bool      `json:"emailVerified"`
-	IsServiceUser bool      `json:"isServiceUser"`
-	CreatedAt     time.Time `json:"createdAt"`
-	UpdatedAt     time.Time `json:"updatedAt"`
 }
 
 // GetUserById returns a user by ID.
@@ -336,7 +289,7 @@ func GetUserById(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
-	response := GetUserByIdResponseDto{
+	response := api.GetUserByIdResponseDto{
 		Id:            queryResult.Id,
 		Username:      queryResult.Username,
 		DisplayName:   queryResult.DisplayName,
@@ -352,8 +305,6 @@ func GetUserById(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, err)
 	}
 }
-
-type GetUserApplicationMetadataResponseDto map[string]any
 
 // GetUserApplicationMetadata returns a users application metadata.
 // @Summary      Get users application metadata
@@ -400,7 +351,7 @@ func GetUserApplicationMetadata(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var responseDto GetUserGlobalMetadataResponseDto = make(map[string]any)
+	var responseDto api.GetUserGlobalMetadataResponseDto = make(map[string]any)
 
 	for _, v := range response.ApplicationMetadata {
 		err := json.Unmarshal([]byte(v), &responseDto)
@@ -417,8 +368,6 @@ func GetUserApplicationMetadata(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, err)
 	}
 }
-
-type GetUserGlobalMetadataResponseDto map[string]any
 
 // GetUserGlobalMetadata returns a users metadata (only the global metadata).
 // @Summary      Get user metadata (only global)
@@ -459,7 +408,7 @@ func GetUserGlobalMetadata(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var responseDto GetUserGlobalMetadataResponseDto = make(map[string]any)
+	var responseDto api.GetUserGlobalMetadataResponseDto = make(map[string]any)
 
 	if response.Metadata != "" {
 		err := json.Unmarshal([]byte(response.Metadata), &responseDto)
@@ -475,11 +424,6 @@ func GetUserGlobalMetadata(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		utils.HandleHttpError(w, err)
 	}
-}
-
-type GetUserMetadataResponseDto struct {
-	Metadata            map[string]any `json:"metadata,omitempty"`
-	ApplicationMetadata map[string]any `json:"applicationMetadata,omitempty"`
 }
 
 // GetUserMetadata returns a users metadata.
@@ -521,7 +465,7 @@ func GetUserMetadata(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	responseDto := GetUserMetadataResponseDto{}
+	responseDto := api.GetUserMetadataResponseDto{}
 
 	if response.Metadata != "" {
 		err := json.Unmarshal([]byte(response.Metadata), &responseDto.Metadata)
@@ -553,8 +497,6 @@ func GetUserMetadata(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-type UpdateUserGlobalMetadataRequestDto map[string]any
-
 // UpdateUserGlobalMetadata updates a users metadata.
 // @Summary      Update a user metadata
 // @Tags         Users
@@ -581,7 +523,7 @@ func UpdateUserGlobalMetadata(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, utils.ErrInvalidUuid)
 	}
 
-	var dto UpdateUserGlobalMetadataRequestDto
+	var dto api.UpdateUserGlobalMetadataRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -601,8 +543,6 @@ func UpdateUserGlobalMetadata(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusNoContent)
 }
-
-type PatchUserGlobalMetadataRequestDto map[string]any
 
 // PatchUserGlobalMetadata patch a users metadata.
 // @Summary      Patch a user metadata using JSON Merge Patch (RFC 7396)
@@ -633,7 +573,7 @@ func PatchUserGlobalMetadata(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var dto PatchUserGlobalMetadataRequestDto
+	var dto api.PatchUserGlobalMetadataRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -653,8 +593,6 @@ func PatchUserGlobalMetadata(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 }
-
-type UpdateUserApplicationMetadataRequestDto map[string]any
 
 // UpdateUserApplicationMetadata updates a users application metadata.
 // @Summary      Update a users application metadata
@@ -690,7 +628,7 @@ func UpdateUserApplicationMetadata(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var dto UpdateUserApplicationMetadataRequestDto
+	var dto api.UpdateUserApplicationMetadataRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -711,8 +649,6 @@ func UpdateUserApplicationMetadata(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusNoContent)
 }
-
-type PatchUserApplicationMetadataRequestDto map[string]any
 
 // PatchUserApplicationMetadata patch a users application metadata.
 // @Summary      Patch a users application metadata using JSON Merge Patch (RFC 7396)
@@ -750,7 +686,7 @@ func PatchUserApplicationMetadata(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var dto PatchUserApplicationMetadataRequestDto
+	var dto api.PatchUserApplicationMetadataRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -769,11 +705,6 @@ func PatchUserApplicationMetadata(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
-}
-
-type PatchUserRequestDto struct {
-	DisplayName   *string `json:"displayName"`
-	EmailVerified *bool   `json:"emailVerified"`
 }
 
 // PatchUser updates fields of a user.
@@ -805,7 +736,7 @@ func PatchUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var dto PatchUserRequestDto
+	var dto api.PatchUserRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -828,14 +759,6 @@ func PatchUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-type CreateServiceUserRequestDto struct {
-	Username string `json:"username" validate:"required,min=1,max=255"`
-}
-
-type CreateServiceUserResponseDto struct {
-	Id uuid.UUID `json:"id"`
-}
-
 // CreateServiceUser create a service user.
 // @Summary      Create service user
 // @Tags         Users
@@ -855,7 +778,7 @@ func CreateServiceUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var dto CreateServiceUserRequestDto
+	var dto api.CreateServiceUserRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -880,21 +803,13 @@ func CreateServiceUser(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	err = json.NewEncoder(w).Encode(CreateServiceUserResponseDto{
+	err = json.NewEncoder(w).Encode(api.CreateServiceUserResponseDto{
 		Id: response.Id,
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
 	}
-}
-
-type AssociateServiceUserPublicKeyRequestDto struct {
-	PublicKey string `json:"publicKey" validate:"required"`
-}
-
-type AssociateServiceUserPublicKeyResponseDto struct {
-	Kid string `json:"kid"`
 }
 
 // AssociateServiceUserPublicKey associates a public key with a service user.
@@ -922,7 +837,7 @@ func AssociateServiceUserPublicKey(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, utils.ErrInvalidUuid)
 	}
 
-	var dto AssociateServiceUserPublicKeyRequestDto
+	var dto api.AssociateServiceUserPublicKeyRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -948,21 +863,13 @@ func AssociateServiceUserPublicKey(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	err = json.NewEncoder(w).Encode(AssociateServiceUserPublicKeyResponseDto{
+	err = json.NewEncoder(w).Encode(api.AssociateServiceUserPublicKeyResponseDto{
 		Kid: response.Kid,
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
 	}
-}
-
-type PasskeyCreateChallengeResponseDto struct {
-	Id          uuid.UUID `json:"id"`
-	Challenge   string    `json:"challenge" validate:"required"`
-	UserId      uuid.UUID `json:"userId"`
-	Username    string    `json:"username"`
-	DisplayName string    `json:"displayName"`
 }
 
 func PasskeyCreateChallenge(w http.ResponseWriter, r *http.Request) {
@@ -1013,7 +920,7 @@ func PasskeyCreateChallenge(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	err = json.NewEncoder(w).Encode(PasskeyCreateChallengeResponseDto{
+	err = json.NewEncoder(w).Encode(api.PasskeyCreateChallengeResponseDto{
 		Id:          challenge.Id,
 		Challenge:   challenge.Challenge,
 		UserId:      userId,
@@ -1024,24 +931,6 @@ func PasskeyCreateChallenge(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, err)
 		return
 	}
-}
-
-type PasskeyValidateChallengeRequestDto struct {
-	Id               uuid.UUID `json:"id" validate:"required"`
-	WebauthnResponse struct {
-		Id       string `json:"id"`
-		RawId    string `json:"rawId"`
-		Response struct {
-			ClientDataJSON     string   `json:"clientDataJSON"`
-			AuthenticatorData  string   `json:"authenticatorData"`
-			Transports         []string `json:"transports"`
-			PublicKey          string   `json:"publicKey"`
-			PublicKeyAlgorithm int      `json:"publicKeyAlgorithm"`
-			AttestationObject  string   `json:"attestationObject"`
-		} `json:"response"`
-		AuthenticatorAttachment string `json:"authenticatorAttachment"`
-		Type                    string `json:"type"`
-	} `json:"webauthnResponse" validate:"required"`
 }
 
 func PasskeyValidateCreateChallengeResponse(w http.ResponseWriter, r *http.Request) {
@@ -1063,7 +952,7 @@ func PasskeyValidateCreateChallengeResponse(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	var dto PasskeyValidateChallengeRequestDto
+	var dto api.PasskeyValidateChallengeRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -1098,14 +987,6 @@ func PasskeyValidateCreateChallengeResponse(w http.ResponseWriter, r *http.Reque
 	w.WriteHeader(http.StatusNoContent)
 }
 
-type ListPasskeyResponseDto struct {
-	Id uuid.UUID `json:"id"`
-}
-
-type PagedListPasskeyResponseDto struct {
-	Items []ListPasskeyResponseDto `json:"items"`
-}
-
 func ListPasskeys(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	scope := middlewares.GetScope(ctx)
@@ -1135,15 +1016,15 @@ func ListPasskeys(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	items := utils.MapSlice(passkeys.Items, func(x queries.ListPasskeysResponseItem) ListPasskeyResponseDto {
-		return ListPasskeyResponseDto{
+	items := utils.MapSlice(passkeys.Items, func(x queries.ListPasskeysResponseItem) api.ListPasskeyResponseDto {
+		return api.ListPasskeyResponseDto{
 			Id: x.Id,
 		}
 	})
 
 	w.Header().Set("Content-Type", "application/json")
 
-	err = json.NewEncoder(w).Encode(PagedListPasskeyResponseDto{
+	err = json.NewEncoder(w).Encode(api.PagedListPasskeyResponseDto{
 		Items: items,
 	})
 	if err != nil {

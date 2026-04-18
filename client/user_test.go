@@ -1,7 +1,7 @@
 package client
 
 import (
-	"github.com/The127/Keyline/internal/handlers"
+	"github.com/The127/Keyline/api"
 	"github.com/The127/Keyline/utils"
 	"encoding/json"
 	"fmt"
@@ -29,8 +29,8 @@ func (s *UserClientSuite) TestListUsers_HappyPath() {
 		Size: 11,
 	}
 
-	response := handlers.PagedUsersResponseDto{
-		Items: []handlers.ListUsersResponseDto{
+	response := api.PagedUsersResponseDto{
+		Items: []api.ListUsersResponseDto{
 			{
 				Id:            uuid.New(),
 				Username:      "username",
@@ -39,7 +39,7 @@ func (s *UserClientSuite) TestListUsers_HappyPath() {
 				IsServiceUser: false,
 			},
 		},
-		Pagination: handlers.Pagination{
+		Pagination: api.Pagination{
 			Page:       1,
 			Size:       11,
 			TotalPages: 2,
@@ -70,7 +70,7 @@ func (s *UserClientSuite) TestGetUser_HappyPath() {
 	// arrange
 	requestId := uuid.New()
 
-	response := handlers.GetUserByIdResponseDto{
+	response := api.GetUserByIdResponseDto{
 		Id:            requestId,
 		Username:      "username",
 		DisplayName:   "displayName",
@@ -100,7 +100,7 @@ func (s *UserClientSuite) TestGetUser_HappyPath() {
 func (s *UserClientSuite) TestPatchUser_HappyPath() {
 	// arrange
 	requestId := uuid.New()
-	request := handlers.PatchUserRequestDto{
+	request := api.PatchUserRequestDto{
 		DisplayName: utils.Ptr("New display name"),
 	}
 
@@ -108,7 +108,7 @@ func (s *UserClientSuite) TestPatchUser_HappyPath() {
 		s.Equal(http.MethodPatch, r.Method)
 		s.Equal(fmt.Sprintf("/api/virtual-servers/test/users/%s", requestId), r.URL.Path)
 
-		var requestDto handlers.PatchUserRequestDto
+		var requestDto api.PatchUserRequestDto
 		err := json.NewDecoder(r.Body).Decode(&requestDto)
 		s.NoError(err)
 		s.Equal(request, requestDto)

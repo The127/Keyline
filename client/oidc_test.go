@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/The127/Keyline/api"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -19,7 +20,7 @@ func TestOidcClientSuite(t *testing.T) {
 }
 
 func (s *OidcClientSuite) TestBeginDeviceFlow_HappyPath() {
-	expected := DeviceAuthorizationResponse{
+	expected := api.DeviceAuthorizationResponse{
 		DeviceCode:              "device-code-abc",
 		UserCode:                "ABCD-EFGH",
 		VerificationUri:         "http://localhost/oidc/test/activate",
@@ -69,7 +70,7 @@ func (s *OidcClientSuite) TestBeginDeviceFlow_RejectsUnknownApp() {
 }
 
 func (s *OidcClientSuite) TestPollDeviceToken_HappyPath() {
-	expected := DeviceTokenResponse{
+	expected := api.DeviceTokenResponse{
 		TokenType:    "Bearer",
 		IdToken:      "id-token-value",
 		AccessToken:  "access-token-value",

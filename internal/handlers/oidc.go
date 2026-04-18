@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"github.com/The127/Keyline/api"
 	"github.com/The127/Keyline/internal/config"
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/jsonTypes"
@@ -1688,15 +1689,6 @@ func handleTokenExchange(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-type DeviceAuthorizationResponse struct {
-	DeviceCode              string `json:"device_code"`
-	UserCode                string `json:"user_code"`
-	VerificationUri         string `json:"verification_uri"`
-	VerificationUriComplete string `json:"verification_uri_complete"`
-	ExpiresIn               int    `json:"expires_in"`
-	Interval                int    `json:"interval"`
-}
-
 func generateUserCode() string {
 	const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	b := utils.GetSecureRandomBytes(8)
@@ -1809,7 +1801,7 @@ func BeginDeviceFlow(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
-	response := DeviceAuthorizationResponse{
+	response := api.DeviceAuthorizationResponse{
 		DeviceCode:              deviceCode,
 		UserCode:                userCode,
 		VerificationUri:         verificationUri,

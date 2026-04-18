@@ -1,33 +1,19 @@
 package handlers
 
 import (
+	"github.com/The127/Keyline/api"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/queries"
 	"github.com/The127/Keyline/internal/repositories"
 	"github.com/The127/Keyline/utils"
 	"encoding/json"
 	"net/http"
-	"time"
 
 	"github.com/The127/ioc"
 	"github.com/The127/mediatr"
 
-	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
-
-// PagedTemplatesResponseDto is the paged envelope for ListTemplates.
-type PagedTemplatesResponseDto struct {
-	Items      []ListTemplatesResponseDto `json:"items"`
-	Pagination Pagination                 `json:"pagination"`
-}
-type GetTemplateResponseDto struct {
-	Id        uuid.UUID                 `json:"id"`
-	Type      repositories.TemplateType `json:"type"`
-	Text      string                    `json:"text"`
-	CreatedAt time.Time                 `json:"createdAt"`
-	UpdatedAt time.Time                 `json:"updatedAt"`
-}
 
 // GetTemplate returns a single template by type.
 // @Summary      Get template
@@ -69,9 +55,9 @@ func GetTemplate(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
-	response := GetTemplateResponseDto{
+	response := api.GetTemplateResponseDto{
 		Id:        queryResult.Id,
-		Type:      query.Type,
+		Type:      string(query.Type),
 		Text:      queryResult.Text,
 		CreatedAt: queryResult.CreatedAt,
 		UpdatedAt: queryResult.UpdatedAt,
@@ -81,11 +67,6 @@ func GetTemplate(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		utils.HandleHttpError(w, err)
 	}
-}
-
-type ListTemplatesResponseDto struct {
-	Id   uuid.UUID                 `json:"id"`
-	Type repositories.TemplateType `json:"type"`
 }
 
 // ListTemplates lists available templates for the virtual server.
@@ -125,10 +106,10 @@ func ListTemplates(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	items := utils.MapSlice(templates.Items, func(x queries.ListTemplatesResponseItem) ListTemplatesResponseDto {
-		return ListTemplatesResponseDto{
+	items := utils.MapSlice(templates.Items, func(x queries.ListTemplatesResponseItem) api.ListTemplatesResponseDto {
+		return api.ListTemplatesResponseDto{
 			Id:   x.Id,
-			Type: x.Type,
+			Type: string(x.Type),
 		}
 	})
 

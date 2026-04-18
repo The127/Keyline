@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"github.com/The127/Keyline/api"
 	"github.com/The127/Keyline/internal/commands"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/queries"
@@ -13,19 +14,8 @@ import (
 	"github.com/The127/ioc"
 	"github.com/The127/mediatr"
 
-	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
-
-type PagedPasswordRuleResponseDto struct {
-	Items []ListPasswordRulesResponseDto `json:"items"`
-}
-
-type ListPasswordRulesResponseDto struct {
-	Id      uuid.UUID      `json:"id"`
-	Type    string         `json:"type"`
-	Details map[string]any `json:"details"`
-}
 
 // ListPasswordRules
 // @summary     List password rules
@@ -58,7 +48,7 @@ func ListPasswordRules(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := PagedPasswordRuleResponseDto{}
+	response := api.PagedPasswordRuleResponseDto{}
 
 	for _, rule := range rules.Items {
 		details := make(map[string]any)
@@ -68,7 +58,7 @@ func ListPasswordRules(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		response.Items = append(response.Items, ListPasswordRulesResponseDto{
+		response.Items = append(response.Items, api.ListPasswordRulesResponseDto{
 			Id:      rule.Id,
 			Type:    string(rule.Type),
 			Details: details,
@@ -82,11 +72,6 @@ func ListPasswordRules(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, err)
 		return
 	}
-}
-
-type CreatePasswordRuleRequestDto struct {
-	Type    string                 `json:"type" validate:"required"`
-	Details map[string]interface{} `json:"details" validate:"required"`
 }
 
 // CreatePasswordRule
@@ -109,7 +94,7 @@ func CreatePasswordRule(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var requestDto CreatePasswordRuleRequestDto
+	var requestDto api.CreatePasswordRuleRequestDto
 	err = json.NewDecoder(r.Body).Decode(&requestDto)
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -136,8 +121,6 @@ func CreatePasswordRule(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusNoContent)
 }
-
-type PatchPasswordRuleRequestDto map[string]any
 
 // UpdatePasswordRule
 // @summary     Update a password rule
@@ -168,7 +151,7 @@ func UpdatePasswordRule(w http.ResponseWriter, r *http.Request) {
 
 	ruleType := repositories.PasswordRuleType(ruleTypeString)
 
-	var requestDto PatchPasswordRuleRequestDto
+	var requestDto api.PatchPasswordRuleRequestDto
 	err = json.NewDecoder(r.Body).Decode(&requestDto)
 	if err != nil {
 		utils.HandleHttpError(w, err)
