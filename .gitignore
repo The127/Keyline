@@ -150,6 +150,7 @@ Temporary Items
 .todo
 Keyline
 api
+!api/
 queue-worker
 keys
 /bin
