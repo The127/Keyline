@@ -59,7 +59,8 @@ func (s *ServiceUserTokenSource) Token() (*oauth2.Token, error) {
 		return nil, fmt.Errorf("signing JWT: %w", err)
 	}
 
-	resp, err := http.PostForm(
+	httpClient := &http.Client{Timeout: 10 * time.Second}
+	resp, err := httpClient.PostForm(
 		fmt.Sprintf("%s/oidc/%s/token", s.KeylineURL, s.VirtualServer),
 		url.Values{
 			"grant_type":         {"urn:ietf:params:oauth:grant-type:token-exchange"},
