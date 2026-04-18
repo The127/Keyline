@@ -15,13 +15,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// Type aliases to keep handler code compiling.
-type CreateProjectRequestDto = api.CreateProjectRequestDto
-type CreateProjectResponseDto = api.CreateProjectResponseDto
-type PagedProjectsResponseDto = api.PagedProjectsResponseDto
-type ListProjectsResponseDto = api.ListProjectsResponseDto
-type GetProjectResponseDto = api.GetProjectResponseDto
-
 // CreateProject creates a new project
 // @Summary Create project
 // @Description Create a new project
@@ -43,7 +36,7 @@ func CreateProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var dto CreateProjectRequestDto
+	var dto api.CreateProjectRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -73,7 +66,7 @@ func CreateProject(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 
-	err = json.NewEncoder(w).Encode(CreateProjectResponseDto{
+	err = json.NewEncoder(w).Encode(api.CreateProjectResponseDto{
 		Id: response.Id,
 	})
 	if err != nil {
@@ -127,8 +120,8 @@ func ListProjects(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	items := utils.MapSlice(projects.Items, func(x queries.ListProjectsResponseItem) ListProjectsResponseDto {
-		return ListProjectsResponseDto{
+	items := utils.MapSlice(projects.Items, func(x queries.ListProjectsResponseItem) api.ListProjectsResponseDto {
+		return api.ListProjectsResponseDto{
 			Id:            x.Id,
 			Slug:          x.Slug,
 			Name:          x.Name,
@@ -175,7 +168,7 @@ func GetProject(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	err = json.NewEncoder(w).Encode(GetProjectResponseDto{
+	err = json.NewEncoder(w).Encode(api.GetProjectResponseDto{
 		Id:          resp.Id,
 		Slug:        resp.Slug,
 		Name:        resp.Name,

@@ -16,12 +16,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// Type aliases to keep handler code compiling.
-type CreateResourceServerRequestDto = api.CreateResourceServerRequestDto
-type PagedResourceServersResponseDto = api.PagedResourceServersResponseDto
-type ListResourceServersResponseDto = api.ListResourceServersResponseDto
-type GetResourceServerResponseDto = api.GetResourceServerResponseDto
-
 // CreateResourceServer creates a new resource server (API/(micro-)service) in a project
 // @Summary Create resource server
 // @Description Create a new resource server
@@ -46,7 +40,7 @@ func CreateResourceServer(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	projectSlug := vars["projectSlug"]
 
-	requestDto := CreateResourceServerRequestDto{}
+	requestDto := api.CreateResourceServerRequestDto{}
 	err = json.NewDecoder(r.Body).Decode(&requestDto)
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -124,8 +118,8 @@ func ListResourceServers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	items := utils.MapSlice(resourceServers.Items, func(x queries.ListResourceServersResponseItem) ListResourceServersResponseDto {
-		return ListResourceServersResponseDto{
+	items := utils.MapSlice(resourceServers.Items, func(x queries.ListResourceServersResponseItem) api.ListResourceServersResponseDto {
+		return api.ListResourceServersResponseDto{
 			Id:   x.Id,
 			Slug: x.Slug,
 			Name: x.Name,
@@ -193,7 +187,7 @@ func GetResourceServer(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	err = json.NewEncoder(w).Encode(GetResourceServerResponseDto{
+	err = json.NewEncoder(w).Encode(api.GetResourceServerResponseDto{
 		Id:          resourceServer.Id,
 		Slug:        resourceServer.Slug,
 		Name:        resourceServer.Name,

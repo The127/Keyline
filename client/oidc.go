@@ -20,13 +20,9 @@ var (
 	ErrInvalidUserCode      = errors.New("invalid_user_code")
 )
 
-// DeviceAuthorizationResponse and DeviceTokenResponse are re-exported from api package.
-type DeviceAuthorizationResponse = api.DeviceAuthorizationResponse
-type DeviceTokenResponse = api.DeviceTokenResponse
-
 type OidcClient interface {
-	BeginDeviceFlow(ctx context.Context, clientId string, scope string) (DeviceAuthorizationResponse, error)
-	PollDeviceToken(ctx context.Context, clientId string, deviceCode string) (DeviceTokenResponse, error)
+	BeginDeviceFlow(ctx context.Context, clientId string, scope string) (api.DeviceAuthorizationResponse, error)
+	PollDeviceToken(ctx context.Context, clientId string, deviceCode string) (api.DeviceTokenResponse, error)
 	PostActivate(ctx context.Context, userCode string) (loginToken string, err error)
 	VerifyPassword(ctx context.Context, loginToken string, username string, password string) error
 	FinishLogin(ctx context.Context, loginToken string) error
@@ -40,7 +36,7 @@ func NewOidcClient(transport *Transport) OidcClient {
 	return &oidcClient{transport: transport}
 }
 
-func (o *oidcClient) BeginDeviceFlow(ctx context.Context, clientId string, scope string) (DeviceAuthorizationResponse, error) {
+func (o *oidcClient) BeginDeviceFlow(ctx context.Context, clientId string, scope string) (api.DeviceAuthorizationResponse, error) {
 	formValues := url.Values{
 		"client_id": {clientId},
 		"scope":     {scope},
@@ -48,25 +44,25 @@ func (o *oidcClient) BeginDeviceFlow(ctx context.Context, clientId string, scope
 
 	req, err := o.transport.NewOidcRequest(ctx, http.MethodPost, "/device", strings.NewReader(formValues.Encode()))
 	if err != nil {
-		return DeviceAuthorizationResponse{}, fmt.Errorf("creating request: %w", err)
+		return api.DeviceAuthorizationResponse{}, fmt.Errorf("creating request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	resp, err := o.transport.Do(req)
 	if err != nil {
-		return DeviceAuthorizationResponse{}, fmt.Errorf("doing request: %w", err)
+		return api.DeviceAuthorizationResponse{}, fmt.Errorf("doing request: %w", err)
 	}
 	defer resp.Body.Close() //nolint:errcheck
 
-	var result DeviceAuthorizationResponse
+	var result api.DeviceAuthorizationResponse
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return DeviceAuthorizationResponse{}, fmt.Errorf("decoding response: %w", err)
+		return api.DeviceAuthorizationResponse{}, fmt.Errorf("decoding response: %w", err)
 	}
 
 	return result, nil
 }
 
-func (o *oidcClient) PollDeviceToken(ctx context.Context, clientId string, deviceCode string) (DeviceTokenResponse, error) {
+func (o *oidcClient) PollDeviceToken(ctx context.Context, clientId string, deviceCode string) (api.DeviceTokenResponse, error) {
 	formValues := url.Values{
 		"grant_type":  {"urn:ietf:params:oauth:grant-type:device_code"},
 		"client_id":   {clientId},
@@ -75,13 +71,13 @@ func (o *oidcClient) PollDeviceToken(ctx context.Context, clientId string, devic
 
 	req, err := o.transport.NewOidcRequest(ctx, http.MethodPost, "/token", strings.NewReader(formValues.Encode()))
 	if err != nil {
-		return DeviceTokenResponse{}, fmt.Errorf("creating request: %w", err)
+		return api.DeviceTokenResponse{}, fmt.Errorf("creating request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	resp, err := o.transport.DoRaw(req)
 	if err != nil {
-		return DeviceTokenResponse{}, fmt.Errorf("doing request: %w", err)
+		return api.DeviceTokenResponse{}, fmt.Errorf("doing request: %w", err)
 	}
 	defer resp.Body.Close() //nolint:errcheck
 
@@ -93,25 +89,25 @@ func (o *oidcClient) PollDeviceToken(ctx context.Context, clientId string, devic
 		_ = json.NewDecoder(resp.Body).Decode(&oauthErr)
 		switch oauthErr.Error {
 		case "authorization_pending":
-			return DeviceTokenResponse{}, ErrAuthorizationPending
+			return api.DeviceTokenResponse{}, ErrAuthorizationPending
 		case "access_denied":
-			return DeviceTokenResponse{}, ErrAccessDenied
+			return api.DeviceTokenResponse{}, ErrAccessDenied
 		case "expired_token":
-			return DeviceTokenResponse{}, ErrExpiredToken
+			return api.DeviceTokenResponse{}, ErrExpiredToken
 		case "slow_down":
-			return DeviceTokenResponse{}, ErrSlowDown
+			return api.DeviceTokenResponse{}, ErrSlowDown
 		default:
-			return DeviceTokenResponse{}, fmt.Errorf("oauth error %s: %s", oauthErr.Error, oauthErr.ErrorDescription)
+			return api.DeviceTokenResponse{}, fmt.Errorf("oauth error %s: %s", oauthErr.Error, oauthErr.ErrorDescription)
 		}
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return DeviceTokenResponse{}, ApiError{Message: resp.Status, Code: resp.StatusCode}
+		return api.DeviceTokenResponse{}, ApiError{Message: resp.Status, Code: resp.StatusCode}
 	}
 
-	var result DeviceTokenResponse
+	var result api.DeviceTokenResponse
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return DeviceTokenResponse{}, fmt.Errorf("decoding response: %w", err)
+		return api.DeviceTokenResponse{}, fmt.Errorf("decoding response: %w", err)
 	}
 
 	return result, nil

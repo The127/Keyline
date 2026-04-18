@@ -17,14 +17,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// Type aliases to keep handler code compiling.
-type CreateApplicationRequestDto = api.CreateApplicationRequestDto
-type CreateApplicationResponseDto = api.CreateApplicationResponseDto
-type GetApplicationResponseDto = api.GetApplicationResponseDto
-type PatchApplicationRequestDto = api.PatchApplicationRequestDto
-type PagedApplicationsResponseDto = api.PagedApplicationsResponseDto
-type ListApplicationsResponseDto = api.ListApplicationsResponseDto
-
 // CreateApplication creates a new application (OIDC client) in a project
 // @Summary Create application
 // @Description Create a new OIDC application/client with redirect URIs and type
@@ -50,7 +42,7 @@ func CreateApplication(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	projectSlug := vars["projectSlug"]
 
-	var dto CreateApplicationRequestDto
+	var dto api.CreateApplicationRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -90,7 +82,7 @@ func CreateApplication(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 
-	err = json.NewEncoder(w).Encode(CreateApplicationResponseDto{
+	err = json.NewEncoder(w).Encode(api.CreateApplicationResponseDto{
 		Id:     response.Id,
 		Secret: response.Secret,
 	})
@@ -153,7 +145,7 @@ func GetApplication(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
-	err = json.NewEncoder(w).Encode(GetApplicationResponseDto{
+	err = json.NewEncoder(w).Encode(api.GetApplicationResponseDto{
 		Id:                     application.Id,
 		Name:                   application.Name,
 		DisplayName:            application.DisplayName,
@@ -204,7 +196,7 @@ func PatchApplication(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, utils.ErrInvalidUuid)
 	}
 
-	var dto PatchApplicationRequestDto
+	var dto api.PatchApplicationRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -326,8 +318,8 @@ func ListApplications(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	items := utils.MapSlice(applications.Items, func(x queries.ListApplicationsResponseItem) ListApplicationsResponseDto {
-		return ListApplicationsResponseDto{
+	items := utils.MapSlice(applications.Items, func(x queries.ListApplicationsResponseItem) api.ListApplicationsResponseDto {
+		return api.ListApplicationsResponseDto{
 			Id:                x.Id,
 			Name:              x.Name,
 			DisplayName:       x.DisplayName,

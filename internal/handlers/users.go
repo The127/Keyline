@@ -25,31 +25,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// Type aliases to keep handler code compiling.
-type RegisterUserRequestDto = api.RegisterUserRequestDto
-type CreateUserRequestDto = api.CreateUserRequestDto
-type CreateUserRequestDtoPasword = api.CreateUserRequestDtoPasword
-type CreateUserResponseDto = api.CreateUserResponseDto
-type ListUsersResponseDto = api.ListUsersResponseDto
-type PagedUsersResponseDto = api.PagedUsersResponseDto
-type GetUserByIdResponseDto = api.GetUserByIdResponseDto
-type GetUserApplicationMetadataResponseDto = api.GetUserApplicationMetadataResponseDto
-type GetUserGlobalMetadataResponseDto = api.GetUserGlobalMetadataResponseDto
-type GetUserMetadataResponseDto = api.GetUserMetadataResponseDto
-type UpdateUserGlobalMetadataRequestDto = api.UpdateUserGlobalMetadataRequestDto
-type PatchUserGlobalMetadataRequestDto = api.PatchUserGlobalMetadataRequestDto
-type UpdateUserApplicationMetadataRequestDto = api.UpdateUserApplicationMetadataRequestDto
-type PatchUserApplicationMetadataRequestDto = api.PatchUserApplicationMetadataRequestDto
-type PatchUserRequestDto = api.PatchUserRequestDto
-type CreateServiceUserRequestDto = api.CreateServiceUserRequestDto
-type CreateServiceUserResponseDto = api.CreateServiceUserResponseDto
-type AssociateServiceUserPublicKeyRequestDto = api.AssociateServiceUserPublicKeyRequestDto
-type AssociateServiceUserPublicKeyResponseDto = api.AssociateServiceUserPublicKeyResponseDto
-type PasskeyCreateChallengeResponseDto = api.PasskeyCreateChallengeResponseDto
-type PasskeyValidateChallengeRequestDto = api.PasskeyValidateChallengeRequestDto
-type ListPasskeyResponseDto = api.ListPasskeyResponseDto
-type PagedListPasskeyResponseDto = api.PagedListPasskeyResponseDto
-
 var (
 	ErrMissingEmailVerificationToken = fmt.Errorf("missing email verification token: %w", utils.ErrHttpBadRequest)
 )
@@ -110,7 +85,7 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var dto RegisterUserRequestDto
+	var dto api.RegisterUserRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -159,7 +134,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var dto CreateUserRequestDto
+	var dto api.CreateUserRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -200,7 +175,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	err = json.NewEncoder(w).Encode(CreateUserResponseDto{
+	err = json.NewEncoder(w).Encode(api.CreateUserResponseDto{
 		Id: createUserResponse.Id,
 	})
 	if err != nil {
@@ -249,8 +224,8 @@ func ListUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	items := utils.MapSlice(users.Items, func(x queries.ListUsersResponseItem) ListUsersResponseDto {
-		return ListUsersResponseDto{
+	items := utils.MapSlice(users.Items, func(x queries.ListUsersResponseItem) api.ListUsersResponseDto {
+		return api.ListUsersResponseDto{
 			Id:            x.Id,
 			Username:      x.Username,
 			DisplayName:   x.DisplayName,
@@ -314,7 +289,7 @@ func GetUserById(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
-	response := GetUserByIdResponseDto{
+	response := api.GetUserByIdResponseDto{
 		Id:            queryResult.Id,
 		Username:      queryResult.Username,
 		DisplayName:   queryResult.DisplayName,
@@ -376,7 +351,7 @@ func GetUserApplicationMetadata(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var responseDto GetUserGlobalMetadataResponseDto = make(map[string]any)
+	var responseDto api.GetUserGlobalMetadataResponseDto = make(map[string]any)
 
 	for _, v := range response.ApplicationMetadata {
 		err := json.Unmarshal([]byte(v), &responseDto)
@@ -433,7 +408,7 @@ func GetUserGlobalMetadata(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var responseDto GetUserGlobalMetadataResponseDto = make(map[string]any)
+	var responseDto api.GetUserGlobalMetadataResponseDto = make(map[string]any)
 
 	if response.Metadata != "" {
 		err := json.Unmarshal([]byte(response.Metadata), &responseDto)
@@ -490,7 +465,7 @@ func GetUserMetadata(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	responseDto := GetUserMetadataResponseDto{}
+	responseDto := api.GetUserMetadataResponseDto{}
 
 	if response.Metadata != "" {
 		err := json.Unmarshal([]byte(response.Metadata), &responseDto.Metadata)
@@ -548,7 +523,7 @@ func UpdateUserGlobalMetadata(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, utils.ErrInvalidUuid)
 	}
 
-	var dto UpdateUserGlobalMetadataRequestDto
+	var dto api.UpdateUserGlobalMetadataRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -598,7 +573,7 @@ func PatchUserGlobalMetadata(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var dto PatchUserGlobalMetadataRequestDto
+	var dto api.PatchUserGlobalMetadataRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -653,7 +628,7 @@ func UpdateUserApplicationMetadata(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var dto UpdateUserApplicationMetadataRequestDto
+	var dto api.UpdateUserApplicationMetadataRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -711,7 +686,7 @@ func PatchUserApplicationMetadata(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var dto PatchUserApplicationMetadataRequestDto
+	var dto api.PatchUserApplicationMetadataRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -761,7 +736,7 @@ func PatchUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var dto PatchUserRequestDto
+	var dto api.PatchUserRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -803,7 +778,7 @@ func CreateServiceUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var dto CreateServiceUserRequestDto
+	var dto api.CreateServiceUserRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -828,7 +803,7 @@ func CreateServiceUser(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	err = json.NewEncoder(w).Encode(CreateServiceUserResponseDto{
+	err = json.NewEncoder(w).Encode(api.CreateServiceUserResponseDto{
 		Id: response.Id,
 	})
 	if err != nil {
@@ -862,7 +837,7 @@ func AssociateServiceUserPublicKey(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, utils.ErrInvalidUuid)
 	}
 
-	var dto AssociateServiceUserPublicKeyRequestDto
+	var dto api.AssociateServiceUserPublicKeyRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -888,7 +863,7 @@ func AssociateServiceUserPublicKey(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	err = json.NewEncoder(w).Encode(AssociateServiceUserPublicKeyResponseDto{
+	err = json.NewEncoder(w).Encode(api.AssociateServiceUserPublicKeyResponseDto{
 		Kid: response.Kid,
 	})
 	if err != nil {
@@ -945,7 +920,7 @@ func PasskeyCreateChallenge(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	err = json.NewEncoder(w).Encode(PasskeyCreateChallengeResponseDto{
+	err = json.NewEncoder(w).Encode(api.PasskeyCreateChallengeResponseDto{
 		Id:          challenge.Id,
 		Challenge:   challenge.Challenge,
 		UserId:      userId,
@@ -977,7 +952,7 @@ func PasskeyValidateCreateChallengeResponse(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	var dto PasskeyValidateChallengeRequestDto
+	var dto api.PasskeyValidateChallengeRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -1041,15 +1016,15 @@ func ListPasskeys(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	items := utils.MapSlice(passkeys.Items, func(x queries.ListPasskeysResponseItem) ListPasskeyResponseDto {
-		return ListPasskeyResponseDto{
+	items := utils.MapSlice(passkeys.Items, func(x queries.ListPasskeysResponseItem) api.ListPasskeyResponseDto {
+		return api.ListPasskeyResponseDto{
 			Id: x.Id,
 		}
 	})
 
 	w.Header().Set("Content-Type", "application/json")
 
-	err = json.NewEncoder(w).Encode(PagedListPasskeyResponseDto{
+	err = json.NewEncoder(w).Encode(api.PagedListPasskeyResponseDto{
 		Items: items,
 	})
 	if err != nil {

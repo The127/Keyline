@@ -17,12 +17,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// Type aliases to keep handler code compiling.
-type PagedPasswordRuleResponseDto = api.PagedPasswordRuleResponseDto
-type ListPasswordRulesResponseDto = api.ListPasswordRulesResponseDto
-type CreatePasswordRuleRequestDto = api.CreatePasswordRuleRequestDto
-type PatchPasswordRuleRequestDto = api.PatchPasswordRuleRequestDto
-
 // ListPasswordRules
 // @summary     List password rules
 // @description Retrieve all password rules of a virtual server.
@@ -54,7 +48,7 @@ func ListPasswordRules(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := PagedPasswordRuleResponseDto{}
+	response := api.PagedPasswordRuleResponseDto{}
 
 	for _, rule := range rules.Items {
 		details := make(map[string]any)
@@ -64,7 +58,7 @@ func ListPasswordRules(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		response.Items = append(response.Items, ListPasswordRulesResponseDto{
+		response.Items = append(response.Items, api.ListPasswordRulesResponseDto{
 			Id:      rule.Id,
 			Type:    string(rule.Type),
 			Details: details,
@@ -100,7 +94,7 @@ func CreatePasswordRule(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var requestDto CreatePasswordRuleRequestDto
+	var requestDto api.CreatePasswordRuleRequestDto
 	err = json.NewDecoder(r.Body).Decode(&requestDto)
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -157,7 +151,7 @@ func UpdatePasswordRule(w http.ResponseWriter, r *http.Request) {
 
 	ruleType := repositories.PasswordRuleType(ruleTypeString)
 
-	var requestDto PatchPasswordRuleRequestDto
+	var requestDto api.PatchPasswordRuleRequestDto
 	err = json.NewDecoder(r.Body).Decode(&requestDto)
 	if err != nil {
 		utils.HandleHttpError(w, err)

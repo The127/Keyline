@@ -16,16 +16,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// Type aliases to keep handler code compiling.
-type GetRoleByIdResponseDto = api.GetRoleByIdResponseDto
-type PagedRolesResponseDto = api.PagedRolesResponseDto
-type ListRolesResponseDto = api.ListRolesResponseDto
-type CreateRoleRequestDto = api.CreateRoleRequestDto
-type CreateRoleResponseDto = api.CreateRoleResponseDto
-type AssignRoleRequestDto = api.AssignRoleRequestDto
-type PagedUsersInRoleResponseDto = api.PagedUsersInRoleResponseDto
-type ListUsersInRoleResponseDto = api.ListUsersInRoleResponseDto
-
 // GetRoleById
 // @summary     Get role
 // @description Get a role by its ID within a project.
@@ -74,7 +64,7 @@ func GetRoleById(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
-	response := GetRoleByIdResponseDto{
+	response := api.GetRoleByIdResponseDto{
 		Id:          queryResult.Id,
 		Name:        queryResult.Name,
 		Description: queryResult.Description,
@@ -137,8 +127,8 @@ func ListRoles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	items := utils.MapSlice(roles.Items, func(x queries.ListRolesResponseItem) ListRolesResponseDto {
-		return ListRolesResponseDto{
+	items := utils.MapSlice(roles.Items, func(x queries.ListRolesResponseItem) api.ListRolesResponseDto {
+		return api.ListRolesResponseDto{
 			Id:   x.Id,
 			Name: x.Name,
 		}
@@ -182,7 +172,7 @@ func CreateRole(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	projectSlug := vars["projectSlug"]
 
-	var dto CreateRoleRequestDto
+	var dto api.CreateRoleRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -212,7 +202,7 @@ func CreateRole(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 
-	err = json.NewEncoder(w).Encode(CreateRoleResponseDto{
+	err = json.NewEncoder(w).Encode(api.CreateRoleResponseDto{
 		Id: response.Id,
 	})
 	if err != nil {
@@ -253,7 +243,7 @@ func AssignRole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var dto AssignRoleRequestDto
+	var dto api.AssignRoleRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -340,8 +330,8 @@ func ListUsersInRole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	items := utils.MapSlice(users.Items, func(x queries.ListUsersInRoleResponseItem) ListUsersInRoleResponseDto {
-		return ListUsersInRoleResponseDto{
+	items := utils.MapSlice(users.Items, func(x queries.ListUsersInRoleResponseItem) api.ListUsersInRoleResponseDto {
+		return api.ListUsersInRoleResponseDto{
 			Id:          x.Id,
 			Username:    x.Username,
 			DisplayName: x.DisplayName,

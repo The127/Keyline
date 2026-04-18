@@ -14,18 +14,6 @@ import (
 	"github.com/The127/mediatr"
 )
 
-// Type aliases to keep handler code compiling.
-type CreateVirtualServerRequestDtoAdminDto = api.CreateVirtualServerRequestDtoAdminDto
-type CreateVirtualServerRequestDtoServiceUserDto = api.CreateVirtualServerRequestDtoServiceUserDto
-type CreateVirtualServerRequestDtoProjectDtoRoleDto = api.CreateVirtualServerRequestDtoProjectDtoRoleDto
-type CreateVirtualServerRequestDtoProjectDtoApplicationDto = api.CreateVirtualServerRequestDtoProjectDtoApplicationDto
-type CreateVirtualServerRequestDtoProjectDtoResourceServerDto = api.CreateVirtualServerRequestDtoProjectDtoResourceServerDto
-type CreateVirtualServerRequestDtoProjectDto = api.CreateVirtualServerRequestDtoProjectDto
-type CreateVirtualServerRequestDto = api.CreateVirtualServerRequestDto
-type GetVirtualServerResponseDto = api.GetVirtualServerResponseDto
-type GetVirtualServerListResponseDto = api.GetVirtualServerListResponseDto
-type PatchVirtualServerRequestDto = api.PatchVirtualServerRequestDto
-
 // CreateVirtualServer creates a new virtual server.
 // @Summary      Create virtual server
 // @Tags         Admin
@@ -39,7 +27,7 @@ func CreateVirtualServer(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	scope := middlewares.GetScope(ctx)
 
-	var dto CreateVirtualServerRequestDto
+	var dto api.CreateVirtualServerRequestDto
 	err := json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -64,7 +52,7 @@ func CreateVirtualServer(w http.ResponseWriter, r *http.Request) {
 		EnableRegistration: dto.EnableRegistration,
 		SigningAlgorithm:   signingAlgorithm,
 		Require2fa:         dto.Require2fa,
-		Admin: utils.MapPtr(dto.Admin, func(admin CreateVirtualServerRequestDtoAdminDto) commands.CreateVirtualServerAdmin {
+		Admin: utils.MapPtr(dto.Admin, func(admin api.CreateVirtualServerRequestDtoAdminDto) commands.CreateVirtualServerAdmin {
 			return commands.CreateVirtualServerAdmin{
 				Username:     admin.Username,
 				DisplayName:  admin.DisplayName,
@@ -73,7 +61,7 @@ func CreateVirtualServer(w http.ResponseWriter, r *http.Request) {
 				Roles:        admin.Roles,
 			}
 		}),
-		ServiceUsers: utils.MapSlice(dto.ServiceUsers, func(x CreateVirtualServerRequestDtoServiceUserDto) commands.CreateVirtualServerServiceUser {
+		ServiceUsers: utils.MapSlice(dto.ServiceUsers, func(x api.CreateVirtualServerRequestDtoServiceUserDto) commands.CreateVirtualServerServiceUser {
 			return commands.CreateVirtualServerServiceUser{
 				Username: x.Username,
 				Roles:    x.Roles,
@@ -86,12 +74,12 @@ func CreateVirtualServer(w http.ResponseWriter, r *http.Request) {
 				},
 			}
 		}),
-		Projects: utils.MapSlice(dto.Projects, func(project CreateVirtualServerRequestDtoProjectDto) commands.CreateVirtualServerProject {
+		Projects: utils.MapSlice(dto.Projects, func(project api.CreateVirtualServerRequestDtoProjectDto) commands.CreateVirtualServerProject {
 			return commands.CreateVirtualServerProject{
 				Slug:        project.Slug,
 				Name:        project.Name,
 				Description: project.Description,
-				Applications: utils.MapSlice(project.Applications, func(app CreateVirtualServerRequestDtoProjectDtoApplicationDto) commands.CreateVirtualServerProjectApplication {
+				Applications: utils.MapSlice(project.Applications, func(app api.CreateVirtualServerRequestDtoProjectDtoApplicationDto) commands.CreateVirtualServerProjectApplication {
 					return commands.CreateVirtualServerProjectApplication{
 						Name:           app.Name,
 						DisplayName:    app.DisplayName,
@@ -101,13 +89,13 @@ func CreateVirtualServer(w http.ResponseWriter, r *http.Request) {
 						PostLogoutUris: app.PostLogoutUris,
 					}
 				}),
-				Roles: utils.MapSlice(project.Roles, func(role CreateVirtualServerRequestDtoProjectDtoRoleDto) commands.CreateVirtualServerProjectRole {
+				Roles: utils.MapSlice(project.Roles, func(role api.CreateVirtualServerRequestDtoProjectDtoRoleDto) commands.CreateVirtualServerProjectRole {
 					return commands.CreateVirtualServerProjectRole{
 						Name:        role.Name,
 						Description: role.Description,
 					}
 				}),
-				ResourceServers: utils.MapSlice(project.ResourceServers, func(rs CreateVirtualServerRequestDtoProjectDtoResourceServerDto) commands.CreateVirtualServerProjectResourceServer {
+				ResourceServers: utils.MapSlice(project.ResourceServers, func(rs api.CreateVirtualServerRequestDtoProjectDtoResourceServerDto) commands.CreateVirtualServerProjectResourceServer {
 					return commands.CreateVirtualServerProjectResourceServer{
 						Slug:        rs.Slug,
 						Name:        rs.Name,
@@ -155,7 +143,7 @@ func GetVirtualServer(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
-	err = json.NewEncoder(w).Encode(GetVirtualServerResponseDto{
+	err = json.NewEncoder(w).Encode(api.GetVirtualServerResponseDto{
 		Id:                       response.Id,
 		Name:                     response.Name,
 		DisplayName:              response.DisplayName,
@@ -202,7 +190,7 @@ func GetVirtualServerPublicInfo(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
-	err = json.NewEncoder(w).Encode(GetVirtualServerListResponseDto{
+	err = json.NewEncoder(w).Encode(api.GetVirtualServerListResponseDto{
 		Name:                response.Name,
 		DisplayName:         response.DisplayName,
 		RegistrationEnabled: response.RegistrationEnabled,
@@ -232,7 +220,7 @@ func PatchVirtualServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var dto PatchVirtualServerRequestDto
+	var dto api.PatchVirtualServerRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
 		utils.HandleHttpError(w, err)

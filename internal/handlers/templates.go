@@ -15,11 +15,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// Type aliases to keep handler code compiling.
-type PagedTemplatesResponseDto = api.PagedTemplatesResponseDto
-type GetTemplateResponseDto = api.GetTemplateResponseDto
-type ListTemplatesResponseDto = api.ListTemplatesResponseDto
-
 // GetTemplate returns a single template by type.
 // @Summary      Get template
 // @Tags         Templates
@@ -60,7 +55,7 @@ func GetTemplate(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
-	response := GetTemplateResponseDto{
+	response := api.GetTemplateResponseDto{
 		Id:        queryResult.Id,
 		Type:      string(query.Type),
 		Text:      queryResult.Text,
@@ -111,8 +106,8 @@ func ListTemplates(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	items := utils.MapSlice(templates.Items, func(x queries.ListTemplatesResponseItem) ListTemplatesResponseDto {
-		return ListTemplatesResponseDto{
+	items := utils.MapSlice(templates.Items, func(x queries.ListTemplatesResponseItem) api.ListTemplatesResponseDto {
+		return api.ListTemplatesResponseDto{
 			Id:   x.Id,
 			Type: string(x.Type),
 		}

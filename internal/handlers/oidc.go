@@ -32,9 +32,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// Type aliases for OIDC DTOs moved to api package.
-type DeviceAuthorizationResponse = api.DeviceAuthorizationResponse
-
 type OidcError struct {
 	Error            string
 	ErrorDescription string
@@ -1804,7 +1801,7 @@ func BeginDeviceFlow(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
-	response := DeviceAuthorizationResponse{
+	response := api.DeviceAuthorizationResponse{
 		DeviceCode:              deviceCode,
 		UserCode:                userCode,
 		VerificationUri:         verificationUri,

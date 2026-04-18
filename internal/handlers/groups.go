@@ -12,10 +12,6 @@ import (
 	"github.com/The127/mediatr"
 )
 
-// Type aliases to keep handler code compiling.
-type PagedGroupsResponseDto = api.PagedGroupsResponseDto
-type ListGroupsResponseDto = api.ListGroupsResponseDto
-
 // ListGroups lists groups in a virtual server
 // @Summary List groups
 // @Description Retrieve a paginated list of groups
@@ -60,8 +56,8 @@ func ListGroups(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, err)
 	}
 
-	items := utils.MapSlice(groups.Items, func(x queries.ListGroupsResponseItem) ListGroupsResponseDto {
-		return ListGroupsResponseDto{
+	items := utils.MapSlice(groups.Items, func(x queries.ListGroupsResponseItem) api.ListGroupsResponseDto {
+		return api.ListGroupsResponseDto{
 			Id:   x.Id,
 			Name: x.Name,
 		}

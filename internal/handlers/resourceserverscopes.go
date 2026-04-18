@@ -16,13 +16,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// Type aliases to keep handler code compiling.
-type CreateResourceServerScopeRequestDto = api.CreateResourceServerScopeRequestDto
-type CreateResourceServerScopeResponseDto = api.CreateResourceServerScopeResponseDto
-type PagedResourceServerScopeResponseDto = api.PagedResourceServerScopeResponseDto
-type ListResourceServerScopesResponseDto = api.ListResourceServerScopesResponseDto
-type GetResourceServerScopeResponseDto = api.GetResourceServerScopeResponseDto
-
 // CreateResourceServerScope creates a new scope for a resource server
 // @Summary Create resource server scope
 // @Description Create a new scope for a resource server
@@ -56,7 +49,7 @@ func CreateResourceServerScope(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var dto CreateResourceServerScopeRequestDto
+	var dto api.CreateResourceServerScopeRequestDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -88,7 +81,7 @@ func CreateResourceServerScope(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 
-	err = json.NewEncoder(w).Encode(CreateResourceServerScopeResponseDto{
+	err = json.NewEncoder(w).Encode(api.CreateResourceServerScopeResponseDto{
 		Id: response.Id,
 	})
 	if err != nil {
@@ -155,8 +148,8 @@ func ListResourceServerScopes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	items := utils.MapSlice(scopes.Items, func(x queries.ListResourceServerScopesResponseItem) ListResourceServerScopesResponseDto {
-		return ListResourceServerScopesResponseDto{
+	items := utils.MapSlice(scopes.Items, func(x queries.ListResourceServerScopesResponseItem) api.ListResourceServerScopesResponseDto {
+		return api.ListResourceServerScopesResponseDto{
 			Id:    x.Id,
 			Name:  x.Name,
 			Scope: x.Scope,
@@ -232,7 +225,7 @@ func GetResourceServerScope(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	err = json.NewEncoder(w).Encode(GetResourceServerScopeResponseDto{
+	err = json.NewEncoder(w).Encode(api.GetResourceServerScopeResponseDto{
 		Id:          scopeResponse.Id,
 		Scope:       scopeResponse.Scope,
 		Name:        scopeResponse.Name,

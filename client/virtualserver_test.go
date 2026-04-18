@@ -54,7 +54,7 @@ func (s *VirtualServerClientSuite) TestCreate_HappyPath() {
 
 func (s *VirtualServerClientSuite) TestGet_HappyPath() {
 	// arrange
-	response := VirtualServerState{
+	response := api.GetVirtualServerResponseDto{
 		DisplayName:              "Display Name",
 		Require2fa:               false,
 		RequireEmailVerification: false,

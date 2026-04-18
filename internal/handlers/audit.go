@@ -12,10 +12,6 @@ import (
 	"github.com/The127/mediatr"
 )
 
-// Type aliases to keep handler code compiling.
-type PagedAuditLogResponseDto = api.PagedAuditLogResponseDto
-type ListAuditLogResponseDto = api.ListAuditLogResponseDto
-
 // ListAuditLog
 // @summary     List audit log entries
 // @description Retrieve a paginated list of audit log entries within a virtual server.
@@ -57,8 +53,8 @@ func ListAuditLog(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, err)
 	}
 
-	items := utils.MapSlice(auditEntries.Items, func(x queries.ListAuditEntriesResponseItem) ListAuditLogResponseDto {
-		return ListAuditLogResponseDto{
+	items := utils.MapSlice(auditEntries.Items, func(x queries.ListAuditEntriesResponseItem) api.ListAuditLogResponseDto {
+		return api.ListAuditLogResponseDto{
 			Id:     x.Id,
 			UserId: x.UserId,
 
