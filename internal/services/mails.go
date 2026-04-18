@@ -1,7 +1,7 @@
 package services
 
 import (
-	"github.com/The127/Keyline/internal/config"
+	"github.com/The127/Keyline/config"
 	"fmt"
 
 	gomail "gopkg.in/mail.v2"

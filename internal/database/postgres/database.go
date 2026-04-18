@@ -1,7 +1,7 @@
 package postgres
 
 import (
-	"github.com/The127/Keyline/internal/config"
+	"github.com/The127/Keyline/config"
 	db "github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/logging"
 	"context"

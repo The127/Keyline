@@ -4,7 +4,7 @@ import (
 	"github.com/The127/Keyline/api"
 	"github.com/The127/Keyline/internal/authentication"
 	"github.com/The127/Keyline/internal/commands"
-	"github.com/The127/Keyline/internal/config"
+	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/jsonTypes"
 	"github.com/The127/Keyline/internal/middlewares"
