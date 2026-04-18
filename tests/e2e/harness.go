@@ -213,6 +213,11 @@ func newE2eTestHarness(dbMode config.DatabaseMode, tokenSourceGenerator func(ctx
 
 	cl := client.NewClient(serverConfig.ExternalUrl, "test-vs", opts...)
 
+	// The fix for cross-VS system-admin auth uses config.C.InitialVirtualServer.Name
+	// to identify which VS's key to fall back to. All e2e tests use "test-vs" as the
+	// initial VS, so set this here to keep the middleware's fallback in sync.
+	config.C.InitialVirtualServer.Name = "test-vs"
+
 	err = initTest(scope)
 	if err != nil {
 		panic(fmt.Errorf("failed to initialize test: %w", err))
