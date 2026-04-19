@@ -17,7 +17,7 @@ type CreateUserRequestDto struct {
 	Username      string                       `json:"username" validate:"required"`
 	DisplayName   string                       `json:"displayName" validate:"required"`
 	Email         string                       `json:"email" validate:"required"`
-	EmailVerified bool                         `json:"emailVerified" validate:"required"`
+	EmailVerified *bool                        `json:"emailVerified"`
 	Password      *CreateUserRequestDtoPasword `json:"password"`
 }
 
