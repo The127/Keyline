@@ -155,7 +155,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		Username:          dto.Username,
 		DisplayName:       dto.DisplayName,
 		Email:             dto.Email,
-		EmailVerified:     dto.EmailVerified,
+		EmailVerified:     utils.ZeroIfNil(dto.EmailVerified),
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)
