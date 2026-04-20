@@ -1,6 +1,8 @@
 package events
 
 import (
+	"context"
+	"fmt"
 	"github.com/The127/Keyline/config"
 	db "github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/messages"
@@ -8,8 +10,6 @@ import (
 	"github.com/The127/Keyline/internal/repositories"
 	"github.com/The127/Keyline/internal/services"
 	"github.com/The127/Keyline/templates"
-	"context"
-	"fmt"
 	"time"
 
 	"github.com/The127/ioc"

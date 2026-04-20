@@ -1,23 +1,23 @@
 package setup
 
 import (
+	"fmt"
+	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/behaviours"
 	"github.com/The127/Keyline/internal/caching"
-	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/password"
 	"github.com/The127/Keyline/internal/services"
 	"github.com/The127/Keyline/internal/services/audit"
 	"github.com/The127/Keyline/internal/services/claimsMapping"
 	"github.com/The127/Keyline/internal/services/keyValue"
-	"fmt"
 
 	"github.com/The127/ioc"
 )
 
 func KeyServices(dc *ioc.DependencyCollection, keyStoreConfig config.KeyStoreConfig) {
 	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) services.KeyCache {
-		return caching.NewMemoryCache[string, services.KeyPair]()
+		return caching.NewMemoryCache[services.KeyCacheKey, services.KeyPair]()
 	})
 	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) services.KeyStore {
 		switch keyStoreConfig.Mode {

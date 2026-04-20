@@ -1,10 +1,10 @@
 package memory
 
 import (
+	"context"
 	"github.com/The127/Keyline/internal/change"
 	"github.com/The127/Keyline/internal/repositories"
 	"github.com/The127/Keyline/utils"
-	"context"
 	"sync"
 
 	"github.com/google/uuid"

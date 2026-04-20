@@ -1,9 +1,9 @@
 package config
 
 import (
-	"github.com/The127/Keyline/internal/retry"
 	"flag"
 	"fmt"
+	"github.com/The127/Keyline/internal/retry"
 	"log"
 	"net/url"
 	"os"
@@ -83,13 +83,14 @@ type Config struct {
 }
 
 type InitialVirtualServerConfig struct {
-	Name                  string           `yaml:"name"`
-	DisplayName           string           `yaml:"displayName"`
-	EnableRegistration    bool             `yaml:"enableRegistration"`
-	SigningAlgorithm      SigningAlgorithm  `yaml:"signingAlgorithm"`
-	CreateSystemAdminRole bool             `yaml:"createSystemAdminRole"`
-	CreateAdmin           bool             `yaml:"createAdmin"`
-	Admin                 struct {
+	Name                        string             `yaml:"name"`
+	DisplayName                 string             `yaml:"displayName"`
+	EnableRegistration          bool               `yaml:"enableRegistration"`
+	PrimarySigningAlgorithm     SigningAlgorithm   `yaml:"primarySigningAlgorithm"`
+	AdditionalSigningAlgorithms []SigningAlgorithm `yaml:"additionalSigningAlgorithms"`
+	CreateSystemAdminRole       bool               `yaml:"createSystemAdminRole"`
+	CreateAdmin                 bool               `yaml:"createAdmin"`
+	Admin                       struct {
 		Username     string   `yaml:"username"`
 		DisplayName  string   `yaml:"displayName"`
 		PrimaryEmail string   `yaml:"primaryEmail"`
@@ -107,7 +108,7 @@ type InitialVirtualServerConfig struct {
 }
 
 type ServiceUserConfig struct {
-	Username  string `yaml:"username"`
+	Username  string   `yaml:"username"`
 	Roles     []string `yaml:"roles"`
 	PublicKey struct {
 		Pem string `yaml:"pem"`
@@ -116,8 +117,8 @@ type ServiceUserConfig struct {
 }
 
 type KeyStoreConfig struct {
-	Mode      KeyStoreMode          `yaml:"mode"`
-	Vault     VaultKeyStoreConfig   `yaml:"vault"`
+	Mode      KeyStoreMode        `yaml:"mode"`
+	Vault     VaultKeyStoreConfig `yaml:"vault"`
 	Directory struct {
 		Path string `yaml:"path"`
 	} `yaml:"directory"`
@@ -162,7 +163,7 @@ type InitialProjectConfig struct {
 }
 
 type LeaderElectionConfig struct {
-	Mode LeaderElectionMode     `yaml:"mode"`
+	Mode LeaderElectionMode       `yaml:"mode"`
 	Raft LeaderElectionRaftConfig `yaml:"raft"`
 }
 
@@ -401,8 +402,8 @@ func setInitialVirtualServerDefaultsOrPanic() {
 		C.InitialVirtualServer.DisplayName = "Keyline"
 	}
 
-	if C.InitialVirtualServer.SigningAlgorithm == "" {
-		C.InitialVirtualServer.SigningAlgorithm = SigningAlgorithmEdDSA
+	if C.InitialVirtualServer.PrimarySigningAlgorithm == "" {
+		C.InitialVirtualServer.PrimarySigningAlgorithm = SigningAlgorithmEdDSA
 	}
 
 	setInitialAdminDefaultsOrPanic()

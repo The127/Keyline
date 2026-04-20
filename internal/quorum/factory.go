@@ -1,9 +1,9 @@
 package quorum
 
 import (
-	"github.com/The127/Keyline/config"
 	"context"
 	"fmt"
+	"github.com/The127/Keyline/config"
 )
 
 type LeaderChangeCallback func(isLeader bool)

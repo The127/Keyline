@@ -113,3 +113,17 @@ func (mr *MockKeyStoreMockRecorder) Remove(virtualServerName, algorithm, kid any
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Remove", reflect.TypeOf((*MockKeyStore)(nil).Remove), virtualServerName, algorithm, kid)
 }
+
+// RemoveAllForAlgorithm mocks base method.
+func (m *MockKeyStore) RemoveAllForAlgorithm(virtualServerName string, algorithm config.SigningAlgorithm) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveAllForAlgorithm", virtualServerName, algorithm)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveAllForAlgorithm indicates an expected call of RemoveAllForAlgorithm.
+func (mr *MockKeyStoreMockRecorder) RemoveAllForAlgorithm(virtualServerName, algorithm any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveAllForAlgorithm", reflect.TypeOf((*MockKeyStore)(nil).RemoveAllForAlgorithm), virtualServerName, algorithm)
+}

@@ -1,14 +1,14 @@
 package commands
 
 import (
+	"context"
+	"fmt"
 	"github.com/The127/Keyline/internal/authentication/permissions"
 	"github.com/The127/Keyline/internal/behaviours"
 	db "github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/repositories"
 	"github.com/The127/Keyline/utils"
-	"context"
-	"fmt"
 
 	"github.com/The127/ioc"
 

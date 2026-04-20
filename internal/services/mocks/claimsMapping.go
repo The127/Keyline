@@ -10,8 +10,8 @@
 package mocks
 
 import (
-	claimsMapping "github.com/The127/Keyline/internal/services/claimsMapping"
 	context "context"
+	claimsMapping "github.com/The127/Keyline/internal/services/claimsMapping"
 	reflect "reflect"
 
 	uuid "github.com/google/uuid"

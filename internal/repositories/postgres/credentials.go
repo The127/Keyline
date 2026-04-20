@@ -1,16 +1,16 @@
 package postgres
 
 import (
-	"github.com/The127/Keyline/internal/change"
-	"github.com/The127/Keyline/internal/logging"
-	"github.com/The127/Keyline/internal/repositories"
-	"github.com/The127/Keyline/internal/repositories/postgres/pghelpers"
-	"github.com/The127/Keyline/utils"
 	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/The127/Keyline/internal/change"
+	"github.com/The127/Keyline/internal/logging"
+	"github.com/The127/Keyline/internal/repositories"
+	"github.com/The127/Keyline/internal/repositories/postgres/pghelpers"
+	"github.com/The127/Keyline/utils"
 
 	"github.com/google/uuid"
 	"github.com/huandu/go-sqlbuilder"

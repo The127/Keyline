@@ -1,13 +1,14 @@
 package handlers
 
 import (
+	"encoding/json"
 	"github.com/The127/Keyline/api"
+	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/commands"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/queries"
 	"github.com/The127/Keyline/internal/repositories"
 	"github.com/The127/Keyline/utils"
-	"encoding/json"
 	"net/http"
 
 	"github.com/The127/ioc"
@@ -73,6 +74,7 @@ func CreateApplication(w http.ResponseWriter, r *http.Request) {
 		PostLogoutRedirectUris: utils.EmptyIfNil(dto.PostLogoutUris),
 		AccessTokenHeaderType:  accessTokenHeaderType,
 		DeviceFlowEnabled:      dto.DeviceFlowEnabled,
+		SigningAlgorithm:       (*config.SigningAlgorithm)(dto.SigningAlgorithm),
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -156,6 +158,7 @@ func GetApplication(w http.ResponseWriter, r *http.Request) {
 		ClaimsMappingScript:    application.ClaimsMappingScript,
 		AccessTokenHeaderType:  application.AccessTokenHeaderType,
 		DeviceFlowEnabled:      application.DeviceFlowEnabled,
+		SigningAlgorithm:       (*string)(application.SigningAlgorithm),
 		CreatedAt:              application.CreatedAt,
 		UpdatedAt:              application.UpdatedAt,
 	})
@@ -218,15 +221,16 @@ func PatchApplication(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_, err = mediatr.Send[*commands.PatchApplicationResponse](ctx, m, commands.PatchApplication{
-		VirtualServerName:     vsName,
-		ProjectSlug:           projectSlug,
-		ApplicationId:         appId,
-		DisplayName:           utils.TrimSpace(dto.DisplayName),
-		ClaimsMappingScript:   dto.ClaimsMappingScript,
-		DeviceFlowEnabled:     dto.DeviceFlowEnabled,
-		RedirectUris:          redirectUris,
+		VirtualServerName:      vsName,
+		ProjectSlug:            projectSlug,
+		ApplicationId:          appId,
+		DisplayName:            utils.TrimSpace(dto.DisplayName),
+		ClaimsMappingScript:    dto.ClaimsMappingScript,
+		DeviceFlowEnabled:      dto.DeviceFlowEnabled,
+		RedirectUris:           redirectUris,
 		PostLogoutRedirectUris: postLogoutUris,
-		AccessTokenHeaderType: dto.AccessTokenHeaderType,
+		AccessTokenHeaderType:  dto.AccessTokenHeaderType,
+		SigningAlgorithm:       (*config.SigningAlgorithm)(dto.SigningAlgorithm),
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)

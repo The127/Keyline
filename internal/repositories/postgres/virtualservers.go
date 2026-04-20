@@ -1,39 +1,46 @@
 package postgres
 
 import (
+	"context"
+	"database/sql"
+	"errors"
+	"fmt"
 	"github.com/The127/Keyline/internal/caching"
 	"github.com/The127/Keyline/internal/change"
 	"github.com/The127/Keyline/internal/logging"
 	"github.com/The127/Keyline/internal/repositories"
 	"github.com/The127/Keyline/internal/repositories/postgres/pghelpers"
 	"github.com/The127/Keyline/utils"
-	"context"
-	"database/sql"
-	"errors"
-	"fmt"
 
 	"github.com/huandu/go-sqlbuilder"
+	"github.com/lib/pq"
 )
 
 type postgresVirtualServer struct {
 	postgresBaseModel
-	displayName              string
-	name                     string
-	enableRegistration       bool
-	require2fa               bool
-	requireEmailVerification bool
-	signingAlgorithm         string
+	displayName                 string
+	name                        string
+	enableRegistration          bool
+	require2fa                  bool
+	requireEmailVerification    bool
+	primarySigningAlgorithm     string
+	additionalSigningAlgorithms pq.StringArray
 }
 
 func mapVirtualServer(virtualServer *repositories.VirtualServer) *postgresVirtualServer {
+	additional := make(pq.StringArray, len(virtualServer.AdditionalSigningAlgorithms()))
+	for i, a := range virtualServer.AdditionalSigningAlgorithms() {
+		additional[i] = string(a)
+	}
 	return &postgresVirtualServer{
-		postgresBaseModel:        mapBase(virtualServer.BaseModel),
-		displayName:              virtualServer.DisplayName(),
-		name:                     virtualServer.Name(),
-		enableRegistration:       virtualServer.EnableRegistration(),
-		require2fa:               virtualServer.Require2fa(),
-		requireEmailVerification: virtualServer.RequireEmailVerification(),
-		signingAlgorithm:         string(virtualServer.SigningAlgorithm()),
+		postgresBaseModel:           mapBase(virtualServer.BaseModel),
+		displayName:                 virtualServer.DisplayName(),
+		name:                        virtualServer.Name(),
+		enableRegistration:          virtualServer.EnableRegistration(),
+		require2fa:                  virtualServer.Require2fa(),
+		requireEmailVerification:    virtualServer.RequireEmailVerification(),
+		primarySigningAlgorithm:     string(virtualServer.PrimarySigningAlgorithm()),
+		additionalSigningAlgorithms: additional,
 	}
 }
 
@@ -45,7 +52,8 @@ func (s *postgresVirtualServer) Map() *repositories.VirtualServer {
 		s.enableRegistration,
 		s.require2fa,
 		s.requireEmailVerification,
-		s.signingAlgorithm,
+		s.primarySigningAlgorithm,
+		[]string(s.additionalSigningAlgorithms),
 	)
 }
 
@@ -60,7 +68,8 @@ func (s *postgresVirtualServer) scan(row pghelpers.Row, additionalPtrs ...any) e
 		&s.enableRegistration,
 		&s.require2fa,
 		&s.requireEmailVerification,
-		&s.signingAlgorithm,
+		&s.primarySigningAlgorithm,
+		&s.additionalSigningAlgorithms,
 	}
 
 	ptrs = append(ptrs, additionalPtrs...)
@@ -98,7 +107,8 @@ func (r *VirtualServerRepository) selectQuery(filter *repositories.VirtualServer
 		"enable_registration",
 		"require_2fa",
 		"require_email_verification",
-		"signing_algorithm",
+		"primary_signing_algorithm",
+		"additional_signing_algorithms",
 	).From("virtual_servers")
 
 	if filter.HasName() {
@@ -197,7 +207,8 @@ func (r *VirtualServerRepository) ExecuteInsert(ctx context.Context, tx *sql.Tx,
 			"display_name",
 			"enable_registration",
 			"require_2fa",
-			"signing_algorithm",
+			"primary_signing_algorithm",
+			"additional_signing_algorithms",
 		).
 		Values(
 			mapped.id,
@@ -207,7 +218,8 @@ func (r *VirtualServerRepository) ExecuteInsert(ctx context.Context, tx *sql.Tx,
 			mapped.displayName,
 			mapped.enableRegistration,
 			mapped.require2fa,
-			mapped.signingAlgorithm,
+			mapped.primarySigningAlgorithm,
+			mapped.additionalSigningAlgorithms,
 		).
 		Returning("xmin")
 
@@ -255,8 +267,11 @@ func (r *VirtualServerRepository) ExecuteUpdate(ctx context.Context, tx *sql.Tx,
 		case repositories.VirtualServerChangeRequireEmailVerification:
 			s.SetMore(s.Assign("require_email_verification", mapped.requireEmailVerification))
 
-		case repositories.VirtualServerChangeSigningAlgorithm:
-			s.SetMore(s.Assign("signing_algorithm", mapped.signingAlgorithm))
+		case repositories.VirtualServerChangePrimarySigningAlgorithm:
+			s.SetMore(s.Assign("primary_signing_algorithm", mapped.primarySigningAlgorithm))
+
+		case repositories.VirtualServerChangeAdditionalSigningAlgorithms:
+			s.SetMore(s.Assign("additional_signing_algorithms", mapped.additionalSigningAlgorithms))
 
 		default:
 			return fmt.Errorf("updating field %v is not supported", field)

@@ -1,14 +1,18 @@
 package commands
 
 import (
+	"context"
+	"fmt"
+	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/authentication/permissions"
 	"github.com/The127/Keyline/internal/behaviours"
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/repositories"
-	"context"
-	"fmt"
+	"github.com/The127/Keyline/internal/services"
+	"github.com/The127/Keyline/utils"
 
+	"github.com/The127/go-clock"
 	"github.com/The127/ioc"
 )
 
@@ -19,6 +23,9 @@ type PatchVirtualServer struct {
 	EnableRegistration       *bool
 	Require2fa               *bool
 	RequireEmailVerification *bool
+
+	PrimarySigningAlgorithm     *config.SigningAlgorithm
+	AdditionalSigningAlgorithms *[]config.SigningAlgorithm
 }
 
 func (a PatchVirtualServer) LogRequest() bool {
@@ -65,6 +72,47 @@ func HandlePatchVirtualServer(ctx context.Context, command PatchVirtualServer) (
 		virtualServer.SetRequireEmailVerification(*command.RequireEmailVerification)
 	}
 
+	if command.PrimarySigningAlgorithm != nil {
+		virtualServer.SetPrimarySigningAlgorithm(*command.PrimarySigningAlgorithm)
+	}
+
+	if command.AdditionalSigningAlgorithms != nil {
+		virtualServer.SetAdditionalSigningAlgorithms(*command.AdditionalSigningAlgorithms)
+	}
+
+	if command.PrimarySigningAlgorithm != nil || command.AdditionalSigningAlgorithms != nil {
+		apps, _, err := dbContext.Applications().List(ctx, repositories.NewApplicationFilter().VirtualServerId(virtualServer.Id()))
+		if err != nil {
+			return nil, fmt.Errorf("listing applications: %w", err)
+		}
+		for _, app := range apps {
+			if alg := app.SigningAlgorithm(); alg != nil && !virtualServer.HasSigningAlgorithm(*alg) {
+				return nil, fmt.Errorf("cannot remove algorithm %s: application %s still uses it: %w", *alg, app.Name(), utils.ErrHttpBadRequest)
+			}
+		}
+	}
+
 	dbContext.VirtualServers().Update(virtualServer)
+
+	if command.PrimarySigningAlgorithm != nil || command.AdditionalSigningAlgorithms != nil {
+		keyStore := ioc.GetDependency[services.KeyStore](scope)
+		keyService := ioc.GetDependency[services.KeyService](scope)
+		clockService := ioc.GetDependency[clock.Service](scope)
+
+		for _, alg := range virtualServer.AllSigningAlgorithms() {
+			existing, err := keyStore.GetAllForAlgorithm(command.VirtualServerName, alg)
+			if err != nil {
+				return nil, fmt.Errorf("checking keys for algorithm %s: %w", alg, err)
+			}
+			if len(existing) > 0 {
+				continue
+			}
+			_, err = keyService.Generate(clockService, command.VirtualServerName, alg)
+			if err != nil {
+				return nil, fmt.Errorf("generating key for algorithm %s: %w", alg, err)
+			}
+		}
+	}
+
 	return &PatchVirtualServerResponse{}, nil
 }

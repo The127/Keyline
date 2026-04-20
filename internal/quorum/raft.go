@@ -1,10 +1,10 @@
 package quorum
 
 import (
-	"github.com/The127/Keyline/config"
-	"github.com/The127/Keyline/internal/logging"
 	"context"
 	"fmt"
+	"github.com/The127/Keyline/config"
+	"github.com/The127/Keyline/internal/logging"
 	"io"
 	"net"
 	"os"

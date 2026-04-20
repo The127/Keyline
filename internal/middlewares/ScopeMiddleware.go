@@ -1,8 +1,8 @@
 package middlewares
 
 import (
-	"github.com/The127/Keyline/utils"
 	"context"
+	"github.com/The127/Keyline/utils"
 	"net/http"
 
 	"github.com/The127/ioc"

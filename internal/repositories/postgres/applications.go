@@ -1,15 +1,16 @@
 package postgres
 
 import (
+	"context"
+	"database/sql"
+	"errors"
+	"fmt"
+	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/change"
 	"github.com/The127/Keyline/internal/logging"
 	"github.com/The127/Keyline/internal/repositories"
 	"github.com/The127/Keyline/internal/repositories/postgres/pghelpers"
 	"github.com/The127/Keyline/utils"
-	"context"
-	"database/sql"
-	"errors"
-	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/huandu/go-sqlbuilder"
@@ -30,6 +31,7 @@ type postgresApplication struct {
 	claimsMappingScript    sql.NullString
 	accessTokenHeaderType  string
 	deviceFlowEnabled      bool
+	signingAlgorithm       sql.NullString
 }
 
 func mapApplication(a *repositories.Application) *postgresApplication {
@@ -47,6 +49,7 @@ func mapApplication(a *repositories.Application) *postgresApplication {
 		claimsMappingScript:    pghelpers.WrapStringPointer(a.ClaimsMappingScript()),
 		accessTokenHeaderType:  a.AccessTokenHeaderType(),
 		deviceFlowEnabled:      a.DeviceFlowEnabled(),
+		signingAlgorithm:       pghelpers.WrapStringPointer(utils.MapPtr(a.SigningAlgorithm(), func(alg config.SigningAlgorithm) string { return string(alg) })),
 	}
 }
 
@@ -65,6 +68,7 @@ func (a *postgresApplication) Map() *repositories.Application {
 		pghelpers.UnwrapNullString(a.claimsMappingScript),
 		a.accessTokenHeaderType,
 		a.deviceFlowEnabled,
+		utils.MapPtr(pghelpers.UnwrapNullString(a.signingAlgorithm), func(s string) config.SigningAlgorithm { return config.SigningAlgorithm(s) }),
 	)
 }
 
@@ -87,6 +91,7 @@ func (a *postgresApplication) scan(row pghelpers.Row, additionalPtrs ...any) err
 		&a.claimsMappingScript,
 		&a.accessTokenHeaderType,
 		&a.deviceFlowEnabled,
+		&a.signingAlgorithm,
 	}
 
 	ptrs = append(ptrs, additionalPtrs...)
@@ -126,6 +131,7 @@ func (r *ApplicationRepository) selectQuery(filter *repositories.ApplicationFilt
 		"claims_mapping_script",
 		"access_token_header_type",
 		"device_flow_enabled",
+		"signing_algorithm",
 	).From("applications")
 
 	if filter.HasName() {
@@ -250,6 +256,7 @@ func (r *ApplicationRepository) ExecuteInsert(ctx context.Context, tx *sql.Tx, a
 			"claims_mapping_script",
 			"access_token_header_type",
 			"device_flow_enabled",
+			"signing_algorithm",
 		).
 		Values(
 			mapped.id,
@@ -267,6 +274,7 @@ func (r *ApplicationRepository) ExecuteInsert(ctx context.Context, tx *sql.Tx, a
 			mapped.claimsMappingScript,
 			mapped.accessTokenHeaderType,
 			mapped.deviceFlowEnabled,
+			mapped.signingAlgorithm,
 		).
 		Returning("xmin")
 
@@ -325,6 +333,9 @@ func (r *ApplicationRepository) ExecuteUpdate(ctx context.Context, tx *sql.Tx, a
 
 		case repositories.ApplicationChangeDeviceFlowEnabled:
 			s.SetMore(s.Assign("device_flow_enabled", mapped.deviceFlowEnabled))
+
+		case repositories.ApplicationChangeSigningAlgorithm:
+			s.SetMore(s.Assign("signing_algorithm", mapped.signingAlgorithm))
 
 		default:
 			return fmt.Errorf("updating field %v is not supported", field)

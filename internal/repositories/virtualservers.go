@@ -1,10 +1,10 @@
 package repositories
 
 import (
-	"github.com/The127/Keyline/internal/change"
-	"github.com/The127/Keyline/config"
-	"github.com/The127/Keyline/utils"
 	"context"
+	"github.com/The127/Keyline/config"
+	"github.com/The127/Keyline/internal/change"
+	"github.com/The127/Keyline/utils"
 
 	"github.com/google/uuid"
 )
@@ -16,7 +16,8 @@ const (
 	VirtualServerChangeEnableRegistration
 	VirtualServerChangeRequire2fa
 	VirtualServerChangeRequireEmailVerification
-	VirtualServerChangeSigningAlgorithm
+	VirtualServerChangePrimarySigningAlgorithm
+	VirtualServerChangeAdditionalSigningAlgorithms
 )
 
 type VirtualServer struct {
@@ -30,7 +31,8 @@ type VirtualServer struct {
 	require2fa               bool
 	requireEmailVerification bool
 
-	signingAlgorithm config.SigningAlgorithm
+	primarySigningAlgorithm     config.SigningAlgorithm
+	additionalSigningAlgorithms []config.SigningAlgorithm
 }
 
 func NewVirtualServer(name string, displayName string) *VirtualServer {
@@ -43,16 +45,21 @@ func NewVirtualServer(name string, displayName string) *VirtualServer {
 	}
 }
 
-func NewVirtualServerFromDB(base BaseModel, name string, displayName string, enableRegistration bool, require2fa bool, requireEmailVerification bool, signingAlgorithm string) *VirtualServer {
+func NewVirtualServerFromDB(base BaseModel, name string, displayName string, enableRegistration bool, require2fa bool, requireEmailVerification bool, primarySigningAlgorithm string, additionalSigningAlgorithms []string) *VirtualServer {
+	additional := make([]config.SigningAlgorithm, len(additionalSigningAlgorithms))
+	for i, a := range additionalSigningAlgorithms {
+		additional[i] = config.SigningAlgorithm(a)
+	}
 	return &VirtualServer{
-		BaseModel:                base,
-		List:                     change.NewChanges[VirtualServerChange](),
-		name:                     name,
-		displayName:              displayName,
-		enableRegistration:       enableRegistration,
-		require2fa:               require2fa,
-		requireEmailVerification: requireEmailVerification,
-		signingAlgorithm:         config.SigningAlgorithm(signingAlgorithm),
+		BaseModel:                   base,
+		List:                        change.NewChanges[VirtualServerChange](),
+		name:                        name,
+		displayName:                 displayName,
+		enableRegistration:          enableRegistration,
+		require2fa:                  require2fa,
+		requireEmailVerification:    requireEmailVerification,
+		primarySigningAlgorithm:     config.SigningAlgorithm(primarySigningAlgorithm),
+		additionalSigningAlgorithms: additional,
 	}
 }
 
@@ -112,17 +119,46 @@ func (m *VirtualServer) SetRequireEmailVerification(requireEmailVerification boo
 	m.TrackChange(VirtualServerChangeRequireEmailVerification)
 }
 
-func (m *VirtualServer) SigningAlgorithm() config.SigningAlgorithm {
-	return m.signingAlgorithm
+func (m *VirtualServer) PrimarySigningAlgorithm() config.SigningAlgorithm {
+	return m.primarySigningAlgorithm
 }
 
-func (m *VirtualServer) SetSigningAlgorithm(signingAlgorithm config.SigningAlgorithm) {
-	if m.signingAlgorithm == signingAlgorithm {
+func (m *VirtualServer) SetPrimarySigningAlgorithm(alg config.SigningAlgorithm) {
+	if m.primarySigningAlgorithm == alg {
 		return
 	}
+	m.primarySigningAlgorithm = alg
+	m.TrackChange(VirtualServerChangePrimarySigningAlgorithm)
+}
 
-	m.signingAlgorithm = signingAlgorithm
-	m.TrackChange(VirtualServerChangeSigningAlgorithm)
+func (m *VirtualServer) AdditionalSigningAlgorithms() []config.SigningAlgorithm {
+	return m.additionalSigningAlgorithms
+}
+
+func (m *VirtualServer) SetAdditionalSigningAlgorithms(algs []config.SigningAlgorithm) {
+	m.additionalSigningAlgorithms = algs
+	m.TrackChange(VirtualServerChangeAdditionalSigningAlgorithms)
+}
+
+func (m *VirtualServer) HasSigningAlgorithm(alg config.SigningAlgorithm) bool {
+	for _, a := range m.AllSigningAlgorithms() {
+		if a == alg {
+			return true
+		}
+	}
+	return false
+}
+
+func (m *VirtualServer) AllSigningAlgorithms() []config.SigningAlgorithm {
+	seen := map[config.SigningAlgorithm]bool{m.primarySigningAlgorithm: true}
+	all := []config.SigningAlgorithm{m.primarySigningAlgorithm}
+	for _, a := range m.additionalSigningAlgorithms {
+		if !seen[a] {
+			seen[a] = true
+			all = append(all, a)
+		}
+	}
+	return all
 }
 
 type VirtualServerFilter struct {

@@ -14,6 +14,7 @@ type CreateApplicationRequestDto struct {
 	Type                  string   `json:"type" validate:"required,oneof=public confidential"`
 	AccessTokenHeaderType *string  `json:"accessTokenHeaderType" validate:"omitempty,oneof=at+jwt JWT"`
 	DeviceFlowEnabled     bool     `json:"deviceFlowEnabled"`
+	SigningAlgorithm      *string  `json:"signingAlgorithm,omitempty" validate:"omitempty,oneof=RS256 EdDSA"`
 }
 
 type CreateApplicationResponseDto struct {
@@ -38,6 +39,8 @@ type GetApplicationResponseDto struct {
 
 	DeviceFlowEnabled bool `json:"deviceFlowEnabled"`
 
+	SigningAlgorithm *string `json:"signingAlgorithm,omitempty"`
+
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }
@@ -49,6 +52,7 @@ type PatchApplicationRequestDto struct {
 	RedirectUris          []string `json:"redirectUris,omitempty"`
 	PostLogoutUris        []string `json:"postLogoutUris,omitempty"`
 	AccessTokenHeaderType *string  `json:"accessTokenHeaderType,omitempty" validate:"omitempty,oneof=at+jwt JWT"`
+	SigningAlgorithm      *string  `json:"signingAlgorithm,omitempty" validate:"omitempty,oneof=RS256 EdDSA"`
 }
 
 type PagedApplicationsResponseDto = PagedResponseDto[ListApplicationsResponseDto]

@@ -1,8 +1,6 @@
 package services
 
 import (
-	"github.com/The127/Keyline/internal/caching"
-	"github.com/The127/Keyline/config"
 	"context"
 	"crypto"
 	"crypto/ed25519"
@@ -14,6 +12,8 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
+	"github.com/The127/Keyline/config"
+	"github.com/The127/Keyline/internal/caching"
 	"os"
 	"path/filepath"
 	"strings"
@@ -205,6 +205,7 @@ type KeyStore interface {
 	GetAllForAlgorithm(virtualServerName string, algorithm config.SigningAlgorithm) ([]KeyPair, error)
 	Add(virtualServerName string, keyPair KeyPair) error
 	Remove(virtualServerName string, algorithm config.SigningAlgorithm, kid string) error
+	RemoveAllForAlgorithm(virtualServerName string, algorithm config.SigningAlgorithm) error
 }
 
 type memoryKeyStore struct {
@@ -254,6 +255,16 @@ func (m *memoryKeyStore) Add(virtualServerName string, keyPair KeyPair) error {
 func (m *memoryKeyStore) Remove(virtualServerName string, algorithm config.SigningAlgorithm, kid string) error {
 	key := fmt.Sprintf("%s:%s:%s", virtualServerName, algorithm, kid)
 	delete(m.keyPairs, key)
+	return nil
+}
+
+func (m *memoryKeyStore) RemoveAllForAlgorithm(virtualServerName string, algorithm config.SigningAlgorithm) error {
+	prefix := fmt.Sprintf("%s:%s:", virtualServerName, algorithm)
+	for key := range m.keyPairs {
+		if strings.HasPrefix(key, prefix) {
+			delete(m.keyPairs, key)
+		}
+	}
 	return nil
 }
 
@@ -357,6 +368,19 @@ func (v *vaultKeyStore) Get(virtualServerName string, algorithm config.SigningAl
 func (v *vaultKeyStore) Remove(virtualServerName string, algorithm config.SigningAlgorithm, kid string) error {
 	path := v.keyPath(virtualServerName, algorithm, kid)
 	return v.client.KVv2(v.mountPath).Delete(context.Background(), path)
+}
+
+func (v *vaultKeyStore) RemoveAllForAlgorithm(virtualServerName string, algorithm config.SigningAlgorithm) error {
+	keys, err := v.GetAllForAlgorithm(virtualServerName, algorithm)
+	if err != nil {
+		return fmt.Errorf("listing keys for removal: %w", err)
+	}
+	for _, kp := range keys {
+		if err := v.Remove(virtualServerName, algorithm, kp.GetKid()); err != nil {
+			return fmt.Errorf("removing key %s: %w", kp.GetKid(), err)
+		}
+	}
+	return nil
 }
 
 func (v *vaultKeyStore) GetAllForAlgorithm(virtualServerName string, algorithm config.SigningAlgorithm) ([]KeyPair, error) {
@@ -503,6 +527,14 @@ func (d *directoryKeyStore) Add(virtualServerName string, keyPair KeyPair) error
 	return nil
 }
 
+func (d *directoryKeyStore) RemoveAllForAlgorithm(virtualServerName string, algorithm config.SigningAlgorithm) error {
+	algPath := d.getPath(virtualServerName, algorithm)
+	if err := os.RemoveAll(algPath); err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("removing algorithm directory: %w", err)
+	}
+	return nil
+}
+
 func (d *directoryKeyStore) Remove(virtualServerName string, algorithm config.SigningAlgorithm, kid string) error {
 	algPath := d.getPath(virtualServerName, algorithm)
 	keyPath := filepath.Join(algPath, kid)
@@ -629,7 +661,12 @@ func (d *directoryKeyStore) getPath(virtualServerName string, algorithm config.S
 	return filepath.Join(config.C.KeyStore.Directory.Path, virtualServerName, string(algorithm))
 }
 
-type KeyCache caching.Cache[string, KeyPair]
+type KeyCacheKey struct {
+	VirtualServerName string
+	Algorithm         config.SigningAlgorithm
+}
+
+type KeyCache caching.Cache[KeyCacheKey, KeyPair]
 
 type KeyPair struct {
 	algorithm  config.SigningAlgorithm
@@ -702,6 +739,7 @@ func (k *KeyPair) ExpiresAt() time.Time {
 type KeyService interface {
 	Generate(clockService clock.Service, virtualServerName string, algorithm config.SigningAlgorithm) (KeyPair, error)
 	GetKey(virtualServerName string, algorithm config.SigningAlgorithm) (KeyPair, error)
+	GetAllKeys(virtualServerName string) ([]KeyPair, error)
 }
 
 type keyServiceImpl struct {
@@ -732,7 +770,8 @@ func (s *keyServiceImpl) Generate(clockService clock.Service, virtualServerName 
 }
 
 func (s *keyServiceImpl) GetKey(virtualServerName string, algorithm config.SigningAlgorithm) (KeyPair, error) {
-	keyPair, ok := s.cache.TryGet(virtualServerName)
+	cacheKey := KeyCacheKey{VirtualServerName: virtualServerName, Algorithm: algorithm}
+	keyPair, ok := s.cache.TryGet(cacheKey)
 	if !ok {
 		keyPairs, err := s.store.GetAllForAlgorithm(virtualServerName, algorithm)
 		if err != nil {
@@ -744,12 +783,12 @@ func (s *keyServiceImpl) GetKey(virtualServerName string, algorithm config.Signi
 		}
 
 		keyPair = keyPairs[0]
-		s.cache.Put(virtualServerName, keyPair)
-	}
-
-	if keyPair.Algorithm() != algorithm {
-		return KeyPair{}, fmt.Errorf("key pair algorithm mismatch: %s != %s", keyPair.Algorithm(), algorithm)
+		s.cache.Put(cacheKey, keyPair)
 	}
 
 	return keyPair, nil
+}
+
+func (s *keyServiceImpl) GetAllKeys(virtualServerName string) ([]KeyPair, error) {
+	return s.store.GetAll(virtualServerName)
 }

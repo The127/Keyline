@@ -1,8 +1,8 @@
 package logging
 
 import (
-	"github.com/The127/Keyline/config"
 	"fmt"
+	"github.com/The127/Keyline/config"
 
 	"go.uber.org/zap"
 )

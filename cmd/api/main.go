@@ -10,9 +10,11 @@
 package main
 
 import (
+	"context"
+	"fmt"
+	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/authentication"
 	"github.com/The127/Keyline/internal/commands"
-	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/jobs"
 	"github.com/The127/Keyline/internal/logging"
@@ -25,8 +27,6 @@ import (
 	"github.com/The127/Keyline/internal/server"
 	"github.com/The127/Keyline/internal/setup"
 	"github.com/The127/Keyline/utils"
-	"context"
-	"fmt"
 	"net/url"
 	"os"
 	"os/signal"
@@ -218,10 +218,11 @@ func initApplication(dp *ioc.DependencyProvider) {
 	}
 
 	_, err = mediatr.Send[*commands.CreateVirtualServerResponse](ctx, m, commands.CreateVirtualServer{
-		Name:               config.C.InitialVirtualServer.Name,
-		DisplayName:        config.C.InitialVirtualServer.DisplayName,
-		EnableRegistration: config.C.InitialVirtualServer.EnableRegistration,
-		SigningAlgorithm:   config.C.InitialVirtualServer.SigningAlgorithm,
+		Name:                        config.C.InitialVirtualServer.Name,
+		DisplayName:                 config.C.InitialVirtualServer.DisplayName,
+		EnableRegistration:          config.C.InitialVirtualServer.EnableRegistration,
+		PrimarySigningAlgorithm:     config.C.InitialVirtualServer.PrimarySigningAlgorithm,
+		AdditionalSigningAlgorithms: config.C.InitialVirtualServer.AdditionalSigningAlgorithms,
 
 		CreateSystemAdminRole: config.C.InitialVirtualServer.CreateSystemAdminRole,
 

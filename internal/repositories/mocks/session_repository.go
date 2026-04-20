@@ -10,8 +10,8 @@
 package mocks
 
 import (
-	repositories "github.com/The127/Keyline/internal/repositories"
 	context "context"
+	repositories "github.com/The127/Keyline/internal/repositories"
 	reflect "reflect"
 
 	uuid "github.com/google/uuid"

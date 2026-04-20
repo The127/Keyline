@@ -1,14 +1,15 @@
 package commands
 
 import (
+	"context"
+	"fmt"
+	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/authentication/permissions"
 	"github.com/The127/Keyline/internal/behaviours"
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/repositories"
 	"github.com/The127/Keyline/utils"
-	"context"
-	"fmt"
 
 	"github.com/The127/ioc"
 
@@ -25,6 +26,7 @@ type PatchApplication struct {
 	DeviceFlowEnabled      *bool
 	RedirectUris           *[]string
 	PostLogoutRedirectUris *[]string
+	SigningAlgorithm       *config.SigningAlgorithm
 }
 
 func (a PatchApplication) LogRequest() bool {
@@ -100,6 +102,13 @@ func HandlePatchApplication(ctx context.Context, command PatchApplication) (*Pat
 
 	if command.PostLogoutRedirectUris != nil {
 		application.SetPostLogoutRedirectUris(*command.PostLogoutRedirectUris)
+	}
+
+	if command.SigningAlgorithm != nil {
+		if !virtualServer.HasSigningAlgorithm(*command.SigningAlgorithm) {
+			return nil, fmt.Errorf("signing algorithm %s is not configured on virtual server: %w", *command.SigningAlgorithm, utils.ErrHttpBadRequest)
+		}
+		application.SetSigningAlgorithm(command.SigningAlgorithm)
 	}
 
 	dbContext.Applications().Update(application)

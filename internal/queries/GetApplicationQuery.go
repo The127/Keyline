@@ -1,13 +1,14 @@
 package queries
 
 import (
+	"context"
+	"fmt"
+	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/authentication/permissions"
 	"github.com/The127/Keyline/internal/behaviours"
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/repositories"
-	"context"
-	"fmt"
 	"time"
 
 	"github.com/The127/ioc"
@@ -48,6 +49,7 @@ type GetApplicationResult struct {
 	ClaimsMappingScript   *string
 	AccessTokenHeaderType string
 	DeviceFlowEnabled     bool
+	SigningAlgorithm      *config.SigningAlgorithm
 	CreatedAt             time.Time
 	UpdatedAt             time.Time
 }
@@ -95,6 +97,7 @@ func HandleGetApplication(ctx context.Context, query GetApplication) (*GetApplic
 		ClaimsMappingScript:   application.ClaimsMappingScript(),
 		AccessTokenHeaderType: application.AccessTokenHeaderType(),
 		DeviceFlowEnabled:     application.DeviceFlowEnabled(),
+		SigningAlgorithm:      application.SigningAlgorithm(),
 		CreatedAt:             application.AuditCreatedAt(),
 		UpdatedAt:             application.AuditUpdatedAt(),
 	}, nil

@@ -1,13 +1,13 @@
 package password
 
 import (
-	"github.com/The127/Keyline/internal/database"
-	"github.com/The127/Keyline/internal/middlewares"
-	"github.com/The127/Keyline/internal/repositories"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/The127/Keyline/internal/database"
+	"github.com/The127/Keyline/internal/middlewares"
+	"github.com/The127/Keyline/internal/repositories"
 
 	"github.com/The127/ioc"
 )

@@ -1,6 +1,9 @@
 package commands
 
 import (
+	"context"
+	"fmt"
+	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/authentication"
 	"github.com/The127/Keyline/internal/authentication/permissions"
 	"github.com/The127/Keyline/internal/behaviours"
@@ -8,8 +11,6 @@ import (
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/repositories"
 	"github.com/The127/Keyline/utils"
-	"context"
-	"fmt"
 
 	"github.com/The127/ioc"
 
@@ -28,6 +29,7 @@ type CreateApplication struct {
 	HashedSecret          *string
 	AccessTokenHeaderType string
 	DeviceFlowEnabled     bool
+	SigningAlgorithm      *config.SigningAlgorithm
 }
 
 func (c CreateApplication) LogRequest() bool {
@@ -90,6 +92,13 @@ func HandleCreateApplication(ctx context.Context, command CreateApplication) (*C
 	application.SetPostLogoutRedirectUris(command.PostLogoutRedirectUris)
 	application.SetAccessTokenHeaderType(command.AccessTokenHeaderType)
 	application.SetDeviceFlowEnabled(command.DeviceFlowEnabled)
+
+	if command.SigningAlgorithm != nil {
+		if !virtualServer.HasSigningAlgorithm(*command.SigningAlgorithm) {
+			return nil, fmt.Errorf("signing algorithm %s is not configured on virtual server: %w", *command.SigningAlgorithm, utils.ErrHttpBadRequest)
+		}
+		application.SetSigningAlgorithm(command.SigningAlgorithm)
+	}
 
 	dbContext.Applications().Insert(application)
 

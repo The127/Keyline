@@ -1,10 +1,10 @@
 package behaviours
 
 import (
-	"github.com/The127/Keyline/internal/database"
-	"github.com/The127/Keyline/internal/middlewares"
 	"context"
 	"fmt"
+	"github.com/The127/Keyline/internal/database"
+	"github.com/The127/Keyline/internal/middlewares"
 
 	"github.com/The127/ioc"
 	"github.com/The127/mediatr"

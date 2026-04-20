@@ -1,12 +1,12 @@
 package server
 
 import (
-	"github.com/The127/Keyline/internal/authentication"
+	"fmt"
 	"github.com/The127/Keyline/config"
+	"github.com/The127/Keyline/internal/authentication"
 	"github.com/The127/Keyline/internal/handlers"
 	"github.com/The127/Keyline/internal/logging"
 	"github.com/The127/Keyline/internal/middlewares"
-	"fmt"
 	"net/http"
 
 	"github.com/The127/ioc"

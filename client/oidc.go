@@ -1,12 +1,12 @@
 package client
 
 import (
-	"github.com/The127/Keyline/api"
 	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/The127/Keyline/api"
 	"net/http"
 	"net/url"
 	"strings"

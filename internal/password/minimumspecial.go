@@ -1,9 +1,9 @@
 package password
 
 import (
-	"github.com/The127/Keyline/internal/repositories"
 	"encoding/json"
 	"fmt"
+	"github.com/The127/Keyline/internal/repositories"
 )
 
 type minimumSpecialPolicy struct {

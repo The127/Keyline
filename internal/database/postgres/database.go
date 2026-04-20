@@ -1,13 +1,13 @@
 package postgres
 
 import (
-	"github.com/The127/Keyline/config"
-	db "github.com/The127/Keyline/internal/database"
-	"github.com/The127/Keyline/internal/logging"
 	"context"
 	"database/sql"
 	"embed"
 	"fmt"
+	"github.com/The127/Keyline/config"
+	db "github.com/The127/Keyline/internal/database"
+	"github.com/The127/Keyline/internal/logging"
 
 	migrate "github.com/rubenv/sql-migrate"
 )
