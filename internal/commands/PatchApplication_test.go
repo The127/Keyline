@@ -33,7 +33,6 @@ func (s *PatchApplicationCommandSuite) createContext(
 	virtualServerRepository repositories.VirtualServerRepository,
 	projectRepository repositories.ProjectRepository,
 	applicationRepository repositories.ApplicationRepository,
-	expectSaveChanges bool,
 ) context.Context {
 	dc := ioc.NewDependencyCollection()
 
@@ -52,10 +51,6 @@ func (s *PatchApplicationCommandSuite) createContext(
 
 	if applicationRepository != nil {
 		dbContext.EXPECT().Applications().Return(applicationRepository).AnyTimes()
-	}
-
-	if expectSaveChanges {
-		dbContext.EXPECT().SaveChanges(gomock.Any()).Return(nil)
 	}
 
 	scope := dc.BuildProvider()
@@ -107,7 +102,7 @@ func (s *PatchApplicationCommandSuite) TestHappyPath() {
 	})).Return(application, nil)
 	applicationRepository.EXPECT().Update(gomock.Any())
 
-	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, applicationRepository, true)
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, applicationRepository)
 	cmd := PatchApplication{
 		VirtualServerName:     virtualServer.Name(),
 		ProjectSlug:           project.Slug(),
@@ -140,7 +135,7 @@ func (s *PatchApplicationCommandSuite) TestUpdatesRedirectUris() {
 		return slices.Equal(x.RedirectUris(), []string{"https://new.example.com/callback"})
 	}))
 
-	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, applicationRepository, true)
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, applicationRepository)
 	newUris := []string{"https://new.example.com/callback"}
 	cmd := PatchApplication{
 		VirtualServerName: virtualServer.Name(),
@@ -173,7 +168,7 @@ func (s *PatchApplicationCommandSuite) TestUpdatesPostLogoutUris() {
 		return slices.Equal(x.PostLogoutRedirectUris(), []string{"https://example.com/logout"})
 	}))
 
-	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, applicationRepository, true)
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, applicationRepository)
 	newUris := []string{"https://example.com/logout"}
 	cmd := PatchApplication{
 		VirtualServerName:      virtualServer.Name(),
@@ -206,7 +201,7 @@ func (s *PatchApplicationCommandSuite) TestApplicationError() {
 	applicationRepository := mocks.NewMockApplicationRepository(ctrl)
 	applicationRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
 
-	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, applicationRepository, false)
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, applicationRepository)
 	cmd := PatchApplication{}
 
 	// act
@@ -229,7 +224,7 @@ func (s *PatchApplicationCommandSuite) TestProjectError() {
 	projectRepository := mocks.NewMockProjectRepository(ctrl)
 	projectRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
 
-	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, nil, false)
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, nil)
 	cmd := PatchApplication{}
 
 	// act
@@ -248,7 +243,7 @@ func (s *PatchApplicationCommandSuite) TestVirtualServerError() {
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
 	virtualServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
 
-	ctx := s.createContext(ctrl, virtualServerRepository, nil, nil, false)
+	ctx := s.createContext(ctrl, virtualServerRepository, nil, nil)
 	cmd := PatchApplication{}
 
 	// act
