@@ -150,9 +150,9 @@ func (s *VirtualServerClientSuite) TestPatch_WithSigningAlgorithms() {
 		var requestDto PatchVirtualServerInput
 		err := json.NewDecoder(r.Body).Decode(&requestDto)
 		s.NoError(err)
-		s.Require().NotNil(requestDto.PrimarySigningAlgorithm)
+		s.NotNil(requestDto.PrimarySigningAlgorithm)
 		s.Equal("EdDSA", *requestDto.PrimarySigningAlgorithm)
-		s.Require().NotNil(requestDto.AdditionalSigningAlgorithms)
+		s.NotNil(requestDto.AdditionalSigningAlgorithms)
 		s.Equal([]string{"RS256"}, *requestDto.AdditionalSigningAlgorithms)
 
 		w.WriteHeader(http.StatusNoContent)

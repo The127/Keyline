@@ -188,10 +188,10 @@ func (s *ApplicationClientSuite) TestPatchApplication_HappyPath() {
 func (s *ApplicationClientSuite) TestCreateApplication_WithSigningAlgorithm() {
 	// arrange
 	request := api.CreateApplicationRequestDto{
-		Name:            "rs256-app",
-		DisplayName:     "RS256 App",
-		RedirectUris:    []string{"http://localhost/callback"},
-		Type:            "public",
+		Name:             "rs256-app",
+		DisplayName:      "RS256 App",
+		RedirectUris:     []string{"http://localhost/callback"},
+		Type:             "public",
 		SigningAlgorithm: utils.Ptr("RS256"),
 	}
 
@@ -204,7 +204,7 @@ func (s *ApplicationClientSuite) TestCreateApplication_WithSigningAlgorithm() {
 		err := json.NewDecoder(r.Body).Decode(&requestDto)
 		s.NoError(err)
 		s.Equal(request, requestDto)
-		s.Require().NotNil(requestDto.SigningAlgorithm)
+		s.NotNil(requestDto.SigningAlgorithm)
 		s.Equal("RS256", *requestDto.SigningAlgorithm)
 
 		err = json.NewEncoder(w).Encode(response)
@@ -233,7 +233,7 @@ func (s *ApplicationClientSuite) TestPatchApplication_WithSigningAlgorithm() {
 		var requestDto api.PatchApplicationRequestDto
 		err := json.NewDecoder(r.Body).Decode(&requestDto)
 		s.NoError(err)
-		s.Require().NotNil(requestDto.SigningAlgorithm)
+		s.NotNil(requestDto.SigningAlgorithm)
 		s.Equal("RS256", *requestDto.SigningAlgorithm)
 
 		w.WriteHeader(http.StatusNoContent)
@@ -253,10 +253,10 @@ func (s *ApplicationClientSuite) TestGetApplication_ReturnsSigningAlgorithm() {
 	// arrange
 	requestId := uuid.New()
 	response := api.GetApplicationResponseDto{
-		Id:              requestId,
-		Name:            "rs256-app",
-		DisplayName:     "RS256 App",
-		Type:            "public",
+		Id:               requestId,
+		Name:             "rs256-app",
+		DisplayName:      "RS256 App",
+		Type:             "public",
 		SigningAlgorithm: utils.Ptr("RS256"),
 	}
 
