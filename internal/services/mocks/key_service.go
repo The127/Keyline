@@ -57,6 +57,21 @@ func (mr *MockKeyServiceMockRecorder) Generate(clockService, virtualServerName, 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Generate", reflect.TypeOf((*MockKeyService)(nil).Generate), clockService, virtualServerName, algorithm)
 }
 
+// GetAllKeys mocks base method.
+func (m *MockKeyService) GetAllKeys(virtualServerName string) ([]services.KeyPair, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllKeys", virtualServerName)
+	ret0, _ := ret[0].([]services.KeyPair)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAllKeys indicates an expected call of GetAllKeys.
+func (mr *MockKeyServiceMockRecorder) GetAllKeys(virtualServerName any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllKeys", reflect.TypeOf((*MockKeyService)(nil).GetAllKeys), virtualServerName)
+}
+
 // GetKey mocks base method.
 func (m *MockKeyService) GetKey(virtualServerName string, algorithm config.SigningAlgorithm) (services.KeyPair, error) {
 	m.ctrl.T.Helper()

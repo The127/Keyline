@@ -3,16 +3,16 @@
 package e2e
 
 import (
+	"context"
+	"fmt"
 	"github.com/The127/Keyline/client"
+	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/authentication"
 	"github.com/The127/Keyline/internal/commands"
-	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/repositories"
 	"github.com/The127/Keyline/utils"
-	"context"
-	"fmt"
 
 	"github.com/The127/ioc"
 	"github.com/The127/mediatr"

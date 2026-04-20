@@ -54,11 +54,12 @@ type CreateVirtualServerRequestDtoProjectDto struct {
 }
 
 type CreateVirtualServerRequestDto struct {
-	Name               string  `json:"name" validate:"required,min=1,max=255,alphanum"`
-	DisplayName        string  `json:"displayName" validate:"required,min=1,max=255"`
-	EnableRegistration bool    `json:"enableRegistration"`
-	SigningAlgorithm   *string `json:"signingAlgorithm" validate:"oneof=RS256 EdDSA"`
-	Require2fa         bool    `json:"require2fa"`
+	Name                        string   `json:"name" validate:"required,min=1,max=255,alphanum"`
+	DisplayName                 string   `json:"displayName" validate:"required,min=1,max=255"`
+	EnableRegistration          bool     `json:"enableRegistration"`
+	PrimarySigningAlgorithm     *string  `json:"primarySigningAlgorithm" validate:"omitempty,oneof=RS256 EdDSA"`
+	AdditionalSigningAlgorithms []string `json:"additionalSigningAlgorithms" validate:"omitempty,dive,oneof=RS256 EdDSA"`
+	Require2fa                  bool     `json:"require2fa"`
 
 	Admin        *CreateVirtualServerRequestDtoAdminDto        `json:"admin"`
 	ServiceUsers []CreateVirtualServerRequestDtoServiceUserDto `json:"serviceUsers"`
@@ -66,15 +67,16 @@ type CreateVirtualServerRequestDto struct {
 }
 
 type GetVirtualServerResponseDto struct {
-	Id                       uuid.UUID `json:"id"`
-	Name                     string    `json:"name"`
-	DisplayName              string    `json:"displayName"`
-	RegistrationEnabled      bool      `json:"registrationEnabled"`
-	Require2fa               bool      `json:"require2fa"`
-	RequireEmailVerification bool      `json:"requireEmailVerification"`
-	SigningAlgorithm         string    `json:"signingAlgorithm"`
-	CreatedAt                time.Time `json:"createdAt"`
-	UpdatedAt                time.Time `json:"updatedAt"`
+	Id                          uuid.UUID `json:"id"`
+	Name                        string    `json:"name"`
+	DisplayName                 string    `json:"displayName"`
+	RegistrationEnabled         bool      `json:"registrationEnabled"`
+	Require2fa                  bool      `json:"require2fa"`
+	RequireEmailVerification    bool      `json:"requireEmailVerification"`
+	PrimarySigningAlgorithm     string    `json:"primarySigningAlgorithm"`
+	AdditionalSigningAlgorithms []string  `json:"additionalSigningAlgorithms"`
+	CreatedAt                   time.Time `json:"createdAt"`
+	UpdatedAt                   time.Time `json:"updatedAt"`
 }
 
 type GetVirtualServerListResponseDto struct {
@@ -89,4 +91,7 @@ type PatchVirtualServerRequestDto struct {
 	EnableRegistration       *bool `json:"enableRegistration"`
 	Require2fa               *bool `json:"require2fa"`
 	RequireEmailVerification *bool `json:"requireEmailVerification"`
+
+	PrimarySigningAlgorithm     *string   `json:"primarySigningAlgorithm" validate:"omitempty,oneof=RS256 EdDSA"`
+	AdditionalSigningAlgorithms *[]string `json:"additionalSigningAlgorithms" validate:"omitempty,dive,oneof=RS256 EdDSA"`
 }

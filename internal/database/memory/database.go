@@ -1,9 +1,9 @@
 package memory
 
 import (
+	"context"
 	db "github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/repositories"
-	"context"
 	"sync"
 
 	"github.com/google/uuid"

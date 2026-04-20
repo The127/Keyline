@@ -1,9 +1,9 @@
 package middlewares
 
 import (
-	"github.com/The127/Keyline/config"
 	"context"
 	"errors"
+	"github.com/The127/Keyline/config"
 	"net/http"
 
 	"github.com/gorilla/mux"

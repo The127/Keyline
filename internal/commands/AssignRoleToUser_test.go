@@ -1,14 +1,14 @@
 package commands
 
 import (
+	"context"
+	"errors"
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/mocks"
 	"github.com/The127/Keyline/internal/repositories"
 	repoMocks "github.com/The127/Keyline/internal/repositories/mocks"
 	"github.com/The127/Keyline/utils"
-	"context"
-	"errors"
 	"testing"
 	"time"
 

@@ -1,13 +1,13 @@
 package queries
 
 import (
+	"context"
+	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/authentication/permissions"
 	"github.com/The127/Keyline/internal/behaviours"
-	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/repositories"
-	"context"
 	"time"
 
 	"github.com/The127/ioc"
@@ -36,15 +36,16 @@ func (a GetVirtualServerQuery) GetRequestName() string {
 }
 
 type GetVirtualServerResponse struct {
-	Id                       uuid.UUID
-	Name                     string
-	DisplayName              string
-	RegistrationEnabled      bool
-	Require2fa               bool
-	RequireEmailVerification bool
-	SigningAlgorithm         config.SigningAlgorithm
-	CreatedAt                time.Time
-	UpdatedAt                time.Time
+	Id                          uuid.UUID
+	Name                        string
+	DisplayName                 string
+	RegistrationEnabled         bool
+	Require2fa                  bool
+	RequireEmailVerification    bool
+	PrimarySigningAlgorithm     config.SigningAlgorithm
+	AdditionalSigningAlgorithms []config.SigningAlgorithm
+	CreatedAt                   time.Time
+	UpdatedAt                   time.Time
 }
 
 func HandleGetVirtualServerQuery(ctx context.Context, command GetVirtualServerQuery) (*GetVirtualServerResponse, error) {
@@ -58,14 +59,15 @@ func HandleGetVirtualServerQuery(ctx context.Context, command GetVirtualServerQu
 	}
 
 	return &GetVirtualServerResponse{
-		Id:                       virtualServer.Id(),
-		Name:                     virtualServer.Name(),
-		DisplayName:              virtualServer.DisplayName(),
-		RegistrationEnabled:      virtualServer.EnableRegistration(),
-		Require2fa:               virtualServer.Require2fa(),
-		RequireEmailVerification: virtualServer.RequireEmailVerification(),
-		SigningAlgorithm:         virtualServer.SigningAlgorithm(),
-		CreatedAt:                virtualServer.AuditCreatedAt(),
-		UpdatedAt:                virtualServer.AuditUpdatedAt(),
+		Id:                          virtualServer.Id(),
+		Name:                        virtualServer.Name(),
+		DisplayName:                 virtualServer.DisplayName(),
+		RegistrationEnabled:         virtualServer.EnableRegistration(),
+		Require2fa:                  virtualServer.Require2fa(),
+		RequireEmailVerification:    virtualServer.RequireEmailVerification(),
+		PrimarySigningAlgorithm:     virtualServer.PrimarySigningAlgorithm(),
+		AdditionalSigningAlgorithms: virtualServer.AdditionalSigningAlgorithms(),
+		CreatedAt:                   virtualServer.AuditCreatedAt(),
+		UpdatedAt:                   virtualServer.AuditUpdatedAt(),
 	}, nil
 }

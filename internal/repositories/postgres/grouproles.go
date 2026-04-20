@@ -1,8 +1,8 @@
 package postgres
 
 import (
-	"github.com/The127/Keyline/internal/change"
 	"database/sql"
+	"github.com/The127/Keyline/internal/change"
 )
 
 type GroupRoleRepository struct {

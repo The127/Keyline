@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/middlewares"
@@ -11,7 +12,6 @@ import (
 	"github.com/The127/Keyline/internal/services/claimsMapping"
 	serviceMocks "github.com/The127/Keyline/internal/services/mocks"
 	"github.com/The127/Keyline/utils"
-	"context"
 	"testing"
 	"time"
 

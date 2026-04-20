@@ -1,13 +1,13 @@
 package handlers
 
 import (
+	"encoding/json"
 	"github.com/The127/Keyline/api"
 	"github.com/The127/Keyline/internal/commands"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/queries"
 	"github.com/The127/Keyline/internal/repositories"
 	"github.com/The127/Keyline/utils"
-	"encoding/json"
 	"net/http"
 
 	"github.com/The127/ioc"
@@ -218,15 +218,15 @@ func PatchApplication(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_, err = mediatr.Send[*commands.PatchApplicationResponse](ctx, m, commands.PatchApplication{
-		VirtualServerName:     vsName,
-		ProjectSlug:           projectSlug,
-		ApplicationId:         appId,
-		DisplayName:           utils.TrimSpace(dto.DisplayName),
-		ClaimsMappingScript:   dto.ClaimsMappingScript,
-		DeviceFlowEnabled:     dto.DeviceFlowEnabled,
-		RedirectUris:          redirectUris,
+		VirtualServerName:      vsName,
+		ProjectSlug:            projectSlug,
+		ApplicationId:          appId,
+		DisplayName:            utils.TrimSpace(dto.DisplayName),
+		ClaimsMappingScript:    dto.ClaimsMappingScript,
+		DeviceFlowEnabled:      dto.DeviceFlowEnabled,
+		RedirectUris:           redirectUris,
 		PostLogoutRedirectUris: postLogoutUris,
-		AccessTokenHeaderType: dto.AccessTokenHeaderType,
+		AccessTokenHeaderType:  dto.AccessTokenHeaderType,
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)

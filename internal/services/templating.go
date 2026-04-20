@@ -1,12 +1,12 @@
 package services
 
 import (
-	"github.com/The127/Keyline/internal/database"
-	"github.com/The127/Keyline/internal/middlewares"
-	"github.com/The127/Keyline/internal/repositories"
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/The127/Keyline/internal/database"
+	"github.com/The127/Keyline/internal/middlewares"
+	"github.com/The127/Keyline/internal/repositories"
 	"html/template"
 
 	"github.com/The127/ioc"

@@ -1,12 +1,12 @@
 package claimsMapping
 
 import (
+	"context"
+	"fmt"
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/logging"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/repositories"
-	"context"
-	"fmt"
 
 	"github.com/The127/ioc"
 

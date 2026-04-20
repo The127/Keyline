@@ -1,20 +1,22 @@
 package client
 
 import (
-	"github.com/The127/Keyline/api"
 	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/The127/Keyline/api"
 	"net/http"
 )
 
 // PatchVirtualServerInput holds the fields that can be patched on a virtual server.
 type PatchVirtualServerInput struct {
-	DisplayName              *string `json:"displayName"`
-	EnableRegistration       *bool   `json:"enableRegistration"`
-	Require2fa               *bool   `json:"require2fa"`
-	RequireEmailVerification *bool   `json:"requireEmailVerification"`
+	DisplayName                 *string   `json:"displayName"`
+	EnableRegistration          *bool     `json:"enableRegistration"`
+	Require2fa                  *bool     `json:"require2fa"`
+	RequireEmailVerification    *bool     `json:"requireEmailVerification"`
+	PrimarySigningAlgorithm     *string   `json:"primarySigningAlgorithm,omitempty"`
+	AdditionalSigningAlgorithms *[]string `json:"additionalSigningAlgorithms,omitempty"`
 }
 
 type VirtualServerClient interface {

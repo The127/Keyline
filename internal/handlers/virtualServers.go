@@ -1,13 +1,13 @@
 package handlers
 
 import (
+	"encoding/json"
 	"github.com/The127/Keyline/api"
-	"github.com/The127/Keyline/internal/commands"
 	"github.com/The127/Keyline/config"
+	"github.com/The127/Keyline/internal/commands"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/queries"
 	"github.com/The127/Keyline/utils"
-	"encoding/json"
 	"net/http"
 
 	"github.com/The127/ioc"
@@ -41,17 +41,23 @@ func CreateVirtualServer(w http.ResponseWriter, r *http.Request) {
 	}
 	m := ioc.GetDependency[mediatr.Mediator](scope)
 
-	signingAlgorithm := config.SigningAlgorithmEdDSA
-	if dto.SigningAlgorithm != nil {
-		signingAlgorithm = config.SigningAlgorithm(*dto.SigningAlgorithm)
+	primaryAlgorithm := config.SigningAlgorithmEdDSA
+	if dto.PrimarySigningAlgorithm != nil {
+		primaryAlgorithm = config.SigningAlgorithm(*dto.PrimarySigningAlgorithm)
+	}
+
+	additionalAlgorithms := make([]config.SigningAlgorithm, len(dto.AdditionalSigningAlgorithms))
+	for i, a := range dto.AdditionalSigningAlgorithms {
+		additionalAlgorithms[i] = config.SigningAlgorithm(a)
 	}
 
 	_, err = mediatr.Send[*commands.CreateVirtualServerResponse](ctx, m, commands.CreateVirtualServer{
-		Name:               dto.Name,
-		DisplayName:        dto.DisplayName,
-		EnableRegistration: dto.EnableRegistration,
-		SigningAlgorithm:   signingAlgorithm,
-		Require2fa:         dto.Require2fa,
+		Name:                        dto.Name,
+		DisplayName:                 dto.DisplayName,
+		EnableRegistration:          dto.EnableRegistration,
+		PrimarySigningAlgorithm:     primaryAlgorithm,
+		AdditionalSigningAlgorithms: additionalAlgorithms,
+		Require2fa:                  dto.Require2fa,
 		Admin: utils.MapPtr(dto.Admin, func(admin api.CreateVirtualServerRequestDtoAdminDto) commands.CreateVirtualServerAdmin {
 			return commands.CreateVirtualServerAdmin{
 				Username:     admin.Username,
@@ -143,16 +149,22 @@ func GetVirtualServer(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
+	additionalAlgorithms := make([]string, len(response.AdditionalSigningAlgorithms))
+	for i, a := range response.AdditionalSigningAlgorithms {
+		additionalAlgorithms[i] = string(a)
+	}
+
 	err = json.NewEncoder(w).Encode(api.GetVirtualServerResponseDto{
-		Id:                       response.Id,
-		Name:                     response.Name,
-		DisplayName:              response.DisplayName,
-		RegistrationEnabled:      response.RegistrationEnabled,
-		Require2fa:               response.Require2fa,
-		RequireEmailVerification: response.RequireEmailVerification,
-		SigningAlgorithm:         string(response.SigningAlgorithm),
-		CreatedAt:                response.CreatedAt,
-		UpdatedAt:                response.UpdatedAt,
+		Id:                          response.Id,
+		Name:                        response.Name,
+		DisplayName:                 response.DisplayName,
+		RegistrationEnabled:         response.RegistrationEnabled,
+		Require2fa:                  response.Require2fa,
+		RequireEmailVerification:    response.RequireEmailVerification,
+		PrimarySigningAlgorithm:     string(response.PrimarySigningAlgorithm),
+		AdditionalSigningAlgorithms: additionalAlgorithms,
+		CreatedAt:                   response.CreatedAt,
+		UpdatedAt:                   response.UpdatedAt,
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -227,13 +239,24 @@ func PatchVirtualServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var additionalAlgorithms *[]config.SigningAlgorithm
+	if dto.AdditionalSigningAlgorithms != nil {
+		converted := make([]config.SigningAlgorithm, len(*dto.AdditionalSigningAlgorithms))
+		for i, a := range *dto.AdditionalSigningAlgorithms {
+			converted[i] = config.SigningAlgorithm(a)
+		}
+		additionalAlgorithms = &converted
+	}
+
 	m := ioc.GetDependency[mediatr.Mediator](scope)
 	command := commands.PatchVirtualServer{
-		VirtualServerName:        vsName,
-		DisplayName:              utils.TrimSpace(dto.DisplayName),
-		EnableRegistration:       dto.EnableRegistration,
-		Require2fa:               dto.Require2fa,
-		RequireEmailVerification: dto.RequireEmailVerification,
+		VirtualServerName:           vsName,
+		DisplayName:                 utils.TrimSpace(dto.DisplayName),
+		EnableRegistration:          dto.EnableRegistration,
+		Require2fa:                  dto.Require2fa,
+		RequireEmailVerification:    dto.RequireEmailVerification,
+		PrimarySigningAlgorithm:     (*config.SigningAlgorithm)(dto.PrimarySigningAlgorithm),
+		AdditionalSigningAlgorithms: additionalAlgorithms,
 	}
 	_, err = mediatr.Send[*commands.PatchVirtualServerResponse](ctx, m, command)
 	if err != nil {

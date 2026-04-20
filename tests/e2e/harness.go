@@ -1,10 +1,12 @@
 package e2e
 
 import (
+	"context"
+	"fmt"
 	"github.com/The127/Keyline/client"
+	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/authentication"
 	"github.com/The127/Keyline/internal/commands"
-	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/database/postgres"
 	"github.com/The127/Keyline/internal/middlewares"
@@ -12,8 +14,6 @@ import (
 	"github.com/The127/Keyline/internal/server"
 	"github.com/The127/Keyline/internal/setup"
 	"github.com/The127/Keyline/utils"
-	"context"
-	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -243,10 +243,10 @@ func initTest(dp *ioc.DependencyProvider) error {
 	m := ioc.GetDependency[mediatr.Mediator](scope)
 
 	createVirtualServerResponse, err := mediatr.Send[*commands.CreateVirtualServerResponse](ctx, m, commands.CreateVirtualServer{
-		Name:               "test-vs",
-		DisplayName:        "Test Virtual Server",
-		EnableRegistration: true,
-		SigningAlgorithm:   config.SigningAlgorithmEdDSA,
+		Name:                    "test-vs",
+		DisplayName:             "Test Virtual Server",
+		EnableRegistration:      true,
+		PrimarySigningAlgorithm: config.SigningAlgorithmEdDSA,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create initial virtual server: %v", err)

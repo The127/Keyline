@@ -88,9 +88,9 @@ func setupSystemAdminFixtures(h *harness) {
 
 	// Create a second VS to use as the cross-VS target.
 	_, err = mediatr.Send[*commands.CreateVirtualServerResponse](ctx, m, commands.CreateVirtualServer{
-		Name:             secondVirtualServerName,
-		DisplayName:      "Second Virtual Server",
-		SigningAlgorithm: config.SigningAlgorithmEdDSA,
+		Name:                    secondVirtualServerName,
+		DisplayName:             "Second Virtual Server",
+		PrimarySigningAlgorithm: config.SigningAlgorithmEdDSA,
 	})
 	Expect(err).ToNot(HaveOccurred())
 	Expect(dbContext.SaveChanges(ctx)).To(Succeed())

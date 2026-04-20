@@ -1,13 +1,13 @@
 package postgres
 
 import (
+	"context"
+	"database/sql"
+	"fmt"
 	"github.com/The127/Keyline/internal/change"
 	db "github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/repositories"
 	"github.com/The127/Keyline/internal/repositories/postgres"
-	"context"
-	"database/sql"
-	"fmt"
 
 	"github.com/google/uuid"
 )

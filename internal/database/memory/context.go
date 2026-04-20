@@ -1,12 +1,12 @@
 package memory
 
 import (
+	"context"
+	"fmt"
 	"github.com/The127/Keyline/internal/change"
 	db "github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/repositories"
 	memrepos "github.com/The127/Keyline/internal/repositories/memory"
-	"context"
-	"fmt"
 
 	"github.com/google/uuid"
 )
@@ -196,7 +196,10 @@ func (c *Context) applyChange(ch *change.Entry) error {
 		return applyChange(c.stores.Applications, ch, func(e *repositories.Application) { e.SetVersion(incrementVersion(e.GetVersion())); e.ClearChanges() })
 
 	case db.ApplicationUserMetadataEntityType:
-		return applyChange(c.stores.ApplicationUserMetadata, ch, func(e *repositories.ApplicationUserMetadata) { e.SetVersion(incrementVersion(e.GetVersion())); e.ClearChanges() })
+		return applyChange(c.stores.ApplicationUserMetadata, ch, func(e *repositories.ApplicationUserMetadata) {
+			e.SetVersion(incrementVersion(e.GetVersion()))
+			e.ClearChanges()
+		})
 
 	case db.AuditLogEntityType:
 		return applyInsertOnly(c.stores.AuditLogs, ch, func(e *repositories.AuditLog) { e.SetVersion(1) })
@@ -226,7 +229,10 @@ func (c *Context) applyChange(ch *change.Entry) error {
 		return applyChange(c.stores.ResourceServers, ch, func(e *repositories.ResourceServer) { e.SetVersion(incrementVersion(e.GetVersion())); e.ClearChanges() })
 
 	case db.ResourceServerScopeEntityType:
-		return applyChange(c.stores.ResourceServerScopes, ch, func(e *repositories.ResourceServerScope) { e.SetVersion(incrementVersion(e.GetVersion())); e.ClearChanges() })
+		return applyChange(c.stores.ResourceServerScopes, ch, func(e *repositories.ResourceServerScope) {
+			e.SetVersion(incrementVersion(e.GetVersion()))
+			e.ClearChanges()
+		})
 
 	case db.RoleEntityType:
 		return applyChange(c.stores.Roles, ch, func(e *repositories.Role) { e.SetVersion(incrementVersion(e.GetVersion())); e.ClearChanges() })

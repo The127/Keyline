@@ -1,6 +1,8 @@
 package behaviours
 
 import (
+	"context"
+	"fmt"
 	"github.com/The127/Keyline/internal/authentication"
 	"github.com/The127/Keyline/internal/authentication/permissions"
 	"github.com/The127/Keyline/internal/authentication/roles"
@@ -8,8 +10,6 @@ import (
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/repositories"
 	"github.com/The127/Keyline/utils"
-	"context"
-	"fmt"
 
 	"github.com/The127/ioc"
 

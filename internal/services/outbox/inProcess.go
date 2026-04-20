@@ -1,10 +1,10 @@
 package outbox
 
 import (
-	"github.com/The127/Keyline/internal/middlewares"
-	"github.com/The127/Keyline/internal/repositories"
 	"context"
 	"fmt"
+	"github.com/The127/Keyline/internal/middlewares"
+	"github.com/The127/Keyline/internal/repositories"
 
 	"github.com/The127/ioc"
 )

@@ -1,6 +1,8 @@
 package jobs
 
 import (
+	"context"
+	"fmt"
 	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/logging"
@@ -8,8 +10,6 @@ import (
 	"github.com/The127/Keyline/internal/repositories"
 	"github.com/The127/Keyline/internal/services"
 	"github.com/The127/Keyline/utils"
-	"context"
-	"fmt"
 	"time"
 
 	"github.com/The127/go-clock"
@@ -55,6 +55,11 @@ func rotateKeysForVirtualServer(dp *ioc.DependencyProvider, server *repositories
 		return fmt.Errorf("deleting expired key: %w", err)
 	}
 
+	err = deleteOrphanKeys(keyPairs, keyStore, server)
+	if err != nil {
+		return fmt.Errorf("deleting orphan keys: %w", err)
+	}
+
 	keyService := ioc.GetDependency[services.KeyService](dp)
 	err = generateNewKeys(keyPairs, keyService, server, clockService)
 	if err != nil {
@@ -78,6 +83,27 @@ func deleteExpiredKeys(
 				return fmt.Errorf("removing key pair: %w", err)
 			}
 			continue
+		}
+	}
+	return nil
+}
+
+func deleteOrphanKeys(
+	keyPairs []services.KeyPair,
+	keyStore services.KeyStore,
+	server *repositories.VirtualServer,
+) error {
+	configured := map[config.SigningAlgorithm]bool{}
+	for _, alg := range server.AllSigningAlgorithms() {
+		configured[alg] = true
+	}
+	for _, keyPair := range keyPairs {
+		if configured[keyPair.Algorithm()] {
+			continue
+		}
+		logging.Logger.Infof("removing orphan key for virtual server %s, algorithm %s", server.Name(), keyPair.Algorithm())
+		if err := keyStore.Remove(server.Name(), keyPair.Algorithm(), keyPair.GetKid()); err != nil {
+			return fmt.Errorf("removing orphan key pair: %w", err)
 		}
 	}
 	return nil
@@ -110,7 +136,18 @@ func generateNewKeys(
 		if err != nil {
 			return fmt.Errorf("generating key pair: %w", err)
 		}
-
 	}
+
+	for _, alg := range server.AllSigningAlgorithms() {
+		if _, known := algorithmsToRotate[alg]; known {
+			continue
+		}
+		logging.Logger.Infof("seeding initial key for virtual server %s, algorithm %s", server.Name(), alg)
+		_, err := keyService.Generate(clockService, server.Name(), alg)
+		if err != nil {
+			return fmt.Errorf("generating key pair: %w", err)
+		}
+	}
+
 	return nil
 }

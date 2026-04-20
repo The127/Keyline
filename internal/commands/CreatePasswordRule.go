@@ -1,6 +1,9 @@
 package commands
 
 import (
+	"context"
+	"encoding/json"
+	"fmt"
 	"github.com/The127/Keyline/internal/authentication/permissions"
 	"github.com/The127/Keyline/internal/behaviours"
 	"github.com/The127/Keyline/internal/database"
@@ -8,9 +11,6 @@ import (
 	"github.com/The127/Keyline/internal/password"
 	"github.com/The127/Keyline/internal/repositories"
 	"github.com/The127/Keyline/utils"
-	"context"
-	"encoding/json"
-	"fmt"
 
 	"github.com/The127/ioc"
 )

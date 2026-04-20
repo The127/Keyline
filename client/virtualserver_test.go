@@ -1,9 +1,9 @@
 package client
 
 import (
+	"encoding/json"
 	"github.com/The127/Keyline/api"
 	"github.com/The127/Keyline/utils"
-	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -23,11 +23,11 @@ func TestVirtualServerClientSuite(t *testing.T) {
 func (s *VirtualServerClientSuite) TestCreate_HappyPath() {
 	// arrange
 	request := api.CreateVirtualServerRequestDto{
-		Name:               "name",
-		DisplayName:        "Display Name",
-		EnableRegistration: false,
-		Require2fa:         false,
-		SigningAlgorithm:   utils.Ptr("EdDSA"),
+		Name:                    "name",
+		DisplayName:             "Display Name",
+		EnableRegistration:      false,
+		Require2fa:              false,
+		PrimarySigningAlgorithm: utils.Ptr("EdDSA"),
 	}
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

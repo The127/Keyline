@@ -1,17 +1,17 @@
 package commands
 
 import (
+	"context"
+	"fmt"
+	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/authentication/permissions"
 	"github.com/The127/Keyline/internal/behaviours"
-	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/repositories"
 	"github.com/The127/Keyline/internal/services"
 	"github.com/The127/Keyline/templates"
 	"github.com/The127/Keyline/utils"
-	"context"
-	"fmt"
 	"strings"
 
 	"github.com/The127/go-clock"
@@ -76,11 +76,12 @@ type CreateVirtualServerProject struct {
 }
 
 type CreateVirtualServer struct {
-	Name               string
-	DisplayName        string
-	EnableRegistration bool
-	SigningAlgorithm   config.SigningAlgorithm
-	Require2fa         bool
+	Name                        string
+	DisplayName                 string
+	EnableRegistration          bool
+	PrimarySigningAlgorithm     config.SigningAlgorithm
+	AdditionalSigningAlgorithms []config.SigningAlgorithm
+	Require2fa                  bool
 
 	CreateSystemAdminRole bool
 
@@ -122,16 +123,20 @@ func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer)
 	virtualServer := repositories.NewVirtualServer(command.Name, command.DisplayName)
 	virtualServer.SetEnableRegistration(command.EnableRegistration)
 	virtualServer.SetRequire2fa(command.Require2fa)
-	virtualServer.SetSigningAlgorithm(command.SigningAlgorithm)
+	virtualServer.SetPrimarySigningAlgorithm(command.PrimarySigningAlgorithm)
+	virtualServer.SetAdditionalSigningAlgorithms(command.AdditionalSigningAlgorithms)
 
 	dbContext.VirtualServers().Insert(virtualServer)
 
 	clockService := ioc.GetDependency[clock.Service](scope)
 
 	keyService := ioc.GetDependency[services.KeyService](scope)
-	_, err := keyService.Generate(clockService, command.Name, command.SigningAlgorithm)
-	if err != nil {
-		return nil, fmt.Errorf("generating keypair: %w", err)
+	var err error
+	for _, alg := range virtualServer.AllSigningAlgorithms() {
+		_, err = keyService.Generate(clockService, command.Name, alg)
+		if err != nil {
+			return nil, fmt.Errorf("generating keypair for %s: %w", alg, err)
+		}
 	}
 	initializeDefaultTemplates(ctx, virtualServer)
 

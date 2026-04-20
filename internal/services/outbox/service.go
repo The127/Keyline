@@ -1,14 +1,14 @@
 package outbox
 
 import (
+	"context"
+	"encoding/json"
+	"fmt"
 	"github.com/The127/Keyline/internal/logging"
 	"github.com/The127/Keyline/internal/messages"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/repositories"
 	"github.com/The127/Keyline/internal/services"
-	"context"
-	"encoding/json"
-	"fmt"
 
 	"github.com/The127/ioc"
 

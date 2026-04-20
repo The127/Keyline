@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/middlewares"
 	mocks2 "github.com/The127/Keyline/internal/mocks"
@@ -9,7 +10,6 @@ import (
 	"github.com/The127/Keyline/internal/services"
 	serviceMocks "github.com/The127/Keyline/internal/services/mocks"
 	"github.com/The127/Keyline/utils"
-	"context"
 	"testing"
 	"time"
 

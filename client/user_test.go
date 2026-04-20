@@ -1,10 +1,10 @@
 package client
 
 import (
-	"github.com/The127/Keyline/api"
-	"github.com/The127/Keyline/utils"
 	"encoding/json"
 	"fmt"
+	"github.com/The127/Keyline/api"
+	"github.com/The127/Keyline/utils"
 	"net/http"
 	"net/http/httptest"
 	"testing"
