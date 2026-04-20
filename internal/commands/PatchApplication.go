@@ -16,13 +16,15 @@ import (
 )
 
 type PatchApplication struct {
-	VirtualServerName     string
-	ProjectSlug           string
-	ApplicationId         uuid.UUID
-	DisplayName           *string
-	ClaimsMappingScript   *string
-	AccessTokenHeaderType *string
-	DeviceFlowEnabled     *bool
+	VirtualServerName      string
+	ProjectSlug            string
+	ApplicationId          uuid.UUID
+	DisplayName            *string
+	ClaimsMappingScript    *string
+	AccessTokenHeaderType  *string
+	DeviceFlowEnabled      *bool
+	RedirectUris           *[]string
+	PostLogoutRedirectUris *[]string
 }
 
 func (a PatchApplication) LogRequest() bool {
@@ -92,6 +94,15 @@ func HandlePatchApplication(ctx context.Context, command PatchApplication) (*Pat
 		application.SetDeviceFlowEnabled(*command.DeviceFlowEnabled)
 	}
 
+	if command.RedirectUris != nil {
+		application.SetRedirectUris(*command.RedirectUris)
+	}
+
+	if command.PostLogoutRedirectUris != nil {
+		application.SetPostLogoutRedirectUris(*command.PostLogoutRedirectUris)
+	}
+
 	dbContext.Applications().Update(application)
+
 	return &PatchApplicationResponse{}, nil
 }

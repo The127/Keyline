@@ -9,6 +9,7 @@ import (
 	"github.com/The127/Keyline/utils"
 	"context"
 	"errors"
+	"slices"
 	"testing"
 	"time"
 
@@ -60,13 +61,12 @@ func (s *PatchApplicationCommandSuite) createContext(
 	return middlewares.ContextWithScope(s.T().Context(), scope)
 }
 
-func (s *PatchApplicationCommandSuite) TestHappyPath() {
-	// arrange
-	ctrl := gomock.NewController(s.T())
-	defer ctrl.Finish()
-
-	now := time.Now()
-
+func (s *PatchApplicationCommandSuite) setupVSAndProject(ctrl *gomock.Controller, now time.Time) (
+	*repositories.VirtualServer,
+	*repositories.Project,
+	*mocks.MockVirtualServerRepository,
+	*mocks.MockProjectRepository,
+) {
 	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
 	virtualServer.Mock(now)
 	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
@@ -80,6 +80,17 @@ func (s *PatchApplicationCommandSuite) TestHappyPath() {
 	projectRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Cond(func(x *repositories.ProjectFilter) bool {
 		return x.GetSlug() == "project"
 	})).Return(project, nil)
+
+	return virtualServer, project, virtualServerRepository, projectRepository
+}
+
+func (s *PatchApplicationCommandSuite) TestHappyPath() {
+	// arrange
+	ctrl := gomock.NewController(s.T())
+	defer ctrl.Finish()
+
+	now := time.Now()
+	virtualServer, project, virtualServerRepository, projectRepository := s.setupVSAndProject(ctrl, now)
 
 	application := repositories.NewApplication(virtualServer.Id(), project.Id(), "application", "Application", repositories.ApplicationTypePublic, []string{})
 	application.Mock(now)
@@ -98,6 +109,72 @@ func (s *PatchApplicationCommandSuite) TestHappyPath() {
 		ApplicationId:         application.Id(),
 		ClaimsMappingScript:   utils.Ptr("claimsMappingScript"),
 		AccessTokenHeaderType: utils.Ptr("JWT"),
+	}
+
+	// act
+	resp, err := HandlePatchApplication(ctx, cmd)
+
+	// assert
+	s.Require().NoError(err)
+	s.NotNil(resp)
+}
+
+func (s *PatchApplicationCommandSuite) TestUpdatesRedirectUris() {
+	// arrange
+	ctrl := gomock.NewController(s.T())
+	defer ctrl.Finish()
+
+	now := time.Now()
+	virtualServer, project, virtualServerRepository, projectRepository := s.setupVSAndProject(ctrl, now)
+
+	application := repositories.NewApplication(virtualServer.Id(), project.Id(), "application", "Application", repositories.ApplicationTypePublic, []string{"https://old.example.com/callback"})
+	application.Mock(now)
+	applicationRepository := mocks.NewMockApplicationRepository(ctrl)
+	applicationRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(application, nil)
+	applicationRepository.EXPECT().Update(gomock.Cond(func(x *repositories.Application) bool {
+		return slices.Equal(x.RedirectUris(), []string{"https://new.example.com/callback"})
+	}))
+
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, applicationRepository)
+	newUris := []string{"https://new.example.com/callback"}
+	cmd := PatchApplication{
+		VirtualServerName: virtualServer.Name(),
+		ProjectSlug:       project.Slug(),
+		ApplicationId:     application.Id(),
+		RedirectUris:      &newUris,
+	}
+
+	// act
+	resp, err := HandlePatchApplication(ctx, cmd)
+
+	// assert
+	s.Require().NoError(err)
+	s.NotNil(resp)
+}
+
+func (s *PatchApplicationCommandSuite) TestUpdatesPostLogoutUris() {
+	// arrange
+	ctrl := gomock.NewController(s.T())
+	defer ctrl.Finish()
+
+	now := time.Now()
+	virtualServer, project, virtualServerRepository, projectRepository := s.setupVSAndProject(ctrl, now)
+
+	application := repositories.NewApplication(virtualServer.Id(), project.Id(), "application", "Application", repositories.ApplicationTypePublic, []string{"https://example.com/callback"})
+	application.Mock(now)
+	applicationRepository := mocks.NewMockApplicationRepository(ctrl)
+	applicationRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(application, nil)
+	applicationRepository.EXPECT().Update(gomock.Cond(func(x *repositories.Application) bool {
+		return slices.Equal(x.PostLogoutRedirectUris(), []string{"https://example.com/logout"})
+	}))
+
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, applicationRepository)
+	newUris := []string{"https://example.com/logout"}
+	cmd := PatchApplication{
+		VirtualServerName:      virtualServer.Name(),
+		ProjectSlug:            project.Slug(),
+		ApplicationId:          application.Id(),
+		PostLogoutRedirectUris: &newUris,
 	}
 
 	// act

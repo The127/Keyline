@@ -154,6 +154,7 @@ func GetApplication(w http.ResponseWriter, r *http.Request) {
 		PostLogoutRedirectUris: application.PostLogoutUris,
 		SystemApplication:      application.SystemApplication,
 		ClaimsMappingScript:    application.ClaimsMappingScript,
+		AccessTokenHeaderType:  application.AccessTokenHeaderType,
 		DeviceFlowEnabled:      application.DeviceFlowEnabled,
 		CreatedAt:              application.CreatedAt,
 		UpdatedAt:              application.UpdatedAt,
@@ -194,6 +195,7 @@ func PatchApplication(w http.ResponseWriter, r *http.Request) {
 	appId, err := uuid.Parse(appIdString)
 	if err != nil {
 		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+		return
 	}
 
 	var dto api.PatchApplicationRequestDto
@@ -206,13 +208,25 @@ func PatchApplication(w http.ResponseWriter, r *http.Request) {
 	scope := middlewares.GetScope(ctx)
 	m := ioc.GetDependency[mediatr.Mediator](scope)
 
+	var redirectUris *[]string
+	if dto.RedirectUris != nil {
+		redirectUris = &dto.RedirectUris
+	}
+	var postLogoutUris *[]string
+	if dto.PostLogoutUris != nil {
+		postLogoutUris = &dto.PostLogoutUris
+	}
+
 	_, err = mediatr.Send[*commands.PatchApplicationResponse](ctx, m, commands.PatchApplication{
-		VirtualServerName:   vsName,
-		ProjectSlug:         projectSlug,
-		ApplicationId:       appId,
-		DisplayName:         utils.TrimSpace(dto.DisplayName),
-		ClaimsMappingScript: dto.ClaimsMappingScript,
-		DeviceFlowEnabled:   dto.DeviceFlowEnabled,
+		VirtualServerName:     vsName,
+		ProjectSlug:           projectSlug,
+		ApplicationId:         appId,
+		DisplayName:           utils.TrimSpace(dto.DisplayName),
+		ClaimsMappingScript:   dto.ClaimsMappingScript,
+		DeviceFlowEnabled:     dto.DeviceFlowEnabled,
+		RedirectUris:          redirectUris,
+		PostLogoutRedirectUris: postLogoutUris,
+		AccessTokenHeaderType: dto.AccessTokenHeaderType,
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -250,6 +264,7 @@ func DeleteApplication(w http.ResponseWriter, r *http.Request) {
 	appId, err := uuid.Parse(appIdString)
 	if err != nil {
 		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+		return
 	}
 
 	scope := middlewares.GetScope(ctx)
