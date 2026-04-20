@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"encoding/base64"
+	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/change"
 	"github.com/The127/Keyline/utils"
 	"slices"
@@ -28,6 +29,7 @@ const (
 	ApplicationChangePostLogoutRedirectUris
 	ApplicationChangeSystemApplication
 	ApplicationChangeDeviceFlowEnabled
+	ApplicationChangeSigningAlgorithm
 )
 
 type Application struct {
@@ -51,6 +53,8 @@ type Application struct {
 	accessTokenHeaderType string
 
 	deviceFlowEnabled bool
+
+	signingAlgorithm *config.SigningAlgorithm
 }
 
 func NewApplication(virtualServerId uuid.UUID, projectId uuid.UUID, name string, displayName string, type_ ApplicationType, redirectUris []string) *Application {
@@ -82,6 +86,7 @@ func NewApplicationFromDB(
 	claimsMappingScript *string,
 	accessTokenHeaderType string,
 	deviceFlowEnabled bool,
+	signingAlgorithm *config.SigningAlgorithm,
 ) *Application {
 	return &Application{
 		BaseModel:              base,
@@ -98,6 +103,7 @@ func NewApplicationFromDB(
 		claimsMappingScript:    claimsMappingScript,
 		accessTokenHeaderType:  accessTokenHeaderType,
 		deviceFlowEnabled:      deviceFlowEnabled,
+		signingAlgorithm:       signingAlgorithm,
 	}
 }
 
@@ -227,6 +233,15 @@ func (a *Application) SetDeviceFlowEnabled(deviceFlowEnabled bool) {
 
 	a.deviceFlowEnabled = deviceFlowEnabled
 	a.TrackChange(ApplicationChangeDeviceFlowEnabled)
+}
+
+func (a *Application) SigningAlgorithm() *config.SigningAlgorithm {
+	return a.signingAlgorithm
+}
+
+func (a *Application) SetSigningAlgorithm(alg *config.SigningAlgorithm) {
+	a.signingAlgorithm = alg
+	a.TrackChange(ApplicationChangeSigningAlgorithm)
 }
 
 type ApplicationFilter struct {

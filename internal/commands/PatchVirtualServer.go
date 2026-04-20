@@ -10,6 +10,7 @@ import (
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/repositories"
 	"github.com/The127/Keyline/internal/services"
+	"github.com/The127/Keyline/utils"
 
 	"github.com/The127/go-clock"
 	"github.com/The127/ioc"
@@ -77,6 +78,18 @@ func HandlePatchVirtualServer(ctx context.Context, command PatchVirtualServer) (
 
 	if command.AdditionalSigningAlgorithms != nil {
 		virtualServer.SetAdditionalSigningAlgorithms(*command.AdditionalSigningAlgorithms)
+	}
+
+	if command.PrimarySigningAlgorithm != nil || command.AdditionalSigningAlgorithms != nil {
+		apps, _, err := dbContext.Applications().List(ctx, repositories.NewApplicationFilter().VirtualServerId(virtualServer.Id()))
+		if err != nil {
+			return nil, fmt.Errorf("listing applications: %w", err)
+		}
+		for _, app := range apps {
+			if alg := app.SigningAlgorithm(); alg != nil && !virtualServer.HasSigningAlgorithm(*alg) {
+				return nil, fmt.Errorf("cannot remove algorithm %s: application %s still uses it: %w", *alg, app.Name(), utils.ErrHttpBadRequest)
+			}
+		}
 	}
 
 	dbContext.VirtualServers().Update(virtualServer)

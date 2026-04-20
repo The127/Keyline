@@ -549,19 +549,7 @@ func OidcEndSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	virtualServerFilter := repositories.NewVirtualServerFilter().Name(vsName)
-	virtualServer, err := dbContext.VirtualServers().FirstOrNil(r.Context(), virtualServerFilter)
-	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
-		return
-	}
-
 	keyService := ioc.GetDependency[services.KeyService](scope)
-	keyPair, err := keyService.GetKey(vsName, virtualServer.PrimarySigningAlgorithm())
-	if err != nil {
-		utils.HandleHttpError(w, err)
-		return
-	}
 
 	idTokenString := r.Form.Get("id_token_hint")
 	if idTokenString == "" {
@@ -570,16 +558,11 @@ func OidcEndSession(w http.ResponseWriter, r *http.Request) {
 	}
 
 	idToken, err := jwt.Parse(idTokenString, func(token *jwt.Token) (interface{}, error) {
-		jwtSigningMethod, err := getJwtSigningMethod(virtualServer.PrimarySigningAlgorithm())
+		alg := config.SigningAlgorithm(token.Method.Alg())
+		keyPair, err := keyService.GetKey(vsName, alg)
 		if err != nil {
-			return nil, fmt.Errorf("getting jwt signing method: %w", err)
+			return nil, fmt.Errorf("getting key: %w", err)
 		}
-
-		tokenMethodAlgorithm := token.Method.Alg()
-		if jwtSigningMethod.Alg() != tokenMethodAlgorithm {
-			return nil, fmt.Errorf("unexpected signing method: %v", tokenMethodAlgorithm)
-		}
-
 		return keyPair.PublicKey(), nil
 	})
 	if err != nil {
@@ -709,11 +692,6 @@ func OidcUserinfo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	keyService := ioc.GetDependency[services.KeyService](scope)
-	keyPair, err := keyService.GetKey(vsName, virtualServer.PrimarySigningAlgorithm())
-	if err != nil {
-		utils.HandleHttpError(w, err)
-		return
-	}
 
 	err = r.ParseForm()
 	if err != nil {
@@ -738,6 +716,11 @@ func OidcUserinfo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tokenJwt, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		alg := config.SigningAlgorithm(token.Method.Alg())
+		keyPair, err := keyService.GetKey(vsName, alg)
+		if err != nil {
+			return nil, fmt.Errorf("getting key: %w", err)
+		}
 		return keyPair.PublicKey(), nil
 	})
 	if err != nil {
@@ -992,7 +975,7 @@ func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 	}
 
 	keyService := ioc.GetDependency[services.KeyService](scope)
-	keyPair, err := keyService.GetKey(codeInfo.VirtualServerName, virtualServer.PrimarySigningAlgorithm())
+	keyPair, err := keyService.GetKey(codeInfo.VirtualServerName, appSigningAlgorithm(virtualServer, application))
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
@@ -1049,6 +1032,13 @@ func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, fmt.Errorf("encoding response: %w", err))
 		return
 	}
+}
+
+func appSigningAlgorithm(vs *repositories.VirtualServer, app *repositories.Application) config.SigningAlgorithm {
+	if alg := app.SigningAlgorithm(); alg != nil {
+		return *alg
+	}
+	return vs.PrimarySigningAlgorithm()
 }
 
 func getJwtSigningMethod(algorithm config.SigningAlgorithm) (jwt.SigningMethod, error) {
@@ -1434,7 +1424,7 @@ func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	keyService := ioc.GetDependency[services.KeyService](scope)
-	keyPair, err := keyService.GetKey(refreshTokenInfo.VirtualServerName, virtualServer.PrimarySigningAlgorithm())
+	keyPair, err := keyService.GetKey(refreshTokenInfo.VirtualServerName, appSigningAlgorithm(virtualServer, application))
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
@@ -1688,7 +1678,7 @@ func handleTokenExchange(w http.ResponseWriter, r *http.Request) {
 	}
 
 	keyService := ioc.GetDependency[services.KeyService](scope)
-	keyPair, err := keyService.GetKey(virtualServerName, virtualServer.PrimarySigningAlgorithm())
+	keyPair, err := keyService.GetKey(virtualServerName, appSigningAlgorithm(virtualServer, application))
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
@@ -1958,7 +1948,7 @@ func handleDeviceCodeGrant(w http.ResponseWriter, r *http.Request) {
 	}
 
 	keyService := ioc.GetDependency[services.KeyService](scope)
-	keyPair, err := keyService.GetKey(deviceCodeInfo.VirtualServerName, virtualServer.PrimarySigningAlgorithm())
+	keyPair, err := keyService.GetKey(deviceCodeInfo.VirtualServerName, appSigningAlgorithm(virtualServer, application))
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return

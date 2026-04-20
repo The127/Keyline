@@ -125,6 +125,10 @@ func setupSystemAdminFixtures(h *harness) {
 // acquireTokenForServiceUser exchanges a signed service-user JWT for an access token
 // from the given VS's OIDC endpoint.
 func acquireTokenForServiceUser(h *harness, username, kid, privateKeyPem string) string {
+	return acquireTokenForServiceUserOnVS(h, h.VirtualServer(), commands.AdminApplicationName, username, kid, privateKeyPem)
+}
+
+func acquireTokenForServiceUserOnVS(h *harness, vsName, appName, username, kid, privateKeyPem string) string {
 	block, _ := pem.Decode([]byte(privateKeyPem))
 	Expect(block).ToNot(BeNil())
 
@@ -132,7 +136,7 @@ func acquireTokenForServiceUser(h *harness, username, kid, privateKeyPem string)
 	Expect(err).ToNot(HaveOccurred())
 
 	claims := jwt.MapClaims{
-		"aud":    commands.AdminApplicationName,
+		"aud":    appName,
 		"iss":    username,
 		"sub":    username,
 		"scopes": "openid profile email",
@@ -143,7 +147,7 @@ func acquireTokenForServiceUser(h *harness, username, kid, privateKeyPem string)
 	Expect(err).ToNot(HaveOccurred())
 
 	resp, err := http.PostForm(
-		fmt.Sprintf("%s/oidc/%s/token", h.ApiUrl(), h.VirtualServer()),
+		fmt.Sprintf("%s/oidc/%s/token", h.ApiUrl(), vsName),
 		url.Values{
 			"grant_type":         {"urn:ietf:params:oauth:grant-type:token-exchange"},
 			"subject_token":      {signedJWT},

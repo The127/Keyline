@@ -140,6 +140,15 @@ func (m *VirtualServer) SetAdditionalSigningAlgorithms(algs []config.SigningAlgo
 	m.TrackChange(VirtualServerChangeAdditionalSigningAlgorithms)
 }
 
+func (m *VirtualServer) HasSigningAlgorithm(alg config.SigningAlgorithm) bool {
+	for _, a := range m.AllSigningAlgorithms() {
+		if a == alg {
+			return true
+		}
+	}
+	return false
+}
+
 func (m *VirtualServer) AllSigningAlgorithms() []config.SigningAlgorithm {
 	seen := map[config.SigningAlgorithm]bool{m.primarySigningAlgorithm: true}
 	all := []config.SigningAlgorithm{m.primarySigningAlgorithm}

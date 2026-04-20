@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"github.com/The127/Keyline/api"
+	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/commands"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/queries"
@@ -73,6 +74,7 @@ func CreateApplication(w http.ResponseWriter, r *http.Request) {
 		PostLogoutRedirectUris: utils.EmptyIfNil(dto.PostLogoutUris),
 		AccessTokenHeaderType:  accessTokenHeaderType,
 		DeviceFlowEnabled:      dto.DeviceFlowEnabled,
+		SigningAlgorithm:       (*config.SigningAlgorithm)(dto.SigningAlgorithm),
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -156,6 +158,7 @@ func GetApplication(w http.ResponseWriter, r *http.Request) {
 		ClaimsMappingScript:    application.ClaimsMappingScript,
 		AccessTokenHeaderType:  application.AccessTokenHeaderType,
 		DeviceFlowEnabled:      application.DeviceFlowEnabled,
+		SigningAlgorithm:       (*string)(application.SigningAlgorithm),
 		CreatedAt:              application.CreatedAt,
 		UpdatedAt:              application.UpdatedAt,
 	})
@@ -227,6 +230,7 @@ func PatchApplication(w http.ResponseWriter, r *http.Request) {
 		RedirectUris:           redirectUris,
 		PostLogoutRedirectUris: postLogoutUris,
 		AccessTokenHeaderType:  dto.AccessTokenHeaderType,
+		SigningAlgorithm:       (*config.SigningAlgorithm)(dto.SigningAlgorithm),
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)
