@@ -38,17 +38,18 @@ func (a GetApplication) GetRequestName() string {
 }
 
 type GetApplicationResult struct {
-	Id                  uuid.UUID
-	Name                string
-	DisplayName         string
-	Type                repositories.ApplicationType
-	RedirectUris        []string
-	PostLogoutUris      []string
-	SystemApplication   bool
-	ClaimsMappingScript *string
-	DeviceFlowEnabled   bool
-	CreatedAt           time.Time
-	UpdatedAt           time.Time
+	Id                    uuid.UUID
+	Name                  string
+	DisplayName           string
+	Type                  repositories.ApplicationType
+	RedirectUris          []string
+	PostLogoutUris        []string
+	SystemApplication     bool
+	ClaimsMappingScript   *string
+	AccessTokenHeaderType string
+	DeviceFlowEnabled     bool
+	CreatedAt             time.Time
+	UpdatedAt             time.Time
 }
 
 func HandleGetApplication(ctx context.Context, query GetApplication) (*GetApplicationResult, error) {
@@ -84,16 +85,17 @@ func HandleGetApplication(ctx context.Context, query GetApplication) (*GetApplic
 	}
 
 	return &GetApplicationResult{
-		Id:                  application.Id(),
-		Name:                application.Name(),
-		DisplayName:         application.DisplayName(),
-		Type:                application.Type(),
-		RedirectUris:        application.RedirectUris(),
-		PostLogoutUris:      application.PostLogoutRedirectUris(),
-		SystemApplication:   application.SystemApplication(),
-		ClaimsMappingScript: application.ClaimsMappingScript(),
-		DeviceFlowEnabled:   application.DeviceFlowEnabled(),
-		CreatedAt:           application.AuditCreatedAt(),
-		UpdatedAt:           application.AuditUpdatedAt(),
+		Id:                    application.Id(),
+		Name:                  application.Name(),
+		DisplayName:           application.DisplayName(),
+		Type:                  application.Type(),
+		RedirectUris:          application.RedirectUris(),
+		PostLogoutUris:        application.PostLogoutRedirectUris(),
+		SystemApplication:     application.SystemApplication(),
+		ClaimsMappingScript:   application.ClaimsMappingScript(),
+		AccessTokenHeaderType: application.AccessTokenHeaderType(),
+		DeviceFlowEnabled:     application.DeviceFlowEnabled(),
+		CreatedAt:             application.AuditCreatedAt(),
+		UpdatedAt:             application.AuditUpdatedAt(),
 	}, nil
 }
