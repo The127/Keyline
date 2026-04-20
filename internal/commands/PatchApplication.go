@@ -103,5 +103,10 @@ func HandlePatchApplication(ctx context.Context, command PatchApplication) (*Pat
 	}
 
 	dbContext.Applications().Update(application)
+
+	if err := dbContext.SaveChanges(ctx); err != nil {
+		return nil, fmt.Errorf("saving application changes: %w", err)
+	}
+
 	return &PatchApplicationResponse{}, nil
 }
