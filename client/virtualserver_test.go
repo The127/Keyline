@@ -137,3 +137,58 @@ func (s *VirtualServerClientSuite) TestPatch_HappyPath() {
 	// assert
 	s.Require().NoError(err)
 }
+
+func (s *VirtualServerClientSuite) TestPatch_WithSigningAlgorithms() {
+	// arrange
+	additional := []string{"RS256"}
+	request := PatchVirtualServerInput{
+		PrimarySigningAlgorithm:     utils.Ptr("EdDSA"),
+		AdditionalSigningAlgorithms: &additional,
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var requestDto PatchVirtualServerInput
+		err := json.NewDecoder(r.Body).Decode(&requestDto)
+		s.NoError(err)
+		s.Require().NotNil(requestDto.PrimarySigningAlgorithm)
+		s.Equal("EdDSA", *requestDto.PrimarySigningAlgorithm)
+		s.Require().NotNil(requestDto.AdditionalSigningAlgorithms)
+		s.Equal([]string{"RS256"}, *requestDto.AdditionalSigningAlgorithms)
+
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer server.Close()
+
+	testee := NewClient(server.URL, "test").VirtualServer()
+
+	// act
+	err := testee.Patch(s.T().Context(), request)
+
+	// assert
+	s.Require().NoError(err)
+}
+
+func (s *VirtualServerClientSuite) TestGet_ReturnsSigningAlgorithms() {
+	// arrange
+	response := api.GetVirtualServerResponseDto{
+		DisplayName:                 "Display Name",
+		PrimarySigningAlgorithm:     "EdDSA",
+		AdditionalSigningAlgorithms: []string{"RS256"},
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		err := json.NewEncoder(w).Encode(response)
+		s.NoError(err)
+	}))
+	defer server.Close()
+
+	testee := NewClient(server.URL, "test").VirtualServer()
+
+	// act
+	responseDto, err := testee.Get(s.T().Context())
+
+	// assert
+	s.Require().NoError(err)
+	s.Equal("EdDSA", responseDto.PrimarySigningAlgorithm)
+	s.Equal([]string{"RS256"}, responseDto.AdditionalSigningAlgorithms)
+}

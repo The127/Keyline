@@ -184,3 +184,95 @@ func (s *ApplicationClientSuite) TestPatchApplication_HappyPath() {
 	// assert
 	s.Require().NoError(err)
 }
+
+func (s *ApplicationClientSuite) TestCreateApplication_WithSigningAlgorithm() {
+	// arrange
+	request := api.CreateApplicationRequestDto{
+		Name:            "rs256-app",
+		DisplayName:     "RS256 App",
+		RedirectUris:    []string{"http://localhost/callback"},
+		Type:            "public",
+		SigningAlgorithm: utils.Ptr("RS256"),
+	}
+
+	response := api.CreateApplicationResponseDto{
+		Id: uuid.New(),
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var requestDto api.CreateApplicationRequestDto
+		err := json.NewDecoder(r.Body).Decode(&requestDto)
+		s.NoError(err)
+		s.Equal(request, requestDto)
+		s.Require().NotNil(requestDto.SigningAlgorithm)
+		s.Equal("RS256", *requestDto.SigningAlgorithm)
+
+		err = json.NewEncoder(w).Encode(response)
+		s.NoError(err)
+	}))
+	defer server.Close()
+
+	testee := NewClient(server.URL, "test").Project().Application("my-project")
+
+	// act
+	responseDto, err := testee.Create(s.T().Context(), request)
+
+	// assert
+	s.Require().NoError(err)
+	s.Equal(response, responseDto)
+}
+
+func (s *ApplicationClientSuite) TestPatchApplication_WithSigningAlgorithm() {
+	// arrange
+	requestId := uuid.New()
+	request := api.PatchApplicationRequestDto{
+		SigningAlgorithm: utils.Ptr("RS256"),
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var requestDto api.PatchApplicationRequestDto
+		err := json.NewDecoder(r.Body).Decode(&requestDto)
+		s.NoError(err)
+		s.Require().NotNil(requestDto.SigningAlgorithm)
+		s.Equal("RS256", *requestDto.SigningAlgorithm)
+
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer server.Close()
+
+	testee := NewClient(server.URL, "test").Project().Application("my-project")
+
+	// act
+	err := testee.Patch(s.T().Context(), requestId, request)
+
+	// assert
+	s.Require().NoError(err)
+}
+
+func (s *ApplicationClientSuite) TestGetApplication_ReturnsSigningAlgorithm() {
+	// arrange
+	requestId := uuid.New()
+	response := api.GetApplicationResponseDto{
+		Id:              requestId,
+		Name:            "rs256-app",
+		DisplayName:     "RS256 App",
+		Type:            "public",
+		SigningAlgorithm: utils.Ptr("RS256"),
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		err := json.NewEncoder(w).Encode(response)
+		s.NoError(err)
+	}))
+	defer server.Close()
+
+	testee := NewClient(server.URL, "test").Project().Application("my-project")
+
+	// act
+	responseDto, err := testee.Get(s.T().Context(), requestId)
+
+	// assert
+	s.Require().NoError(err)
+	s.Require().NotNil(responseDto.SigningAlgorithm)
+	s.Equal("RS256", *responseDto.SigningAlgorithm)
+}
