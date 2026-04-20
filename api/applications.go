@@ -34,6 +34,8 @@ type GetApplicationResponseDto struct {
 
 	ClaimsMappingScript *string `json:"customClaimsMappingScript"`
 
+	AccessTokenHeaderType string `json:"accessTokenHeaderType"`
+
 	DeviceFlowEnabled bool `json:"deviceFlowEnabled"`
 
 	CreatedAt time.Time `json:"createdAt"`
@@ -41,9 +43,12 @@ type GetApplicationResponseDto struct {
 }
 
 type PatchApplicationRequestDto struct {
-	DisplayName         *string `json:"displayName"`
-	ClaimsMappingScript *string `json:"customClaimsMappingScript"`
-	DeviceFlowEnabled   *bool   `json:"deviceFlowEnabled"`
+	DisplayName           *string  `json:"displayName"`
+	ClaimsMappingScript   *string  `json:"customClaimsMappingScript"`
+	DeviceFlowEnabled     *bool    `json:"deviceFlowEnabled"`
+	RedirectUris          []string `json:"redirectUris,omitempty"`
+	PostLogoutUris        []string `json:"postLogoutUris,omitempty"`
+	AccessTokenHeaderType *string  `json:"accessTokenHeaderType,omitempty" validate:"omitempty,oneof=at+jwt JWT"`
 }
 
 type PagedApplicationsResponseDto = PagedResponseDto[ListApplicationsResponseDto]
