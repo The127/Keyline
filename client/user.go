@@ -18,6 +18,7 @@ type ListUserParams struct {
 }
 
 type UserClient interface {
+	Create(ctx context.Context, dto api.CreateUserRequestDto) (api.CreateUserResponseDto, error)
 	List(ctx context.Context, params ListUserParams) (api.PagedUsersResponseDto, error)
 	Get(ctx context.Context, id uuid.UUID) (api.GetUserByIdResponseDto, error)
 	Patch(ctx context.Context, id uuid.UUID, dto api.PatchUserRequestDto) error
@@ -33,6 +34,32 @@ func NewUserClient(transport *Transport) UserClient {
 
 type userClient struct {
 	transport *Transport
+}
+
+func (c *userClient) Create(ctx context.Context, dto api.CreateUserRequestDto) (api.CreateUserResponseDto, error) {
+	jsonBytes, err := json.Marshal(dto)
+	if err != nil {
+		return api.CreateUserResponseDto{}, fmt.Errorf("marshaling dto: %w", err)
+	}
+
+	request, err := c.transport.NewTenantRequest(ctx, http.MethodPost, "/users", bytes.NewBuffer(jsonBytes))
+	if err != nil {
+		return api.CreateUserResponseDto{}, fmt.Errorf("creating request: %w", err)
+	}
+
+	response, err := c.transport.Do(request)
+	if err != nil {
+		return api.CreateUserResponseDto{}, fmt.Errorf("doing request: %w", err)
+	}
+	defer response.Body.Close() //nolint:errcheck
+
+	var responseDto api.CreateUserResponseDto
+	err = json.NewDecoder(response.Body).Decode(&responseDto)
+	if err != nil {
+		return api.CreateUserResponseDto{}, fmt.Errorf("decoding response: %w", err)
+	}
+
+	return responseDto, nil
 }
 
 func (c *userClient) List(ctx context.Context, params ListUserParams) (api.PagedUsersResponseDto, error) {
