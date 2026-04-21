@@ -23,7 +23,8 @@ type UserClient interface {
 	Get(ctx context.Context, id uuid.UUID) (api.GetUserByIdResponseDto, error)
 	Patch(ctx context.Context, id uuid.UUID, dto api.PatchUserRequestDto) error
 	CreateServiceUser(ctx context.Context, username string) (uuid.UUID, error)
-	AssociateServiceUserPublicKey(ctx context.Context, serviceUserID uuid.UUID, publicKeyPEM string) (string, error)
+	AssociateServiceUserPublicKey(ctx context.Context, serviceUserID uuid.UUID, dto api.AssociateServiceUserPublicKeyRequestDto) (api.AssociateServiceUserPublicKeyResponseDto, error)
+	RemoveServiceUserPublicKey(ctx context.Context, serviceUserID uuid.UUID, kid string) error
 }
 
 func NewUserClient(transport *Transport) UserClient {
@@ -159,28 +160,43 @@ func (c *userClient) CreateServiceUser(ctx context.Context, username string) (uu
 	return responseDto.Id, nil
 }
 
-func (c *userClient) AssociateServiceUserPublicKey(ctx context.Context, serviceUserID uuid.UUID, publicKeyPEM string) (string, error) {
-	jsonBytes, err := json.Marshal(api.AssociateServiceUserPublicKeyRequestDto{PublicKey: publicKeyPEM})
+func (c *userClient) AssociateServiceUserPublicKey(ctx context.Context, serviceUserID uuid.UUID, dto api.AssociateServiceUserPublicKeyRequestDto) (api.AssociateServiceUserPublicKeyResponseDto, error) {
+	jsonBytes, err := json.Marshal(dto)
 	if err != nil {
-		return "", fmt.Errorf("marshaling dto: %w", err)
+		return api.AssociateServiceUserPublicKeyResponseDto{}, fmt.Errorf("marshaling dto: %w", err)
 	}
 
 	endpoint := fmt.Sprintf("/users/service-users/%s/keys", serviceUserID)
 	request, err := c.transport.NewTenantRequest(ctx, http.MethodPost, endpoint, bytes.NewBuffer(jsonBytes))
 	if err != nil {
-		return "", fmt.Errorf("creating request: %w", err)
+		return api.AssociateServiceUserPublicKeyResponseDto{}, fmt.Errorf("creating request: %w", err)
 	}
 
 	response, err := c.transport.Do(request)
 	if err != nil {
-		return "", fmt.Errorf("doing request: %w", err)
+		return api.AssociateServiceUserPublicKeyResponseDto{}, fmt.Errorf("doing request: %w", err)
 	}
 	defer response.Body.Close() //nolint:errcheck
 
 	var responseDto api.AssociateServiceUserPublicKeyResponseDto
 	if err := json.NewDecoder(response.Body).Decode(&responseDto); err != nil {
-		return "", fmt.Errorf("decoding response: %w", err)
+		return api.AssociateServiceUserPublicKeyResponseDto{}, fmt.Errorf("decoding response: %w", err)
 	}
 
-	return responseDto.Kid, nil
+	return responseDto, nil
+}
+
+func (c *userClient) RemoveServiceUserPublicKey(ctx context.Context, serviceUserID uuid.UUID, kid string) error {
+	endpoint := fmt.Sprintf("/users/service-users/%s/keys/%s", serviceUserID, kid)
+	request, err := c.transport.NewTenantRequest(ctx, http.MethodDelete, endpoint, nil)
+	if err != nil {
+		return fmt.Errorf("creating request: %w", err)
+	}
+
+	response, err := c.transport.Do(request)
+	if err != nil {
+		return fmt.Errorf("doing request: %w", err)
+	}
+	defer response.Body.Close() //nolint:errcheck
+	return nil
 }

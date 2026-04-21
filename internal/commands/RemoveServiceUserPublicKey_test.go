@@ -87,7 +87,7 @@ func (s *RemoveServiceUserPublicKeyCommandSuite) TestHappyPath() {
 	credential.Mock(now)
 	credentialRepository := mocks.NewMockCredentialRepository(ctrl)
 	credentialRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Cond(func(x *repositories.CredentialFilter) bool {
-		return x.GetDetailPublicKey() == "publicKey" &&
+		return x.GetDetailKid() == "test-kid" &&
 			x.GetUserId() == serviceUser.Id() &&
 			x.GetType() == repositories.CredentialTypeServiceUserKey
 	})).Return(credential, nil)
@@ -97,7 +97,7 @@ func (s *RemoveServiceUserPublicKeyCommandSuite) TestHappyPath() {
 	cmd := RemoveServiceUserPublicKey{
 		VirtualServerName: "virtualServer",
 		ServiceUserId:     serviceUser.Id(),
-		PublicKey:         "publicKey",
+		Kid:               "test-kid",
 	}
 
 	// act

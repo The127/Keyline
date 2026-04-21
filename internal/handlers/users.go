@@ -856,6 +856,7 @@ func AssociateServiceUserPublicKey(w http.ResponseWriter, r *http.Request) {
 		VirtualServerName: vsName,
 		ServiceUserId:     serviceUserId,
 		PublicKey:         dto.PublicKey,
+		Kid:               dto.Kid,
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -870,6 +871,55 @@ func AssociateServiceUserPublicKey(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, err)
 		return
 	}
+}
+
+// RemoveServiceUserPublicKey removes a public key from a service user by kid.
+// @Summary      Remove a public key from a service user
+// @Tags         Users
+// @Produce      plain
+// @Param        virtualServerName  path  string true "Virtual server name"  default(keyline)
+// @Param        serviceUserId      path  string true "Service user ID"
+// @Param        kid                path  string true "Key ID"
+// @Success      204  {string} string "No Content"
+// @Failure      400  {string} string
+// @Failure      404  {string} string
+// @Router       /api/virtual-servers/{virtualServerName}/users/service-users/{serviceUserId}/keys/{kid} [delete]
+func RemoveServiceUserPublicKey(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	vsName, err := middlewares.GetVirtualServerName(ctx)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	vars := mux.Vars(r)
+	serviceUserId, err := uuid.Parse(vars["serviceUserId"])
+	if err != nil {
+		utils.HandleHttpError(w, utils.ErrInvalidUuid)
+		return
+	}
+
+	kid := vars["kid"]
+	if kid == "" {
+		utils.HandleHttpError(w, fmt.Errorf("missing kid: %w", utils.ErrHttpBadRequest))
+		return
+	}
+
+	scope := middlewares.GetScope(ctx)
+	m := ioc.GetDependency[mediatr.Mediator](scope)
+
+	_, err = mediatr.Send[*commands.RemoveServiceUserPublicKeyResponse](ctx, m, commands.RemoveServiceUserPublicKey{
+		VirtualServerName: vsName,
+		ServiceUserId:     serviceUserId,
+		Kid:               kid,
+	})
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func PasskeyCreateChallenge(w http.ResponseWriter, r *http.Request) {

@@ -23,6 +23,7 @@ func init() {
 		Describe("ServiceUser flow ["+backend.name+"]", Ordered, func() {
 			var h *harness
 			var serviceUserId uuid.UUID
+			var associatedKid string
 
 			BeforeAll(func() {
 				if backend.dbMode == config.DatabaseModePostgres && !postgresBackendAvailable() {
@@ -55,8 +56,10 @@ func init() {
 					ServiceUserId:     serviceUserId,
 					PublicKey:         ed25519PublicKey,
 				}
-				_, err := mediatr.Send[*commands.AssociateServiceUserPublicKeyResponse](h.Ctx(), h.Mediator(), req)
+				resp, err := mediatr.Send[*commands.AssociateServiceUserPublicKeyResponse](h.Ctx(), h.Mediator(), req)
 				Expect(err).ToNot(HaveOccurred())
+				Expect(resp.Kid).ToNot(BeEmpty())
+				associatedKid = resp.Kid
 
 				Expect(h.dbContext.SaveChanges(h.ctx)).ToNot(HaveOccurred())
 			})
@@ -65,7 +68,7 @@ func init() {
 				req := commands.RemoveServiceUserPublicKey{
 					VirtualServerName: h.VirtualServer(),
 					ServiceUserId:     serviceUserId,
-					PublicKey:         ed25519PublicKey,
+					Kid:               associatedKid,
 				}
 				_, err := mediatr.Send[*commands.RemoveServiceUserPublicKeyResponse](h.Ctx(), h.Mediator(), req)
 				Expect(err).ToNot(HaveOccurred())
