@@ -22,6 +22,47 @@ func TestUserClientSuite(t *testing.T) {
 	suite.Run(t, new(UserClientSuite))
 }
 
+func (s *UserClientSuite) TestCreateUser_HappyPath() {
+	// arrange
+	request := api.CreateUserRequestDto{
+		Username:      "newuser",
+		DisplayName:   "New User",
+		Email:         "newuser@example.com",
+		EmailVerified: utils.Ptr(true),
+		Password: &api.CreateUserRequestDtoPasword{
+			Plain:     "hunter2",
+			Temporary: true,
+		},
+	}
+	response := api.CreateUserResponseDto{
+		Id: uuid.New(),
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		s.Equal(http.MethodPost, r.Method)
+		s.Equal("/api/virtual-servers/test/users", r.URL.Path)
+
+		var requestDto api.CreateUserRequestDto
+		err := json.NewDecoder(r.Body).Decode(&requestDto)
+		s.NoError(err)
+		s.Equal(request, requestDto)
+
+		w.WriteHeader(http.StatusCreated)
+		err = json.NewEncoder(w).Encode(response)
+		s.NoError(err)
+	}))
+	defer server.Close()
+
+	testee := NewClient(server.URL, "test").User()
+
+	// act
+	responseDto, err := testee.Create(s.T().Context(), request)
+
+	// assert
+	s.Require().NoError(err)
+	s.Equal(response, responseDto)
+}
+
 func (s *UserClientSuite) TestListUsers_HappyPath() {
 	// arrange
 	requestParams := ListUserParams{
