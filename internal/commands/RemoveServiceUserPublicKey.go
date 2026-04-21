@@ -17,7 +17,7 @@ import (
 type RemoveServiceUserPublicKey struct {
 	VirtualServerName string
 	ServiceUserId     uuid.UUID
-	PublicKey         string
+	Kid               string
 }
 
 func (a RemoveServiceUserPublicKey) LogRequest() bool {
@@ -60,7 +60,7 @@ func HandleRemoveServiceUserPublicKey(ctx context.Context, command RemoveService
 	credentialFilter := repositories.NewCredentialFilter().
 		UserId(user.Id()).
 		Type(repositories.CredentialTypeServiceUserKey).
-		DetailPublicKey(command.PublicKey)
+		DetailKid(command.Kid)
 	credential, err := dbContext.Credentials().FirstOrErr(ctx, credentialFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting credential: %w", err)

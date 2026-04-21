@@ -85,7 +85,8 @@ type CreateServiceUserResponseDto struct {
 }
 
 type AssociateServiceUserPublicKeyRequestDto struct {
-	PublicKey string `json:"publicKey" validate:"required"`
+	PublicKey string  `json:"publicKey" validate:"required"`
+	Kid       *string `json:"kid,omitempty"`
 }
 
 type AssociateServiceUserPublicKeyResponseDto struct {

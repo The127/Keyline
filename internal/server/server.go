@@ -181,6 +181,7 @@ func mapApiRoutes(r *mux.Router) {
 	vsApiRouter.HandleFunc("/users/{userId}", handlers.PatchUser).Methods(http.MethodPatch, http.MethodOptions)
 	vsApiRouter.HandleFunc("/users/service-users", handlers.CreateServiceUser).Methods(http.MethodPost, http.MethodOptions)
 	vsApiRouter.HandleFunc("/users/service-users/{serviceUserId}/keys", handlers.AssociateServiceUserPublicKey).Methods(http.MethodPost, http.MethodOptions)
+	vsApiRouter.HandleFunc("/users/service-users/{serviceUserId}/keys/{kid}", handlers.RemoveServiceUserPublicKey).Methods(http.MethodDelete, http.MethodOptions)
 	vsApiRouter.HandleFunc("/users/{userId}/passkeys/register/start", handlers.PasskeyCreateChallenge).Methods(http.MethodPost, http.MethodOptions)
 	vsApiRouter.HandleFunc("/users/{userId}/passkeys/register/finish", handlers.PasskeyValidateCreateChallengeResponse).Methods(http.MethodPost, http.MethodOptions)
 	vsApiRouter.HandleFunc("/users/{userId}/passkeys", handlers.ListPasskeys).Methods(http.MethodGet, http.MethodOptions)
