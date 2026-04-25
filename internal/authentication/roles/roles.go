@@ -18,6 +18,51 @@ var SystemUserPermissions = []permissions.Permission{
 
 var SystemAdminPermissions = []permissions.Permission{
 	permissions.VirtualServerCreate,
+	permissions.VirtualServerUpdate,
+	permissions.VirtualServerView,
+
+	permissions.ProjectCreate,
+	permissions.ProjectUpdate,
+	permissions.ProjectView,
+
+	permissions.ResourceServerCreate,
+	permissions.ResourceServerUpdate,
+	permissions.ResourceServerView,
+
+	permissions.ResourceServerScopeCreate,
+	permissions.ResourceServerScopeUpdate,
+	permissions.ResourceServerScopeView,
+
+	permissions.AuditView,
+
+	permissions.ApplicationCreate,
+	permissions.ApplicationDelete,
+	permissions.ApplicationUpdate,
+	permissions.ApplicationView,
+
+	permissions.GroupView,
+
+	permissions.RoleCreate,
+	permissions.RoleUpdate,
+	permissions.RoleDelete,
+	permissions.RoleAssign,
+	permissions.RoleView,
+
+	permissions.UserCreate,
+	permissions.UserUpdate,
+	permissions.UserResetPassword,
+	permissions.UserView,
+
+	permissions.UserMetadataUpdate,
+	permissions.UserMetadataView,
+
+	permissions.AppMetadataUpdateAny,
+
+	permissions.ServiceUserCreate,
+	permissions.ServiceUserAssociateKey,
+	permissions.ServiceUserRemoveKey,
+
+	permissions.TemplateView,
 }
 
 var VirtualServerAdminPermissions = []permissions.Permission{
@@ -47,6 +92,7 @@ var VirtualServerAdminPermissions = []permissions.Permission{
 
 	permissions.RoleCreate,
 	permissions.RoleUpdate,
+	permissions.RoleDelete,
 	permissions.RoleAssign,
 	permissions.RoleView,
 
