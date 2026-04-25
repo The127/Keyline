@@ -15,6 +15,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/The127/Keyline/config"
+	"github.com/The127/Keyline/internal/authentication"
 	"github.com/The127/Keyline/internal/commands"
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/jsonTypes"
@@ -621,8 +622,14 @@ func ResetTemporaryPassword(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 
+		// The login flow is pre-authentication, so /logins/* skips
+		// authentication.Middleware and ctx carries no CurrentUser. Switch
+		// to the system identity for this command: the login token plus the
+		// LoginStepTemporaryPassword guard above are the proof that the
+		// caller is authorised to reset their own temp password.
+		sysCtx := authentication.ContextWithCurrentUser(ctx, authentication.SystemUser())
 		m := ioc.GetDependency[mediatr.Mediator](scope)
-		_, err = mediatr.Send[*commands.SetPasswordResponse](ctx, m, commands.SetPassword{
+		_, err = mediatr.Send[*commands.SetPasswordResponse](sysCtx, m, commands.SetPassword{
 			UserId:      loginInfo.UserId,
 			NewPassword: dto.NewPassword,
 			Temporary:   false,
