@@ -8,6 +8,7 @@ on:
 permissions:
   contents: write
   packages: write
+  id-token: write
 
 jobs:
   build-and-release:
@@ -29,6 +30,13 @@ jobs:
           file: Containerfile
           push: true
           tags: ghcr.io/the127/keyline:${{ github.ref_name }}
+
+      - uses: sigstore/cosign-installer@v3
+
+      - name: Scan and attest vulnerabilities
+        run: |
+          trivy image --format cosign-vuln --output vuln.json "ghcr.io/the127/keyline:${{ github.ref_name }}"
+          cosign attest --predicate vuln.json --type vuln --yes "ghcr.io/the127/keyline:${{ github.ref_name }}"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3
