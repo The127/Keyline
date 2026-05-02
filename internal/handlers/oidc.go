@@ -3,6 +3,8 @@ package handlers
 import (
 	"context"
 	"crypto/rsa"
+	"crypto/sha256"
+	"crypto/subtle"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/binary"
@@ -419,6 +421,32 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// PKCE policy (OAuth 2.1): the authorization code flow MUST use PKCE.
+	// We accept S256 only -- "plain" is trivially bypassable by an attacker
+	// who can read the request and is no longer recommended.
+	if authRequest.PKCEChallenge == "" {
+		errorRedirect(w, r, authRequest, OidcError{
+			Error:            "invalid_request",
+			ErrorDescription: "code_challenge is required",
+		})
+		return
+	}
+	if authRequest.PKCEChallengeMethod == "" {
+		// Per RFC 7636 §4.3, omitted method defaults to "plain". We do not allow plain.
+		errorRedirect(w, r, authRequest, OidcError{
+			Error:            "invalid_request",
+			ErrorDescription: "code_challenge_method is required and must be S256",
+		})
+		return
+	}
+	if authRequest.PKCEChallengeMethod != "S256" {
+		errorRedirect(w, r, authRequest, OidcError{
+			Error:            "invalid_request",
+			ErrorDescription: "unsupported code_challenge_method (only S256 is allowed)",
+		})
+		return
+	}
+
 	// TODO: check the scopes for email and profile
 
 	tokenService := ioc.GetDependency[services.TokenService](scope)
@@ -427,7 +455,17 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 	if ok {
 		// TODO: consent page
 
-		codeInfo := jsonTypes.NewCodeInfo(virtualServer.Name(), authRequest.Scopes, s.UserId(), authRequest.Nonce, s.CreatedAt())
+		codeInfo := jsonTypes.NewCodeInfo(
+			virtualServer.Name(),
+			application.Id(),
+			authRequest.Scopes,
+			s.UserId(),
+			authRequest.Nonce,
+			s.CreatedAt(),
+			authRequest.RedirectUri,
+			authRequest.PKCEChallenge,
+			authRequest.PKCEChallengeMethod,
+		)
 
 		codeInfoString, err := json.Marshal(codeInfo)
 		if err != nil {
@@ -860,12 +898,31 @@ func OidcToken(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-//nolint:unparam
-func authenticateApplication(ctx context.Context, applicationName string, applicationSecret string) (*repositories.Application, error) {
+// authenticateApplication looks up an application by name within the given
+// virtual server and verifies client authentication.
+//
+// Authentication rules:
+//   - Confidential clients MUST present a non-empty client_secret that matches
+//     the stored hash. Empty or wrong secret -> error.
+//   - Public clients MUST NOT send a client_secret (they have none registered).
+//     They authenticate the redemption via PKCE, which is checked separately
+//     by the caller against the bound code.
+//
+// The virtual server scoping closes a tenant-isolation bug: previously the
+// lookup was by name only, which would let a confidential client in tenant A
+// authenticate against a token request bound to tenant B (when names collided).
+func authenticateApplication(
+	ctx context.Context,
+	virtualServer *repositories.VirtualServer,
+	applicationName string,
+	applicationSecret string,
+) (*repositories.Application, error) {
 	scope := middlewares.GetScope(ctx)
 	dbContext := ioc.GetDependency[database.Context](scope)
 
-	applicationFilter := repositories.NewApplicationFilter().Name(applicationName)
+	applicationFilter := repositories.NewApplicationFilter().
+		VirtualServerId(virtualServer.Id()).
+		Name(applicationName)
 	application, err := dbContext.Applications().FirstOrNil(ctx, applicationFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting application: %w", err)
@@ -874,17 +931,49 @@ func authenticateApplication(ctx context.Context, applicationName string, applic
 		return nil, fmt.Errorf("application not found")
 	}
 
-	if applicationSecret == "" {
-		// TODO: do pkce
+	switch application.Type() {
+	case repositories.ApplicationTypeConfidential:
+		if applicationSecret == "" {
+			return nil, fmt.Errorf("client_secret is required for confidential clients")
+		}
+		if !utils.CheapCompareHash(applicationSecret, application.HashedSecret()) {
+			return nil, fmt.Errorf("invalid secret")
+		}
 		return application, nil
-	}
 
-	hashedSecret := application.HashedSecret()
-	if utils.CheapCompareHash(applicationSecret, hashedSecret) {
+	case repositories.ApplicationTypePublic:
+		if applicationSecret != "" {
+			return nil, fmt.Errorf("public clients must not present a client_secret")
+		}
 		return application, nil
-	}
 
-	return nil, fmt.Errorf("invalid secret")
+	default:
+		return nil, fmt.Errorf("unsupported application type: %s", application.Type())
+	}
+}
+
+// verifyPKCE checks an RFC 7636 PKCE code_verifier against the stored
+// code_challenge and method. Only S256 is accepted; "plain" is rejected since
+// it provides no protection against an attacker who can read the request.
+func verifyPKCE(verifier, challenge, method string) error {
+	if verifier == "" {
+		return fmt.Errorf("code_verifier is required")
+	}
+	// RFC 7636 §4.1: verifier is 43-128 chars, A-Z a-z 0-9 - . _ ~
+	if len(verifier) < 43 || len(verifier) > 128 {
+		return fmt.Errorf("code_verifier length must be between 43 and 128 characters")
+	}
+	switch method {
+	case "S256":
+		sum := sha256.Sum256([]byte(verifier))
+		computed := base64.RawURLEncoding.EncodeToString(sum[:])
+		if subtle.ConstantTimeCompare([]byte(computed), []byte(challenge)) != 1 {
+			return fmt.Errorf("code_verifier does not match code_challenge")
+		}
+		return nil
+	default:
+		return fmt.Errorf("unsupported code_challenge_method: %s", method)
+	}
 }
 
 type CodeFlowResponse struct {
@@ -928,15 +1017,49 @@ func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 	clientId, clientSecret, hasBasicAuth := r.BasicAuth()
 	if !hasBasicAuth {
 		clientId = r.Form.Get("client_id")
-	}
-
-	_, err = authenticateApplication(ctx, clientId, clientSecret)
-	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("authenticating application: %w", err))
-		return
+		clientSecret = r.Form.Get("client_secret")
 	}
 
 	dbContext := ioc.GetDependency[database.Context](scope)
+
+	// Resolve the virtual server from the code itself (not the URL): the code
+	// is what we're trusting; everything else must be validated against it.
+	virtualServerFilter := repositories.NewVirtualServerFilter().Name(codeInfo.VirtualServerName)
+	virtualServer, err := dbContext.VirtualServers().FirstOrNil(ctx, virtualServerFilter)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
+		return
+	}
+	if virtualServer == nil {
+		writeOAuthError(w, "invalid_grant", "virtual server not found")
+		return
+	}
+
+	application, err := authenticateApplication(ctx, virtualServer, clientId, clientSecret)
+	if err != nil {
+		writeOAuthError(w, "invalid_client", err.Error())
+		return
+	}
+
+	// RFC 6749 §4.1.3: the client MUST be the same one the code was issued to.
+	if application.Id() != codeInfo.ApplicationId {
+		writeOAuthError(w, "invalid_grant", "authorization code was issued to a different client")
+		return
+	}
+
+	// RFC 6749 §4.1.3 / §10.6: redirect_uri at /token MUST match what was used at /authorize.
+	if r.Form.Get("redirect_uri") != codeInfo.RedirectUri {
+		writeOAuthError(w, "invalid_grant", "redirect_uri does not match the authorization request")
+		return
+	}
+
+	// RFC 7636: PKCE verifier is required when a challenge was bound to the code.
+	if codeInfo.CodeChallenge != "" {
+		if err := verifyPKCE(r.Form.Get("code_verifier"), codeInfo.CodeChallenge, codeInfo.CodeChallengeMethod); err != nil {
+			writeOAuthError(w, "invalid_grant", err.Error())
+			return
+		}
+	}
 
 	userFilter := repositories.NewUserFilter().Id(codeInfo.UserId)
 	user, err := dbContext.Users().FirstOrNil(ctx, userFilter)
@@ -953,26 +1076,6 @@ func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 
 	clockService := ioc.GetDependency[clock.Service](scope)
 	now := clockService.Now()
-
-	virtualServerFilter := repositories.NewVirtualServerFilter().Name(codeInfo.VirtualServerName)
-	virtualServer, err := dbContext.VirtualServers().FirstOrNil(r.Context(), virtualServerFilter)
-	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
-		return
-	}
-
-	applicationFilter := repositories.NewApplicationFilter().
-		VirtualServerId(virtualServer.Id()).
-		Name(clientId)
-	application, err := dbContext.Applications().FirstOrNil(ctx, applicationFilter)
-	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting application: %w", err))
-		return
-	}
-	if application == nil {
-		utils.HandleHttpError(w, fmt.Errorf("application not found"))
-		return
-	}
 
 	keyService := ioc.GetDependency[services.KeyService](scope)
 	keyPair, err := keyService.GetKey(codeInfo.VirtualServerName, appSigningAlgorithm(virtualServer, application))
@@ -1354,18 +1457,13 @@ func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 	clientId, clientSecret, hasBasicAuth := r.BasicAuth()
 	if !hasBasicAuth {
 		clientId = r.Form.Get("client_id")
-	}
-
-	_, err := authenticateApplication(ctx, clientId, clientSecret)
-	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("authenticating application: %w", err))
-		return
+		clientSecret = r.Form.Get("client_secret")
 	}
 
 	tokenService := ioc.GetDependency[services.TokenService](scope)
 	refreshTokenInfoString, err := tokenService.GetToken(ctx, services.OidcRefreshTokenTokenType, r.Form.Get("refresh_token"))
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting refresh token: %w", err))
+		writeOAuthError(w, "invalid_grant", "refresh token is invalid or expired")
 		return
 	}
 
@@ -1376,8 +1474,26 @@ func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	dbContext := ioc.GetDependency[database.Context](scope)
+
+	virtualServerFilter := repositories.NewVirtualServerFilter().Name(refreshTokenInfo.VirtualServerName)
+	virtualServer, err := dbContext.VirtualServers().FirstOrNil(ctx, virtualServerFilter)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
+		return
+	}
+	if virtualServer == nil {
+		writeOAuthError(w, "invalid_grant", "virtual server not found")
+		return
+	}
+
+	if _, err := authenticateApplication(ctx, virtualServer, clientId, clientSecret); err != nil {
+		writeOAuthError(w, "invalid_client", err.Error())
+		return
+	}
+
 	if refreshTokenInfo.ClientId != clientId {
-		writeOAuthError(w, "invalid_grant", "The provided authorization grant (e.g., authorization code, resource owner credentials) or refresh token is invalid, expired, revoked, does not match the redirection URI used in the authorization request, or was issued to another client.")
+		writeOAuthError(w, "invalid_grant", "refresh token was issued to a different client")
 		return
 	}
 
@@ -1386,8 +1502,6 @@ func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, fmt.Errorf("deleting refresh token: %w", err))
 		return
 	}
-
-	dbContext := ioc.GetDependency[database.Context](scope)
 
 	userFilter := repositories.NewUserFilter().Id(refreshTokenInfo.UserId)
 	user, err := dbContext.Users().FirstOrNil(ctx, userFilter)
@@ -1402,13 +1516,6 @@ func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 
 	clockService := ioc.GetDependency[clock.Service](scope)
 	now := clockService.Now()
-
-	virtualServerFilter := repositories.NewVirtualServerFilter().Name(refreshTokenInfo.VirtualServerName)
-	virtualServer, err := dbContext.VirtualServers().FirstOrNil(r.Context(), virtualServerFilter)
-	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
-		return
-	}
 
 	applicationFilter := repositories.NewApplicationFilter().
 		VirtualServerId(virtualServer.Id()).
