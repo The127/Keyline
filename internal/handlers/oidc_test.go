@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/base64"
 	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/middlewares"
@@ -261,4 +263,66 @@ func TestGenerateRefreshTokenInfo_ReturnsExpectedJSON(t *testing.T) {
 	assert.Contains(t, info, userId.String())
 	assert.Contains(t, info, "test-server")
 	assert.Contains(t, info, "test-client")
+}
+
+// pkceChallenge returns base64url(sha256(verifier)) without padding.
+func pkceChallenge(verifier string) string {
+	sum := sha256.Sum256([]byte(verifier))
+	return base64.RawURLEncoding.EncodeToString(sum[:])
+}
+
+// 56-char verifier; well within RFC 7636's 43-128 char window.
+const testPkceVerifier = "dummy-verifier-for-poc-do-not-use-in-real-systems-please"
+
+func TestVerifyPKCE_AcceptsCorrectS256Verifier(t *testing.T) {
+	t.Parallel()
+	require.NoError(t, verifyPKCE(testPkceVerifier, pkceChallenge(testPkceVerifier), "S256"))
+}
+
+func TestVerifyPKCE_RejectsWrongVerifier(t *testing.T) {
+	t.Parallel()
+	err := verifyPKCE("wrong-verifier-but-still-long-enough-to-pass-length-check", pkceChallenge(testPkceVerifier), "S256")
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "code_verifier does not match")
+}
+
+func TestVerifyPKCE_RejectsEmptyVerifier(t *testing.T) {
+	t.Parallel()
+	err := verifyPKCE("", pkceChallenge(testPkceVerifier), "S256")
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "code_verifier is required")
+}
+
+func TestVerifyPKCE_RejectsTooShortVerifier(t *testing.T) {
+	t.Parallel()
+	short := "too-short"
+	err := verifyPKCE(short, pkceChallenge(short), "S256")
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "length")
+}
+
+func TestVerifyPKCE_RejectsTooLongVerifier(t *testing.T) {
+	t.Parallel()
+	long := ""
+	for i := 0; i < 129; i++ {
+		long += "a"
+	}
+	err := verifyPKCE(long, pkceChallenge(long), "S256")
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "length")
+}
+
+func TestVerifyPKCE_RejectsPlainMethod(t *testing.T) {
+	t.Parallel()
+	// "plain" is no longer accepted because it provides no real protection.
+	err := verifyPKCE(testPkceVerifier, testPkceVerifier, "plain")
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "unsupported code_challenge_method")
+}
+
+func TestVerifyPKCE_RejectsUnknownMethod(t *testing.T) {
+	t.Parallel()
+	err := verifyPKCE(testPkceVerifier, pkceChallenge(testPkceVerifier), "S512")
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "unsupported code_challenge_method")
 }
