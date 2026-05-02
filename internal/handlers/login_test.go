@@ -39,7 +39,7 @@ func seedUserAndPasswordCredential(
 	ctrl *gomock.Controller,
 	username string,
 	password string,
-) (*repositories.User, *repositories.Credential) {
+) *repositories.User {
 	t.Helper()
 	user := repositories.NewUser(username, "Display "+username, username+"@test", uuid.New())
 	user.Mock(time.Now())
@@ -56,14 +56,14 @@ func seedUserAndPasswordCredential(
 	credentialRepository.EXPECT().FirstOrNil(gomock.Any(), gomock.Any()).Return(credential, nil).AnyTimes()
 	dbContext.EXPECT().Credentials().Return(credentialRepository).AnyTimes()
 
-	return user, credential
+	return user
 }
 
 func TestVerifyPasswordCredential_AcceptsCorrectPassword(t *testing.T) {
 	t.Parallel()
 	ctx, dbContext, ctrl := newPasswordVerifyTestContext(t)
 	defer ctrl.Finish()
-	expectedUser, _ := seedUserAndPasswordCredential(t, dbContext, ctrl, "alice", "correct-horse-battery-staple")
+	expectedUser := seedUserAndPasswordCredential(t, dbContext, ctrl, "alice", "correct-horse-battery-staple")
 
 	user, ok, err := verifyPasswordCredential(ctx, dbContext, uuid.New(), "alice", "correct-horse-battery-staple")
 	require.NoError(t, err)
