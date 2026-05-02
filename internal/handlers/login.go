@@ -238,6 +238,14 @@ type VerifyPasswordRequestDto struct {
 // @Failure      400         {string} string "Bad Request"
 // @Failure      401         {string} string "Unauthorized or wrong step"
 // @Router       /logins/{loginToken}/verify-password [post]
+// MaxFailedPasswordAttempts is the per-loginToken cap on wrong-password
+// attempts before the loginToken is invalidated. RFC 6819 §5.1.4.2.3
+// recommends throttling/lockout against online password guessing on the
+// resource-owner credentials; without this cap a single anonymously-minted
+// loginToken supports unbounded brute force / spray within its 15-minute
+// TTL.
+const MaxFailedPasswordAttempts = 5
+
 func VerifyPassword(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	scope := middlewares.GetScope(ctx)
@@ -258,40 +266,60 @@ func VerifyPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = updateLoginStep(ctx, loginToken, func(loginInfo *jsonTypes.LoginInfo) error {
-		dbContext := ioc.GetDependency[database.Context](scope)
+	tokenService := ioc.GetDependency[services.TokenService](scope)
+	dbContext := ioc.GetDependency[database.Context](scope)
 
-		if loginInfo.Step != jsonTypes.LoginStepPasswordVerification {
-			return utils.ErrHttpUnauthorized
-		}
+	rawLoginInfo, err := tokenService.GetToken(ctx, services.LoginSessionTokenType, loginToken)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("getting token: %w", err))
+		return
+	}
 
-		userFilter := repositories.NewUserFilter().VirtualServerId(loginInfo.VirtualServerId).Username(dto.Username)
-		user, err := dbContext.Users().FirstOrNil(ctx, userFilter)
-		if err != nil {
-			return err
-		}
-		if user == nil {
-			return utils.ErrHttpUnauthorized
-		}
+	var loginInfo jsonTypes.LoginInfo
+	if err := json.Unmarshal([]byte(rawLoginInfo), &loginInfo); err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("unmarshal login info: %w", err))
+		return
+	}
 
-		credentialFilter := repositories.NewCredentialFilter().
-			UserId(user.Id()).
-			Type(repositories.CredentialTypePassword)
-		credential, err := dbContext.Credentials().FirstOrNil(ctx, credentialFilter)
-		if err != nil {
-			return utils.ErrHttpUnauthorized
-		}
+	if loginInfo.Step != jsonTypes.LoginStepPasswordVerification {
+		utils.HandleHttpError(w, utils.ErrHttpUnauthorized)
+		return
+	}
 
-		passwordDetails, err := credential.PasswordDetails()
-		if err != nil {
-			return utils.ErrHttpUnauthorized
-		}
+	user, ok, err := verifyPasswordCredential(ctx, dbContext, loginInfo.VirtualServerId, dto.Username, dto.Password)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("verifying password: %w", err))
+		return
+	}
 
-		if !utils.CompareHash(dto.Password, passwordDetails.HashedPassword) {
-			return utils.ErrHttpUnauthorized
+	if !ok {
+		loginInfo.FailedPasswordAttempts++
+		if loginInfo.FailedPasswordAttempts >= MaxFailedPasswordAttempts {
+			// Drop the loginToken entirely so the attacker cannot keep
+			// hammering the same anonymously-minted token; the user must
+			// restart the flow at /authorize.
+			if delErr := tokenService.DeleteToken(ctx, services.LoginSessionTokenType, loginToken); delErr != nil {
+				utils.HandleHttpError(w, fmt.Errorf("deleting login token: %w", delErr))
+				return
+			}
+		} else {
+			updated, marshalErr := json.Marshal(loginInfo)
+			if marshalErr != nil {
+				utils.HandleHttpError(w, fmt.Errorf("marshal login info: %w", marshalErr))
+				return
+			}
+			if updErr := tokenService.UpdateToken(ctx, services.LoginSessionTokenType, loginToken, string(updated), 15*time.Minute); updErr != nil {
+				utils.HandleHttpError(w, fmt.Errorf("update login token: %w", updErr))
+				return
+			}
 		}
+		utils.HandleHttpError(w, utils.ErrHttpUnauthorized)
+		return
+	}
 
-		loginInfo.UserId = user.Id()
+	err = updateLoginStep(ctx, loginToken, func(info *jsonTypes.LoginInfo) error {
+		info.UserId = user.Id()
+		info.FailedPasswordAttempts = 0
 		return nil
 	})
 	if err != nil {
@@ -300,6 +328,55 @@ func VerifyPassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// verifyPasswordCredential looks up the password credential for the given
+// (virtualServerId, username) pair and compares the supplied password
+// against the stored hash. It returns (user, true, nil) only when the user
+// exists, has a password credential, and the hash compares equal.
+//
+// On a wrong password / unknown user / missing credential it returns
+// (user-or-nil, false, nil) -- those are not errors, they're a failed
+// authentication attempt that the caller MUST count against the
+// loginToken's failed-attempt budget. A non-nil error is reserved for
+// underlying database failures.
+func verifyPasswordCredential(
+	ctx context.Context,
+	dbContext database.Context,
+	virtualServerId uuid.UUID,
+	username string,
+	password string,
+) (*repositories.User, bool, error) {
+	userFilter := repositories.NewUserFilter().VirtualServerId(virtualServerId).Username(username)
+	user, err := dbContext.Users().FirstOrNil(ctx, userFilter)
+	if err != nil {
+		return nil, false, fmt.Errorf("getting user: %w", err)
+	}
+	if user == nil {
+		return nil, false, nil
+	}
+
+	credentialFilter := repositories.NewCredentialFilter().
+		UserId(user.Id()).
+		Type(repositories.CredentialTypePassword)
+	credential, err := dbContext.Credentials().FirstOrNil(ctx, credentialFilter)
+	if err != nil {
+		return user, false, fmt.Errorf("getting credential: %w", err)
+	}
+	if credential == nil {
+		return user, false, nil
+	}
+
+	passwordDetails, err := credential.PasswordDetails()
+	if err != nil {
+		return user, false, nil
+	}
+
+	if !utils.CompareHash(password, passwordDetails.HashedPassword) {
+		return user, false, nil
+	}
+
+	return user, true, nil
 }
 
 // VerifyEmailToken advances the login after the user's email is verified.
