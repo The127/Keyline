@@ -625,7 +625,23 @@ func OidcEndSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	applicationFilter := repositories.NewApplicationFilter().Name(clientId)
+	virtualServerFilter := repositories.NewVirtualServerFilter().Name(vsName)
+	virtualServer, err := dbContext.VirtualServers().FirstOrNil(ctx, virtualServerFilter)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
+		return
+	}
+	if virtualServer == nil {
+		utils.HandleHttpError(w, fmt.Errorf("virtual server not found"))
+		return
+	}
+
+	// Scope to the request VS: applications are unique on (name, vs_id),
+	// so a name-only filter can return another tenant's row and let its
+	// PostLogoutRedirectUris govern the whitelist check.
+	applicationFilter := repositories.NewApplicationFilter().
+		VirtualServerId(virtualServer.Id()).
+		Name(clientId)
 	application, err := dbContext.Applications().FirstOrNil(ctx, applicationFilter)
 	if err != nil {
 		utils.HandleHttpError(w, fmt.Errorf("getting application: %w", err))
