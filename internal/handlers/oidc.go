@@ -1856,7 +1856,11 @@ func BeginDeviceFlow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	clientId := r.Form.Get("client_id")
+	clientId, clientSecret, hasBasicAuth := r.BasicAuth()
+	if !hasBasicAuth {
+		clientId = r.Form.Get("client_id")
+		clientSecret = r.Form.Get("client_secret")
+	}
 	if clientId == "" {
 		writeOAuthError(w, "invalid_client", "client_id is required")
 		return
@@ -1883,16 +1887,11 @@ func BeginDeviceFlow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	applicationFilter := repositories.NewApplicationFilter().
-		VirtualServerId(virtualServer.Id()).
-		Name(clientId)
-	application, err := dbContext.Applications().FirstOrNil(ctx, applicationFilter)
+	// RFC 8628 §3.1: confidential clients MUST authenticate at the device
+	// authorization endpoint per RFC 6749 §3.2.1.
+	application, err := authenticateApplication(ctx, virtualServer, clientId, clientSecret)
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting application: %w", err))
-		return
-	}
-	if application == nil {
-		writeOAuthError(w, "invalid_client", "application not found")
+		writeOAuthError(w, "invalid_client", err.Error())
 		return
 	}
 
@@ -1960,7 +1959,7 @@ func handleDeviceCodeGrant(w http.ResponseWriter, r *http.Request) {
 	clientId, clientSecret, hasBasicAuth := r.BasicAuth()
 	if !hasBasicAuth {
 		clientId = r.Form.Get("client_id")
-		clientSecret = ""
+		clientSecret = r.Form.Get("client_secret")
 	}
 
 	deviceCode := r.Form.Get("device_code")
@@ -1997,8 +1996,33 @@ func handleDeviceCodeGrant(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	dbContext := ioc.GetDependency[database.Context](scope)
+
+	virtualServerFilter := repositories.NewVirtualServerFilter().Name(deviceCodeInfo.VirtualServerName)
+	virtualServer, err := dbContext.VirtualServers().FirstOrNil(ctx, virtualServerFilter)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
+		return
+	}
+	if virtualServer == nil {
+		writeOAuthError(w, "invalid_grant", "virtual server not found")
+		return
+	}
+
+	// RFC 8628 §3.4: confidential clients MUST authenticate at the token
+	// endpoint per RFC 6749 §3.2.1. authenticateApplication enforces the
+	// per-type rules (confidential => secret required and verified, public =>
+	// no secret allowed) and scopes the lookup to the virtual server.
+	application, err := authenticateApplication(ctx, virtualServer, clientId, clientSecret)
+	if err != nil {
+		writeOAuthError(w, "invalid_client", err.Error())
+		return
+	}
+
+	// Bind the device_code to the client it was issued to. Mirrors the
+	// client_id binding check on the auth-code grant.
 	if deviceCodeInfo.ClientId != clientId {
-		writeOAuthError(w, "invalid_client", "client_id mismatch")
+		writeOAuthError(w, "invalid_grant", "device code was issued to a different client")
 		return
 	}
 
@@ -2014,34 +2038,6 @@ func handleDeviceCodeGrant(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, fmt.Errorf("deleting device code: %w", err))
 		return
 	}
-
-	dbContext := ioc.GetDependency[database.Context](scope)
-
-	virtualServerFilter := repositories.NewVirtualServerFilter().Name(deviceCodeInfo.VirtualServerName)
-	virtualServer, err := dbContext.VirtualServers().FirstOrNil(ctx, virtualServerFilter)
-	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
-		return
-	}
-	if virtualServer == nil {
-		utils.HandleHttpError(w, fmt.Errorf("virtual server not found"))
-		return
-	}
-
-	applicationFilter := repositories.NewApplicationFilter().
-		VirtualServerId(virtualServer.Id()).
-		Name(clientId)
-	application, err := dbContext.Applications().FirstOrNil(ctx, applicationFilter)
-	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting application: %w", err))
-		return
-	}
-	if application == nil {
-		utils.HandleHttpError(w, fmt.Errorf("application not found"))
-		return
-	}
-
-	_ = clientSecret // public clients don't need a secret
 
 	userFilter := repositories.NewUserFilter().Id(userId)
 	user, err := dbContext.Users().FirstOrNil(ctx, userFilter)
