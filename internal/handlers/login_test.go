@@ -27,6 +27,64 @@ func TestMaxFailedPasswordAttempts_LowEnoughForOnlineGuessingMitigation(t *testi
 	assert.GreaterOrEqual(t, MaxFailedPasswordAttempts, 3)
 }
 
+func TestWebauthnExpectedOrigin(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name         string
+		frontendUrl  string
+		want         string
+		wantErr      bool
+	}{
+		{
+			name:        "bare http origin",
+			frontendUrl: "http://localhost:5173",
+			want:        "http://localhost:5173",
+		},
+		{
+			name:        "https without explicit port",
+			frontendUrl: "https://app.keyline-oidc.com",
+			want:        "https://app.keyline-oidc.com",
+		},
+		{
+			// Frontend.ExternalUrl might have a trailing path in some
+			// dev configs; clientData.Origin per RFC 6454 is just
+			// scheme+host(+port), so the helper strips paths.
+			name:        "trailing path is stripped",
+			frontendUrl: "https://app.keyline-oidc.com/keyline",
+			want:        "https://app.keyline-oidc.com",
+		},
+		{
+			name:        "explicit non-default port preserved",
+			frontendUrl: "https://login.example:8443",
+			want:        "https://login.example:8443",
+		},
+		{
+			name:        "empty config rejected",
+			frontendUrl: "",
+			wantErr:     true,
+		},
+		{
+			name:        "scheme-less url rejected",
+			frontendUrl: "app.keyline-oidc.com",
+			wantErr:     true,
+		},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			got, err := webauthnExpectedOrigin(tc.frontendUrl)
+			if tc.wantErr {
+				assert.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tc.want, got)
+		})
+	}
+}
+
 func newPasswordVerifyTestContext(t *testing.T) (context.Context, *mocks.MockContext, *gomock.Controller) {
 	ctrl := gomock.NewController(t)
 	dbContext := mocks.NewMockContext(ctrl)
