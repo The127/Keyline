@@ -3,11 +3,13 @@ package commands
 import (
 	"context"
 	"fmt"
+	"github.com/The127/Keyline/internal/authentication"
 	"github.com/The127/Keyline/internal/authentication/permissions"
 	"github.com/The127/Keyline/internal/behaviours"
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/repositories"
+	"github.com/The127/Keyline/utils"
 
 	"github.com/The127/ioc"
 
@@ -53,6 +55,22 @@ func HandleAssignRoleToUser(ctx context.Context, command AssignRoleToUser) (*Ass
 	project, err := dbContext.Projects().FirstOrErr(ctx, projectFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting project: %w", err)
+	}
+
+	// Role assignments inside the system project drive the JWT
+	// `system:<roleName>` claim that AuthenticationMiddleware honours
+	// directly via roles.AllRoles. Granting one is the same trust
+	// decision as creating, renaming, or deleting one (see
+	// CreateRole / PatchRole / DeleteRole) and requires the same
+	// gate. Without it, any caller with RoleAssign (i.e. every VS
+	// admin) could assign the system-project `system-admin` role to
+	// themselves on the initial VS and silently promote to
+	// SystemAdmin permissions on next login.
+	if project.SystemProject() {
+		currentUser := authentication.GetCurrentUser(ctx)
+		if !currentUser.HasPermission(permissions.SystemUser).IsSuccess() {
+			return nil, fmt.Errorf("assigning roles in system project requires system user permission: %w", utils.ErrHttpUnauthorized)
+		}
 	}
 
 	roleFilter := repositories.NewRoleFilter().

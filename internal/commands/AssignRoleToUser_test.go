@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 	"errors"
+	"github.com/The127/Keyline/internal/authentication"
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/mocks"
@@ -14,6 +15,7 @@ import (
 
 	"github.com/The127/ioc"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -173,6 +175,104 @@ func (s *AssignRoleToUserCommandSuite) TestUserError() {
 
 	// assert
 	s.Error(err)
+}
+
+// TestSystemProjectRequiresSystemUser pins down the gate that mirrors
+// CreateRole / PatchRole / DeleteRole. The persisted (user_id, role_id)
+// row drives the JWT `system:<roleName>` claim that
+// AuthenticationMiddleware honours via roles.AllRoles. Granting a
+// system-project role is the same trust decision as creating, renaming,
+// or deleting one and MUST refuse a non-SystemUser caller.
+func (s *AssignRoleToUserCommandSuite) TestSystemProjectRequiresSystemUser() {
+	// arrange
+	ctrl := gomock.NewController(s.T())
+	defer ctrl.Finish()
+
+	now := time.Now()
+
+	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
+	virtualServer.Mock(now)
+	virtualServerRepository := repoMocks.NewMockVirtualServerRepository(ctrl)
+	virtualServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
+
+	project := repositories.NewSystemProject(virtualServer.Id())
+	project.Mock(now)
+	projectRepository := repoMocks.NewMockProjectRepository(ctrl)
+	projectRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(project, nil)
+
+	// No Roles() / Users() / UserRoleAssignments() expectations: the
+	// guard must short-circuit before any of those repositories are
+	// touched.
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, nil, nil, nil)
+	ctx = authentication.ContextWithCurrentUser(ctx, authentication.NewCurrentUser(uuid.New()))
+
+	cmd := AssignRoleToUser{
+		VirtualServerName: virtualServer.Name(),
+		ProjectSlug:       project.Slug(),
+		UserId:            uuid.New(),
+		RoleId:            uuid.New(),
+	}
+
+	// act
+	resp, err := HandleAssignRoleToUser(ctx, cmd)
+
+	// assert
+	s.Require().Error(err)
+	s.Nil(resp)
+	s.Require().ErrorIs(err, utils.ErrHttpUnauthorized)
+}
+
+// TestSystemProjectAllowedForSystemUser proves the guard does not
+// break the legitimate path: the system identity (used for internal
+// bootstrap flows) can still assign system-project roles.
+func (s *AssignRoleToUserCommandSuite) TestSystemProjectAllowedForSystemUser() {
+	// arrange
+	ctrl := gomock.NewController(s.T())
+	defer ctrl.Finish()
+
+	now := time.Now()
+
+	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
+	virtualServer.Mock(now)
+	virtualServerRepository := repoMocks.NewMockVirtualServerRepository(ctrl)
+	virtualServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
+
+	project := repositories.NewSystemProject(virtualServer.Id())
+	project.Mock(now)
+	projectRepository := repoMocks.NewMockProjectRepository(ctrl)
+	projectRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(project, nil)
+
+	role := repositories.NewRole(virtualServer.Id(), project.Id(), "system-admin", "System administrator role")
+	role.Mock(now)
+	roleRepository := repoMocks.NewMockRoleRepository(ctrl)
+	roleRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(role, nil)
+
+	user := repositories.NewUser("user", "User", "user@mail", virtualServer.Id())
+	user.Mock(now)
+	userRepository := repoMocks.NewMockUserRepository(ctrl)
+	userRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(user, nil)
+
+	userRoleAssignmentRepository := repoMocks.NewMockUserRoleAssignmentRepository(ctrl)
+	userRoleAssignmentRepository.EXPECT().Insert(gomock.Cond(func(x *repositories.UserRoleAssignment) bool {
+		return x.RoleId() == role.Id() && x.UserId() == user.Id()
+	}))
+
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, roleRepository, userRepository, userRoleAssignmentRepository)
+	ctx = authentication.ContextWithCurrentUser(ctx, authentication.SystemUser())
+
+	cmd := AssignRoleToUser{
+		VirtualServerName: virtualServer.Name(),
+		ProjectSlug:       project.Slug(),
+		UserId:            user.Id(),
+		RoleId:            role.Id(),
+	}
+
+	// act
+	resp, err := HandleAssignRoleToUser(ctx, cmd)
+
+	// assert
+	s.Require().NoError(err)
+	s.NotNil(resp)
 }
 
 func (s *AssignRoleToUserCommandSuite) TestHappyPath() {
