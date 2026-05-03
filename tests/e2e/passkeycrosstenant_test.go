@@ -38,6 +38,11 @@ const (
 	passkeyTargetURI     = "http://localhost:9100/passkey-callback"
 	passkeyPkceVerifier  = "passkey-cross-tenant-verifier-padding-padding-12"
 	cosePublicKeyEd25519 = -8
+	// passkeyFrontendOrigin is what the WebAuthn ceremony's clientData.Origin
+	// must equal post PR #284. The harness sets config.C.Frontend.ExternalUrl
+	// to this in BeforeAll so the helper that derives the expected origin
+	// in handlers/login.go produces the same string.
+	passkeyFrontendOrigin = "http://localhost:5173"
 )
 
 // passkeyTestKey holds an ed25519 keypair plus the credential id we wire
@@ -63,6 +68,11 @@ func init() {
 					Skip("Postgres not available")
 				}
 				h = newE2eTestHarness(backend.dbMode, nil)
+				// FinishPasskeyLogin derives the expected clientData.Origin
+				// from config.C.Frontend.ExternalUrl. The harness leaves the
+				// field zero, so set it explicitly here -- otherwise every
+				// /passkey/finish call below would fail the origin check.
+				config.C.Frontend.ExternalUrl = passkeyFrontendOrigin
 				var err error
 				attackerKey, targetUserKey, err = setupPasskeyCrossTenantFixtures(h)
 				Expect(err).ToNot(HaveOccurred())
@@ -107,9 +117,10 @@ func init() {
 			}
 
 			// passkeyFinish drives /passkey/start, signs the challenge with
-			// `key`, and POSTs to /passkey/finish. Returns the response so
-			// callers can assert on status / body.
-			passkeyFinish := func(loginToken string, key *passkeyTestKey) *http.Response {
+			// `key`, and POSTs to /passkey/finish using `origin` as
+			// clientData.Origin. Returns the response so callers can
+			// assert on status / body.
+			passkeyFinish := func(loginToken string, key *passkeyTestKey, origin string) *http.Response {
 				startResp, err := http.Post(
 					fmt.Sprintf("%s/logins/%s/passkey/start", h.ApiUrl(), loginToken),
 					"", nil,
@@ -130,7 +141,7 @@ func init() {
 				clientData := map[string]string{
 					"type":      "webauthn.get",
 					"challenge": base64.RawURLEncoding.EncodeToString(challengeBytes),
-					"origin":    "https://test.invalid",
+					"origin":    origin,
 				}
 				clientDataBytes, err := json.Marshal(clientData)
 				Expect(err).ToNot(HaveOccurred())
@@ -170,7 +181,7 @@ func init() {
 			Describe("POST /logins/{loginToken}/passkey/finish", func() {
 				It("accepts a webauthn credential whose owner is in the same VS as the loginToken (happy path)", func() {
 					loginToken := mintLoginToken(h.VirtualServer())
-					resp := passkeyFinish(loginToken, targetUserKey)
+					resp := passkeyFinish(loginToken, targetUserKey, passkeyFrontendOrigin)
 					defer resp.Body.Close()
 					Expect(resp.StatusCode).To(Equal(http.StatusNoContent),
 						"same-VS passkey login must succeed")
@@ -186,7 +197,7 @@ func init() {
 					// credential.UserId() against loginInfo.VirtualServerId
 					// and rejects with Unauthorized.
 					loginToken := mintLoginToken(h.VirtualServer())
-					resp := passkeyFinish(loginToken, attackerKey)
+					resp := passkeyFinish(loginToken, attackerKey, passkeyFrontendOrigin)
 					defer resp.Body.Close()
 					Expect(resp.StatusCode).To(Equal(http.StatusUnauthorized),
 						"cross-VS passkey login must be rejected")
@@ -199,7 +210,7 @@ func init() {
 						publicKey:    attackerKey.publicKey,
 						privateKey:   attackerKey.privateKey,
 					}
-					resp := passkeyFinish(loginToken, bogus)
+					resp := passkeyFinish(loginToken, bogus, passkeyFrontendOrigin)
 					defer resp.Body.Close()
 					Expect(resp.StatusCode).ToNot(Equal(http.StatusNoContent),
 						"unknown credential id must not authenticate")
@@ -212,10 +223,25 @@ func init() {
 					// guards against an over-broad fix that would also
 					// block the legitimate same-VS case.
 					loginToken := mintLoginToken(passkeyAttackerVS)
-					resp := passkeyFinish(loginToken, attackerKey)
+					resp := passkeyFinish(loginToken, attackerKey, passkeyFrontendOrigin)
 					defer resp.Body.Close()
 					Expect(resp.StatusCode).To(Equal(http.StatusNoContent),
 						"attacker's credential must still authenticate the attacker in their own VS")
+				})
+
+				It("rejects a clientData.Origin that does not match the configured frontend origin (REGRESSION: WebAuthn L3 §7.2 step 9)", func() {
+					// Pre-fix the Origin field was parsed but never
+					// compared. A non-browser caller (or a malicious page
+					// that somehow bypassed the browser's rpId check)
+					// could submit a syntactically-valid assertion with
+					// any Origin string. Post-fix the handler compares
+					// against config.C.Frontend.ExternalUrl and rejects
+					// any other origin with Unauthorized.
+					loginToken := mintLoginToken(h.VirtualServer())
+					resp := passkeyFinish(loginToken, targetUserKey, "https://attacker.invalid")
+					defer resp.Body.Close()
+					Expect(resp.StatusCode).To(Equal(http.StatusUnauthorized),
+						"wrong-origin passkey assertion must be rejected")
 				})
 			})
 		})

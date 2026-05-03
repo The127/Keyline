@@ -27,6 +27,7 @@ import (
 	"github.com/The127/Keyline/templates"
 	"github.com/The127/Keyline/utils"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/The127/go-clock"
@@ -939,6 +940,22 @@ func FinishPasskeyLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// WebAuthn L3 §7.2 step 9: the RP MUST verify that clientData.Origin
+	// is an origin it expects. The login UI runs at config.Frontend.ExternalUrl,
+	// so a real browser will set Origin to that URL's scheme+host(+port).
+	// Skipping this check lets a non-browser caller (which never had a
+	// browser-side rpId binding to begin with) submit an assertion with
+	// any Origin string at all.
+	expectedOrigin, err := webauthnExpectedOrigin(config.C.Frontend.ExternalUrl)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("computing expected webauthn origin: %w", err))
+		return
+	}
+	if clientData.Origin != expectedOrigin {
+		utils.HandleHttpError(w, fmt.Errorf("clientData origin %q does not match expected origin: %w", clientData.Origin, utils.ErrHttpUnauthorized))
+		return
+	}
+
 	challengeFromClient, err := base64.RawURLEncoding.DecodeString(clientData.Challenge)
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -1087,4 +1104,27 @@ func validateSignature(pubKey any, pubKeyAlgorithm int, message, sigBytes []byte
 	}
 
 	return nil
+}
+
+// webauthnExpectedOrigin returns the origin (scheme + host[:port]) that
+// `clientData.Origin` MUST equal for a WebAuthn assertion accepted at
+// /logins/{token}/passkey/finish. The expected origin is derived from
+// config.Frontend.ExternalUrl: that's where the login UI runs, and a
+// real browser sets clientData.Origin to that URL's scheme+host+port
+// when JS on the login page calls navigator.credentials.get().
+//
+// Any path on Frontend.ExternalUrl is stripped — origins per RFC 6454
+// are scheme + host + port, never a path.
+func webauthnExpectedOrigin(frontendExternalUrl string) (string, error) {
+	if frontendExternalUrl == "" {
+		return "", fmt.Errorf("frontend.externalUrl is not configured")
+	}
+	u, err := url.Parse(frontendExternalUrl)
+	if err != nil {
+		return "", fmt.Errorf("parsing frontend.externalUrl: %w", err)
+	}
+	if u.Scheme == "" || u.Host == "" {
+		return "", fmt.Errorf("frontend.externalUrl is missing scheme or host: %q", frontendExternalUrl)
+	}
+	return u.Scheme + "://" + u.Host, nil
 }
