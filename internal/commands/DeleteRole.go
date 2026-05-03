@@ -3,11 +3,13 @@ package commands
 import (
 	"context"
 	"fmt"
+	"github.com/The127/Keyline/internal/authentication"
 	"github.com/The127/Keyline/internal/authentication/permissions"
 	"github.com/The127/Keyline/internal/behaviours"
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/repositories"
+	"github.com/The127/Keyline/utils"
 
 	"github.com/The127/ioc"
 
@@ -54,6 +56,18 @@ func HandleDeleteRole(ctx context.Context, command DeleteRole) (*DeleteRoleRespo
 	project, err := dbContext.Projects().FirstOrErr(ctx, projectFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting project: %w", err)
+	}
+
+	// Mirror of CreateRole's system-project gate. Deleting the system-
+	// project `admin` or `system-admin` role would either brick the VS
+	// or strip a SaaS operator of permissions; either way it's a
+	// privileged operation that must require the same SystemUser perm
+	// CreateRole demands for inserts.
+	if project.SystemProject() {
+		currentUser := authentication.GetCurrentUser(ctx)
+		if !currentUser.HasPermission(permissions.SystemUser).IsSuccess() {
+			return nil, fmt.Errorf("deleting roles in system project requires system user permission: %w", utils.ErrHttpUnauthorized)
+		}
 	}
 
 	roleFilter := repositories.NewRoleFilter().
