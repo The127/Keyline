@@ -3,11 +3,13 @@ package commands
 import (
 	"context"
 	"fmt"
+	"github.com/The127/Keyline/internal/authentication"
 	"github.com/The127/Keyline/internal/authentication/permissions"
 	"github.com/The127/Keyline/internal/behaviours"
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/repositories"
+	"github.com/The127/Keyline/utils"
 
 	"github.com/The127/ioc"
 
@@ -56,6 +58,21 @@ func HandlePatchRole(ctx context.Context, command PatchRole) (*PatchRoleResponse
 	project, err := dbContext.Projects().FirstOrErr(ctx, projectFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting project: %w", err)
+	}
+
+	// System-project roles map to privileged identities through the JWT
+	// `system:<roleName>` claim (AuthenticationMiddleware honours those
+	// directly via roles.AllRoles). Mutating one of these — name or
+	// description — is the same trust decision as creating one and
+	// requires the same gate that CreateRole enforces. Without it, any
+	// caller with RoleUpdate (i.e. every VS admin) can rename the
+	// `admin` role to `system-admin` and silently promote every holder
+	// of that role to SystemAdmin permissions on next login.
+	if project.SystemProject() {
+		currentUser := authentication.GetCurrentUser(ctx)
+		if !currentUser.HasPermission(permissions.SystemUser).IsSuccess() {
+			return nil, fmt.Errorf("modifying roles in system project requires system user permission: %w", utils.ErrHttpUnauthorized)
+		}
 	}
 
 	roleFilter := repositories.NewRoleFilter().
