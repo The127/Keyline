@@ -185,6 +185,79 @@ func (s *PatchApplicationCommandSuite) TestUpdatesPostLogoutUris() {
 	s.NotNil(resp)
 }
 
+func (s *PatchApplicationCommandSuite) TestRefusesRedirectUrisOnSystemApplication() {
+	// arrange
+	ctrl := gomock.NewController(s.T())
+	defer ctrl.Finish()
+
+	now := time.Now()
+	virtualServer, project, virtualServerRepository, projectRepository := s.setupVSAndProject(ctrl, now)
+
+	application := repositories.NewApplication(virtualServer.Id(), project.Id(), "admin-ui", "Admin Application", repositories.ApplicationTypePublic, []string{"https://legit.example.com/callback"})
+	application.SetSystemApplication(true)
+	application.Mock(now)
+	applicationRepository := mocks.NewMockApplicationRepository(ctrl)
+	applicationRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(application, nil)
+	// Update must NOT be called on the system application.
+
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, applicationRepository)
+	newUris := []string{"https://legit.example.com/callback", "http://attacker.example/cb"}
+	cmd := PatchApplication{
+		VirtualServerName: virtualServer.Name(),
+		ProjectSlug:       project.Slug(),
+		ApplicationId:     application.Id(),
+		RedirectUris:      &newUris,
+	}
+
+	// act
+	resp, err := HandlePatchApplication(ctx, cmd)
+
+	// assert
+	s.Require().Error(err)
+	s.Nil(resp)
+	s.Require().ErrorIs(err, utils.ErrHttpBadRequest)
+	s.Contains(err.Error(), "system application")
+	// Original redirect URIs must be untouched.
+	s.Equal([]string{"https://legit.example.com/callback"}, application.RedirectUris())
+}
+
+func (s *PatchApplicationCommandSuite) TestRefusesPostLogoutUrisOnSystemApplication() {
+	// arrange
+	ctrl := gomock.NewController(s.T())
+	defer ctrl.Finish()
+
+	now := time.Now()
+	virtualServer, project, virtualServerRepository, projectRepository := s.setupVSAndProject(ctrl, now)
+
+	application := repositories.NewApplication(virtualServer.Id(), project.Id(), "admin-ui", "Admin Application", repositories.ApplicationTypePublic, []string{"https://legit.example.com/callback"})
+	application.SetPostLogoutRedirectUris([]string{"https://legit.example.com/logout"})
+	application.SetSystemApplication(true)
+	application.Mock(now)
+	applicationRepository := mocks.NewMockApplicationRepository(ctrl)
+	applicationRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(application, nil)
+	// Update must NOT be called on the system application.
+
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, applicationRepository)
+	newUris := []string{"https://legit.example.com/logout", "http://attacker.example/post-logout"}
+	cmd := PatchApplication{
+		VirtualServerName:      virtualServer.Name(),
+		ProjectSlug:            project.Slug(),
+		ApplicationId:          application.Id(),
+		PostLogoutRedirectUris: &newUris,
+	}
+
+	// act
+	resp, err := HandlePatchApplication(ctx, cmd)
+
+	// assert
+	s.Require().Error(err)
+	s.Nil(resp)
+	s.Require().ErrorIs(err, utils.ErrHttpBadRequest)
+	s.Contains(err.Error(), "system application")
+	// Original post-logout URIs must be untouched.
+	s.Equal([]string{"https://legit.example.com/logout"}, application.PostLogoutRedirectUris())
+}
+
 func (s *PatchApplicationCommandSuite) TestApplicationError() {
 	// arrange
 	ctrl := gomock.NewController(s.T())

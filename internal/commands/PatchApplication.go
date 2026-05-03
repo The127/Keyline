@@ -97,10 +97,16 @@ func HandlePatchApplication(ctx context.Context, command PatchApplication) (*Pat
 	}
 
 	if command.RedirectUris != nil {
+		if application.SystemApplication() {
+			return nil, fmt.Errorf("cannot update redirect URIs for system application: %w", utils.ErrHttpBadRequest)
+		}
 		application.SetRedirectUris(*command.RedirectUris)
 	}
 
 	if command.PostLogoutRedirectUris != nil {
+		if application.SystemApplication() {
+			return nil, fmt.Errorf("cannot update post-logout redirect URIs for system application: %w", utils.ErrHttpBadRequest)
+		}
 		application.SetPostLogoutRedirectUris(*command.PostLogoutRedirectUris)
 	}
 
