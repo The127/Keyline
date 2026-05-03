@@ -1003,6 +1003,24 @@ func FinishPasskeyLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = updateLoginStep(ctx, loginToken, func(loginInfo *jsonTypes.LoginInfo) error {
+		// The credential lookup above is keyed only by RawId; without a
+		// virtual-server scope a credential registered against a user in
+		// VS-A would otherwise authenticate the holder into VS-B's
+		// login flow (the resulting session and OIDC tokens would be
+		// signed by VS-B but identify a user that exists only in VS-A).
+		// Reject if the credential's owner does not belong to the
+		// virtual server this login session was minted for.
+		ownerFilter := repositories.NewUserFilter().
+			VirtualServerId(loginInfo.VirtualServerId).
+			Id(credential.UserId())
+		owner, err := dbContext.Users().FirstOrNil(ctx, ownerFilter)
+		if err != nil {
+			return fmt.Errorf("getting credential owner: %w", err)
+		}
+		if owner == nil {
+			return fmt.Errorf("credential does not belong to this virtual server: %w", utils.ErrHttpUnauthorized)
+		}
+
 		loginInfo.UserId = credential.UserId()
 		loginInfo.Step = jsonTypes.LoginStepPasskey
 		return nil
