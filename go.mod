@@ -16,7 +16,7 @@ require (
 	github.com/hashicorp/raft v1.7.3
 	github.com/hashicorp/vault/api v1.23.0
 	github.com/huandu/go-sqlbuilder v1.42.1
-	github.com/knadh/koanf/parsers/yaml v1.1.0
+	github.com/knadh/koanf/parsers/yaml v1.1.1
 	github.com/knadh/koanf/providers/env/v2 v2.0.0
 	github.com/knadh/koanf/providers/file v1.2.1
 	github.com/knadh/koanf/v2 v2.3.5
