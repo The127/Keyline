@@ -22,7 +22,7 @@ require (
 	github.com/knadh/koanf/v2 v2.3.6
 	github.com/lib/pq v1.12.3
 	github.com/onsi/ginkgo/v2 v2.32.1
-	github.com/onsi/gomega v1.42.1
+	github.com/onsi/gomega v1.43.0
 	github.com/pquerna/otp v1.5.0
 	github.com/prometheus/client_golang v1.24.1
 	github.com/redis/go-redis/v9 v9.22.0
