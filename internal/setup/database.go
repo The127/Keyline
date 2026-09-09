@@ -7,6 +7,7 @@ import (
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/database/memory"
 	"github.com/The127/Keyline/internal/database/postgres"
+	"github.com/The127/Keyline/internal/database/sqlite"
 	"github.com/The127/Keyline/internal/logging"
 
 	"github.com/The127/ioc"
@@ -18,7 +19,10 @@ func Database(dc *ioc.DependencyCollection, c config.DatabaseConfig) (database.D
 
 	switch c.Mode {
 	case config.DatabaseModeSqlite:
-		panic("not implemented")
+		db, err = sqlite.NewSqliteDatabase(c.Sqlite)
+		if err != nil {
+			return nil, fmt.Errorf("opening sqlite: %w", err)
+		}
 
 	case config.DatabaseModePostgres:
 		db, err = postgres.NewPostgresDatabase(c.Postgres)

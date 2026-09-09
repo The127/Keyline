@@ -1,4 +1,4 @@
-package postgres
+package sqlite
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"github.com/The127/Keyline/internal/change"
 	db "github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/repositories"
-	"github.com/The127/Keyline/internal/repositories/postgres"
+	"github.com/The127/Keyline/internal/repositories/sqlite"
 
 	"github.com/google/uuid"
 )
@@ -16,29 +16,29 @@ type Context struct {
 	db            *sql.DB
 	changeTracker *change.Tracker
 
-	applications            *postgres.ApplicationRepository
-	applicationUserMetadata *postgres.ApplicationUserMetadataRepository
-	auditLogs               *postgres.AuditLogRepository
-	credentials             *postgres.CredentialRepository
-	files                   *postgres.FileRepository
-	groupRoles              *postgres.GroupRoleRepository
-	groups                  *postgres.GroupRepository
-	outboxMessages          *postgres.OutboxMessageRepository
-	passwordRules           *postgres.PasswordRuleRepository
-	projects                *postgres.ProjectRepository
-	resourceServers         *postgres.ResourceServerRepository
-	resourceServerScopes    *postgres.ResourceServerScopeRepository
-	roles                   *postgres.RoleRepository
-	sessions                *postgres.SessionRepository
-	templates               *postgres.TemplateRepository
-	userRoleAssignments     *postgres.UserRoleAssignmentRepository
-	users                   *postgres.UserRepository
-	virtualServers          *postgres.VirtualServerRepository
+	applications            *sqlite.ApplicationRepository
+	applicationUserMetadata *sqlite.ApplicationUserMetadataRepository
+	auditLogs               *sqlite.AuditLogRepository
+	credentials             *sqlite.CredentialRepository
+	files                   *sqlite.FileRepository
+	groupRoles              *sqlite.GroupRoleRepository
+	groups                  *sqlite.GroupRepository
+	outboxMessages          *sqlite.OutboxMessageRepository
+	passwordRules           *sqlite.PasswordRuleRepository
+	projects                *sqlite.ProjectRepository
+	resourceServers         *sqlite.ResourceServerRepository
+	resourceServerScopes    *sqlite.ResourceServerScopeRepository
+	roles                   *sqlite.RoleRepository
+	sessions                *sqlite.SessionRepository
+	templates               *sqlite.TemplateRepository
+	userRoleAssignments     *sqlite.UserRoleAssignmentRepository
+	users                   *sqlite.UserRepository
+	virtualServers          *sqlite.VirtualServerRepository
 }
 
 func (c *Context) Applications() repositories.ApplicationRepository {
 	if c.applications == nil {
-		c.applications = postgres.NewApplicationRepository(c.db, c.changeTracker, db.ApplicationEntityType)
+		c.applications = sqlite.NewApplicationRepository(c.db, c.changeTracker, db.ApplicationEntityType)
 	}
 
 	return c.applications
@@ -46,7 +46,7 @@ func (c *Context) Applications() repositories.ApplicationRepository {
 
 func (c *Context) ApplicationUserMetadata() repositories.ApplicationUserMetadataRepository {
 	if c.applicationUserMetadata == nil {
-		c.applicationUserMetadata = postgres.NewApplicationUserMetadataRepository(c.db, c.changeTracker, db.ApplicationUserMetadataEntityType)
+		c.applicationUserMetadata = sqlite.NewApplicationUserMetadataRepository(c.db, c.changeTracker, db.ApplicationUserMetadataEntityType)
 	}
 
 	return c.applicationUserMetadata
@@ -54,7 +54,7 @@ func (c *Context) ApplicationUserMetadata() repositories.ApplicationUserMetadata
 
 func (c *Context) AuditLogs() repositories.AuditLogRepository {
 	if c.auditLogs == nil {
-		c.auditLogs = postgres.NewAuditLogRepository(c.db, c.changeTracker, db.AuditLogEntityType)
+		c.auditLogs = sqlite.NewAuditLogRepository(c.db, c.changeTracker, db.AuditLogEntityType)
 	}
 
 	return c.auditLogs
@@ -62,7 +62,7 @@ func (c *Context) AuditLogs() repositories.AuditLogRepository {
 
 func (c *Context) Credentials() repositories.CredentialRepository {
 	if c.credentials == nil {
-		c.credentials = postgres.NewCredentialRepository(c.db, c.changeTracker, db.CredentialEntityType)
+		c.credentials = sqlite.NewCredentialRepository(c.db, c.changeTracker, db.CredentialEntityType)
 	}
 
 	return c.credentials
@@ -70,7 +70,7 @@ func (c *Context) Credentials() repositories.CredentialRepository {
 
 func (c *Context) Files() repositories.FileRepository {
 	if c.files == nil {
-		c.files = postgres.NewFileRepository(c.db, c.changeTracker, db.FileEntityType)
+		c.files = sqlite.NewFileRepository(c.db, c.changeTracker, db.FileEntityType)
 	}
 
 	return c.files
@@ -78,7 +78,7 @@ func (c *Context) Files() repositories.FileRepository {
 
 func (c *Context) GroupRoles() repositories.GroupRoleRepository {
 	if c.groupRoles == nil {
-		c.groupRoles = postgres.NewGroupRoleRepository(c.db, c.changeTracker, db.GroupRoleEntityType)
+		c.groupRoles = sqlite.NewGroupRoleRepository(c.db, c.changeTracker, db.GroupRoleEntityType)
 	}
 
 	return c.groupRoles
@@ -86,7 +86,7 @@ func (c *Context) GroupRoles() repositories.GroupRoleRepository {
 
 func (c *Context) Groups() repositories.GroupRepository {
 	if c.groups == nil {
-		c.groups = postgres.NewGroupRepository(c.db, c.changeTracker, db.GroupEntityType)
+		c.groups = sqlite.NewGroupRepository(c.db, c.changeTracker, db.GroupEntityType)
 	}
 
 	return c.groups
@@ -94,7 +94,7 @@ func (c *Context) Groups() repositories.GroupRepository {
 
 func (c *Context) OutboxMessages() repositories.OutboxMessageRepository {
 	if c.outboxMessages == nil {
-		c.outboxMessages = postgres.NewOutboxMessageRepository(c.db, c.changeTracker, db.OutboxMessageEntityType)
+		c.outboxMessages = sqlite.NewOutboxMessageRepository(c.db, c.changeTracker, db.OutboxMessageEntityType)
 	}
 
 	return c.outboxMessages
@@ -102,7 +102,7 @@ func (c *Context) OutboxMessages() repositories.OutboxMessageRepository {
 
 func (c *Context) PasswordRules() repositories.PasswordRuleRepository {
 	if c.passwordRules == nil {
-		c.passwordRules = postgres.NewPasswordRuleRepository(c.db, c.changeTracker, db.PasswordRuleEntityType)
+		c.passwordRules = sqlite.NewPasswordRuleRepository(c.db, c.changeTracker, db.PasswordRuleEntityType)
 	}
 
 	return c.passwordRules
@@ -110,7 +110,7 @@ func (c *Context) PasswordRules() repositories.PasswordRuleRepository {
 
 func (c *Context) Projects() repositories.ProjectRepository {
 	if c.projects == nil {
-		c.projects = postgres.NewProjectRepository(c.db, c.changeTracker, db.ProjectEntityType)
+		c.projects = sqlite.NewProjectRepository(c.db, c.changeTracker, db.ProjectEntityType)
 	}
 
 	return c.projects
@@ -118,7 +118,7 @@ func (c *Context) Projects() repositories.ProjectRepository {
 
 func (c *Context) ResourceServers() repositories.ResourceServerRepository {
 	if c.resourceServers == nil {
-		c.resourceServers = postgres.NewResourceServerRepository(c.db, c.changeTracker, db.ResourceServerEntityType)
+		c.resourceServers = sqlite.NewResourceServerRepository(c.db, c.changeTracker, db.ResourceServerEntityType)
 	}
 
 	return c.resourceServers
@@ -126,7 +126,7 @@ func (c *Context) ResourceServers() repositories.ResourceServerRepository {
 
 func (c *Context) ResourceServerScopes() repositories.ResourceServerScopeRepository {
 	if c.resourceServerScopes == nil {
-		c.resourceServerScopes = postgres.NewResourceServerScopeRepository(c.db, c.changeTracker, db.ResourceServerScopeEntityType)
+		c.resourceServerScopes = sqlite.NewResourceServerScopeRepository(c.db, c.changeTracker, db.ResourceServerScopeEntityType)
 	}
 
 	return c.resourceServerScopes
@@ -134,7 +134,7 @@ func (c *Context) ResourceServerScopes() repositories.ResourceServerScopeReposit
 
 func (c *Context) Roles() repositories.RoleRepository {
 	if c.roles == nil {
-		c.roles = postgres.NewRoleRepository(c.db, c.changeTracker, db.RoleEntityType)
+		c.roles = sqlite.NewRoleRepository(c.db, c.changeTracker, db.RoleEntityType)
 	}
 
 	return c.roles
@@ -142,7 +142,7 @@ func (c *Context) Roles() repositories.RoleRepository {
 
 func (c *Context) Sessions() repositories.SessionRepository {
 	if c.sessions == nil {
-		c.sessions = postgres.NewSessionRepository(c.db, c.changeTracker, db.SessionEntityType)
+		c.sessions = sqlite.NewSessionRepository(c.db, c.changeTracker, db.SessionEntityType)
 	}
 
 	return c.sessions
@@ -150,7 +150,7 @@ func (c *Context) Sessions() repositories.SessionRepository {
 
 func (c *Context) Templates() repositories.TemplateRepository {
 	if c.templates == nil {
-		c.templates = postgres.NewTemplateRepository(c.db, c.changeTracker, db.TemplateEntityType)
+		c.templates = sqlite.NewTemplateRepository(c.db, c.changeTracker, db.TemplateEntityType)
 	}
 
 	return c.templates
@@ -158,7 +158,7 @@ func (c *Context) Templates() repositories.TemplateRepository {
 
 func (c *Context) UserRoleAssignments() repositories.UserRoleAssignmentRepository {
 	if c.userRoleAssignments == nil {
-		c.userRoleAssignments = postgres.NewUserRoleAssignmentRepository(c.db, c.changeTracker, db.UserRoleAssignmentEntityType)
+		c.userRoleAssignments = sqlite.NewUserRoleAssignmentRepository(c.db, c.changeTracker, db.UserRoleAssignmentEntityType)
 	}
 
 	return c.userRoleAssignments
@@ -166,7 +166,7 @@ func (c *Context) UserRoleAssignments() repositories.UserRoleAssignmentRepositor
 
 func (c *Context) Users() repositories.UserRepository {
 	if c.users == nil {
-		c.users = postgres.NewUserRepository(c.db, c.changeTracker, db.UserEntityType)
+		c.users = sqlite.NewUserRepository(c.db, c.changeTracker, db.UserEntityType)
 	}
 
 	return c.users
@@ -174,7 +174,7 @@ func (c *Context) Users() repositories.UserRepository {
 
 func (c *Context) VirtualServers() repositories.VirtualServerRepository {
 	if c.virtualServers == nil {
-		c.virtualServers = postgres.NewVirtualServerRepository(c.db, c.changeTracker, db.VirtualServerEntityType)
+		c.virtualServers = sqlite.NewVirtualServerRepository(c.db, c.changeTracker, db.VirtualServerEntityType)
 	}
 
 	return c.virtualServers

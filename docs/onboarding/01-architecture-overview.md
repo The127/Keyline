@@ -455,7 +455,7 @@ Handler returns HTTP 201 with user details
 - Rich feature set
 - Mature ecosystem
 
-**SQLite support** (work-in-progress) for single-instance deployments.
+**SQLite support** for single-instance deployments.
 
 ## Next Steps
 

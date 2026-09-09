@@ -12,6 +12,8 @@ database:
     username: "user"
     password: "password"
     sslMode: "disable"
+  # sqlite:
+  #   database: "./keyline.db"
 initialVirtualServer:
   enableRegistration: true
   createAdmin: true

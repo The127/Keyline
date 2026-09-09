@@ -1,4 +1,4 @@
-package postgres
+package sqlite
 
 import (
 	"context"
@@ -8,32 +8,31 @@ import (
 	"github.com/The127/Keyline/internal/change"
 	"github.com/The127/Keyline/internal/logging"
 	"github.com/The127/Keyline/internal/repositories"
-	"github.com/The127/Keyline/internal/repositories/postgres/pghelpers"
+	"github.com/The127/Keyline/internal/repositories/sqlite/sqlitehelpers"
 	"github.com/The127/Keyline/utils"
 
 	"github.com/google/uuid"
 
 	"github.com/huandu/go-sqlbuilder"
-	"github.com/lib/pq"
 )
 
-type postgresApplicationUserMetadata struct {
-	postgresBaseModel
+type sqliteApplicationUserMetadata struct {
+	sqliteBaseModel
 	applicationId uuid.UUID
 	userId        uuid.UUID
 	metadata      string
 }
 
-func mapApplicationUserMetadata(m *repositories.ApplicationUserMetadata) *postgresApplicationUserMetadata {
-	return &postgresApplicationUserMetadata{
-		postgresBaseModel: mapBase(m.BaseModel),
-		applicationId:     m.ApplicationId(),
-		userId:            m.UserId(),
-		metadata:          m.Metadata(),
+func mapApplicationUserMetadata(m *repositories.ApplicationUserMetadata) *sqliteApplicationUserMetadata {
+	return &sqliteApplicationUserMetadata{
+		sqliteBaseModel: mapBase(m.BaseModel),
+		applicationId:   m.ApplicationId(),
+		userId:          m.UserId(),
+		metadata:        m.Metadata(),
 	}
 }
 
-func (m *postgresApplicationUserMetadata) Map() *repositories.ApplicationUserMetadata {
+func (m *sqliteApplicationUserMetadata) Map() *repositories.ApplicationUserMetadata {
 	return repositories.NewApplicationUserMetadataFromDB(
 		m.MapBase(),
 		m.applicationId,
@@ -42,12 +41,12 @@ func (m *postgresApplicationUserMetadata) Map() *repositories.ApplicationUserMet
 	)
 }
 
-func (m *postgresApplicationUserMetadata) scan(row pghelpers.Row, additionalPtrs ...any) error {
+func (m *sqliteApplicationUserMetadata) scan(row sqlitehelpers.Row, additionalPtrs ...any) error {
 	ptrs := []any{
 		&m.id,
 		&m.auditCreatedAt,
 		&m.auditUpdatedAt,
-		&m.xmin,
+		&m.version,
 		&m.applicationId,
 		&m.userId,
 		&m.metadata,
@@ -77,7 +76,7 @@ func (r *ApplicationUserMetadataRepository) selectQuery(filter *repositories.App
 		"id",
 		"audit_created_at",
 		"audit_updated_at",
-		"xmin",
+		"version",
 		"application_id",
 		"user_id",
 		"metadata",
@@ -88,7 +87,7 @@ func (r *ApplicationUserMetadataRepository) selectQuery(filter *repositories.App
 	}
 
 	if filter.HasApplicationIds() {
-		s.Where(s.Any("application_id", "=", pq.Array(filter.GetApplicationIds())))
+		s.Where(s.In("application_id", sqlbuilder.List(sqlitehelpers.UuidStrings(filter.GetApplicationIds()))))
 	}
 
 	if filter.HasUserId() {
@@ -102,7 +101,7 @@ func (r *ApplicationUserMetadataRepository) List(ctx context.Context, filter *re
 	s := r.selectQuery(filter)
 	s.SelectMore("count(*) over()")
 
-	query, args := s.Build()
+	query, args := s.BuildWithFlavor(sqlbuilder.SQLite)
 	logging.Logger.Debug("executing sql: ", query)
 	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -113,7 +112,7 @@ func (r *ApplicationUserMetadataRepository) List(ctx context.Context, filter *re
 	var metadata []*repositories.ApplicationUserMetadata
 	var totalCount int
 	for rows.Next() {
-		m := &postgresApplicationUserMetadata{}
+		m := &sqliteApplicationUserMetadata{}
 		err := m.scan(rows, &totalCount)
 		if err != nil {
 			return nil, 0, fmt.Errorf("scanning row: %w", err)
@@ -140,11 +139,11 @@ func (r *ApplicationUserMetadataRepository) FirstOrNil(ctx context.Context, filt
 	s := r.selectQuery(filter)
 	s.Limit(1)
 
-	query, args := s.Build()
+	query, args := s.BuildWithFlavor(sqlbuilder.SQLite)
 	logging.Logger.Debug("executing sql: ", query)
 	row := r.db.QueryRowContext(ctx, query, args...)
 
-	metadata := &postgresApplicationUserMetadata{}
+	metadata := &sqliteApplicationUserMetadata{}
 	err := metadata.scan(row)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
@@ -180,19 +179,19 @@ func (r *ApplicationUserMetadataRepository) ExecuteInsert(ctx context.Context, t
 			mapped.userId,
 			mapped.metadata,
 		).
-		Returning("xmin")
+		Returning("version")
 
-	query, args := s.Build()
+	query, args := s.BuildWithFlavor(sqlbuilder.SQLite)
 	logging.Logger.Debug("executing sql: ", query)
 	row := tx.QueryRowContext(ctx, query, args...)
 
-	var xmin uint32
-	err := row.Scan(&xmin)
+	var version uint32
+	err := row.Scan(&version)
 	if err != nil {
 		return fmt.Errorf("scanning row: %w", err)
 	}
 
-	applicationUserMetadata.SetVersion(xmin)
+	applicationUserMetadata.SetVersion(version)
 	applicationUserMetadata.ClearChanges()
 	return nil
 }
@@ -210,7 +209,8 @@ func (r *ApplicationUserMetadataRepository) ExecuteUpdate(ctx context.Context, t
 
 	s := sqlbuilder.Update("application_user_metadata")
 	s.Where(s.Equal("id", mapped.id))
-	s.Where(s.Equal("xmin", mapped.xmin))
+	s.Where(s.Equal("version", mapped.version))
+	s.SetMore("version = version + 1")
 
 	for _, field := range applicationUserMetadata.GetChanges() {
 		switch field {
@@ -222,13 +222,13 @@ func (r *ApplicationUserMetadataRepository) ExecuteUpdate(ctx context.Context, t
 		}
 	}
 
-	s.Returning("xmin")
-	query, args := s.Build()
+	s.Returning("version")
+	query, args := s.BuildWithFlavor(sqlbuilder.SQLite)
 	logging.Logger.Debug("executing sql: ", query)
 	row := tx.QueryRowContext(ctx, query, args...)
 
-	var xmin uint32
-	err := row.Scan(&xmin)
+	var version uint32
+	err := row.Scan(&version)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return fmt.Errorf("updating application: %w", repositories.ErrVersionMismatch)
@@ -236,7 +236,7 @@ func (r *ApplicationUserMetadataRepository) ExecuteUpdate(ctx context.Context, t
 		return fmt.Errorf("scanning row: %w", err)
 	}
 
-	applicationUserMetadata.SetVersion(xmin)
+	applicationUserMetadata.SetVersion(version)
 	applicationUserMetadata.ClearChanges()
 	return nil
 }
