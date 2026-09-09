@@ -5,6 +5,7 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"github.com/The127/Keyline/api"
 	"github.com/The127/Keyline/client"
 	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/authentication"
@@ -16,6 +17,7 @@ import (
 
 	"github.com/The127/ioc"
 	"github.com/The127/mediatr"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -118,6 +120,20 @@ func init() {
 					Expect(tokenResp.IdToken).ToNot(BeEmpty())
 					Expect(tokenResp.RefreshToken).ToNot(BeEmpty())
 					Expect(tokenResp.TokenType).To(Equal("Bearer"))
+				})
+
+				It("includes preferred_username in the access token when profile is requested", func() {
+					tokenResp := runDeviceFlow(h, "openid profile")
+
+					claims := accessTokenClaims(tokenResp.AccessToken)
+					Expect(claims["preferred_username"]).To(Equal(deviceUserUsername))
+				})
+
+				It("omits preferred_username from the access token without the profile scope", func() {
+					tokenResp := runDeviceFlow(h, "openid")
+
+					claims := accessTokenClaims(tokenResp.AccessToken)
+					Expect(claims).ToNot(HaveKey("preferred_username"))
 				})
 
 				It("rejects double use of device_code", func() {
@@ -227,4 +243,28 @@ func setupDeviceFlowFixtures(scope *ioc.DependencyProvider) (uuid.UUID, error) {
 	}
 
 	return appResp.Id, nil
+}
+
+func runDeviceFlow(h *harness, scope string) api.DeviceTokenResponse {
+	deviceResp, err := h.Client().Oidc().BeginDeviceFlow(h.Ctx(), deviceAppName, scope)
+	Expect(err).ToNot(HaveOccurred())
+
+	loginToken, err := h.Client().Oidc().PostActivate(h.Ctx(), deviceResp.UserCode)
+	Expect(err).ToNot(HaveOccurred())
+
+	err = h.Client().Oidc().VerifyPassword(h.Ctx(), loginToken, deviceUserUsername, deviceUserPassword)
+	Expect(err).ToNot(HaveOccurred())
+
+	err = h.Client().Oidc().FinishLogin(h.Ctx(), loginToken)
+	Expect(err).ToNot(HaveOccurred())
+
+	tokenResp, err := h.Client().Oidc().PollDeviceToken(h.Ctx(), deviceAppName, deviceResp.DeviceCode)
+	Expect(err).ToNot(HaveOccurred())
+	return tokenResp
+}
+
+func accessTokenClaims(tokenString string) jwt.MapClaims {
+	token, _, err := jwt.NewParser().ParseUnverified(tokenString, jwt.MapClaims{})
+	Expect(err).ToNot(HaveOccurred())
+	return token.Claims.(jwt.MapClaims)
 }

@@ -1411,6 +1411,8 @@ func mapClaims(ctx context.Context, params AccessTokenGenerationParams) (jwt.Map
 			ApplicationRoles: applicationRoles,
 			GlobalMetadata:   userMetadata,
 			AppMetadata:      appMetadata,
+			Username:         user.Username(),
+			Scopes:           params.GrantedScopes,
 		},
 	)
 
