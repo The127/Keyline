@@ -10,7 +10,6 @@ import (
 	"github.com/The127/Keyline/internal/repositories"
 	"github.com/The127/Keyline/internal/repositories/sqlite/sqlitehelpers"
 	"github.com/The127/Keyline/utils"
-	"strings"
 
 	"github.com/google/uuid"
 	"github.com/huandu/go-sqlbuilder"
@@ -107,9 +106,9 @@ func (r *ProjectRepository) selectQuery(filter *repositories.ProjectFilter) *sql
 	if filter.HasSearch() {
 		term := filter.GetSearch().Term()
 		s.Where(s.Or(
-			s.Like("lower(slug)", strings.ToLower(term)),
-			s.Like("lower(name)", strings.ToLower(term)),
-			s.Like("lower(description)", strings.ToLower(term)),
+			s.Like("slug", term),
+			s.Like("name", term),
+			s.Like("description", term),
 		))
 	}
 

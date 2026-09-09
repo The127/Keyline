@@ -11,7 +11,6 @@ import (
 	"github.com/The127/Keyline/internal/repositories"
 	"github.com/The127/Keyline/internal/repositories/sqlite/sqlitehelpers"
 	"github.com/The127/Keyline/utils"
-	"strings"
 
 	"github.com/google/uuid"
 	"github.com/huandu/go-sqlbuilder"
@@ -143,7 +142,7 @@ func (r *ApplicationRepository) selectQuery(filter *repositories.ApplicationFilt
 	}
 
 	if filter.HasIds() {
-		s.Where(s.In("id", sqlbuilder.List(filter.GetIds())))
+		s.Where(s.In("id", sqlbuilder.List(sqlitehelpers.UuidStrings(filter.GetIds()))))
 	}
 
 	if filter.HasVirtualServerId() {
@@ -157,8 +156,8 @@ func (r *ApplicationRepository) selectQuery(filter *repositories.ApplicationFilt
 	if filter.HasSearch() {
 		term := filter.GetSearch().Term()
 		s.Where(s.Or(
-			s.Like("lower(name)", strings.ToLower(term)),
-			s.Like("lower(display_name)", strings.ToLower(term)),
+			s.Like("name", term),
+			s.Like("display_name", term),
 		))
 	}
 

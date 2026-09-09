@@ -188,12 +188,20 @@ func newContext(db *sql.DB) *Context {
 }
 
 func (c *Context) SaveChanges(ctx context.Context) error {
+	changes := c.changeTracker.GetChanges()
+	if len(changes) == 0 {
+		return nil
+	}
+
 	tx, err := c.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("starting transaction: %w", err)
 	}
+	defer func() {
+		_ = tx.Rollback()
+	}()
 
-	for _, ch := range c.changeTracker.GetChanges() {
+	for _, ch := range changes {
 		err := c.applyChange(ctx, tx, ch)
 		if err != nil {
 			return fmt.Errorf("applying change: %w", err)

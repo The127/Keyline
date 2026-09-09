@@ -67,8 +67,16 @@ func connectionString(sc config.SqliteConfig) string {
 	query.Add("_pragma", "busy_timeout(10000)")
 	query.Set("_txlock", "immediate")
 	query.Set("_time_format", "sqlite")
+	query.Set("_timezone", "UTC")
 
-	return "file:" + sc.Database + "?" + query.Encode()
+	u := url.URL{
+		Scheme:   "file",
+		Path:     sc.Database,
+		RawQuery: query.Encode(),
+		OmitHost: true,
+	}
+
+	return u.String()
 }
 
 func (d *database) Migrate(ctx context.Context) error {

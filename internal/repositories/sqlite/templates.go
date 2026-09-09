@@ -10,7 +10,6 @@ import (
 	"github.com/The127/Keyline/internal/repositories"
 	"github.com/The127/Keyline/internal/repositories/sqlite/sqlitehelpers"
 	"github.com/The127/Keyline/utils"
-	"strings"
 
 	"github.com/google/uuid"
 
@@ -94,7 +93,7 @@ func (r *TemplateRepository) selectQuery(filter *repositories.TemplateFilter) *s
 	if filter.HasSearch() {
 		term := filter.GetSearch().Term()
 		s.Where(s.Or(
-			s.Like("lower(type)", strings.ToLower(term)),
+			s.Like("type", term),
 		))
 	}
 

@@ -87,7 +87,7 @@ func (r *ApplicationUserMetadataRepository) selectQuery(filter *repositories.App
 	}
 
 	if filter.HasApplicationIds() {
-		s.Where(s.In("application_id", filter.GetApplicationIds()))
+		s.Where(s.In("application_id", sqlbuilder.List(sqlitehelpers.UuidStrings(filter.GetApplicationIds()))))
 	}
 
 	if filter.HasUserId() {

@@ -32,7 +32,7 @@ create trigger "trg_virtual_servers_audit_updated_at"
     on "virtual_servers"
     for each row
 begin
-    update "virtual_servers" set "audit_updated_at" = current_timestamp where "id" = new."id";
+    update "virtual_servers" set "audit_updated_at" = strftime('%Y-%m-%d %H:%M:%f+00:00', 'now') where "id" = new."id";
 end;
 -- +migrate StatementEnd
 
@@ -62,7 +62,7 @@ create trigger "trg_projects_audit_updated_at"
     on "projects"
     for each row
 begin
-    update "projects" set "audit_updated_at" = current_timestamp where "id" = new."id";
+    update "projects" set "audit_updated_at" = strftime('%Y-%m-%d %H:%M:%f+00:00', 'now') where "id" = new."id";
 end;
 -- +migrate StatementEnd
 
@@ -96,7 +96,7 @@ create trigger "trg_users_audit_updated_at"
     on "users"
     for each row
 begin
-    update "users" set "audit_updated_at" = current_timestamp where "id" = new."id";
+    update "users" set "audit_updated_at" = strftime('%Y-%m-%d %H:%M:%f+00:00', 'now') where "id" = new."id";
 end;
 -- +migrate StatementEnd
 
@@ -139,7 +139,7 @@ create trigger "trg_applications_audit_updated_at"
     on "applications"
     for each row
 begin
-    update "applications" set "audit_updated_at" = current_timestamp where "id" = new."id";
+    update "applications" set "audit_updated_at" = strftime('%Y-%m-%d %H:%M:%f+00:00', 'now') where "id" = new."id";
 end;
 -- +migrate StatementEnd
 
@@ -165,7 +165,7 @@ create trigger "trg_credentials_audit_updated_at"
     on "credentials"
     for each row
 begin
-    update "credentials" set "audit_updated_at" = current_timestamp where "id" = new."id";
+    update "credentials" set "audit_updated_at" = strftime('%Y-%m-%d %H:%M:%f+00:00', 'now') where "id" = new."id";
 end;
 -- +migrate StatementEnd
 
@@ -188,7 +188,7 @@ create trigger "trg_outbox_messages_audit_updated_at"
     on "outbox_messages"
     for each row
 begin
-    update "outbox_messages" set "audit_updated_at" = current_timestamp where "id" = new."id";
+    update "outbox_messages" set "audit_updated_at" = strftime('%Y-%m-%d %H:%M:%f+00:00', 'now') where "id" = new."id";
 end;
 -- +migrate StatementEnd
 
@@ -212,7 +212,7 @@ create trigger "trg_files_audit_updated_at"
     on "files"
     for each row
 begin
-    update "files" set "audit_updated_at" = current_timestamp where "id" = new."id";
+    update "files" set "audit_updated_at" = strftime('%Y-%m-%d %H:%M:%f+00:00', 'now') where "id" = new."id";
 end;
 -- +migrate StatementEnd
 
@@ -239,7 +239,7 @@ create trigger "trg_templates_audit_updated_at"
     on "templates"
     for each row
 begin
-    update "templates" set "audit_updated_at" = current_timestamp where "id" = new."id";
+    update "templates" set "audit_updated_at" = strftime('%Y-%m-%d %H:%M:%f+00:00', 'now') where "id" = new."id";
 end;
 -- +migrate StatementEnd
 
@@ -267,7 +267,7 @@ create trigger "trg_roles_audit_updated_at"
     on "roles"
     for each row
 begin
-    update "roles" set "audit_updated_at" = current_timestamp where "id" = new."id";
+    update "roles" set "audit_updated_at" = strftime('%Y-%m-%d %H:%M:%f+00:00', 'now') where "id" = new."id";
 end;
 -- +migrate StatementEnd
 
@@ -293,7 +293,7 @@ create trigger "trg_groups_audit_updated_at"
     on "groups"
     for each row
 begin
-    update "groups" set "audit_updated_at" = current_timestamp where "id" = new."id";
+    update "groups" set "audit_updated_at" = strftime('%Y-%m-%d %H:%M:%f+00:00', 'now') where "id" = new."id";
 end;
 -- +migrate StatementEnd
 
@@ -319,7 +319,7 @@ create trigger "trg_group_roles_audit_updated_at"
     on "group_roles"
     for each row
 begin
-    update "group_roles" set "audit_updated_at" = current_timestamp where "id" = new."id";
+    update "group_roles" set "audit_updated_at" = strftime('%Y-%m-%d %H:%M:%f+00:00', 'now') where "id" = new."id";
 end;
 -- +migrate StatementEnd
 
@@ -347,7 +347,7 @@ create trigger "trg_user_role_assignments_audit_updated_at"
     on "user_role_assignments"
     for each row
 begin
-    update "user_role_assignments" set "audit_updated_at" = current_timestamp where "id" = new."id";
+    update "user_role_assignments" set "audit_updated_at" = strftime('%Y-%m-%d %H:%M:%f+00:00', 'now') where "id" = new."id";
 end;
 -- +migrate StatementEnd
 
@@ -377,7 +377,7 @@ create trigger "trg_sessions_audit_updated_at"
     on "sessions"
     for each row
 begin
-    update "sessions" set "audit_updated_at" = current_timestamp where "id" = new."id";
+    update "sessions" set "audit_updated_at" = strftime('%Y-%m-%d %H:%M:%f+00:00', 'now') where "id" = new."id";
 end;
 -- +migrate StatementEnd
 
@@ -405,7 +405,7 @@ create trigger "trg_application_user_metadata_audit_updated_at"
     on "application_user_metadata"
     for each row
 begin
-    update "application_user_metadata" set "audit_updated_at" = current_timestamp where "id" = new."id";
+    update "application_user_metadata" set "audit_updated_at" = strftime('%Y-%m-%d %H:%M:%f+00:00', 'now') where "id" = new."id";
 end;
 -- +migrate StatementEnd
 
@@ -437,7 +437,7 @@ create trigger "trg_audit_logs_audit_updated_at"
     on "audit_logs"
     for each row
 begin
-    update "audit_logs" set "audit_updated_at" = current_timestamp where "id" = new."id";
+    update "audit_logs" set "audit_updated_at" = strftime('%Y-%m-%d %H:%M:%f+00:00', 'now') where "id" = new."id";
 end;
 -- +migrate StatementEnd
 
@@ -464,7 +464,7 @@ create trigger "trg_password_rules_audit_updated_at"
     on "password_rules"
     for each row
 begin
-    update "password_rules" set "audit_updated_at" = current_timestamp where "id" = new."id";
+    update "password_rules" set "audit_updated_at" = strftime('%Y-%m-%d %H:%M:%f+00:00', 'now') where "id" = new."id";
 end;
 -- +migrate StatementEnd
 
@@ -494,7 +494,7 @@ create trigger "trg_resource_servers_audit_updated_at"
     on "resource_servers"
     for each row
 begin
-    update "resource_servers" set "audit_updated_at" = current_timestamp where "id" = new."id";
+    update "resource_servers" set "audit_updated_at" = strftime('%Y-%m-%d %H:%M:%f+00:00', 'now') where "id" = new."id";
 end;
 -- +migrate StatementEnd
 
@@ -526,7 +526,7 @@ create trigger "trg_resource_server_scopes_audit_updated_at"
     on "resource_server_scopes"
     for each row
 begin
-    update "resource_server_scopes" set "audit_updated_at" = current_timestamp where "id" = new."id";
+    update "resource_server_scopes" set "audit_updated_at" = strftime('%Y-%m-%d %H:%M:%f+00:00', 'now') where "id" = new."id";
 end;
 -- +migrate StatementEnd
 

@@ -14,6 +14,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/huandu/go-sqlbuilder"
+	"github.com/lib/pq"
 )
 
 type postgresApplicationUserMetadata struct {
@@ -87,7 +88,7 @@ func (r *ApplicationUserMetadataRepository) selectQuery(filter *repositories.App
 	}
 
 	if filter.HasApplicationIds() {
-		s.Where(s.In("application_id", filter.GetApplicationIds()))
+		s.Where(s.Any("application_id", "=", pq.Array(filter.GetApplicationIds())))
 	}
 
 	if filter.HasUserId() {

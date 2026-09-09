@@ -10,7 +10,6 @@ import (
 	"github.com/The127/Keyline/internal/repositories"
 	"github.com/The127/Keyline/internal/repositories/sqlite/sqlitehelpers"
 	"github.com/The127/Keyline/utils"
-	"strings"
 
 	"github.com/google/uuid"
 	"github.com/huandu/go-sqlbuilder"
@@ -107,7 +106,7 @@ func (r *ResourceServerRepository) selectQuery(filter *repositories.ResourceServ
 	if filter.HasSearch() {
 		term := filter.GetSearch().Term()
 		s.Where(s.Or(
-			s.Like("lower(name)", strings.ToLower(term)),
+			s.Like("name", term),
 		))
 	}
 
