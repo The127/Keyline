@@ -33,6 +33,8 @@ jobs:
 
       - uses: sigstore/cosign-installer@v3
 
+      - uses: aquasecurity/setup-trivy@v0.3.1
+
       - name: Scan and attest vulnerabilities
         run: |
           trivy image --format cosign-vuln --output vuln.json "ghcr.io/the127/keyline:${{ github.ref_name }}"
