@@ -7,6 +7,7 @@ import (
 	"github.com/The127/Keyline/internal/logging"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/repositories"
+	"slices"
 
 	"github.com/The127/ioc"
 
@@ -19,6 +20,8 @@ type Params struct {
 	ApplicationRoles []string
 	GlobalMetadata   map[string]interface{}
 	AppMetadata      map[string]interface{}
+	Username         string
+	Scopes           []string
 }
 
 //go:generate mockgen -destination=../mocks/claimsMapping.go -package=mocks Keyline/internal/services/claimsMapping ClaimsMapper
@@ -34,10 +37,16 @@ func NewClaimsMapper() ClaimsMapper {
 }
 
 func defaultMapping(params Params) map[string]any {
-	return map[string]any{
+	claims := map[string]any{
 		"roles":             params.Roles,
 		"application_roles": params.ApplicationRoles,
 	}
+
+	if slices.Contains(params.Scopes, "profile") {
+		claims["preferred_username"] = params.Username
+	}
+
+	return claims
 }
 
 func (c *claimsMapper) MapClaims(ctx context.Context, applicationId uuid.UUID, params Params) map[string]any {
@@ -92,6 +101,16 @@ func (c *claimsMapper) runCustomClaimsMappingScript(claimsMappingScript *string,
 	err = vm.Set("appMetadata", params.AppMetadata)
 	if err != nil {
 		return nil, fmt.Errorf("failed setting appMetadata: %w", err)
+	}
+
+	err = vm.Set("username", params.Username)
+	if err != nil {
+		return nil, fmt.Errorf("failed setting username: %w", err)
+	}
+
+	err = vm.Set("scopes", params.Scopes)
+	if err != nil {
+		return nil, fmt.Errorf("failed setting scopes: %w", err)
 	}
 
 	p, err := goja.Compile("mappingScript.js", *claimsMappingScript, true)
