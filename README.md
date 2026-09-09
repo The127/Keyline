@@ -34,7 +34,7 @@ For future major releases, we will be including a link to the conformance test r
 - 🔄 **Session Management** - Secure session handling with Redis support
 - 🪪 **Flexible Key Storage** - In-memory (testing), directory-based, or Vault/OpenBao
 - 💾 **Flexible Cache Layer** - in-memory for dev, Redis for production
-- 🗄️ **Configurable Database** - PostgreSQL for production, SQLite for development/single-server (work-in-progress)
+- 🗄️ **Configurable Database** - PostgreSQL for production, SQLite for development and single-instance deployments
 - 🎯 **Service Users** - Support for service accounts with public key authentication
 - 📦 **User Metadata** - Store custom user and application-specific metadata
 - 📈 **Metrics & Monitoring** - Prometheus metrics integration
@@ -67,7 +67,7 @@ Perfect for new contributors and developers wanting to understand Keyline's arch
 ## Prerequisites
 
 - **Go 1.25** or higher
-- **Database** - PostgreSQL (recommended for production) or SQLite (work-in-progress, for development/single-server)
+- **Database** - PostgreSQL (recommended for production) or SQLite (for development and single-instance deployments)
 - **Cache Storage** - Redis (Valkey) recommended for production, or in-memory for development/single-instance
 - **Mail server** (for email notifications)
 
@@ -126,14 +126,14 @@ server:
 #### Database Configuration
 ```yaml
 database:
-  mode: "postgres"  # "postgres" or "sqlite" (sqlite is work-in-progress)
+  mode: "postgres"  # "postgres" or "sqlite"
   postgres:
     host: "localhost"
     port: 5732
     username: "user"
     password: "password"
     sslMode: "disable"
-  # For SQLite (work-in-progress):
+  # For SQLite:
   # sqlite:
   #   database: "./keyline.db"
 ```
@@ -282,7 +282,7 @@ Keyline includes example applications demonstrating how to integrate with variou
 
 ## Configuration
 
-Keyline provides flexible configuration management through YAML files and environment variables. Configuration supports multiple database backends (PostgreSQL, SQLite work-in-progress), cache backends (in-memory or Redis) and key storage options (directory or OpenvaultBao).
+Keyline provides flexible configuration management through YAML files and environment variables. Configuration supports multiple database backends (PostgreSQL or SQLite), cache backends (in-memory or Redis) and key storage options (directory or OpenvaultBao).
 
 **Quick Start:**
 1. Copy `config.yaml.template` to `config.yaml` and customize it
@@ -638,7 +638,7 @@ Passkeys provide a more secure and user-friendly alternative to traditional pass
 ### Production Considerations
 
 1. **Use HTTPS** - Always use TLS in production
-2. **Database Choice** - Use PostgreSQL for production deployments (SQLite is for development only)
+2. **Database Choice** - Use PostgreSQL for production deployments (SQLite for single-instance deployments only)
 3. **Secure Key Storage** - Consider using OpenBao or similar for key management
 4. **Database Backups** - Regular backups of PostgreSQL database
 5. **Distributed Caching** - Use Redis cache mode for multi-instance deployments (in-memory cache is not shared)

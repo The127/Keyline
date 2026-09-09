@@ -192,9 +192,11 @@ type ServerConfig struct {
 type DatabaseConfig struct {
 	Mode     DatabaseMode   `yaml:"mode"`
 	Postgres PostgresConfig `yaml:"postgres"`
-	Sqlite   struct {
-		Database string `yaml:"database"`
-	} `yaml:"sqlite"`
+	Sqlite   SqliteConfig   `yaml:"sqlite"`
+}
+
+type SqliteConfig struct {
+	Database string `yaml:"database"`
 }
 
 type PostgresConfig struct {
@@ -586,10 +588,12 @@ func setDatabaseDefaultsOrPanic() {
 
 func setSqliteDefaultsOrPanic() {
 	if C.Database.Sqlite.Database == "" {
-		panic("missing sqlite file path")
-	}
+		if IsProduction() {
+			panic("missing sqlite database file path")
+		}
 
-	panic("sqlite not implemented yet")
+		C.Database.Sqlite.Database = "keyline.db"
+	}
 }
 
 func setPostgresDefaultsOrPanic() {

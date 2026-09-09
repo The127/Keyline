@@ -1,0 +1,248 @@
+package sqlite
+
+import (
+	"context"
+	"database/sql"
+	"errors"
+	"fmt"
+	"github.com/The127/Keyline/internal/change"
+	"github.com/The127/Keyline/internal/logging"
+	"github.com/The127/Keyline/internal/repositories"
+	"github.com/The127/Keyline/internal/repositories/sqlite/sqlitehelpers"
+	"github.com/The127/Keyline/utils"
+
+	"github.com/google/uuid"
+	"github.com/huandu/go-sqlbuilder"
+)
+
+type sqlitePasswordRule struct {
+	sqliteBaseModel
+	virtualServerId uuid.UUID
+	type_           string
+	details         []byte
+}
+
+func mapPasswordRule(rule *repositories.PasswordRule) *sqlitePasswordRule {
+	return &sqlitePasswordRule{
+		sqliteBaseModel: mapBase(rule.BaseModel),
+		virtualServerId: rule.VirtualServerId(),
+		type_:           string(rule.Type()),
+		details:         rule.Details(),
+	}
+}
+
+func (r *sqlitePasswordRule) Map() *repositories.PasswordRule {
+	return repositories.NewPasswordRuleFromDB(
+		r.MapBase(),
+		r.virtualServerId,
+		repositories.PasswordRuleType(r.type_),
+		r.details,
+	)
+}
+
+func (r *sqlitePasswordRule) scan(row sqlitehelpers.Row, additionalPtrs ...any) error {
+	ptrs := []any{
+		&r.id,
+		&r.auditCreatedAt,
+		&r.auditUpdatedAt,
+		&r.version,
+		&r.virtualServerId,
+		&r.type_,
+	}
+
+	ptrs = append(ptrs, additionalPtrs...)
+
+	return row.Scan(ptrs...)
+}
+
+type PasswordRuleRepository struct {
+	db            *sql.DB
+	changeTracker *change.Tracker
+	entityType    int
+}
+
+func NewPasswordRuleRepository(db *sql.DB, changeTracker *change.Tracker, entityType int) *PasswordRuleRepository {
+	return &PasswordRuleRepository{
+		db:            db,
+		changeTracker: changeTracker,
+		entityType:    entityType,
+	}
+}
+
+func (r *PasswordRuleRepository) selectQuery(filter *repositories.PasswordRuleFilter) *sqlbuilder.SelectBuilder {
+	s := sqlbuilder.Select(
+		"id",
+		"audit_created_at",
+		"audit_updated_at",
+		"version",
+		"virtual_server_id",
+		"type",
+		"details",
+	).From("password_rules")
+
+	if filter.HasVirtualServerId() {
+		s.Where(s.Equal("virtual_server_id", filter.GetVirtualServerId()))
+	}
+
+	if filter.HasType() {
+		s.Where(s.Equal("type", filter.GetType()))
+	}
+
+	return s
+}
+
+func (r *PasswordRuleRepository) List(ctx context.Context, filter *repositories.PasswordRuleFilter) ([]*repositories.PasswordRule, error) {
+	s := r.selectQuery(filter)
+
+	query, args := s.BuildWithFlavor(sqlbuilder.SQLite)
+	logging.Logger.Debug("executing sql: ", query)
+	rows, err := r.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("querying db: %w", err)
+	}
+	defer utils.PanicOnError(rows.Close, "closing rows")
+
+	var result []*repositories.PasswordRule
+	for rows.Next() {
+		passwordRule := &sqlitePasswordRule{}
+		err := passwordRule.scan(rows)
+		if err != nil {
+			return nil, fmt.Errorf("scanning row: %w", err)
+		}
+		result = append(result, passwordRule.Map())
+	}
+
+	return result, nil
+}
+
+func (r *PasswordRuleRepository) FirstOrNil(ctx context.Context, filter *repositories.PasswordRuleFilter) (*repositories.PasswordRule, error) {
+	s := r.selectQuery(filter)
+	s.Limit(1)
+
+	query, args := s.BuildWithFlavor(sqlbuilder.SQLite)
+	logging.Logger.Debug("executing sql: ", query)
+	row := r.db.QueryRowContext(ctx, query, args...)
+
+	passwordRule := &sqlitePasswordRule{}
+	err := passwordRule.scan(row)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return nil, nil
+	case err != nil:
+		return nil, fmt.Errorf("scanning row: %w", err)
+	}
+
+	return passwordRule.Map(), nil
+}
+
+func (r *PasswordRuleRepository) FirstOrErr(ctx context.Context, filter *repositories.PasswordRuleFilter) (*repositories.PasswordRule, error) {
+	rule, err := r.FirstOrNil(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	if rule == nil {
+		return nil, utils.ErrPasswordRuleNotFound
+	}
+	return rule, nil
+}
+
+func (r *PasswordRuleRepository) Insert(passwordRule *repositories.PasswordRule) {
+	r.changeTracker.Add(change.NewEntry(change.Added, r.entityType, passwordRule))
+}
+
+func (r *PasswordRuleRepository) ExecuteInsert(ctx context.Context, tx *sql.Tx, passwordRule *repositories.PasswordRule) error {
+	mapped := mapPasswordRule(passwordRule)
+
+	s := sqlbuilder.InsertInto("password_rules").
+		Cols(
+			"id",
+			"audit_created_at",
+			"audit_updated_at",
+			"virtual_server_id",
+			"type",
+			"details",
+		).
+		Values(
+			mapped.id,
+			mapped.auditCreatedAt,
+			mapped.auditUpdatedAt,
+			mapped.virtualServerId,
+			mapped.type_,
+			mapped.details,
+		).
+		Returning("version")
+
+	query, args := s.BuildWithFlavor(sqlbuilder.SQLite)
+	logging.Logger.Debug("executing sql: ", query)
+	row := tx.QueryRowContext(ctx, query, args...)
+
+	var version uint32
+	err := row.Scan(&version)
+	if err != nil {
+		return fmt.Errorf("scanning row: %w", err)
+	}
+
+	passwordRule.SetVersion(version)
+	passwordRule.ClearChanges()
+	return nil
+}
+
+func (r *PasswordRuleRepository) Update(passwordRule *repositories.PasswordRule) {
+	r.changeTracker.Add(change.NewEntry(change.Updated, r.entityType, passwordRule))
+}
+
+func (r *PasswordRuleRepository) ExecuteUpdate(ctx context.Context, tx *sql.Tx, passwordRule *repositories.PasswordRule) error {
+	if !passwordRule.HasChanges() {
+		return nil
+	}
+
+	mapped := mapPasswordRule(passwordRule)
+
+	s := sqlbuilder.Update("password_rules")
+	s.Where(s.Equal("id", mapped.id))
+	s.Where(s.Equal("version", mapped.version))
+	s.SetMore("version = version + 1")
+
+	for _, field := range passwordRule.GetChanges() {
+		switch field {
+		case repositories.PasswordRuleChangeDetails:
+			s.SetMore(s.Assign("details", mapped.details))
+
+		default:
+			return fmt.Errorf("updating field %v is not supported", field)
+		}
+	}
+
+	s.Returning("version")
+	query, args := s.BuildWithFlavor(sqlbuilder.SQLite)
+	logging.Logger.Debug("executing sql: ", query)
+	row := tx.QueryRowContext(ctx, query, args...)
+
+	var version uint32
+	err := row.Scan(&version)
+	if err != nil {
+		return fmt.Errorf("scanning row: %w", err)
+	}
+
+	passwordRule.SetVersion(version)
+	passwordRule.ClearChanges()
+	return nil
+}
+
+func (r *PasswordRuleRepository) Delete(id uuid.UUID) {
+	r.changeTracker.Add(change.NewEntry(change.Deleted, r.entityType, id))
+}
+
+func (r *PasswordRuleRepository) ExecuteDelete(ctx context.Context, tx *sql.Tx, id uuid.UUID) error {
+	s := sqlbuilder.DeleteFrom("password_rules")
+	s.Where(s.Equal("id", id))
+
+	query, args := s.BuildWithFlavor(sqlbuilder.SQLite)
+	logging.Logger.Debug("executing sql: ", query)
+	_, err := tx.ExecContext(ctx, query, args...)
+	if err != nil {
+		return fmt.Errorf("executing delete: %w", err)
+	}
+
+	return nil
+}

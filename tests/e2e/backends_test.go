@@ -33,5 +33,6 @@ func postgresBackendAvailable() bool {
 // Postgres is skipped at runtime when the server is unavailable.
 var testBackends = []testBackend{
 	{name: "postgres", dbMode: config.DatabaseModePostgres},
+	{name: "sqlite", dbMode: config.DatabaseModeSqlite},
 	{name: "memory", dbMode: config.DatabaseModeMemory},
 }

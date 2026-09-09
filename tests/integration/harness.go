@@ -12,6 +12,8 @@ import (
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/setup"
 	"github.com/The127/Keyline/utils"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -40,7 +42,14 @@ func (h *harness) Close() {
 
 	// For Postgres we need to drop the temporary database we created.
 	// For memory there is nothing to tear down.
-	if h.dbMode != config.DatabaseModePostgres {
+	switch h.dbMode {
+	case config.DatabaseModeSqlite:
+		removeSqliteFiles(h.dbName)
+		return
+
+	case config.DatabaseModePostgres:
+
+	default:
 		return
 	}
 
@@ -123,6 +132,15 @@ func newIntegrationTestHarness(dbMode config.DatabaseMode) *harness {
 
 		dbc.Postgres.Database = dbName
 
+	case config.DatabaseModeSqlite:
+		dbName = filepath.Join(os.TempDir(), "keyline_test_"+uuid.New().String()+".db")
+		dbc = config.DatabaseConfig{
+			Mode: config.DatabaseModeSqlite,
+			Sqlite: config.SqliteConfig{
+				Database: dbName,
+			},
+		}
+
 	case config.DatabaseModeMemory:
 		dbc = config.DatabaseConfig{
 			Mode: config.DatabaseModeMemory,
@@ -183,5 +201,14 @@ func newIntegrationTestHarness(dbMode config.DatabaseMode) *harness {
 		dbName:    dbName,
 		dbMode:    dbMode,
 		dbContext: dbContext,
+	}
+}
+
+func removeSqliteFiles(path string) {
+	for _, suffix := range []string{"", "-wal", "-shm"} {
+		err := os.Remove(path + suffix)
+		if err != nil && !os.IsNotExist(err) {
+			panic(fmt.Errorf("removing sqlite file %s: %w", path+suffix, err))
+		}
 	}
 }

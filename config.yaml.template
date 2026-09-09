@@ -11,6 +11,8 @@ database:
     port: 5732
     username: "user"
     password: "password"
+  # sqlite:
+  #   database: "./keyline.db"
     sslMode: "disable"
 initialVirtualServer:
   enableRegistration: true
