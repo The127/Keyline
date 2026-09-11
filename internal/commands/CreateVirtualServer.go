@@ -56,13 +56,14 @@ type CreateVirtualServerProjectRole struct {
 }
 
 type CreateVirtualServerProjectApplication struct {
-	Name              string
-	DisplayName       string
-	Type              string
-	HashedSecret      *string
-	RedirectUris      []string
-	PostLogoutUris    []string
-	DeviceFlowEnabled bool
+	Name                    string
+	DisplayName             string
+	Type                    string
+	HashedSecret            *string
+	RedirectUris            []string
+	PostLogoutUris          []string
+	DeviceFlowEnabled       bool
+	TokenEndpointAuthMethod *string
 }
 
 type CreateVirtualServerProject struct {
@@ -164,6 +165,15 @@ func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer)
 				repositories.ApplicationType(app.Type),
 				app.RedirectUris,
 			)
+			if app.TokenEndpointAuthMethod != nil {
+				if newApp.Type() != repositories.ApplicationTypeConfidential {
+					return nil, fmt.Errorf("token endpoint auth method is only supported for confidential applications: %w", utils.ErrHttpBadRequest)
+				}
+				newApp.SetTokenEndpointAuthMethod(utils.Ptr(repositories.TokenEndpointAuthMethod(*app.TokenEndpointAuthMethod)))
+			}
+			if newApp.AuthenticatesWith(repositories.TokenEndpointAuthMethodPrivateKeyJwt) && app.HashedSecret != nil {
+				return nil, fmt.Errorf("application secret is not supported for the private_key_jwt token endpoint auth method: %w", utils.ErrHttpBadRequest)
+			}
 			if app.HashedSecret != nil {
 				newApp.SetHashedSecret(*app.HashedSecret)
 			}

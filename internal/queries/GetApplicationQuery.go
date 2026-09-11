@@ -39,19 +39,20 @@ func (a GetApplication) GetRequestName() string {
 }
 
 type GetApplicationResult struct {
-	Id                    uuid.UUID
-	Name                  string
-	DisplayName           string
-	Type                  repositories.ApplicationType
-	RedirectUris          []string
-	PostLogoutUris        []string
-	SystemApplication     bool
-	ClaimsMappingScript   *string
-	AccessTokenHeaderType string
-	DeviceFlowEnabled     bool
-	SigningAlgorithm      *config.SigningAlgorithm
-	CreatedAt             time.Time
-	UpdatedAt             time.Time
+	Id                      uuid.UUID
+	Name                    string
+	DisplayName             string
+	Type                    repositories.ApplicationType
+	RedirectUris            []string
+	PostLogoutUris          []string
+	SystemApplication       bool
+	ClaimsMappingScript     *string
+	AccessTokenHeaderType   string
+	DeviceFlowEnabled       bool
+	SigningAlgorithm        *config.SigningAlgorithm
+	TokenEndpointAuthMethod *repositories.TokenEndpointAuthMethod
+	CreatedAt               time.Time
+	UpdatedAt               time.Time
 }
 
 func HandleGetApplication(ctx context.Context, query GetApplication) (*GetApplicationResult, error) {
@@ -87,18 +88,19 @@ func HandleGetApplication(ctx context.Context, query GetApplication) (*GetApplic
 	}
 
 	return &GetApplicationResult{
-		Id:                    application.Id(),
-		Name:                  application.Name(),
-		DisplayName:           application.DisplayName(),
-		Type:                  application.Type(),
-		RedirectUris:          application.RedirectUris(),
-		PostLogoutUris:        application.PostLogoutRedirectUris(),
-		SystemApplication:     application.SystemApplication(),
-		ClaimsMappingScript:   application.ClaimsMappingScript(),
-		AccessTokenHeaderType: application.AccessTokenHeaderType(),
-		DeviceFlowEnabled:     application.DeviceFlowEnabled(),
-		SigningAlgorithm:      application.SigningAlgorithm(),
-		CreatedAt:             application.AuditCreatedAt(),
-		UpdatedAt:             application.AuditUpdatedAt(),
+		Id:                      application.Id(),
+		Name:                    application.Name(),
+		DisplayName:             application.DisplayName(),
+		Type:                    application.Type(),
+		RedirectUris:            application.RedirectUris(),
+		PostLogoutUris:          application.PostLogoutRedirectUris(),
+		SystemApplication:       application.SystemApplication(),
+		ClaimsMappingScript:     application.ClaimsMappingScript(),
+		AccessTokenHeaderType:   application.AccessTokenHeaderType(),
+		DeviceFlowEnabled:       application.DeviceFlowEnabled(),
+		SigningAlgorithm:        application.SigningAlgorithm(),
+		TokenEndpointAuthMethod: application.TokenEndpointAuthMethod(),
+		CreatedAt:               application.AuditCreatedAt(),
+		UpdatedAt:               application.AuditUpdatedAt(),
 	}, nil
 }

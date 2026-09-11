@@ -183,3 +183,135 @@ func (s *CreateApplicationCommandSuite) TestConfidentialApplicationHappyPath() {
 	s.Require().NoError(err)
 	s.NotNil(resp)
 }
+
+func (s *CreateApplicationCommandSuite) mockVirtualServerAndProject(ctrl *gomock.Controller) (*repositories.VirtualServer, repositories.VirtualServerRepository, repositories.ProjectRepository) {
+	now := time.Now()
+
+	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
+	virtualServer.Mock(now)
+	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
+	virtualServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
+
+	project := repositories.NewProject(virtualServer.Id(), "project", "Project", "Test Project")
+	project.Mock(now)
+	projectRepository := mocks.NewMockProjectRepository(ctrl)
+	projectRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(project, nil)
+
+	return virtualServer, virtualServerRepository, projectRepository
+}
+
+func (s *CreateApplicationCommandSuite) TestConfidentialApplicationDefaultsToClientSecret() {
+	// arrange
+	ctrl := gomock.NewController(s.T())
+	defer ctrl.Finish()
+
+	virtualServer, virtualServerRepository, projectRepository := s.mockVirtualServerAndProject(ctrl)
+
+	applicationRepository := mocks.NewMockApplicationRepository(ctrl)
+	applicationRepository.EXPECT().Insert(gomock.Cond(func(x *repositories.Application) bool {
+		return x.AuthenticatesWith(repositories.TokenEndpointAuthMethodClientSecret) &&
+			x.HashedSecret() != ""
+	}))
+
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, applicationRepository)
+	cmd := CreateApplication{
+		VirtualServerName: virtualServer.Name(),
+		ProjectSlug:       "project",
+		Name:              "applicationName",
+		DisplayName:       "Display Name",
+		Type:              repositories.ApplicationTypeConfidential,
+		RedirectUris:      []string{"redirectUri1"},
+	}
+
+	// act
+	resp, err := HandleCreateApplication(ctx, cmd)
+
+	// assert
+	s.Require().NoError(err)
+	s.NotNil(resp.Secret)
+}
+
+func (s *CreateApplicationCommandSuite) TestPrivateKeyJwtApplicationHasNoSecret() {
+	// arrange
+	ctrl := gomock.NewController(s.T())
+	defer ctrl.Finish()
+
+	virtualServer, virtualServerRepository, projectRepository := s.mockVirtualServerAndProject(ctrl)
+
+	applicationRepository := mocks.NewMockApplicationRepository(ctrl)
+	applicationRepository.EXPECT().Insert(gomock.Cond(func(x *repositories.Application) bool {
+		return x.AuthenticatesWith(repositories.TokenEndpointAuthMethodPrivateKeyJwt) &&
+			x.HashedSecret() == ""
+	}))
+
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, applicationRepository)
+	cmd := CreateApplication{
+		VirtualServerName:       virtualServer.Name(),
+		ProjectSlug:             "project",
+		Name:                    "applicationName",
+		DisplayName:             "Display Name",
+		Type:                    repositories.ApplicationTypeConfidential,
+		RedirectUris:            []string{"redirectUri1"},
+		TokenEndpointAuthMethod: utils.Ptr(repositories.TokenEndpointAuthMethodPrivateKeyJwt),
+	}
+
+	// act
+	resp, err := HandleCreateApplication(ctx, cmd)
+
+	// assert
+	s.Require().NoError(err)
+	s.Nil(resp.Secret)
+}
+
+func (s *CreateApplicationCommandSuite) TestPrivateKeyJwtApplicationRejectsHashedSecret() {
+	// arrange
+	ctrl := gomock.NewController(s.T())
+	defer ctrl.Finish()
+
+	virtualServer, virtualServerRepository, projectRepository := s.mockVirtualServerAndProject(ctrl)
+	applicationRepository := mocks.NewMockApplicationRepository(ctrl)
+
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, applicationRepository)
+	cmd := CreateApplication{
+		VirtualServerName:       virtualServer.Name(),
+		ProjectSlug:             "project",
+		Name:                    "applicationName",
+		DisplayName:             "Display Name",
+		Type:                    repositories.ApplicationTypeConfidential,
+		RedirectUris:            []string{"redirectUri1"},
+		HashedSecret:            utils.Ptr("hashed"),
+		TokenEndpointAuthMethod: utils.Ptr(repositories.TokenEndpointAuthMethodPrivateKeyJwt),
+	}
+
+	// act
+	_, err := HandleCreateApplication(ctx, cmd)
+
+	// assert
+	s.Require().ErrorIs(err, utils.ErrHttpBadRequest)
+}
+
+func (s *CreateApplicationCommandSuite) TestPublicApplicationRejectsTokenEndpointAuthMethod() {
+	// arrange
+	ctrl := gomock.NewController(s.T())
+	defer ctrl.Finish()
+
+	virtualServer, virtualServerRepository, projectRepository := s.mockVirtualServerAndProject(ctrl)
+	applicationRepository := mocks.NewMockApplicationRepository(ctrl)
+
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, applicationRepository)
+	cmd := CreateApplication{
+		VirtualServerName:       virtualServer.Name(),
+		ProjectSlug:             "project",
+		Name:                    "applicationName",
+		DisplayName:             "Display Name",
+		Type:                    repositories.ApplicationTypePublic,
+		RedirectUris:            []string{"redirectUri1"},
+		TokenEndpointAuthMethod: utils.Ptr(repositories.TokenEndpointAuthMethodClientSecret),
+	}
+
+	// act
+	_, err := HandleCreateApplication(ctx, cmd)
+
+	// assert
+	s.Require().ErrorIs(err, utils.ErrHttpBadRequest)
+}

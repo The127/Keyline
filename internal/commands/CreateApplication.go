@@ -26,10 +26,11 @@ type CreateApplication struct {
 	RedirectUris           []string
 	PostLogoutRedirectUris []string
 
-	HashedSecret          *string
-	AccessTokenHeaderType string
-	DeviceFlowEnabled     bool
-	SigningAlgorithm      *config.SigningAlgorithm
+	HashedSecret            *string
+	AccessTokenHeaderType   string
+	DeviceFlowEnabled       bool
+	SigningAlgorithm        *config.SigningAlgorithm
+	TokenEndpointAuthMethod *repositories.TokenEndpointAuthMethod
 }
 
 func (c CreateApplication) LogRequest() bool {
@@ -79,8 +80,19 @@ func HandleCreateApplication(ctx context.Context, command CreateApplication) (*C
 
 	application := repositories.NewApplication(virtualServer.Id(), project.Id(), command.Name, command.DisplayName, command.Type, command.RedirectUris)
 
+	if command.TokenEndpointAuthMethod != nil {
+		if command.Type != repositories.ApplicationTypeConfidential {
+			return nil, fmt.Errorf("token endpoint auth method is only supported for confidential applications: %w", utils.ErrHttpBadRequest)
+		}
+		application.SetTokenEndpointAuthMethod(command.TokenEndpointAuthMethod)
+	}
+
+	if application.AuthenticatesWith(repositories.TokenEndpointAuthMethodPrivateKeyJwt) && command.HashedSecret != nil {
+		return nil, fmt.Errorf("application secret is not supported for the private_key_jwt token endpoint auth method: %w", utils.ErrHttpBadRequest)
+	}
+
 	var secret *string = nil
-	if command.Type == repositories.ApplicationTypeConfidential {
+	if application.AuthenticatesWith(repositories.TokenEndpointAuthMethodClientSecret) {
 		if command.HashedSecret != nil {
 			application.SetHashedSecret(*command.HashedSecret)
 			secret = utils.Ptr("pre hashed secret was used")

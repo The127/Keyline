@@ -147,13 +147,14 @@ type InitialProjectConfig struct {
 		Description string `yaml:"description"`
 	} `yaml:"roles"`
 	Applications []struct {
-		Name                   string   `yaml:"name"`
-		DisplayName            string   `yaml:"displayName"`
-		Type                   string   `yaml:"type"`
-		HashedSecret           *string  `yaml:"hashedSecret,omitempty"`
-		RedirectUris           []string `yaml:"redirectUris"`
-		PostLogoutRedirectUris []string `yaml:"postLogoutRedirectUris"`
-		DeviceFlowEnabled      bool     `yaml:"deviceFlowEnabled"`
+		Name                    string   `yaml:"name"`
+		DisplayName             string   `yaml:"displayName"`
+		Type                    string   `yaml:"type"`
+		HashedSecret            *string  `yaml:"hashedSecret,omitempty"`
+		RedirectUris            []string `yaml:"redirectUris"`
+		PostLogoutRedirectUris  []string `yaml:"postLogoutRedirectUris"`
+		DeviceFlowEnabled       bool     `yaml:"deviceFlowEnabled"`
+		TokenEndpointAuthMethod *string  `yaml:"tokenEndpointAuthMethod,omitempty"`
 	} `yaml:"applications"`
 	ResourceServers []struct {
 		Slug        string `yaml:"slug"`
@@ -494,14 +495,35 @@ func setInitialApplicationsDefaultsOrPanic(project *InitialProjectConfig) {
 			panic("application type not supported")
 		}
 
-		if application.Type == "confidential" && application.HashedSecret == nil {
-			panic("missing application secret")
+		if application.Type == "public" && application.TokenEndpointAuthMethod != nil {
+			panic("application token endpoint auth method is only supported for confidential applications")
 		}
 
-		if application.Type == "confidential" && application.HashedSecret != nil {
+		if application.Type != "confidential" {
+			continue
+		}
+
+		tokenEndpointAuthMethod := "client_secret"
+		if application.TokenEndpointAuthMethod != nil {
+			tokenEndpointAuthMethod = *application.TokenEndpointAuthMethod
+		}
+
+		switch tokenEndpointAuthMethod {
+		case "client_secret":
+			if application.HashedSecret == nil {
+				panic("missing application secret")
+			}
 			if len(*application.HashedSecret) == 0 {
 				panic("application secret is empty")
 			}
+
+		case "private_key_jwt":
+			if application.HashedSecret != nil {
+				panic("application secret is not supported for the private_key_jwt token endpoint auth method")
+			}
+
+		default:
+			panic("application token endpoint auth method not supported (client_secret or private_key_jwt)")
 		}
 	}
 }
