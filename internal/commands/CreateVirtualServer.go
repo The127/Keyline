@@ -55,6 +55,11 @@ type CreateVirtualServerProjectRole struct {
 	Description string
 }
 
+type CreateVirtualServerApplicationKey struct {
+	Pem string
+	Kid string
+}
+
 type CreateVirtualServerProjectApplication struct {
 	Name                    string
 	DisplayName             string
@@ -64,6 +69,7 @@ type CreateVirtualServerProjectApplication struct {
 	PostLogoutUris          []string
 	DeviceFlowEnabled       bool
 	TokenEndpointAuthMethod *string
+	PublicKeys              []CreateVirtualServerApplicationKey
 }
 
 type CreateVirtualServerProject struct {
@@ -180,6 +186,23 @@ func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer)
 			newApp.SetPostLogoutRedirectUris(app.PostLogoutUris)
 			newApp.SetDeviceFlowEnabled(app.DeviceFlowEnabled)
 			dbContext.Applications().Insert(newApp)
+
+			if len(app.PublicKeys) > 0 && !newApp.AuthenticatesWith(repositories.TokenEndpointAuthMethodPrivateKeyJwt) {
+				return nil, fmt.Errorf("public keys are only supported for the private_key_jwt token endpoint auth method: %w", utils.ErrHttpBadRequest)
+			}
+			kids := make(map[string]struct{}, len(app.PublicKeys))
+			for _, key := range app.PublicKeys {
+				if _, duplicate := kids[key.Kid]; duplicate {
+					return nil, fmt.Errorf("application %s declares kid %s twice: %w", app.Name, key.Kid, utils.ErrHttpBadRequest)
+				}
+				kids[key.Kid] = struct{}{}
+
+				_, err = utils.ParsePublicKeyPem(key.Pem)
+				if err != nil {
+					return nil, fmt.Errorf("parsing public key %s of application %s: %w", key.Kid, app.Name, err)
+				}
+				dbContext.ApplicationKeys().Insert(repositories.NewApplicationKey(newApp.Id(), key.Kid, key.Pem))
+			}
 		}
 
 		for _, role := range project.Roles {

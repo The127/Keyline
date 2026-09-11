@@ -39,6 +39,8 @@ var SystemAdminPermissions = []permissions.Permission{
 	permissions.ApplicationDelete,
 	permissions.ApplicationUpdate,
 	permissions.ApplicationView,
+	permissions.ApplicationAddKey,
+	permissions.ApplicationRemoveKey,
 
 	permissions.GroupView,
 
@@ -87,6 +89,8 @@ var VirtualServerAdminPermissions = []permissions.Permission{
 	permissions.ApplicationDelete,
 	permissions.ApplicationUpdate,
 	permissions.ApplicationView,
+	permissions.ApplicationAddKey,
+	permissions.ApplicationRemoveKey,
 
 	permissions.GroupView,
 

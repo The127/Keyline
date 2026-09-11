@@ -188,6 +188,9 @@ func initApplication(dp *ioc.DependencyProvider) {
 				PostLogoutUris:          app.PostLogoutRedirectUris,
 				DeviceFlowEnabled:       app.DeviceFlowEnabled,
 				TokenEndpointAuthMethod: app.TokenEndpointAuthMethod,
+				PublicKeys: utils.MapSlice(app.PublicKeys, func(key config.InitialApplicationKeyConfig) commands.CreateVirtualServerApplicationKey {
+					return commands.CreateVirtualServerApplicationKey{Pem: key.Pem, Kid: key.Kid}
+				}),
 			})
 		}
 

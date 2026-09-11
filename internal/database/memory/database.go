@@ -14,6 +14,7 @@ type Stores struct {
 	mu sync.RWMutex
 
 	Applications            map[uuid.UUID]*repositories.Application
+	ApplicationKeys         map[uuid.UUID]*repositories.ApplicationKey
 	ApplicationUserMetadata map[uuid.UUID]*repositories.ApplicationUserMetadata
 	AuditLogs               map[uuid.UUID]*repositories.AuditLog
 	Credentials             map[uuid.UUID]*repositories.Credential
@@ -36,6 +37,7 @@ type Stores struct {
 func newStores() *Stores {
 	return &Stores{
 		Applications:            make(map[uuid.UUID]*repositories.Application),
+		ApplicationKeys:         make(map[uuid.UUID]*repositories.ApplicationKey),
 		ApplicationUserMetadata: make(map[uuid.UUID]*repositories.ApplicationUserMetadata),
 		AuditLogs:               make(map[uuid.UUID]*repositories.AuditLog),
 		Credentials:             make(map[uuid.UUID]*repositories.Credential),

@@ -16,6 +16,7 @@ type Context struct {
 	changeTracker *change.Tracker
 
 	applications            *memrepos.ApplicationRepository
+	applicationKeys         *memrepos.ApplicationKeyRepository
 	applicationUserMetadata *memrepos.ApplicationUserMetadataRepository
 	auditLogs               *memrepos.AuditLogRepository
 	credentials             *memrepos.CredentialRepository
@@ -47,6 +48,13 @@ func (c *Context) Applications() repositories.ApplicationRepository {
 		c.applications = memrepos.NewApplicationRepository(c.stores.Applications, &c.stores.mu, c.changeTracker, db.ApplicationEntityType)
 	}
 	return c.applications
+}
+
+func (c *Context) ApplicationKeys() repositories.ApplicationKeyRepository {
+	if c.applicationKeys == nil {
+		c.applicationKeys = memrepos.NewApplicationKeyRepository(c.stores.ApplicationKeys, &c.stores.mu, c.changeTracker, db.ApplicationKeyEntityType)
+	}
+	return c.applicationKeys
 }
 
 func (c *Context) ApplicationUserMetadata() repositories.ApplicationUserMetadataRepository {
@@ -194,6 +202,9 @@ func (c *Context) applyChange(ch *change.Entry) error {
 	switch ch.GetItemType() {
 	case db.ApplicationEntityType:
 		return applyChange(c.stores.Applications, ch, func(e *repositories.Application) { e.SetVersion(incrementVersion(e.GetVersion())); e.ClearChanges() })
+
+	case db.ApplicationKeyEntityType:
+		return applyChange(c.stores.ApplicationKeys, ch, func(e *repositories.ApplicationKey) { e.SetVersion(incrementVersion(e.GetVersion())); e.ClearChanges() })
 
 	case db.ApplicationUserMetadataEntityType:
 		return applyChange(c.stores.ApplicationUserMetadata, ch, func(e *repositories.ApplicationUserMetadata) {

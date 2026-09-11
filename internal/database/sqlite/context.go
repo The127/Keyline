@@ -17,6 +17,7 @@ type Context struct {
 	changeTracker *change.Tracker
 
 	applications            *sqlite.ApplicationRepository
+	applicationKeys         *sqlite.ApplicationKeyRepository
 	applicationUserMetadata *sqlite.ApplicationUserMetadataRepository
 	auditLogs               *sqlite.AuditLogRepository
 	credentials             *sqlite.CredentialRepository
@@ -42,6 +43,14 @@ func (c *Context) Applications() repositories.ApplicationRepository {
 	}
 
 	return c.applications
+}
+
+func (c *Context) ApplicationKeys() repositories.ApplicationKeyRepository {
+	if c.applicationKeys == nil {
+		c.applicationKeys = sqlite.NewApplicationKeyRepository(c.db, c.changeTracker, db.ApplicationKeyEntityType)
+	}
+
+	return c.applicationKeys
 }
 
 func (c *Context) ApplicationUserMetadata() repositories.ApplicationUserMetadataRepository {
@@ -222,6 +231,9 @@ func (c *Context) applyChange(ctx context.Context, tx *sql.Tx, ch *change.Entry)
 	case db.ApplicationEntityType:
 		return c.applyApplicationChange(ctx, tx, ch)
 
+	case db.ApplicationKeyEntityType:
+		return c.applyApplicationKeyChange(ctx, tx, ch)
+
 	case db.ApplicationUserMetadataEntityType:
 		return c.applyApplicationUserMetadataChange(ctx, tx, ch)
 
@@ -288,6 +300,19 @@ func (c *Context) applyApplicationChange(ctx context.Context, tx *sql.Tx, ch *ch
 
 	case change.Deleted:
 		return c.applications.ExecuteDelete(ctx, tx, ch.GetItem().(uuid.UUID))
+
+	default:
+		return fmt.Errorf("unsupported change type: %v", ch.GetChangeType())
+	}
+}
+
+func (c *Context) applyApplicationKeyChange(ctx context.Context, tx *sql.Tx, ch *change.Entry) error {
+	switch ch.GetChangeType() {
+	case change.Added:
+		return c.applicationKeys.ExecuteInsert(ctx, tx, ch.GetItem().(*repositories.ApplicationKey))
+
+	case change.Deleted:
+		return c.applicationKeys.ExecuteDelete(ctx, tx, ch.GetItem().(uuid.UUID))
 
 	default:
 		return fmt.Errorf("unsupported change type: %v", ch.GetChangeType())

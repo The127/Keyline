@@ -138,6 +138,11 @@ const (
 	LeaderElectionModeRaft LeaderElectionMode = "raft"
 )
 
+type InitialApplicationKeyConfig struct {
+	Pem string `yaml:"pem"`
+	Kid string `yaml:"kid"`
+}
+
 type InitialProjectConfig struct {
 	Slug        string `yaml:"slug"`
 	Name        string `yaml:"name"`
@@ -147,14 +152,15 @@ type InitialProjectConfig struct {
 		Description string `yaml:"description"`
 	} `yaml:"roles"`
 	Applications []struct {
-		Name                    string   `yaml:"name"`
-		DisplayName             string   `yaml:"displayName"`
-		Type                    string   `yaml:"type"`
-		HashedSecret            *string  `yaml:"hashedSecret,omitempty"`
-		RedirectUris            []string `yaml:"redirectUris"`
-		PostLogoutRedirectUris  []string `yaml:"postLogoutRedirectUris"`
-		DeviceFlowEnabled       bool     `yaml:"deviceFlowEnabled"`
-		TokenEndpointAuthMethod *string  `yaml:"tokenEndpointAuthMethod,omitempty"`
+		Name                    string                        `yaml:"name"`
+		DisplayName             string                        `yaml:"displayName"`
+		Type                    string                        `yaml:"type"`
+		HashedSecret            *string                       `yaml:"hashedSecret,omitempty"`
+		RedirectUris            []string                      `yaml:"redirectUris"`
+		PostLogoutRedirectUris  []string                      `yaml:"postLogoutRedirectUris"`
+		DeviceFlowEnabled       bool                          `yaml:"deviceFlowEnabled"`
+		TokenEndpointAuthMethod *string                       `yaml:"tokenEndpointAuthMethod,omitempty"`
+		PublicKeys              []InitialApplicationKeyConfig `yaml:"publicKeys,omitempty"`
 	} `yaml:"applications"`
 	ResourceServers []struct {
 		Slug        string `yaml:"slug"`
@@ -499,7 +505,19 @@ func setInitialApplicationsDefaultsOrPanic(project *InitialProjectConfig) {
 			panic("application token endpoint auth method is only supported for confidential applications")
 		}
 
+		for _, key := range application.PublicKeys {
+			if key.Pem == "" {
+				panic("missing application public key pem")
+			}
+			if key.Kid == "" {
+				panic("missing application public key kid")
+			}
+		}
+
 		if application.Type != "confidential" {
+			if len(application.PublicKeys) > 0 {
+				panic("application public keys are only supported for confidential applications")
+			}
 			continue
 		}
 
@@ -515,6 +533,9 @@ func setInitialApplicationsDefaultsOrPanic(project *InitialProjectConfig) {
 			}
 			if len(*application.HashedSecret) == 0 {
 				panic("application secret is empty")
+			}
+			if len(application.PublicKeys) > 0 {
+				panic("application public keys are only supported for the private_key_jwt token endpoint auth method")
 			}
 
 		case "private_key_jwt":

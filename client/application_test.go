@@ -276,3 +276,82 @@ func (s *ApplicationClientSuite) TestGetApplication_ReturnsSigningAlgorithm() {
 	s.Require().NotNil(responseDto.SigningAlgorithm)
 	s.Equal("RS256", *responseDto.SigningAlgorithm)
 }
+
+func (s *ApplicationClientSuite) TestAddApplicationKey_HappyPath() {
+	// arrange
+	applicationId := uuid.New()
+	request := api.AddApplicationKeyRequestDto{
+		PublicKey: "-----BEGIN PUBLIC KEY-----\nabc\n-----END PUBLIC KEY-----\n",
+		Kid:       utils.Ptr("key-1"),
+	}
+	response := api.AddApplicationKeyResponseDto{Kid: "key-1"}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		s.Equal(http.MethodPost, r.Method)
+		s.Equal(fmt.Sprintf("/api/virtual-servers/test/projects/my-project/applications/%s/keys", applicationId), r.URL.Path)
+
+		var requestDto api.AddApplicationKeyRequestDto
+		err := json.NewDecoder(r.Body).Decode(&requestDto)
+		s.NoError(err)
+		s.Equal(request, requestDto)
+
+		w.WriteHeader(http.StatusCreated)
+		err = json.NewEncoder(w).Encode(response)
+		s.NoError(err)
+	}))
+	defer server.Close()
+
+	testee := NewClient(server.URL, "test").Project().Application("my-project")
+
+	// act
+	responseDto, err := testee.AddKey(s.T().Context(), applicationId, request)
+
+	// assert
+	s.Require().NoError(err)
+	s.Equal(response, responseDto)
+}
+
+func (s *ApplicationClientSuite) TestListApplicationKeys_HappyPath() {
+	// arrange
+	applicationId := uuid.New()
+	response := []api.ApplicationKeyResponseDto{{Kid: "key-1", PublicKey: "pem"}}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		s.Equal(http.MethodGet, r.Method)
+		s.Equal(fmt.Sprintf("/api/virtual-servers/test/projects/my-project/applications/%s/keys", applicationId), r.URL.Path)
+
+		err := json.NewEncoder(w).Encode(response)
+		s.NoError(err)
+	}))
+	defer server.Close()
+
+	testee := NewClient(server.URL, "test").Project().Application("my-project")
+
+	// act
+	responseDto, err := testee.ListKeys(s.T().Context(), applicationId)
+
+	// assert
+	s.Require().NoError(err)
+	s.Len(responseDto, 1)
+	s.Equal("key-1", responseDto[0].Kid)
+}
+
+func (s *ApplicationClientSuite) TestRemoveApplicationKey_HappyPath() {
+	// arrange
+	applicationId := uuid.New()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		s.Equal(http.MethodDelete, r.Method)
+		s.Equal(fmt.Sprintf("/api/virtual-servers/test/projects/my-project/applications/%s/keys/key-1", applicationId), r.URL.Path)
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer server.Close()
+
+	testee := NewClient(server.URL, "test").Project().Application("my-project")
+
+	// act
+	err := testee.RemoveKey(s.T().Context(), applicationId, "key-1")
+
+	// assert
+	s.Require().NoError(err)
+}

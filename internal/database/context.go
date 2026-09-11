@@ -7,6 +7,7 @@ import (
 
 const (
 	ApplicationEntityType = iota
+	ApplicationKeyEntityType
 	ApplicationUserMetadataEntityType
 	AuditLogEntityType
 	CredentialEntityType
@@ -29,6 +30,7 @@ const (
 //go:generate mockgen -destination=../mocks/mock_context.go -package=mocks Keyline/internal/database Context
 type Context interface {
 	Applications() repositories.ApplicationRepository
+	ApplicationKeys() repositories.ApplicationKeyRepository
 	ApplicationUserMetadata() repositories.ApplicationUserMetadataRepository
 	AuditLogs() repositories.AuditLogRepository
 	Credentials() repositories.CredentialRepository

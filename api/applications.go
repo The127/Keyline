@@ -58,6 +58,21 @@ type PatchApplicationRequestDto struct {
 	SigningAlgorithm      *string  `json:"signingAlgorithm,omitempty" validate:"omitempty,oneof=RS256 EdDSA"`
 }
 
+type AddApplicationKeyRequestDto struct {
+	PublicKey string  `json:"publicKey" validate:"required"`
+	Kid       *string `json:"kid,omitempty"`
+}
+
+type AddApplicationKeyResponseDto struct {
+	Kid string `json:"kid"`
+}
+
+type ApplicationKeyResponseDto struct {
+	Kid       string    `json:"kid"`
+	PublicKey string    `json:"publicKey"`
+	CreatedAt time.Time `json:"createdAt"`
+}
+
 type PagedApplicationsResponseDto = PagedResponseDto[ListApplicationsResponseDto]
 
 type ListApplicationsResponseDto struct {

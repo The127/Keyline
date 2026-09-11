@@ -23,6 +23,9 @@ type ApplicationClient interface {
 	Get(ctx context.Context, id uuid.UUID) (api.GetApplicationResponseDto, error)
 	Patch(ctx context.Context, id uuid.UUID, dto api.PatchApplicationRequestDto) error
 	Delete(ctx context.Context, id uuid.UUID) error
+	AddKey(ctx context.Context, id uuid.UUID, dto api.AddApplicationKeyRequestDto) (api.AddApplicationKeyResponseDto, error)
+	ListKeys(ctx context.Context, id uuid.UUID) ([]api.ApplicationKeyResponseDto, error)
+	RemoveKey(ctx context.Context, id uuid.UUID, kid string) error
 }
 
 func NewApplicationClient(transport *Transport, projectSlug string) ApplicationClient {
@@ -141,6 +144,74 @@ func (a *application) Patch(ctx context.Context, id uuid.UUID, dto api.PatchAppl
 	}
 
 	request, err := a.transport.NewTenantRequest(ctx, http.MethodPatch, endpoint, bytes.NewBuffer(jsonBytes))
+	if err != nil {
+		return fmt.Errorf("creating request: %w", err)
+	}
+
+	response, err := a.transport.Do(request)
+	if err != nil {
+		return fmt.Errorf("doing request: %w", err)
+	}
+	defer response.Body.Close() //nolint:errcheck
+
+	return nil
+}
+
+func (a *application) AddKey(ctx context.Context, id uuid.UUID, dto api.AddApplicationKeyRequestDto) (api.AddApplicationKeyResponseDto, error) {
+	endpoint := fmt.Sprintf("/projects/%s/applications/%s/keys", a.projectSlug, id.String())
+
+	jsonBytes, err := json.Marshal(dto)
+	if err != nil {
+		return api.AddApplicationKeyResponseDto{}, fmt.Errorf("marshaling dto: %w", err)
+	}
+
+	request, err := a.transport.NewTenantRequest(ctx, http.MethodPost, endpoint, bytes.NewBuffer(jsonBytes))
+	if err != nil {
+		return api.AddApplicationKeyResponseDto{}, fmt.Errorf("creating request: %w", err)
+	}
+
+	response, err := a.transport.Do(request)
+	if err != nil {
+		return api.AddApplicationKeyResponseDto{}, fmt.Errorf("doing request: %w", err)
+	}
+	defer response.Body.Close() //nolint:errcheck
+
+	var responseDto api.AddApplicationKeyResponseDto
+	err = json.NewDecoder(response.Body).Decode(&responseDto)
+	if err != nil {
+		return api.AddApplicationKeyResponseDto{}, fmt.Errorf("decoding response: %w", err)
+	}
+
+	return responseDto, nil
+}
+
+func (a *application) ListKeys(ctx context.Context, id uuid.UUID) ([]api.ApplicationKeyResponseDto, error) {
+	endpoint := fmt.Sprintf("/projects/%s/applications/%s/keys", a.projectSlug, id.String())
+
+	request, err := a.transport.NewTenantRequest(ctx, http.MethodGet, endpoint, nil)
+	if err != nil {
+		return nil, fmt.Errorf("creating request: %w", err)
+	}
+
+	response, err := a.transport.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("doing request: %w", err)
+	}
+	defer response.Body.Close() //nolint:errcheck
+
+	var responseDto []api.ApplicationKeyResponseDto
+	err = json.NewDecoder(response.Body).Decode(&responseDto)
+	if err != nil {
+		return nil, fmt.Errorf("decoding response: %w", err)
+	}
+
+	return responseDto, nil
+}
+
+func (a *application) RemoveKey(ctx context.Context, id uuid.UUID, kid string) error {
+	endpoint := fmt.Sprintf("/projects/%s/applications/%s/keys/%s", a.projectSlug, id.String(), kid)
+
+	request, err := a.transport.NewTenantRequest(ctx, http.MethodDelete, endpoint, nil)
 	if err != nil {
 		return fmt.Errorf("creating request: %w", err)
 	}
