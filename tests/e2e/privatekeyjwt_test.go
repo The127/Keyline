@@ -213,7 +213,7 @@ func init() {
 			It("advertises private_key_jwt in discovery", func() {
 				resp, err := http.Get(fmt.Sprintf("%s/oidc/%s/.well-known/openid-configuration", h.ApiUrl(), h.VirtualServer()))
 				Expect(err).ToNot(HaveOccurred())
-				defer resp.Body.Close()
+				defer resp.Body.Close() //nolint:errcheck
 
 				var discovery map[string]any
 				Expect(json.NewDecoder(resp.Body).Decode(&discovery)).To(Succeed())
@@ -249,7 +249,7 @@ func init() {
 			It("runs the device flow with a client assertion and no client_id", func() {
 				resp, err := http.PostForm(fmt.Sprintf("%s/oidc/%s/device", h.ApiUrl(), h.VirtualServer()), withClientAssertion(url.Values{"scope": {"openid"}}, clientAssertion(h, now, nil)))
 				Expect(err).ToNot(HaveOccurred())
-				defer resp.Body.Close()
+				defer resp.Body.Close() //nolint:errcheck
 				var device map[string]any
 				Expect(json.NewDecoder(resp.Body).Decode(&device)).To(Succeed())
 				Expect(resp.StatusCode).To(Equal(http.StatusOK), fmt.Sprintf("body: %v", device))

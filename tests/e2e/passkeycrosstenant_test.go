@@ -21,6 +21,7 @@ import (
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/repositories"
+	"github.com/The127/Keyline/utils"
 
 	"github.com/The127/ioc"
 	"github.com/The127/mediatr"
@@ -104,7 +105,7 @@ func init() {
 				)
 				resp, err := httpClient.Get(url)
 				Expect(err).ToNot(HaveOccurred())
-				resp.Body.Close()
+				_ = resp.Body.Close()
 				Expect(resp.StatusCode).To(Equal(http.StatusFound))
 				loc := resp.Header.Get("Location")
 				idx := strings.Index(loc, "token=")
@@ -182,7 +183,7 @@ func init() {
 				It("accepts a webauthn credential whose owner is in the same VS as the loginToken (happy path)", func() {
 					loginToken := mintLoginToken(h.VirtualServer())
 					resp := passkeyFinish(loginToken, targetUserKey, passkeyFrontendOrigin)
-					defer resp.Body.Close()
+					defer resp.Body.Close() //nolint:errcheck
 					Expect(resp.StatusCode).To(Equal(http.StatusNoContent),
 						"same-VS passkey login must succeed")
 				})
@@ -198,7 +199,7 @@ func init() {
 					// and rejects with Unauthorized.
 					loginToken := mintLoginToken(h.VirtualServer())
 					resp := passkeyFinish(loginToken, attackerKey, passkeyFrontendOrigin)
-					defer resp.Body.Close()
+					defer resp.Body.Close() //nolint:errcheck
 					Expect(resp.StatusCode).To(Equal(http.StatusUnauthorized),
 						"cross-VS passkey login must be rejected")
 				})
@@ -211,7 +212,7 @@ func init() {
 						privateKey:   attackerKey.privateKey,
 					}
 					resp := passkeyFinish(loginToken, bogus, passkeyFrontendOrigin)
-					defer resp.Body.Close()
+					defer resp.Body.Close() //nolint:errcheck
 					Expect(resp.StatusCode).ToNot(Equal(http.StatusNoContent),
 						"unknown credential id must not authenticate")
 				})
@@ -224,7 +225,7 @@ func init() {
 					// block the legitimate same-VS case.
 					loginToken := mintLoginToken(passkeyAttackerVS)
 					resp := passkeyFinish(loginToken, attackerKey, passkeyFrontendOrigin)
-					defer resp.Body.Close()
+					defer resp.Body.Close() //nolint:errcheck
 					Expect(resp.StatusCode).To(Equal(http.StatusNoContent),
 						"attacker's credential must still authenticate the attacker in their own VS")
 				})
@@ -239,7 +240,7 @@ func init() {
 					// any other origin with Unauthorized.
 					loginToken := mintLoginToken(h.VirtualServer())
 					resp := passkeyFinish(loginToken, targetUserKey, "https://attacker.invalid")
-					defer resp.Body.Close()
+					defer resp.Body.Close() //nolint:errcheck
 					Expect(resp.StatusCode).To(Equal(http.StatusUnauthorized),
 						"wrong-origin passkey assertion must be rejected")
 				})
@@ -255,7 +256,7 @@ func init() {
 // against the target VS's loginToken.
 func setupPasskeyCrossTenantFixtures(h *harness) (*passkeyTestKey, *passkeyTestKey, error) {
 	scope := h.Scope().NewScope()
-	defer scope.Close()
+	defer utils.PanicOnError(scope.Close, "closing scope")
 
 	ctx := middlewares.ContextWithScope(context.Background(), scope)
 	ctx = authentication.ContextWithCurrentUser(ctx, authentication.SystemUser())

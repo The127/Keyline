@@ -74,7 +74,7 @@ func init() {
 
 				resp, err := http.PostForm(fmt.Sprintf("%s/oidc/%s/token", h.ApiUrl(), h.VirtualServer()), form)
 				Expect(err).ToNot(HaveOccurred())
-				defer resp.Body.Close()
+				defer resp.Body.Close() //nolint:errcheck
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 
 				body := readJSON(resp)
@@ -103,7 +103,7 @@ func init() {
 				It("redirects to a post_logout_redirect_uri registered for THIS VS's app (happy path)", func() {
 					idTok := mintIdToken()
 					resp := endSession(h.VirtualServer(), idTok, endSessionVictimURI)
-					defer resp.Body.Close()
+					defer resp.Body.Close() //nolint:errcheck
 					Expect(resp.StatusCode).To(Equal(http.StatusFound))
 					Expect(resp.Header.Get("Location")).To(HavePrefix(endSessionVictimURI))
 				})
@@ -119,7 +119,7 @@ func init() {
 					// considered.
 					idTok := mintIdToken()
 					resp := endSession(h.VirtualServer(), idTok, endSessionAttackerURI)
-					defer resp.Body.Close()
+					defer resp.Body.Close() //nolint:errcheck
 					Expect(resp.StatusCode).ToNot(Equal(http.StatusFound),
 						"end_session must not redirect to a URI only registered in another VS")
 					Expect(resp.Header.Get("Location")).ToNot(ContainSubstring(endSessionAttackerURI))
@@ -128,7 +128,7 @@ func init() {
 				It("rejects a post_logout_redirect_uri that is registered nowhere", func() {
 					idTok := mintIdToken()
 					resp := endSession(h.VirtualServer(), idTok, "http://localhost:9001/totally-unregistered")
-					defer resp.Body.Close()
+					defer resp.Body.Close() //nolint:errcheck
 					Expect(resp.StatusCode).ToNot(Equal(http.StatusFound))
 				})
 
@@ -139,14 +139,14 @@ func init() {
 					// fail.
 					idTok := mintIdToken()
 					resp := endSession(endSessionAttackerVS, idTok, endSessionAttackerURI)
-					defer resp.Body.Close()
+					defer resp.Body.Close() //nolint:errcheck
 					Expect(resp.StatusCode).ToNot(Equal(http.StatusFound),
 						"a token signed by another VS must not validate")
 				})
 
 				It("rejects when id_token_hint is missing", func() {
 					resp := endSession(h.VirtualServer(), "", endSessionVictimURI)
-					defer resp.Body.Close()
+					defer resp.Body.Close() //nolint:errcheck
 					Expect(resp.StatusCode).ToNot(Equal(http.StatusFound))
 				})
 			})
@@ -179,7 +179,7 @@ func endSessionAuthCodeFlow(serverUrl, vs, clientId, redirectUri, codeChallenge 
 	if err != nil {
 		return "", fmt.Errorf("authorize: %w", err)
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	if resp.StatusCode != http.StatusFound {
 		return "", fmt.Errorf("authorize: expected 302, got %d", resp.StatusCode)
 	}
@@ -202,7 +202,7 @@ func endSessionAuthCodeFlow(serverUrl, vs, clientId, redirectUri, codeChallenge 
 	if err != nil {
 		return "", fmt.Errorf("verify-password: %w", err)
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	if resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("verify-password: status %d", resp.StatusCode)
 	}
@@ -211,7 +211,7 @@ func endSessionAuthCodeFlow(serverUrl, vs, clientId, redirectUri, codeChallenge 
 	if err != nil {
 		return "", fmt.Errorf("finish-login: %w", err)
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	if resp.StatusCode != http.StatusFound {
 		return "", fmt.Errorf("finish-login: expected 302, got %d", resp.StatusCode)
 	}
@@ -234,7 +234,7 @@ func endSessionAuthCodeFlow(serverUrl, vs, clientId, redirectUri, codeChallenge 
 	if err != nil {
 		return "", fmt.Errorf("second authorize: %w", err)
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	if resp.StatusCode != http.StatusFound {
 		return "", fmt.Errorf("second authorize: expected 302, got %d", resp.StatusCode)
 	}
@@ -267,7 +267,7 @@ func readJSON(resp *http.Response) map[string]any {
 // app names is precisely the precondition the bug needs.
 func setupEndSessionFixtures(h *harness) error {
 	scope := h.Scope().NewScope()
-	defer scope.Close()
+	defer utils.PanicOnError(scope.Close, "closing scope")
 
 	ctx := middlewares.ContextWithScope(context.Background(), scope)
 	ctx = authentication.ContextWithCurrentUser(ctx, authentication.SystemUser())
