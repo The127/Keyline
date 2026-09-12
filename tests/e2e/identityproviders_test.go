@@ -97,6 +97,66 @@ func init() {
 				Expect(auditLog).ToNot(ContainSubstring("very-secret"))
 			})
 
+			It("fills the settings from the github preset", func() {
+				_, err := h.Client().VirtualServer().IdentityProviders().Create(h.Ctx(), api.CreateIdentityProviderRequestDto{
+					Name:         "github",
+					DisplayName:  "GitHub",
+					Preset:       "github",
+					ClientId:     "gh-client",
+					ClientSecret: "gh-secret",
+				})
+				Expect(err).ToNot(HaveOccurred())
+
+				got, err := h.Client().VirtualServer().IdentityProviders().Get(h.Ctx(), "github")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(got).To(Equal(api.GetIdentityProviderResponseDto{
+					Name:                  "github",
+					DisplayName:           "GitHub",
+					Preset:                "github",
+					AuthorizationEndpoint: "https://github.com/login/oauth/authorize",
+					TokenEndpoint:         "https://github.com/login/oauth/access_token",
+					UserinfoEndpoint:      "https://api.github.com/user",
+					Scopes:                []string{"read:user", "user:email"},
+					ClientId:              "gh-client",
+				}))
+			})
+
+			It("lets explicit settings win over the preset", func() {
+				_, err := h.Client().VirtualServer().IdentityProviders().Create(h.Ctx(), api.CreateIdentityProviderRequestDto{
+					Name:          "github-enterprise",
+					DisplayName:   "GitHub Enterprise",
+					Preset:        "github",
+					TokenEndpoint: "https://github.example/login/oauth/access_token",
+					Scopes:        []string{"read:user"},
+					ClientId:      "ghe-client",
+					ClientSecret:  "ghe-secret",
+				})
+				Expect(err).ToNot(HaveOccurred())
+
+				got, err := h.Client().VirtualServer().IdentityProviders().Get(h.Ctx(), "github-enterprise")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(got.Preset).To(Equal("github"))
+				Expect(got.AuthorizationEndpoint).To(Equal("https://github.com/login/oauth/authorize"))
+				Expect(got.TokenEndpoint).To(Equal("https://github.example/login/oauth/access_token"))
+				Expect(got.Scopes).To(Equal([]string{"read:user"}))
+			})
+
+			It("keeps an explicit empty scope list over the preset", func() {
+				_, err := h.Client().VirtualServer().IdentityProviders().Create(h.Ctx(), api.CreateIdentityProviderRequestDto{
+					Name:         "github-noscopes",
+					DisplayName:  "GitHub No Scopes",
+					Preset:       "github",
+					Scopes:       []string{},
+					ClientId:     "gh-client",
+					ClientSecret: "gh-secret",
+				})
+				Expect(err).ToNot(HaveOccurred())
+
+				got, err := h.Client().VirtualServer().IdentityProviders().Get(h.Ctx(), "github-noscopes")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(got.Scopes).To(Equal([]string{}))
+			})
+
 			It("reads an empty scope list back as an empty list", func() {
 				provider := explicitIdentityProvider("noscopes", "No Scopes")
 				provider.Scopes = nil
@@ -120,6 +180,14 @@ func init() {
 					},
 					"with a name that cannot be a path segment": func() api.CreateIdentityProviderRequestDto {
 						return explicitIdentityProvider("a/b", "Slash")
+					},
+					"with an unknown preset": func() api.CreateIdentityProviderRequestDto {
+						provider := explicitIdentityProvider("unknown-preset", "Unknown")
+						provider.Preset = "myspace"
+						return provider
+					},
+					"with a preset but no client credentials": func() api.CreateIdentityProviderRequestDto {
+						return api.CreateIdentityProviderRequestDto{Name: "no-creds", DisplayName: "No Creds", Preset: "github"}
 					},
 					"with an empty scope": func() api.CreateIdentityProviderRequestDto {
 						provider := explicitIdentityProvider("emptyscope", "Empty Scope")

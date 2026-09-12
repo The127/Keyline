@@ -21,6 +21,7 @@ type postgresIdentityProvider struct {
 	virtualServerId       uuid.UUID
 	name                  string
 	displayName           string
+	preset                string
 	authorizationEndpoint string
 	tokenEndpoint         string
 	userinfoEndpoint      string
@@ -35,6 +36,7 @@ func mapIdentityProvider(identityProvider *repositories.IdentityProvider) *postg
 		virtualServerId:       identityProvider.VirtualServerId(),
 		name:                  identityProvider.Name(),
 		displayName:           identityProvider.DisplayName(),
+		preset:                identityProvider.Preset(),
 		authorizationEndpoint: identityProvider.Settings().AuthorizationEndpoint,
 		tokenEndpoint:         identityProvider.Settings().TokenEndpoint,
 		userinfoEndpoint:      identityProvider.Settings().UserinfoEndpoint,
@@ -50,6 +52,7 @@ func (k *postgresIdentityProvider) Map() *repositories.IdentityProvider {
 		k.virtualServerId,
 		k.name,
 		k.displayName,
+		k.preset,
 		repositories.IdentityProviderSettings{
 			AuthorizationEndpoint: k.authorizationEndpoint,
 			TokenEndpoint:         k.tokenEndpoint,
@@ -70,6 +73,7 @@ func (k *postgresIdentityProvider) scan(row pghelpers.Row, additionalPtrs ...any
 		&k.virtualServerId,
 		&k.name,
 		&k.displayName,
+		&k.preset,
 		&k.authorizationEndpoint,
 		&k.tokenEndpoint,
 		&k.userinfoEndpoint,
@@ -106,6 +110,7 @@ func (r *IdentityProviderRepository) selectQuery(filter *repositories.IdentityPr
 		"virtual_server_id",
 		"name",
 		"display_name",
+		"preset",
 		"authorization_endpoint",
 		"token_endpoint",
 		"userinfo_endpoint",
@@ -203,6 +208,7 @@ func (r *IdentityProviderRepository) ExecuteInsert(ctx context.Context, tx *sql.
 			"virtual_server_id",
 			"name",
 			"display_name",
+			"preset",
 			"authorization_endpoint",
 			"token_endpoint",
 			"userinfo_endpoint",
@@ -217,6 +223,7 @@ func (r *IdentityProviderRepository) ExecuteInsert(ctx context.Context, tx *sql.
 			mapped.virtualServerId,
 			mapped.name,
 			mapped.displayName,
+			mapped.preset,
 			mapped.authorizationEndpoint,
 			mapped.tokenEndpoint,
 			mapped.userinfoEndpoint,

@@ -36,6 +36,7 @@ func (q GetIdentityProvider) GetRequestName() string {
 type GetIdentityProviderResult struct {
 	Name        string
 	DisplayName string
+	Preset      string
 	Settings    repositories.IdentityProviderSettings
 }
 
@@ -60,6 +61,7 @@ func HandleGetIdentityProvider(ctx context.Context, query GetIdentityProvider) (
 	return &GetIdentityProviderResult{
 		Name:        identityProvider.Name(),
 		DisplayName: identityProvider.DisplayName(),
+		Preset:      identityProvider.Preset(),
 		Settings:    identityProvider.Settings(),
 	}, nil
 }

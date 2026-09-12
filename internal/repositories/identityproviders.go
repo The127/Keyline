@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"fmt"
 	"github.com/The127/Keyline/internal/change"
 	"github.com/The127/Keyline/utils"
 
@@ -19,6 +20,48 @@ type IdentityProviderSettings struct {
 	ClientSecret          string `json:"-"`
 }
 
+func (s IdentityProviderSettings) FilledFrom(defaults IdentityProviderSettings) IdentityProviderSettings {
+	filled := s
+	if filled.AuthorizationEndpoint == "" {
+		filled.AuthorizationEndpoint = defaults.AuthorizationEndpoint
+	}
+	if filled.TokenEndpoint == "" {
+		filled.TokenEndpoint = defaults.TokenEndpoint
+	}
+	if filled.UserinfoEndpoint == "" {
+		filled.UserinfoEndpoint = defaults.UserinfoEndpoint
+	}
+	if filled.Scopes == nil {
+		filled.Scopes = append([]string{}, defaults.Scopes...)
+	}
+	if filled.ClientId == "" {
+		filled.ClientId = defaults.ClientId
+	}
+	if filled.ClientSecret == "" {
+		filled.ClientSecret = defaults.ClientSecret
+	}
+	return filled
+}
+
+func (s IdentityProviderSettings) Validate() error {
+	if s.AuthorizationEndpoint == "" {
+		return fmt.Errorf("identity provider needs an authorization endpoint: %w", utils.ErrHttpBadRequest)
+	}
+	if s.TokenEndpoint == "" {
+		return fmt.Errorf("identity provider needs a token endpoint: %w", utils.ErrHttpBadRequest)
+	}
+	if s.UserinfoEndpoint == "" {
+		return fmt.Errorf("identity provider needs a userinfo endpoint: %w", utils.ErrHttpBadRequest)
+	}
+	if s.ClientId == "" {
+		return fmt.Errorf("identity provider needs a client id: %w", utils.ErrHttpBadRequest)
+	}
+	if s.ClientSecret == "" {
+		return fmt.Errorf("identity provider needs a client secret: %w", utils.ErrHttpBadRequest)
+	}
+	return nil
+}
+
 type IdentityProvider struct {
 	BaseModel
 	change.List[IdentityProviderChange]
@@ -26,27 +69,30 @@ type IdentityProvider struct {
 	virtualServerId uuid.UUID
 	name            string
 	displayName     string
+	preset          string
 	settings        IdentityProviderSettings
 }
 
-func NewIdentityProvider(virtualServerId uuid.UUID, name string, displayName string, settings IdentityProviderSettings) *IdentityProvider {
+func NewIdentityProvider(virtualServerId uuid.UUID, name string, displayName string, preset string, settings IdentityProviderSettings) *IdentityProvider {
 	return &IdentityProvider{
 		BaseModel:       NewBaseModel(),
 		List:            change.NewChanges[IdentityProviderChange](),
 		virtualServerId: virtualServerId,
 		name:            name,
 		displayName:     displayName,
+		preset:          preset,
 		settings:        settings,
 	}
 }
 
-func NewIdentityProviderFromDB(base BaseModel, virtualServerId uuid.UUID, name string, displayName string, settings IdentityProviderSettings) *IdentityProvider {
+func NewIdentityProviderFromDB(base BaseModel, virtualServerId uuid.UUID, name string, displayName string, preset string, settings IdentityProviderSettings) *IdentityProvider {
 	return &IdentityProvider{
 		BaseModel:       base,
 		List:            change.NewChanges[IdentityProviderChange](),
 		virtualServerId: virtualServerId,
 		name:            name,
 		displayName:     displayName,
+		preset:          preset,
 		settings:        settings,
 	}
 }
@@ -61,6 +107,10 @@ func (p *IdentityProvider) Name() string {
 
 func (p *IdentityProvider) DisplayName() string {
 	return p.displayName
+}
+
+func (p *IdentityProvider) Preset() string {
+	return p.preset
 }
 
 func (p *IdentityProvider) Settings() IdentityProviderSettings {

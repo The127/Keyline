@@ -8,6 +8,7 @@ import (
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/repositories"
+	"github.com/The127/Keyline/utils"
 
 	"github.com/The127/ioc"
 
@@ -18,6 +19,7 @@ type CreateIdentityProvider struct {
 	VirtualServerName string
 	Name              string
 	DisplayName       string
+	Preset            string
 	Settings          repositories.IdentityProviderSettings
 }
 
@@ -51,7 +53,23 @@ func HandleCreateIdentityProvider(ctx context.Context, command CreateIdentityPro
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
-	identityProvider := repositories.NewIdentityProvider(virtualServer.Id(), command.Name, command.DisplayName, command.Settings)
+	settings := command.Settings
+	if command.Preset != "" {
+		preset, ok := repositories.IdentityProviderPreset(command.Preset)
+		if !ok {
+			return nil, fmt.Errorf("unknown identity provider preset %s: %w", command.Preset, utils.ErrHttpBadRequest)
+		}
+		settings = settings.FilledFrom(preset)
+	}
+
+	settings.Scopes = utils.EmptyIfNil(settings.Scopes)
+
+	err = settings.Validate()
+	if err != nil {
+		return nil, err
+	}
+
+	identityProvider := repositories.NewIdentityProvider(virtualServer.Id(), command.Name, command.DisplayName, command.Preset, settings)
 	dbContext.IdentityProviders().Insert(identityProvider)
 
 	return &CreateIdentityProviderResponse{

@@ -55,11 +55,12 @@ func CreateIdentityProvider(w http.ResponseWriter, r *http.Request) {
 		VirtualServerName: vsName,
 		Name:              dto.Name,
 		DisplayName:       dto.DisplayName,
+		Preset:            dto.Preset,
 		Settings: repositories.IdentityProviderSettings{
 			AuthorizationEndpoint: dto.AuthorizationEndpoint,
 			TokenEndpoint:         dto.TokenEndpoint,
 			UserinfoEndpoint:      dto.UserinfoEndpoint,
-			Scopes:                utils.EmptyIfNil(dto.Scopes),
+			Scopes:                dto.Scopes,
 			ClientId:              dto.ClientId,
 			ClientSecret:          dto.ClientSecret,
 		},
@@ -118,6 +119,7 @@ func GetIdentityProvider(w http.ResponseWriter, r *http.Request) {
 	err = json.NewEncoder(w).Encode(api.GetIdentityProviderResponseDto{
 		Name:                  identityProvider.Name,
 		DisplayName:           identityProvider.DisplayName,
+		Preset:                identityProvider.Preset,
 		AuthorizationEndpoint: identityProvider.Settings.AuthorizationEndpoint,
 		TokenEndpoint:         identityProvider.Settings.TokenEndpoint,
 		UserinfoEndpoint:      identityProvider.Settings.UserinfoEndpoint,
