@@ -5,7 +5,7 @@ A confidential application can authenticate at the token endpoint with a signed 
 ## Setup
 
 1. Create the application with `"tokenEndpointAuthMethod": "private_key_jwt"`. No secret is generated.
-2. Register one or more PEM encoded public keys (RSA or Ed25519):
+2. Register one or more PEM encoded public keys (Ed25519, or RSA with at least 2048 bits). Weaker keys are refused:
 
 ```
 POST   /api/virtual-servers/{vs}/projects/{project}/applications/{appId}/keys   {"publicKey": "<PEM>", "kid": "optional"}

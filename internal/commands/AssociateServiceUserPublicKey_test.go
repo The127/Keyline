@@ -80,18 +80,19 @@ func (s *AssociateServiceUserPublicKeyCommandSuite) TestHappyPath() {
 		return x.GetId() == user.Id()
 	})).Return(user, nil)
 
+	publicKey := testPublicKeyPem()
 	credentialRepository := mocks.NewMockCredentialRepository(ctrl)
 	credentialRepository.EXPECT().Insert(gomock.Cond(func(x *repositories.Credential) bool {
 		return x.UserId() == user.Id() &&
 			x.Type() == repositories.CredentialTypeServiceUserKey &&
-			utils.Unwrap(x.ServiceUserKeyDetails()).PublicKey == "publicKey"
+			utils.Unwrap(x.ServiceUserKeyDetails()).PublicKey == publicKey
 	}))
 
 	ctx := s.createContext(ctrl, virtualServerRepository, userRepository, credentialRepository)
 	cmd := AssociateServiceUserPublicKey{
 		VirtualServerName: "virtualServer",
 		ServiceUserId:     user.Id(),
-		PublicKey:         "publicKey",
+		PublicKey:         publicKey,
 	}
 
 	// act
@@ -100,4 +101,70 @@ func (s *AssociateServiceUserPublicKeyCommandSuite) TestHappyPath() {
 	// assert
 	s.Require().NoError(err)
 	s.NotNil(resp)
+}
+
+func (s *AssociateServiceUserPublicKeyCommandSuite) TestRejectsWeakRsaKey() {
+	// arrange
+	ctrl := gomock.NewController(s.T())
+	defer ctrl.Finish()
+
+	now := time.Now()
+
+	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
+	virtualServer.Mock(now)
+	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
+	virtualServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
+
+	user := repositories.NewUser("user", "User", "user@mail", virtualServer.Id())
+	user.Mock(now)
+	userRepository := mocks.NewMockUserRepository(ctrl)
+	userRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(user, nil)
+
+	credentialRepository := mocks.NewMockCredentialRepository(ctrl)
+
+	ctx := s.createContext(ctrl, virtualServerRepository, userRepository, credentialRepository)
+	cmd := AssociateServiceUserPublicKey{
+		VirtualServerName: "virtualServer",
+		ServiceUserId:     user.Id(),
+		PublicKey:         testRsaPublicKeyPem(1024),
+	}
+
+	// act
+	_, err := HandleAssociateServiceUserPublicKey(ctx, cmd)
+
+	// assert
+	s.Require().ErrorIs(err, utils.ErrHttpBadRequest)
+}
+
+func (s *AssociateServiceUserPublicKeyCommandSuite) TestRejectsInvalidPem() {
+	// arrange
+	ctrl := gomock.NewController(s.T())
+	defer ctrl.Finish()
+
+	now := time.Now()
+
+	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
+	virtualServer.Mock(now)
+	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
+	virtualServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
+
+	user := repositories.NewUser("user", "User", "user@mail", virtualServer.Id())
+	user.Mock(now)
+	userRepository := mocks.NewMockUserRepository(ctrl)
+	userRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(user, nil)
+
+	credentialRepository := mocks.NewMockCredentialRepository(ctrl)
+
+	ctx := s.createContext(ctrl, virtualServerRepository, userRepository, credentialRepository)
+	cmd := AssociateServiceUserPublicKey{
+		VirtualServerName: "virtualServer",
+		ServiceUserId:     user.Id(),
+		PublicKey:         "not a key",
+	}
+
+	// act
+	_, err := HandleAssociateServiceUserPublicKey(ctx, cmd)
+
+	// assert
+	s.Require().ErrorIs(err, utils.ErrHttpBadRequest)
 }

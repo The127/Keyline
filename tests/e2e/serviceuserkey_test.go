@@ -51,6 +51,37 @@ func init() {
 				_ = serviceUserId
 			})
 
+			It("refuses an RSA key shorter than 2048 bits", func() {
+				suId, err := h.Client().User().CreateServiceUser(h.Ctx(), "key-flow-weak-user-"+backend.name)
+				Expect(err).ToNot(HaveOccurred())
+
+				_, err = h.Client().User().AssociateServiceUserPublicKey(h.Ctx(), suId, api.AssociateServiceUserPublicKeyRequestDto{
+					PublicKey: rsaPublicKeyPem(1024),
+				})
+				Expect(err).To(HaveOccurred())
+			})
+
+			It("refuses a key that is not a pem encoded public key", func() {
+				suId, err := h.Client().User().CreateServiceUser(h.Ctx(), "key-flow-garbage-user-"+backend.name)
+				Expect(err).ToNot(HaveOccurred())
+
+				_, err = h.Client().User().AssociateServiceUserPublicKey(h.Ctx(), suId, api.AssociateServiceUserPublicKeyRequestDto{
+					PublicKey: "not a key",
+				})
+				Expect(err).To(HaveOccurred())
+			})
+
+			It("accepts a 2048 bit RSA key", func() {
+				suId, err := h.Client().User().CreateServiceUser(h.Ctx(), "key-flow-rsa-user-"+backend.name)
+				Expect(err).ToNot(HaveOccurred())
+
+				resp, err := h.Client().User().AssociateServiceUserPublicKey(h.Ctx(), suId, api.AssociateServiceUserPublicKeyRequestDto{
+					PublicKey: rsaPublicKeyPem(2048),
+				})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(resp.Kid).ToNot(BeEmpty())
+			})
+
 			It("associates a public key without a kid and server generates one", func() {
 				suId, err := h.Client().User().CreateServiceUser(h.Ctx(), "key-flow-autokid-user-"+backend.name)
 				Expect(err).ToNot(HaveOccurred())

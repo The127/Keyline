@@ -43,7 +43,7 @@ CreateServiceUser{
 
 ### Step 2: Associate a Public Key
 
-After creating a service user, you need to associate its public key with the account. The public key should be in PEM format (PKIX).
+After creating a service user, you need to associate its public key with the account. The public key should be in PEM format (PKIX). Ed25519 keys and RSA keys with at least 2048 bits are accepted. Weaker RSA keys and other key types are refused.
 
 **Command Structure:**
 ```go
