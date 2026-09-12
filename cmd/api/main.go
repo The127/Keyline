@@ -114,11 +114,18 @@ func main() {
 		logging.Logger.Panicf("failed to start leader election: %s", err.Error())
 	}
 
-	server.Serve(dp, config.C.Server)
+	shutdown := server.Serve(dp, config.C.Server)
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	<-c
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	err = shutdown(shutdownCtx)
+	if err != nil {
+		logging.Logger.Errorf("shutting down server: %v", err)
+	}
 }
 
 // initApplication sets up the initial application state on the first startup.

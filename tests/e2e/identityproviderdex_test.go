@@ -39,46 +39,52 @@ func dexAvailable() bool {
 }
 
 func init() {
-	Describe("Identity provider login at dex", Ordered, func() {
-		var h *harness
+	for _, backend := range testBackends {
+		backend := backend
+		Describe("Identity provider login at dex ["+backend.name+"]", Ordered, func() {
+			var h *harness
 
-		BeforeAll(func() {
-			if !dexAvailable() {
-				Skip("dex not available")
-			}
-			h = newE2eTestHarness(config.DatabaseModeMemory, serviceUserTokenSource, withPort(dexHarnessPort))
+			BeforeAll(func() {
+				if backend.dbMode == config.DatabaseModePostgres && !postgresBackendAvailable() {
+					Skip("Postgres not available")
+				}
+				if !dexAvailable() {
+					Skip("dex not available")
+				}
+				h = newE2eTestHarness(backend.dbMode, serviceUserTokenSource, withPort(dexHarnessPort))
 
-			_, err := h.Client().VirtualServer().IdentityProviders().Create(h.Ctx(), api.CreateIdentityProviderRequestDto{
-				Name:                  "dex",
-				DisplayName:           "Dex",
-				Issuer:                dexIssuer,
-				AuthorizationEndpoint: dexIssuer + "/auth",
-				TokenEndpoint:         dexIssuer + "/token",
-				UserinfoEndpoint:      dexIssuer + "/userinfo",
-				Scopes:                []string{"openid", "email", "profile"},
-				ClientId:              dexClientId,
-				ClientSecret:          dexClientSecret,
+				_, err := h.Client().VirtualServer().IdentityProviders().Create(h.Ctx(), api.CreateIdentityProviderRequestDto{
+					Name:                  "dex",
+					DisplayName:           "Dex",
+					Issuer:                dexIssuer,
+					AuthorizationEndpoint: dexIssuer + "/auth",
+					TokenEndpoint:         dexIssuer + "/token",
+					UserinfoEndpoint:      dexIssuer + "/userinfo",
+					Scopes:                []string{"openid", "email", "profile"},
+					ClientId:              dexClientId,
+					ClientSecret:          dexClientSecret,
+				})
+				Expect(err).ToNot(HaveOccurred())
 			})
-			Expect(err).ToNot(HaveOccurred())
+
+			AfterAll(func() {
+				if h != nil {
+					h.Close()
+				}
+			})
+
+			It("comes back from dex with a code and the state of the start", func() {
+				status, body := startIdentityProviderLogin(h, beginLogin(h), "dex")
+				Expect(status).To(Equal(http.StatusOK))
+
+				callback := loginAtDex(body["authorizationUrl"].(string))
+
+				Expect(callback.Scheme + "://" + callback.Host + callback.Path).To(Equal("http://localhost:25999/oidc/test-vs/identity-providers/dex/callback"))
+				Expect(callback.Query().Get("state")).To(Equal(stateOf(body)))
+				Expect(callback.Query().Get("code")).ToNot(BeEmpty())
+			})
 		})
-
-		AfterAll(func() {
-			if h != nil {
-				h.Close()
-			}
-		})
-
-		It("comes back from dex with a code and the state of the start", func() {
-			status, body := startIdentityProviderLogin(h, beginLogin(h), "dex")
-			Expect(status).To(Equal(http.StatusOK))
-
-			callback := loginAtDex(body["authorizationUrl"].(string))
-
-			Expect(callback.Scheme + "://" + callback.Host + callback.Path).To(Equal("http://localhost:25999/oidc/test-vs/identity-providers/dex/callback"))
-			Expect(callback.Query().Get("state")).To(Equal(stateOf(body)))
-			Expect(callback.Query().Get("code")).ToNot(BeEmpty())
-		})
-	})
+	}
 }
 
 func readAll(resp *http.Response) string {

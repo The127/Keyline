@@ -1,6 +1,8 @@
 package server
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/authentication"
@@ -19,7 +21,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func Serve(dp *ioc.DependencyProvider, serverConfig config.ServerConfig) {
+func Serve(dp *ioc.DependencyProvider, serverConfig config.ServerConfig) func(context.Context) error {
+	var servers []*http.Server
 	r := mux.NewRouter()
 
 	r.Use(middlewares.RecoverMiddleware())
@@ -106,6 +109,7 @@ func Serve(dp *ioc.DependencyProvider, serverConfig config.ServerConfig) {
 			Addr:    apiAddr,
 		}
 
+		servers = append(servers, apiSrv)
 		go serve(apiSrv)
 	}
 
@@ -116,7 +120,16 @@ func Serve(dp *ioc.DependencyProvider, serverConfig config.ServerConfig) {
 		Addr:    addr,
 	}
 
+	servers = append(servers, srv)
 	go serve(srv)
+
+	return func(ctx context.Context) error {
+		var errs []error
+		for _, s := range servers {
+			errs = append(errs, s.Shutdown(ctx))
+		}
+		return errors.Join(errs...)
+	}
 }
 
 func mapApiRoutes(r *mux.Router) {
@@ -228,7 +241,7 @@ func mapApiRoutes(r *mux.Router) {
 
 func serve(srv *http.Server) {
 	err := srv.ListenAndServe()
-	if err != nil {
+	if err != nil && !errors.Is(err, http.ErrServerClosed) {
 		panic(fmt.Errorf("error while running server: %w", err))
 	}
 }

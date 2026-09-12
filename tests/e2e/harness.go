@@ -44,6 +44,7 @@ type harness struct {
 	dbMode    config.DatabaseMode
 	scope     *ioc.DependencyProvider
 	serverUrl string
+	shutdown  func(context.Context) error
 }
 
 func (h *harness) SetTime(t time.Time) {
@@ -63,6 +64,10 @@ func (h *harness) Client() client.Client {
 }
 
 func (h *harness) Close() {
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	utils.PanicOnError(func() error { return h.shutdown(shutdownCtx) }, "shutting down server in test")
+
 	// cleanup database
 	dbConnection := ioc.GetDependency[database.Database](h.scope)
 	utils.PanicOnError(h.scope.Close, "closing scope")
@@ -236,7 +241,7 @@ func newE2eTestHarness(dbMode config.DatabaseMode, tokenSourceGenerator func(ctx
 		AllowedOrigins: []string{"*"},
 		ExternalUrl:    fmt.Sprintf("http://localhost:%d", port),
 	}
-	server.Serve(scope, serverConfig)
+	shutdown := server.Serve(scope, serverConfig)
 
 	var opts []client.TransportOptions
 	if tokenSourceGenerator != nil {
@@ -264,6 +269,7 @@ func newE2eTestHarness(dbMode config.DatabaseMode, tokenSourceGenerator func(ctx
 		dbName:    dbName,
 		dbMode:    dbMode,
 		serverUrl: serverConfig.ExternalUrl,
+		shutdown:  shutdown,
 	}
 }
 
