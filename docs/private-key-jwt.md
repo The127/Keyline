@@ -46,6 +46,6 @@ The JWT must have a `kid` header naming a registered key and these claims:
 | `iss`, `sub` | the application name |
 | `aud` | the issuer URL `{externalUrl}/oidc/{vs}` or the token endpoint URL |
 | `exp` | at most five minutes in the future |
-| `jti` | unique per assertion |
+| `jti` | unique per assertion; a reused `jti` is refused until the assertion expires |
 
 `client_id` may be sent as well and must then match `sub`. A `client_secret` next to an assertion is refused. This works for the authorization code, refresh token and device code grants, and at the device authorization endpoint.

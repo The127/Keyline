@@ -362,6 +362,28 @@ func init() {
 				})
 			})
 
+			It("refuses a replayed assertion and accepts a fresh one", func() {
+				assertion := clientAssertion(h, now, nil)
+				refreshWith(withClientAssertion(refreshForm(), assertion))
+
+				status, body, err := postToken(h.ApiUrl(), withClientAssertion(refreshForm(), assertion))
+				Expect(err).ToNot(HaveOccurred())
+				expectInvalidClient(status, body)
+
+				refreshWith(withClientAssertion(refreshForm(), clientAssertion(h, now, nil)))
+			})
+
+			It("accepts a replayed jti again once the original assertion has expired", func() {
+				assertion := clientAssertion(h, now, func(c jwt.MapClaims) { c["jti"] = "fixed-jti" })
+				refreshWith(withClientAssertion(refreshForm(), assertion))
+
+				later := now.Add(2 * time.Minute)
+				h.SetTime(later)
+				defer h.SetTime(now)
+
+				refreshWith(withClientAssertion(refreshForm(), clientAssertion(h, later, func(c jwt.MapClaims) { c["jti"] = "fixed-jti" })))
+			})
+
 			It("accepts a freshly generated key once it is registered", func() {
 				publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
 				Expect(err).ToNot(HaveOccurred())

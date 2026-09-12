@@ -16,12 +16,13 @@ import (
 type TokenType string
 
 const (
-	EmailVerificationTokenType TokenType = "email_verification"
-	LoginSessionTokenType      TokenType = "login_session"
-	OidcCodeTokenType          TokenType = "oidc_code"
-	OidcRefreshTokenTokenType  TokenType = "oidc_refresh_token"
-	OidcDeviceCodeTokenType    TokenType = "oidc_device_code"
-	OidcUserCodeTokenType      TokenType = "oidc_user_code"
+	EmailVerificationTokenType  TokenType = "email_verification"
+	LoginSessionTokenType       TokenType = "login_session"
+	OidcCodeTokenType           TokenType = "oidc_code"
+	OidcRefreshTokenTokenType   TokenType = "oidc_refresh_token"
+	OidcDeviceCodeTokenType     TokenType = "oidc_device_code"
+	OidcUserCodeTokenType       TokenType = "oidc_user_code"
+	ClientAssertionJtiTokenType TokenType = "client_assertion_jti"
 )
 
 func (t TokenType) Key(token string) string {
@@ -36,6 +37,7 @@ type TokenService interface {
 	GetToken(ctx context.Context, tokenType TokenType, token string) (string, error)
 	DeleteToken(ctx context.Context, tokenType TokenType, token string) error
 	StoreToken(ctx context.Context, tokenType TokenType, token string, value string, expiration time.Duration) error
+	StoreTokenIfAbsent(ctx context.Context, tokenType TokenType, token string, value string, expiration time.Duration) (bool, error)
 }
 
 type tokenService struct {
@@ -114,4 +116,16 @@ func (t *tokenService) StoreToken(ctx context.Context, tokenType TokenType, toke
 	}
 
 	return nil
+}
+
+func (t *tokenService) StoreTokenIfAbsent(ctx context.Context, tokenType TokenType, token string, value string, expiration time.Duration) (bool, error) {
+	scope := middlewares.GetScope(ctx)
+	kvStore := ioc.GetDependency[keyValue.Store](scope)
+
+	stored, err := kvStore.SetIfAbsent(ctx, tokenType.Key(token), value, keyValue.WithExpiration(expiration))
+	if err != nil {
+		return false, fmt.Errorf("storing token in kv: %w", err)
+	}
+
+	return stored, nil
 }

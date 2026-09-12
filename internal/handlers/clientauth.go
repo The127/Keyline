@@ -7,6 +7,7 @@ import (
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/repositories"
+	"github.com/The127/Keyline/internal/services"
 	"github.com/The127/Keyline/utils"
 	"net/http"
 	"slices"
@@ -237,6 +238,15 @@ func authenticateApplicationWithAssertion(
 	jti, ok := claims["jti"].(string)
 	if !ok || jti == "" {
 		return nil, fmt.Errorf("client_assertion has no jti")
+	}
+
+	tokenService := ioc.GetDependency[services.TokenService](scope)
+	unused, err := tokenService.StoreTokenIfAbsent(ctx, services.ClientAssertionJtiTokenType, application.Id().String()+":"+jti, "", expiresAt.Sub(now))
+	if err != nil {
+		return nil, fmt.Errorf("recording client_assertion jti: %w", err)
+	}
+	if !unused {
+		return nil, fmt.Errorf("client_assertion jti was already used")
 	}
 
 	return application, nil
