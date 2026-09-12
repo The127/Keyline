@@ -59,6 +59,7 @@ func Mediator(dc *ioc.DependencyCollection) {
 	mediatr.RegisterHandler(m, queries.HandleListApplications)
 	mediatr.RegisterHandler(m, queries.HandleGetApplication)
 	mediatr.RegisterHandler(m, queries.HandleListApplicationKeys)
+	mediatr.RegisterHandler(m, queries.HandleGetIdentityProvider)
 	mediatr.RegisterHandler(m, commands.HandlePatchApplication)
 	mediatr.RegisterHandler(m, commands.HandleDeleteApplication)
 

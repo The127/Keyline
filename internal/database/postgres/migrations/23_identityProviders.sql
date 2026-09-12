@@ -10,6 +10,13 @@ create table identity_providers (
     "name" text not null,
     "display_name" text not null,
 
+    "authorization_endpoint" text not null,
+    "token_endpoint" text not null,
+    "userinfo_endpoint" text not null,
+    "scopes" text[] not null default '{}',
+    "client_id" text not null,
+    "client_secret" text not null,
+
     primary key ("id"),
     foreign key ("virtual_server_id") references "virtual_servers" ("id") on delete cascade,
     unique ("virtual_server_id", "name")

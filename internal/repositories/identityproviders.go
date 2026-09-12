@@ -10,6 +10,15 @@ import (
 
 type IdentityProviderChange int
 
+type IdentityProviderSettings struct {
+	AuthorizationEndpoint string
+	TokenEndpoint         string
+	UserinfoEndpoint      string
+	Scopes                []string
+	ClientId              string
+	ClientSecret          string `json:"-"`
+}
+
 type IdentityProvider struct {
 	BaseModel
 	change.List[IdentityProviderChange]
@@ -17,25 +26,28 @@ type IdentityProvider struct {
 	virtualServerId uuid.UUID
 	name            string
 	displayName     string
+	settings        IdentityProviderSettings
 }
 
-func NewIdentityProvider(virtualServerId uuid.UUID, name string, displayName string) *IdentityProvider {
+func NewIdentityProvider(virtualServerId uuid.UUID, name string, displayName string, settings IdentityProviderSettings) *IdentityProvider {
 	return &IdentityProvider{
 		BaseModel:       NewBaseModel(),
 		List:            change.NewChanges[IdentityProviderChange](),
 		virtualServerId: virtualServerId,
 		name:            name,
 		displayName:     displayName,
+		settings:        settings,
 	}
 }
 
-func NewIdentityProviderFromDB(base BaseModel, virtualServerId uuid.UUID, name string, displayName string) *IdentityProvider {
+func NewIdentityProviderFromDB(base BaseModel, virtualServerId uuid.UUID, name string, displayName string, settings IdentityProviderSettings) *IdentityProvider {
 	return &IdentityProvider{
 		BaseModel:       base,
 		List:            change.NewChanges[IdentityProviderChange](),
 		virtualServerId: virtualServerId,
 		name:            name,
 		displayName:     displayName,
+		settings:        settings,
 	}
 }
 
@@ -49,6 +61,10 @@ func (p *IdentityProvider) Name() string {
 
 func (p *IdentityProvider) DisplayName() string {
 	return p.displayName
+}
+
+func (p *IdentityProvider) Settings() IdentityProviderSettings {
+	return p.settings
 }
 
 type IdentityProviderFilter struct {

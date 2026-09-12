@@ -18,6 +18,7 @@ type CreateIdentityProvider struct {
 	VirtualServerName string
 	Name              string
 	DisplayName       string
+	Settings          repositories.IdentityProviderSettings
 }
 
 func (c CreateIdentityProvider) LogRequest() bool {
@@ -50,7 +51,7 @@ func HandleCreateIdentityProvider(ctx context.Context, command CreateIdentityPro
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
-	identityProvider := repositories.NewIdentityProvider(virtualServer.Id(), command.Name, command.DisplayName)
+	identityProvider := repositories.NewIdentityProvider(virtualServer.Id(), command.Name, command.DisplayName, command.Settings)
 	dbContext.IdentityProviders().Insert(identityProvider)
 
 	return &CreateIdentityProviderResponse{

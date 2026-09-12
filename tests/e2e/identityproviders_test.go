@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 
@@ -44,10 +45,7 @@ func init() {
 			})
 
 			It("offers a registered identity provider on the login", func() {
-				_, err := h.Client().VirtualServer().IdentityProviders().Create(h.Ctx(), api.CreateIdentityProviderRequestDto{
-					Name:        "corp",
-					DisplayName: "Corp SSO",
-				})
+				_, err := h.Client().VirtualServer().IdentityProviders().Create(h.Ctx(), explicitIdentityProvider("corp", "Corp SSO"))
 				Expect(err).ToNot(HaveOccurred())
 
 				state := loginState(h, beginLogin(h))
@@ -59,17 +57,128 @@ func init() {
 			})
 
 			It("refuses a second identity provider with the same name", func() {
-				_, err := h.Client().VirtualServer().IdentityProviders().Create(h.Ctx(), api.CreateIdentityProviderRequestDto{
-					Name:        "corp",
-					DisplayName: "Corp SSO again",
-				})
+				_, err := h.Client().VirtualServer().IdentityProviders().Create(h.Ctx(), explicitIdentityProvider("corp", "Corp SSO again"))
 
 				var apiErr client.ApiError
 				Expect(errors.As(err, &apiErr)).To(BeTrue(), "expected an api error, got %v", err)
 				Expect(apiErr.Code).To(Equal(http.StatusConflict))
 			})
+
+			It("stores the settings of a provider and returns them without the secret", func() {
+				_, err := h.Client().VirtualServer().IdentityProviders().Create(h.Ctx(), explicitIdentityProvider("explicit", "Explicit"))
+				Expect(err).ToNot(HaveOccurred())
+
+				got, err := h.Client().VirtualServer().IdentityProviders().Get(h.Ctx(), "explicit")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(got).To(Equal(api.GetIdentityProviderResponseDto{
+					Name:                  "explicit",
+					DisplayName:           "Explicit",
+					AuthorizationEndpoint: "https://idp.example/authorize",
+					TokenEndpoint:         "https://idp.example/token",
+					UserinfoEndpoint:      "https://idp.example/userinfo",
+					Scopes:                []string{"openid", "email"},
+					ClientId:              "client-123",
+				}))
+
+				raw := getIdentityProviderRaw(h, "explicit")
+				Expect(raw).ToNot(HaveKey("clientSecret"))
+				rawJson, err := json.Marshal(raw)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(string(rawJson)).ToNot(ContainSubstring("very-secret"))
+			})
+
+			It("keeps the client secret out of the audit log", func() {
+				_, err := h.Client().VirtualServer().IdentityProviders().Create(h.Ctx(), explicitIdentityProvider("audited", "Audited"))
+				Expect(err).ToNot(HaveOccurred())
+
+				auditLog := getRaw(h, fmt.Sprintf("%s/api/virtual-servers/%s/audit", h.ApiUrl(), h.VirtualServer()))
+
+				Expect(auditLog).To(ContainSubstring("CreateIdentityProvider"))
+				Expect(auditLog).ToNot(ContainSubstring("very-secret"))
+			})
+
+			It("reads an empty scope list back as an empty list", func() {
+				provider := explicitIdentityProvider("noscopes", "No Scopes")
+				provider.Scopes = nil
+				_, err := h.Client().VirtualServer().IdentityProviders().Create(h.Ctx(), provider)
+				Expect(err).ToNot(HaveOccurred())
+
+				got, err := h.Client().VirtualServer().IdentityProviders().Get(h.Ctx(), "noscopes")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(got.Scopes).To(Equal([]string{}))
+			})
+
+			Describe("refuses a provider", func() {
+				cases := map[string]func() api.CreateIdentityProviderRequestDto{
+					"without endpoints or client credentials": func() api.CreateIdentityProviderRequestDto {
+						return api.CreateIdentityProviderRequestDto{Name: "bare", DisplayName: "Bare"}
+					},
+					"with an endpoint that is not an http url": func() api.CreateIdentityProviderRequestDto {
+						provider := explicitIdentityProvider("script", "Script")
+						provider.AuthorizationEndpoint = "javascript:alert(1)"
+						return provider
+					},
+					"with a name that cannot be a path segment": func() api.CreateIdentityProviderRequestDto {
+						return explicitIdentityProvider("a/b", "Slash")
+					},
+					"with an empty scope": func() api.CreateIdentityProviderRequestDto {
+						provider := explicitIdentityProvider("emptyscope", "Empty Scope")
+						provider.Scopes = []string{"openid", ""}
+						return provider
+					},
+				}
+
+				for name, provider := range cases {
+					It(name, func() {
+						_, err := h.Client().VirtualServer().IdentityProviders().Create(h.Ctx(), provider())
+
+						var apiErr client.ApiError
+						Expect(errors.As(err, &apiErr)).To(BeTrue(), "expected an api error, got %v", err)
+						Expect(apiErr.Code).To(Equal(http.StatusBadRequest))
+					})
+				}
+			})
 		})
 	}
+}
+
+func explicitIdentityProvider(name string, displayName string) api.CreateIdentityProviderRequestDto {
+	return api.CreateIdentityProviderRequestDto{
+		Name:                  name,
+		DisplayName:           displayName,
+		AuthorizationEndpoint: "https://idp.example/authorize",
+		TokenEndpoint:         "https://idp.example/token",
+		UserinfoEndpoint:      "https://idp.example/userinfo",
+		Scopes:                []string{"openid", "email"},
+		ClientId:              "client-123",
+		ClientSecret:          "very-secret",
+	}
+}
+
+func getIdentityProviderRaw(h *harness, name string) map[string]any {
+	body := getRaw(h, fmt.Sprintf("%s/api/virtual-servers/%s/identity-providers/%s", h.ApiUrl(), h.VirtualServer(), name))
+
+	var raw map[string]any
+	Expect(json.Unmarshal([]byte(body), &raw)).To(Succeed())
+	return raw
+}
+
+func getRaw(h *harness, url string) string {
+	token, err := serviceUserTokenSource(h.Ctx(), h.ApiUrl()).Token()
+	Expect(err).ToNot(HaveOccurred())
+
+	request, err := http.NewRequest(http.MethodGet, url, nil)
+	Expect(err).ToNot(HaveOccurred())
+	request.Header.Set("Authorization", "Bearer "+token.AccessToken)
+
+	resp, err := http.DefaultClient.Do(request)
+	Expect(err).ToNot(HaveOccurred())
+	defer resp.Body.Close() //nolint:errcheck
+	Expect(resp.StatusCode).To(Equal(http.StatusOK))
+
+	body, err := io.ReadAll(resp.Body)
+	Expect(err).ToNot(HaveOccurred())
+	return string(body)
 }
 
 func beginLogin(h *harness) string {

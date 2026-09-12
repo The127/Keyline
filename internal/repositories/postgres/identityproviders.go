@@ -13,21 +13,34 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/huandu/go-sqlbuilder"
+	"github.com/lib/pq"
 )
 
 type postgresIdentityProvider struct {
 	postgresBaseModel
-	virtualServerId uuid.UUID
-	name            string
-	displayName     string
+	virtualServerId       uuid.UUID
+	name                  string
+	displayName           string
+	authorizationEndpoint string
+	tokenEndpoint         string
+	userinfoEndpoint      string
+	scopes                pq.StringArray
+	clientId              string
+	clientSecret          string
 }
 
 func mapIdentityProvider(identityProvider *repositories.IdentityProvider) *postgresIdentityProvider {
 	return &postgresIdentityProvider{
-		postgresBaseModel: mapBase(identityProvider.BaseModel),
-		virtualServerId:   identityProvider.VirtualServerId(),
-		name:              identityProvider.Name(),
-		displayName:       identityProvider.DisplayName(),
+		postgresBaseModel:     mapBase(identityProvider.BaseModel),
+		virtualServerId:       identityProvider.VirtualServerId(),
+		name:                  identityProvider.Name(),
+		displayName:           identityProvider.DisplayName(),
+		authorizationEndpoint: identityProvider.Settings().AuthorizationEndpoint,
+		tokenEndpoint:         identityProvider.Settings().TokenEndpoint,
+		userinfoEndpoint:      identityProvider.Settings().UserinfoEndpoint,
+		scopes:                identityProvider.Settings().Scopes,
+		clientId:              identityProvider.Settings().ClientId,
+		clientSecret:          identityProvider.Settings().ClientSecret,
 	}
 }
 
@@ -37,6 +50,14 @@ func (k *postgresIdentityProvider) Map() *repositories.IdentityProvider {
 		k.virtualServerId,
 		k.name,
 		k.displayName,
+		repositories.IdentityProviderSettings{
+			AuthorizationEndpoint: k.authorizationEndpoint,
+			TokenEndpoint:         k.tokenEndpoint,
+			UserinfoEndpoint:      k.userinfoEndpoint,
+			Scopes:                k.scopes,
+			ClientId:              k.clientId,
+			ClientSecret:          k.clientSecret,
+		},
 	)
 }
 
@@ -49,6 +70,12 @@ func (k *postgresIdentityProvider) scan(row pghelpers.Row, additionalPtrs ...any
 		&k.virtualServerId,
 		&k.name,
 		&k.displayName,
+		&k.authorizationEndpoint,
+		&k.tokenEndpoint,
+		&k.userinfoEndpoint,
+		&k.scopes,
+		&k.clientId,
+		&k.clientSecret,
 	}
 
 	ptrs = append(ptrs, additionalPtrs...)
@@ -79,6 +106,12 @@ func (r *IdentityProviderRepository) selectQuery(filter *repositories.IdentityPr
 		"virtual_server_id",
 		"name",
 		"display_name",
+		"authorization_endpoint",
+		"token_endpoint",
+		"userinfo_endpoint",
+		"scopes",
+		"client_id",
+		"client_secret",
 	).From("identity_providers")
 
 	if filter.HasId() {
@@ -170,6 +203,12 @@ func (r *IdentityProviderRepository) ExecuteInsert(ctx context.Context, tx *sql.
 			"virtual_server_id",
 			"name",
 			"display_name",
+			"authorization_endpoint",
+			"token_endpoint",
+			"userinfo_endpoint",
+			"scopes",
+			"client_id",
+			"client_secret",
 		).
 		Values(
 			mapped.id,
@@ -178,6 +217,12 @@ func (r *IdentityProviderRepository) ExecuteInsert(ctx context.Context, tx *sql.
 			mapped.virtualServerId,
 			mapped.name,
 			mapped.displayName,
+			mapped.authorizationEndpoint,
+			mapped.tokenEndpoint,
+			mapped.userinfoEndpoint,
+			mapped.scopes,
+			mapped.clientId,
+			mapped.clientSecret,
 		).
 		Returning("xmin")
 

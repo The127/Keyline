@@ -5,11 +5,14 @@ import (
 	"github.com/The127/Keyline/api"
 	"github.com/The127/Keyline/internal/commands"
 	"github.com/The127/Keyline/internal/middlewares"
+	"github.com/The127/Keyline/internal/queries"
+	"github.com/The127/Keyline/internal/repositories"
 	"github.com/The127/Keyline/utils"
 	"net/http"
 
 	"github.com/The127/ioc"
 	"github.com/The127/mediatr"
+	"github.com/gorilla/mux"
 )
 
 // CreateIdentityProvider registers an external identity provider on a virtual server
@@ -52,6 +55,14 @@ func CreateIdentityProvider(w http.ResponseWriter, r *http.Request) {
 		VirtualServerName: vsName,
 		Name:              dto.Name,
 		DisplayName:       dto.DisplayName,
+		Settings: repositories.IdentityProviderSettings{
+			AuthorizationEndpoint: dto.AuthorizationEndpoint,
+			TokenEndpoint:         dto.TokenEndpoint,
+			UserinfoEndpoint:      dto.UserinfoEndpoint,
+			Scopes:                utils.EmptyIfNil(dto.Scopes),
+			ClientId:              dto.ClientId,
+			ClientSecret:          dto.ClientSecret,
+		},
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -63,6 +74,55 @@ func CreateIdentityProvider(w http.ResponseWriter, r *http.Request) {
 
 	err = json.NewEncoder(w).Encode(api.CreateIdentityProviderResponseDto{
 		Id: response.Id,
+	})
+	if err != nil {
+		utils.HandleHttpError(w, err)
+	}
+}
+
+// GetIdentityProvider returns the settings of an identity provider without its client secret
+// @Summary Get identity provider
+// @Tags IdentityProviders
+// @Produce json
+// @Param vsName path string true "Virtual server name"  default(keyline)
+// @Param name path string true "Identity provider name"
+// @Success 200 {object} api.GetIdentityProviderResponseDto
+// @Failure 404
+// @Router /api/virtual-servers/{vsName}/identity-providers/{name} [get]
+func GetIdentityProvider(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	vsName, err := middlewares.GetVirtualServerName(ctx)
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	name := mux.Vars(r)["name"]
+
+	scope := middlewares.GetScope(ctx)
+	m := ioc.GetDependency[mediatr.Mediator](scope)
+
+	identityProvider, err := mediatr.Send[*queries.GetIdentityProviderResult](ctx, m, queries.GetIdentityProvider{
+		VirtualServerName: vsName,
+		Name:              name,
+	})
+	if err != nil {
+		utils.HandleHttpError(w, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	err = json.NewEncoder(w).Encode(api.GetIdentityProviderResponseDto{
+		Name:                  identityProvider.Name,
+		DisplayName:           identityProvider.DisplayName,
+		AuthorizationEndpoint: identityProvider.Settings.AuthorizationEndpoint,
+		TokenEndpoint:         identityProvider.Settings.TokenEndpoint,
+		UserinfoEndpoint:      identityProvider.Settings.UserinfoEndpoint,
+		Scopes:                identityProvider.Settings.Scopes,
+		ClientId:              identityProvider.Settings.ClientId,
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)

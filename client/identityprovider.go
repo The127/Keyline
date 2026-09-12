@@ -7,10 +7,12 @@ import (
 	"fmt"
 	"github.com/The127/Keyline/api"
 	"net/http"
+	"net/url"
 )
 
 type IdentityProviderClient interface {
 	Create(ctx context.Context, dto api.CreateIdentityProviderRequestDto) (api.CreateIdentityProviderResponseDto, error)
+	Get(ctx context.Context, name string) (api.GetIdentityProviderResponseDto, error)
 }
 
 func NewIdentityProviderClient(transport *Transport) IdentityProviderClient {
@@ -44,6 +46,27 @@ func (c *identityProviderClient) Create(ctx context.Context, dto api.CreateIdent
 	err = json.NewDecoder(response.Body).Decode(&responseDto)
 	if err != nil {
 		return api.CreateIdentityProviderResponseDto{}, fmt.Errorf("decoding response: %w", err)
+	}
+
+	return responseDto, nil
+}
+
+func (c *identityProviderClient) Get(ctx context.Context, name string) (api.GetIdentityProviderResponseDto, error) {
+	request, err := c.transport.NewTenantRequest(ctx, http.MethodGet, fmt.Sprintf("/identity-providers/%s", url.PathEscape(name)), nil)
+	if err != nil {
+		return api.GetIdentityProviderResponseDto{}, fmt.Errorf("creating request: %w", err)
+	}
+
+	response, err := c.transport.Do(request)
+	if err != nil {
+		return api.GetIdentityProviderResponseDto{}, fmt.Errorf("doing request: %w", err)
+	}
+	defer response.Body.Close() //nolint:errcheck
+
+	var responseDto api.GetIdentityProviderResponseDto
+	err = json.NewDecoder(response.Body).Decode(&responseDto)
+	if err != nil {
+		return api.GetIdentityProviderResponseDto{}, fmt.Errorf("decoding response: %w", err)
 	}
 
 	return responseDto, nil

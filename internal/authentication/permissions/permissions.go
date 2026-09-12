@@ -14,6 +14,7 @@ const (
 	ApplicationAddKey      Permission = "application:add_key"
 	ApplicationRemoveKey   Permission = "application:remove_key"
 	IdentityProviderCreate Permission = "identity_provider:create"
+	IdentityProviderView   Permission = "identity_provider:view"
 
 	GroupView Permission = "group:view"
 
