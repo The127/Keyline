@@ -73,7 +73,7 @@ func HandleAddApplicationKey(ctx context.Context, command AddApplicationKey) (*A
 		return nil, fmt.Errorf("application does not authenticate with private_key_jwt: %w", utils.ErrHttpBadRequest)
 	}
 
-	_, err = utils.ParsePublicKeyPem(command.PublicKey)
+	_, err = utils.ParseAndValidatePublicKeyPem(command.PublicKey)
 	if err != nil {
 		return nil, fmt.Errorf("parsing public key: %w", err)
 	}

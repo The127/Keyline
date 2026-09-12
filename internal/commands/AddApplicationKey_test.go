@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/ed25519"
 	"crypto/rand"
+	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
 	"github.com/The127/Keyline/internal/database"
@@ -35,6 +36,18 @@ func testPublicKeyPem() string {
 	if err != nil {
 		panic(err)
 	}
+	return encodePublicKeyPem(publicKey)
+}
+
+func testRsaPublicKeyPem(bits int) string {
+	privateKey, err := rsa.GenerateKey(rand.Reader, bits)
+	if err != nil {
+		panic(err)
+	}
+	return encodePublicKeyPem(&privateKey.PublicKey)
+}
+
+func encodePublicKeyPem(publicKey any) string {
 	der, err := x509.MarshalPKIXPublicKey(publicKey)
 	if err != nil {
 		panic(err)
@@ -176,6 +189,25 @@ func (s *AddApplicationKeyCommandSuite) TestRejectsInvalidPem() {
 		ProjectSlug:       "project",
 		ApplicationId:     f.application.Id(),
 		PublicKey:         "not a key",
+	})
+
+	// assert
+	s.Require().ErrorIs(err, utils.ErrHttpBadRequest)
+}
+
+func (s *AddApplicationKeyCommandSuite) TestRejectsWeakRsaKey() {
+	// arrange
+	ctrl := gomock.NewController(s.T())
+	defer ctrl.Finish()
+
+	f := arrangeApplicationKeyFixture(s.T(), ctrl, repositories.TokenEndpointAuthMethodPrivateKeyJwt)
+
+	// act
+	_, err := HandleAddApplicationKey(f.ctx, AddApplicationKey{
+		VirtualServerName: "virtualServer",
+		ProjectSlug:       "project",
+		ApplicationId:     f.application.Id(),
+		PublicKey:         testRsaPublicKeyPem(1024),
 	})
 
 	// assert

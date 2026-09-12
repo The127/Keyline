@@ -8,6 +8,7 @@ import (
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/repositories"
+	"github.com/The127/Keyline/utils"
 
 	"github.com/The127/ioc"
 
@@ -59,6 +60,11 @@ func HandleAssociateServiceUserPublicKey(ctx context.Context, command AssociateS
 	user, err := dbContext.Users().FirstOrErr(ctx, userFilter)
 	if err != nil {
 		return nil, fmt.Errorf("getting user: %w", err)
+	}
+
+	_, err = utils.ParseAndValidatePublicKeyPem(command.PublicKey)
+	if err != nil {
+		return nil, fmt.Errorf("parsing public key: %w", err)
 	}
 
 	var kid string

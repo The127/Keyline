@@ -199,7 +199,7 @@ func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer)
 				}
 				kids[key.Kid] = struct{}{}
 
-				_, err = utils.ParsePublicKeyPem(key.Pem)
+				_, err = utils.ParseAndValidatePublicKeyPem(key.Pem)
 				if err != nil {
 					return nil, fmt.Errorf("parsing public key %s of application %s: %w", key.Kid, app.Name, err)
 				}
@@ -253,6 +253,11 @@ func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer)
 	}
 
 	for _, serviceUser := range command.ServiceUsers {
+		_, err = utils.ParseAndValidatePublicKeyPem(serviceUser.PublicKey.Pem)
+		if err != nil {
+			return nil, fmt.Errorf("parsing public key of service user %s: %w", serviceUser.Username, err)
+		}
+
 		newServiceUser := repositories.NewServiceUser(serviceUser.Username, virtualServer.Id())
 		dbContext.Users().Insert(newServiceUser)
 

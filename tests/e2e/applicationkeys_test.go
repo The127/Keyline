@@ -128,6 +128,24 @@ func init() {
 				Expect(err).To(HaveOccurred())
 			})
 
+			It("refuses an RSA key shorter than 2048 bits", func() {
+				_, err := applications().AddKey(h.Ctx(), keyAppId, api.AddApplicationKeyRequestDto{
+					PublicKey: rsaPublicKeyPem(1024),
+				})
+				Expect(err).To(HaveOccurred())
+			})
+
+			It("accepts a 2048 bit RSA key", func() {
+				added, err := applications().AddKey(h.Ctx(), keyAppId, api.AddApplicationKeyRequestDto{
+					PublicKey: rsaPublicKeyPem(2048),
+					Kid:       utils.Ptr("rsa-key"),
+				})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(added.Kid).To(Equal("rsa-key"))
+
+				Expect(applications().RemoveKey(h.Ctx(), keyAppId, "rsa-key")).To(Succeed())
+			})
+
 			It("refuses a key on a client_secret application", func() {
 				_, err := applications().AddKey(h.Ctx(), secretAppId, api.AddApplicationKeyRequestDto{
 					PublicKey: serviceUserPublicKey,
