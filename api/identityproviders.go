@@ -3,8 +3,8 @@ package api
 import "github.com/google/uuid"
 
 type CreateIdentityProviderRequestDto struct {
-	Name                  string   `json:"name" validate:"required,min=1,max=255,excludesall=/?#%"`
-	DisplayName           string   `json:"displayName" validate:"required,min=1,max=255"`
+	Name                  string   `json:"name" validate:"max=255"`
+	DisplayName           string   `json:"displayName" validate:"max=255"`
 	Preset                string   `json:"preset,omitempty"`
 	Issuer                string   `json:"issuer,omitempty" validate:"omitempty,http_url"`
 	AuthorizationEndpoint string   `json:"authorizationEndpoint,omitempty" validate:"omitempty,http_url"`

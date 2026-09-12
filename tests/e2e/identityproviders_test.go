@@ -3,6 +3,7 @@
 package e2e
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,7 +14,14 @@ import (
 	"github.com/The127/Keyline/api"
 	"github.com/The127/Keyline/client"
 	"github.com/The127/Keyline/config"
+	"github.com/The127/Keyline/internal/authentication"
 	"github.com/The127/Keyline/internal/commands"
+	"github.com/The127/Keyline/internal/database"
+	"github.com/The127/Keyline/internal/middlewares"
+	"github.com/The127/Keyline/internal/queries"
+	"github.com/The127/Keyline/utils"
+	"github.com/The127/ioc"
+	"github.com/The127/mediatr"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -233,6 +241,104 @@ func init() {
 						var apiErr client.ApiError
 						Expect(errors.As(err, &apiErr)).To(BeTrue(), "expected an api error, got %v", err)
 						Expect(apiErr.Code).To(Equal(http.StatusBadRequest))
+					})
+				}
+			})
+		})
+
+		Describe("Identity providers from initial configuration ["+backend.name+"]", Ordered, func() {
+			var h *harness
+
+			BeforeAll(func() {
+				if backend.dbMode == config.DatabaseModePostgres && !postgresBackendAvailable() {
+					Skip("Postgres not available")
+				}
+				h = newE2eTestHarness(backend.dbMode, nil)
+			})
+
+			AfterAll(func() {
+				if h != nil {
+					h.Close()
+				}
+			})
+
+			It("creates the providers declared for the initial virtual server", func() {
+				scope := h.Scope().NewScope()
+				defer utils.PanicOnError(scope.Close, "closing scope")
+				ctx := middlewares.ContextWithScope(context.Background(), scope)
+				ctx = authentication.ContextWithCurrentUser(ctx, authentication.SystemUser())
+				m := ioc.GetDependency[mediatr.Mediator](scope)
+				dbContext := ioc.GetDependency[database.Context](scope)
+
+				const vsName = "idp-config-vs"
+				_, err := mediatr.Send[*commands.CreateVirtualServerResponse](ctx, m, commands.CreateVirtualServer{
+					Name:                    vsName,
+					DisplayName:             "IdP Config VS",
+					PrimarySigningAlgorithm: config.SigningAlgorithmEdDSA,
+					IdentityProviders: []commands.CreateVirtualServerIdentityProvider{
+						{
+							Name:         "github",
+							DisplayName:  "GitHub",
+							Preset:       "github",
+							ClientId:     "gh-client",
+							ClientSecret: "gh-secret",
+						},
+						{
+							Name:                  "corp",
+							DisplayName:           "Corp SSO",
+							Issuer:                "https://idp.example",
+							AuthorizationEndpoint: "https://idp.example/authorize",
+							TokenEndpoint:         "https://idp.example/token",
+							UserinfoEndpoint:      "https://idp.example/userinfo",
+							Scopes:                []string{"openid", "email"},
+							ClientId:              "client-123",
+							ClientSecret:          "very-secret",
+						},
+					},
+				})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(dbContext.SaveChanges(ctx)).To(Succeed())
+
+				github, err := mediatr.Send[*queries.GetIdentityProviderResult](ctx, m, queries.GetIdentityProvider{
+					VirtualServerName: vsName,
+					Name:              "github",
+				})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(github.Preset).To(Equal("github"))
+				Expect(github.Settings.TokenEndpoint).To(Equal("https://github.com/login/oauth/access_token"))
+				Expect(github.Settings.ClientSecret).To(Equal("gh-secret"))
+
+				corp, err := mediatr.Send[*queries.GetIdentityProviderResult](ctx, m, queries.GetIdentityProvider{
+					VirtualServerName: vsName,
+					Name:              "corp",
+				})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(corp.Settings.Issuer).To(Equal("https://idp.example"))
+				Expect(corp.Settings.Scopes).To(Equal([]string{"openid", "email"}))
+			})
+
+			Describe("refuses an initial provider", func() {
+				cases := map[string]commands.CreateVirtualServerIdentityProvider{
+					"that is incomplete":                        {Name: "bare", DisplayName: "Bare", ClientId: "x", ClientSecret: "y"},
+					"with a name that cannot be a path segment": {Name: "a/b", DisplayName: "Slash", Preset: "github", ClientId: "x", ClientSecret: "y"},
+					"without a display name":                    {Name: "nodisplay", Preset: "github", ClientId: "x", ClientSecret: "y"},
+				}
+
+				for name, provider := range cases {
+					It(name, func() {
+						scope := h.Scope().NewScope()
+						defer utils.PanicOnError(scope.Close, "closing scope")
+						ctx := middlewares.ContextWithScope(context.Background(), scope)
+						ctx = authentication.ContextWithCurrentUser(ctx, authentication.SystemUser())
+						m := ioc.GetDependency[mediatr.Mediator](scope)
+
+						_, err := mediatr.Send[*commands.CreateVirtualServerResponse](ctx, m, commands.CreateVirtualServer{
+							Name:                    "idp-config-bad-" + provider.Name,
+							DisplayName:             "Bad",
+							PrimarySigningAlgorithm: config.SigningAlgorithmEdDSA,
+							IdentityProviders:       []commands.CreateVirtualServerIdentityProvider{provider},
+						})
+						Expect(err).To(MatchError(utils.ErrHttpBadRequest))
 					})
 				}
 			})

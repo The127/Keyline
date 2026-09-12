@@ -175,6 +175,22 @@ func initApplication(dp *ioc.DependencyProvider) {
 		})
 	}
 
+	var identityProviders []commands.CreateVirtualServerIdentityProvider = nil //nolint:prealloc
+	for _, identityProvider := range config.C.InitialVirtualServer.IdentityProviders {
+		identityProviders = append(identityProviders, commands.CreateVirtualServerIdentityProvider{
+			Name:                  identityProvider.Name,
+			DisplayName:           identityProvider.DisplayName,
+			Preset:                identityProvider.Preset,
+			Issuer:                identityProvider.Issuer,
+			AuthorizationEndpoint: identityProvider.AuthorizationEndpoint,
+			TokenEndpoint:         identityProvider.TokenEndpoint,
+			UserinfoEndpoint:      identityProvider.UserinfoEndpoint,
+			Scopes:                identityProvider.Scopes,
+			ClientId:              identityProvider.ClientId,
+			ClientSecret:          identityProvider.ClientSecret,
+		})
+	}
+
 	var projects []commands.CreateVirtualServerProject = nil //nolint:prealloc
 	for _, project := range config.C.InitialVirtualServer.Projects {
 		var apps []commands.CreateVirtualServerProjectApplication = nil
@@ -231,9 +247,10 @@ func initApplication(dp *ioc.DependencyProvider) {
 
 		CreateSystemAdminRole: config.C.InitialVirtualServer.CreateSystemAdminRole,
 
-		Admin:        adminConfig,
-		ServiceUsers: serviceUsers,
-		Projects:     projects,
+		Admin:             adminConfig,
+		ServiceUsers:      serviceUsers,
+		IdentityProviders: identityProviders,
+		Projects:          projects,
 	})
 	if err != nil {
 		logging.Logger.Fatalf("failed to create initial virtual server: %v", err)

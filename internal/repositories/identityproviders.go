@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/The127/Keyline/internal/change"
 	"github.com/The127/Keyline/utils"
+	"strings"
 
 	"github.com/google/uuid"
 )
@@ -87,6 +88,37 @@ func NewIdentityProvider(virtualServerId uuid.UUID, name string, displayName str
 		preset:          preset,
 		settings:        settings,
 	}
+}
+
+const identityProviderNameForbiddenRunes = "/?#%"
+
+func NewIdentityProviderFromSettings(virtualServerId uuid.UUID, name string, displayName string, preset string, settings IdentityProviderSettings) (*IdentityProvider, error) {
+	if name == "" {
+		return nil, fmt.Errorf("identity provider needs a name: %w", utils.ErrHttpBadRequest)
+	}
+	if strings.ContainsAny(name, identityProviderNameForbiddenRunes) {
+		return nil, fmt.Errorf("identity provider name %s must not contain any of %q: %w", name, identityProviderNameForbiddenRunes, utils.ErrHttpBadRequest)
+	}
+	if displayName == "" {
+		return nil, fmt.Errorf("identity provider %s needs a display name: %w", name, utils.ErrHttpBadRequest)
+	}
+
+	if preset != "" {
+		defaults, ok := IdentityProviderPreset(preset)
+		if !ok {
+			return nil, fmt.Errorf("unknown identity provider preset %s: %w", preset, utils.ErrHttpBadRequest)
+		}
+		settings = settings.FilledFrom(defaults)
+	}
+
+	settings.Scopes = utils.EmptyIfNil(settings.Scopes)
+
+	err := settings.Validate()
+	if err != nil {
+		return nil, err
+	}
+
+	return NewIdentityProvider(virtualServerId, name, displayName, preset, settings), nil
 }
 
 func NewIdentityProviderFromDB(base BaseModel, virtualServerId uuid.UUID, name string, displayName string, preset string, settings IdentityProviderSettings) *IdentityProvider {

@@ -35,6 +35,19 @@ type CreateVirtualServerAdmin struct {
 	Roles        []string
 }
 
+type CreateVirtualServerIdentityProvider struct {
+	Name                  string
+	DisplayName           string
+	Preset                string
+	Issuer                string
+	AuthorizationEndpoint string
+	TokenEndpoint         string
+	UserinfoEndpoint      string
+	Scopes                []string
+	ClientId              string
+	ClientSecret          string `json:"-"`
+}
+
 type CreateVirtualServerServiceUser struct {
 	Username  string
 	Roles     []string
@@ -93,9 +106,10 @@ type CreateVirtualServer struct {
 
 	CreateSystemAdminRole bool
 
-	Admin        *CreateVirtualServerAdmin
-	ServiceUsers []CreateVirtualServerServiceUser
-	Projects     []CreateVirtualServerProject
+	Admin             *CreateVirtualServerAdmin
+	ServiceUsers      []CreateVirtualServerServiceUser
+	Projects          []CreateVirtualServerProject
+	IdentityProviders []CreateVirtualServerIdentityProvider
 }
 
 func (a CreateVirtualServer) LogRequest() bool {
@@ -274,6 +288,28 @@ func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer)
 		if err != nil {
 			return nil, fmt.Errorf("assigning roles to service user: %w", err)
 		}
+	}
+
+	for _, identityProvider := range command.IdentityProviders {
+		newIdentityProvider, err := repositories.NewIdentityProviderFromSettings(
+			virtualServer.Id(),
+			identityProvider.Name,
+			identityProvider.DisplayName,
+			identityProvider.Preset,
+			repositories.IdentityProviderSettings{
+				Issuer:                identityProvider.Issuer,
+				AuthorizationEndpoint: identityProvider.AuthorizationEndpoint,
+				TokenEndpoint:         identityProvider.TokenEndpoint,
+				UserinfoEndpoint:      identityProvider.UserinfoEndpoint,
+				Scopes:                identityProvider.Scopes,
+				ClientId:              identityProvider.ClientId,
+				ClientSecret:          identityProvider.ClientSecret,
+			},
+		)
+		if err != nil {
+			return nil, fmt.Errorf("identity provider %s: %w", identityProvider.Name, err)
+		}
+		dbContext.IdentityProviders().Insert(newIdentityProvider)
 	}
 
 	return &CreateVirtualServerResponse{
