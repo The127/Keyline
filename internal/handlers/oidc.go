@@ -5,11 +5,9 @@ import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"crypto/subtle"
-	"crypto/x509"
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
-	"encoding/pem"
 	"fmt"
 	"github.com/The127/Keyline/api"
 	"github.com/The127/Keyline/config"
@@ -254,7 +252,7 @@ func WellKnownOpenIdConfiguration(w http.ResponseWriter, r *http.Request) {
 			return result
 		}(),
 		TokenEndpointAuthMethodsSupported:          []string{"client_secret_basic", "client_secret_post", "private_key_jwt"},
-		TokenEndpointAuthSigningAlgValuesSupported: clientAssertionSigningMethods,
+		TokenEndpointAuthSigningAlgValuesSupported: assertionSigningMethods,
 		GrantTypesSupported:                        []string{"authorization_code", "refresh_token", "urn:ietf:params:oauth:grant-type:token-exchange", "urn:ietf:params:oauth:grant-type:device_code"},
 
 		ScopesSupported: []string{"openid", "email", "profile"}, // TODO: get from db
@@ -1547,24 +1545,28 @@ type TokenExchangeResponse struct {
 	AccessToken     string `json:"access_token"`
 	IssuedTokenType string `json:"issued_token_type"`
 	TokenType       string `json:"token_type"`
+	ExpiresIn       int    `json:"expires_in"`
 }
+
+const serviceUserAccessTokenLifetime = 5 * time.Minute
 
 func handleTokenExchange(w http.ResponseWriter, r *http.Request) {
 	subjectToken := r.Form.Get("subject_token")
 	subjectTokenType := r.Form.Get("subject_token_type")
 
 	if subjectToken == "" {
-		utils.HandleHttpError(w, fmt.Errorf("missing subject token"))
+		writeOAuthError(w, "invalid_request", "subject_token is required")
 		return
 	}
 
 	if subjectTokenType == "" {
-		utils.HandleHttpError(w, fmt.Errorf("missing subject token type"))
+		writeOAuthError(w, "invalid_request", "subject_token_type is required")
 		return
 	}
 
 	if subjectTokenType != "urn:ietf:params:oauth:token-type:access_token" {
-		utils.HandleHttpError(w, fmt.Errorf("unsupported subject token type: %s", subjectTokenType))
+		writeOAuthError(w, "invalid_request", fmt.Sprintf("unsupported subject_token_type: %s", subjectTokenType))
+		return
 	}
 
 	ctx := r.Context()
@@ -1588,151 +1590,69 @@ func handleTokenExchange(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := jwt.Parse(subjectToken, func(token *jwt.Token) (any, error) {
-		claims, ok := token.Claims.(jwt.MapClaims)
-		if !ok {
-			return nil, fmt.Errorf("invalid claims")
-		}
-
-		subject, err := claims.GetSubject()
-		if err != nil {
-			return nil, fmt.Errorf("getting subject: %w", err)
-		}
-
-		issuer, err := claims.GetIssuer()
-		if err != nil {
-			return nil, fmt.Errorf("getting issuer: %w", err)
-		}
-
-		if issuer != subject {
-			return nil, fmt.Errorf("invalid issuer, issuer has to be the same as subject for service account token exchange")
-		}
-
-		keyIdClaim, ok := token.Header["kid"]
-		if !ok {
-			return nil, fmt.Errorf("missing kid header")
-		}
-
-		kid, ok := keyIdClaim.(string)
-		if !ok {
-			return nil, fmt.Errorf("expected kid header to be a string")
-		}
-
-		audienceClaim, err := claims.GetAudience()
-		if err != nil {
-			return nil, fmt.Errorf("getting audience: %w", err)
-		}
-		if len(audienceClaim) != 1 {
-			return nil, fmt.Errorf("expected audience to be a single string")
-		}
-
-		scopesClaim, ok := claims["scopes"]
-		if !ok {
-			return nil, fmt.Errorf("missing scopes claim")
-		}
-
-		scopesString, ok := scopesClaim.(string)
-		if !ok {
-			return nil, fmt.Errorf("expected scopes claim to be a space separated string")
-		}
-
-		scopes := strings.Split(scopesString, " ")
-		if len(scopes) == 0 {
-			return nil, fmt.Errorf("expected scopes claim to be a space separated string")
-		}
-
-		if !slices.Contains(scopes, "openid") {
-			return nil, fmt.Errorf("expected scopes claim to contain openid")
-		}
-
-		// TODO: check if scopes are valid
-
+	var user *repositories.User
+	assertion, err := verifySignedAssertion(ctx, subjectToken, services.ServiceUserAssertionJtiTokenType, func(ctx context.Context, subject string, kid string) (uuid.UUID, any, error) {
 		userFilter := repositories.NewUserFilter().
 			VirtualServerId(virtualServer.Id()).
 			Username(subject)
-		user, err := dbContext.Users().FirstOrNil(ctx, userFilter)
+		found, err := dbContext.Users().FirstOrNil(ctx, userFilter)
 		if err != nil {
-			return nil, fmt.Errorf("getting user: %w", err)
+			return uuid.Nil, nil, fmt.Errorf("getting user: %w", err)
 		}
-		if user == nil {
-			return nil, fmt.Errorf("user not found")
+		if found == nil {
+			return uuid.Nil, nil, fmt.Errorf("user not found")
 		}
-
-		if !user.IsServiceUser() {
-			return nil, fmt.Errorf("user is not a service user")
+		if !found.IsServiceUser() {
+			return uuid.Nil, nil, fmt.Errorf("user is not a service user")
 		}
 
 		credentialFilter := repositories.NewCredentialFilter().
 			Type(repositories.CredentialTypeServiceUserKey).
-			UserId(user.Id()).
+			UserId(found.Id()).
 			DetailKid(kid)
 		credential, err := dbContext.Credentials().FirstOrNil(ctx, credentialFilter)
 		if err != nil {
-			return nil, fmt.Errorf("getting credential: %w", err)
+			return uuid.Nil, nil, fmt.Errorf("getting credential: %w", err)
 		}
 		if credential == nil {
-			return nil, fmt.Errorf("credential not found")
+			return uuid.Nil, nil, fmt.Errorf("unknown kid")
 		}
 
 		serviceUserKeyDetails, err := credential.ServiceUserKeyDetails()
 		if err != nil {
-			return nil, fmt.Errorf("getting service user key details: %w", err)
+			return uuid.Nil, nil, fmt.Errorf("getting service user key details: %w", err)
 		}
 
-		block, _ := pem.Decode([]byte(serviceUserKeyDetails.PublicKey))
-		if block == nil {
-			return nil, fmt.Errorf("failed to decode PEM block")
-		}
-
-		// Parse PKIX
-		pubKey, err := x509.ParsePKIXPublicKey(block.Bytes)
+		publicKey, err := utils.ParsePublicKeyPem(serviceUserKeyDetails.PublicKey)
 		if err != nil {
-			return nil, fmt.Errorf("parse public key: %w", err)
+			return uuid.Nil, nil, fmt.Errorf("parsing service user key: %w", err)
 		}
 
-		return pubKey, nil
+		user = found
+		return found.Id(), publicKey, nil
 	})
 	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("parsing subject token: %w", err))
-		return
-	}
-	if !token.Valid {
-		utils.HandleHttpError(w, fmt.Errorf("invalid subject token"))
+		writeOAuthError(w, "invalid_grant", fmt.Sprintf("subject_token is invalid: %s", err.Error()))
 		return
 	}
 
-	subject, err := token.Claims.GetSubject()
-	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting subject: %w", err))
+	audience, err := assertion.Claims.GetAudience()
+	if err != nil || len(audience) != 1 {
+		writeOAuthError(w, "invalid_grant", "subject_token aud must be a single application name")
 		return
 	}
-
-	userFilter := repositories.NewUserFilter().
-		VirtualServerId(virtualServer.Id()).
-		Username(subject)
-	user, err := dbContext.Users().FirstOrNil(ctx, userFilter)
-	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting user: %w", err))
-		return
-	}
-	if user == nil {
-		utils.HandleHttpError(w, fmt.Errorf("user not found"))
-		return
-	}
-
-	audience, err := token.Claims.GetAudience()
-	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting audience: %w", err))
-		return
-	}
-	if len(audience) != 1 {
-		utils.HandleHttpError(w, fmt.Errorf("expected audience to be a single string"))
-	}
-
 	applicationName := audience[0]
 
-	scopesClaim := token.Claims.(jwt.MapClaims)["scopes"].(string)
+	scopesClaim, ok := assertion.Claims["scopes"].(string)
+	if !ok || scopesClaim == "" {
+		writeOAuthError(w, "invalid_grant", "subject_token scopes must be a space separated string")
+		return
+	}
 	scopes := strings.Split(scopesClaim, " ")
+	if !slices.Contains(scopes, "openid") {
+		writeOAuthError(w, "invalid_grant", "subject_token scopes must contain openid")
+		return
+	}
 
 	applicationFilter := repositories.NewApplicationFilter().
 		VirtualServerId(virtualServer.Id()).
@@ -1743,7 +1663,7 @@ func handleTokenExchange(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if application == nil {
-		utils.HandleHttpError(w, fmt.Errorf("application not found"))
+		writeOAuthError(w, "invalid_grant", "subject_token aud names an unknown application")
 		return
 	}
 
@@ -1766,7 +1686,7 @@ func handleTokenExchange(w http.ResponseWriter, r *http.Request) {
 		ExternalUrl:           config.C.Server.ExternalUrl,
 		KeyPair:               keyPair,
 		IssuedAt:              now,
-		Expiry:                time.Minute * 5, // TODO: make this configurable per virtual server
+		Expiry:                serviceUserAccessTokenLifetime,
 		HeaderType:            application.AccessTokenHeaderType(),
 		UserinfoInAccessToken: application.UserinfoInAccessToken(),
 	})
@@ -1782,6 +1702,7 @@ func handleTokenExchange(w http.ResponseWriter, r *http.Request) {
 		AccessToken:     accessToken,
 		IssuedTokenType: "urn:ietf:params:oauth:token-type:access_token",
 		TokenType:       "Bearer",
+		ExpiresIn:       int(serviceUserAccessTokenLifetime.Seconds()),
 	}
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {

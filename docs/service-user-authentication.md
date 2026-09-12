@@ -86,7 +86,9 @@ The service application must create a JWT with the following characteristics:
   "iss": "<service-user-username>",
   "sub": "<service-user-username>",
   "aud": "<target-application-name>",
-  "scopes": "openid profile email"
+  "scopes": "openid profile email",
+  "exp": 1700000060,
+  "jti": "<unique-id>"
 }
 ```
 
@@ -96,6 +98,9 @@ The service application must create a JWT with the following characteristics:
 - `scopes` must be a space-separated string and must include "openid"
 - The JWT must be signed with the private key corresponding to the registered public key
 - The `kid` header must match the Key ID returned when associating the public key
+- `exp` is required and may be at most five minutes in the future
+- `jti` is required and must be unique per assertion. A reused `jti` is refused until the assertion expires
+- Only `EdDSA` and `RS256` signatures are accepted
 
 **Example in Go:**
 
@@ -103,7 +108,10 @@ The service application must create a JWT with the following characteristics:
 import (
     "crypto/x509"
     "encoding/pem"
+    "time"
+
     "github.com/golang-jwt/jwt/v5"
+    "github.com/google/uuid"
 )
 
 // Decode the private key
@@ -114,11 +122,15 @@ if err != nil {
 }
 
 // Create JWT claims
+now := time.Now()
 claims := jwt.MapClaims{
     "aud":    "my-application",
-    "iss":    serviceUserId.String(),
-    "sub":    serviceUserId.String(),
+    "iss":    serviceUserUsername,
+    "sub":    serviceUserUsername,
     "scopes": "openid profile email",
+    "iat":    now.Unix(),
+    "exp":    now.Add(time.Minute).Unix(),
+    "jti":    uuid.NewString(),
 }
 
 // Create and sign the token

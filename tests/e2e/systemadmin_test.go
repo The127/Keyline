@@ -12,6 +12,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/authentication"
@@ -22,6 +23,7 @@ import (
 	"github.com/The127/ioc"
 	"github.com/The127/mediatr"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -135,11 +137,15 @@ func acquireTokenForServiceUserOnVS(h *harness, vsName, appName, username, kid, 
 	key, err := x509.ParsePKCS8PrivateKey(block.Bytes)
 	Expect(err).ToNot(HaveOccurred())
 
+	now := time.Now()
 	claims := jwt.MapClaims{
 		"aud":    appName,
 		"iss":    username,
 		"sub":    username,
 		"scopes": "openid profile email",
+		"iat":    now.Unix(),
+		"exp":    now.Add(time.Minute).Unix(),
+		"jti":    uuid.NewString(),
 	}
 	jwtToken := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims)
 	jwtToken.Header["kid"] = kid

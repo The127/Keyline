@@ -16,13 +16,14 @@ import (
 type TokenType string
 
 const (
-	EmailVerificationTokenType  TokenType = "email_verification"
-	LoginSessionTokenType       TokenType = "login_session"
-	OidcCodeTokenType           TokenType = "oidc_code"
-	OidcRefreshTokenTokenType   TokenType = "oidc_refresh_token"
-	OidcDeviceCodeTokenType     TokenType = "oidc_device_code"
-	OidcUserCodeTokenType       TokenType = "oidc_user_code"
-	ClientAssertionJtiTokenType TokenType = "client_assertion_jti"
+	EmailVerificationTokenType       TokenType = "email_verification"
+	LoginSessionTokenType            TokenType = "login_session"
+	OidcCodeTokenType                TokenType = "oidc_code"
+	OidcRefreshTokenTokenType        TokenType = "oidc_refresh_token"
+	OidcDeviceCodeTokenType          TokenType = "oidc_device_code"
+	OidcUserCodeTokenType            TokenType = "oidc_user_code"
+	ClientAssertionJtiTokenType      TokenType = "client_assertion_jti"
+	ServiceUserAssertionJtiTokenType TokenType = "service_user_assertion_jti"
 )
 
 func (t TokenType) Key(token string) string {
