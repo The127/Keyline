@@ -45,7 +45,7 @@ const (
 
 func setupSystemAdminFixtures(h *harness) {
 	scope := h.Scope().NewScope()
-	defer scope.Close()
+	defer utils.PanicOnError(scope.Close, "closing scope")
 
 	ctx := middlewares.ContextWithScope(context.Background(), scope)
 	ctx = authentication.ContextWithCurrentUser(ctx, authentication.SystemUser())

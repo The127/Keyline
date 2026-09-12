@@ -4,11 +4,9 @@ package e2e
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 
-	"github.com/The127/Keyline/api"
 	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/authentication"
 	"github.com/The127/Keyline/internal/commands"
@@ -40,7 +38,7 @@ func init() {
 				h = newE2eTestHarness(backend.dbMode, nil)
 
 				scope := h.Scope().NewScope()
-				defer scope.Close()
+				defer utils.PanicOnError(scope.Close, "closing scope")
 				ctx := middlewares.ContextWithScope(context.Background(), scope)
 				ctx = authentication.ContextWithCurrentUser(ctx, authentication.SystemUser())
 				m := ioc.GetDependency[mediatr.Mediator](scope)
@@ -134,7 +132,7 @@ func init() {
 
 			It("cannot set signingAlgorithm to an algorithm not configured on the VS", func() {
 				scope := h.Scope().NewScope()
-				defer scope.Close()
+				defer utils.PanicOnError(scope.Close, "closing scope")
 				ctx := middlewares.ContextWithScope(context.Background(), scope)
 				ctx = authentication.ContextWithCurrentUser(ctx, authentication.SystemUser())
 				m := ioc.GetDependency[mediatr.Mediator](scope)
@@ -156,7 +154,7 @@ func init() {
 
 			It("cannot remove an algorithm from VS that is still used by an app", func() {
 				scope := h.Scope().NewScope()
-				defer scope.Close()
+				defer utils.PanicOnError(scope.Close, "closing scope")
 				ctx := middlewares.ContextWithScope(context.Background(), scope)
 				ctx = authentication.ContextWithCurrentUser(ctx, authentication.SystemUser())
 				m := ioc.GetDependency[mediatr.Mediator](scope)
@@ -190,22 +188,3 @@ func jwtAlgorithm(tokenString string) string {
 }
 
 // getApplicationFromAPI fetches an application via the admin API using the service user token.
-func getApplicationFromAPI(h *harness, vsName, projectSlug, appId string) api.GetApplicationResponseDto {
-	token := acquireTokenForServiceUser(h, serviceUserUsername, serviceUserKid, serviceUserPrivateKey)
-	req, err := http.NewRequest(http.MethodGet,
-		fmt.Sprintf("%s/api/virtual-servers/%s/projects/%s/applications/%s",
-			h.ApiUrl(), vsName, projectSlug, appId),
-		nil,
-	)
-	Expect(err).ToNot(HaveOccurred())
-	req.Header.Set("Authorization", "Bearer "+token)
-
-	resp, err := http.DefaultClient.Do(req)
-	Expect(err).ToNot(HaveOccurred())
-	defer resp.Body.Close() //nolint:errcheck
-	Expect(resp.StatusCode).To(Equal(http.StatusOK))
-
-	var dto api.GetApplicationResponseDto
-	Expect(json.NewDecoder(resp.Body).Decode(&dto)).To(Succeed())
-	return dto
-}

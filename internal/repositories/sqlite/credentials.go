@@ -74,6 +74,15 @@ func (c *sqliteCredential) Map() (*repositories.Credential, error) {
 		}
 		details = &webauthn
 
+	case repositories.CredentialTypeExternalIdentity:
+		var externalIdentity repositories.CredentialExternalIdentity
+		err := json.Unmarshal(c.details, &externalIdentity)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal external identity details: %w", err)
+		}
+
+		details = &externalIdentity
+
 	default:
 		return nil, fmt.Errorf("unsupported credential type: %s", c.type_)
 	}
@@ -149,6 +158,14 @@ func (r *CredentialRepository) selectQuery(filter *repositories.CredentialFilter
 
 	if filter.HasDetailKid() {
 		s.Where(s.Equal("details->>'kid'", filter.GetDetailKid()))
+	}
+
+	if filter.HasDetailIdentityProviderId() {
+		s.Where(s.Equal("details->>'identityProviderId'", filter.GetDetailIdentityProviderId().String()))
+	}
+
+	if filter.HasDetailSubject() {
+		s.Where(s.Equal("details->>'subject'", filter.GetDetailSubject()))
 	}
 
 	return s

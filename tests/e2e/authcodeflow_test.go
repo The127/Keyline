@@ -74,7 +74,8 @@ func authCodeFlow(serverUrl, clientId, redirectUri, codeChallenge string) (strin
 	if err != nil {
 		return "", fmt.Errorf("authorize: %w", err)
 	}
-	resp.Body.Close()
+
+	_ = resp.Body.Close()
 	if resp.StatusCode != http.StatusFound {
 		return "", fmt.Errorf("authorize: expected 302, got %d", resp.StatusCode)
 	}
@@ -98,7 +99,7 @@ func authCodeFlow(serverUrl, clientId, redirectUri, codeChallenge string) (strin
 		return "", fmt.Errorf("verify-password: %w", err)
 	}
 	body, _ := io.ReadAll(resp.Body)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	if resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("verify-password: status %d: %s", resp.StatusCode, body)
 	}
@@ -107,7 +108,8 @@ func authCodeFlow(serverUrl, clientId, redirectUri, codeChallenge string) (strin
 	if err != nil {
 		return "", fmt.Errorf("finish-login: %w", err)
 	}
-	resp.Body.Close()
+
+	_ = resp.Body.Close()
 	if resp.StatusCode != http.StatusFound {
 		return "", fmt.Errorf("finish-login: expected 302, got %d", resp.StatusCode)
 	}
@@ -130,7 +132,8 @@ func authCodeFlow(serverUrl, clientId, redirectUri, codeChallenge string) (strin
 	if err != nil {
 		return "", fmt.Errorf("second authorize: %w", err)
 	}
-	resp.Body.Close()
+
+	_ = resp.Body.Close()
 	if resp.StatusCode != http.StatusFound {
 		return "", fmt.Errorf("second authorize: expected 302, got %d", resp.StatusCode)
 	}
@@ -155,7 +158,8 @@ func postToken(serverUrl string, form url.Values) (int, map[string]any, error) {
 	if err != nil {
 		return 0, nil, err
 	}
-	defer resp.Body.Close()
+
+	defer resp.Body.Close() //nolint:errcheck
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return resp.StatusCode, nil, err
@@ -199,7 +203,7 @@ func init() {
 					q.Set("scope", "openid")
 					resp, err := httpClient.Get(fmt.Sprintf("%s/oidc/test-vs/authorize?%s", h.ApiUrl(), q.Encode()))
 					Expect(err).ToNot(HaveOccurred())
-					resp.Body.Close()
+					_ = resp.Body.Close()
 					// Errors are reported by redirecting to the redirect_uri with ?error=...
 					Expect(resp.StatusCode).To(Equal(http.StatusFound))
 					loc, err := url.Parse(resp.Header.Get("Location"))
@@ -222,7 +226,7 @@ func init() {
 					q.Set("code_challenge_method", "plain")
 					resp, err := httpClient.Get(fmt.Sprintf("%s/oidc/test-vs/authorize?%s", h.ApiUrl(), q.Encode()))
 					Expect(err).ToNot(HaveOccurred())
-					resp.Body.Close()
+					_ = resp.Body.Close()
 					Expect(resp.StatusCode).To(Equal(http.StatusFound))
 					loc, err := url.Parse(resp.Header.Get("Location"))
 					Expect(err).ToNot(HaveOccurred())
@@ -379,7 +383,7 @@ func init() {
 
 func setupAuthCodeFixtures(scope *ioc.DependencyProvider) error {
 	subscope := scope.NewScope()
-	defer subscope.Close()
+	defer utils.PanicOnError(subscope.Close, "closing scope")
 
 	ctx := context.Background()
 	ctx = middlewares.ContextWithScope(ctx, subscope)

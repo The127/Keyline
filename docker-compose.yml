@@ -31,6 +31,14 @@ services:
     ports:
       - "6379:6379"
 
+  dex:
+    image: ghcr.io/dexidp/dex:v2.45.1
+    command: ["dex", "serve", "/etc/dex/config.yaml"]
+    ports:
+      - "5556:5556"
+    volumes:
+      - ./tests/e2e/dex/dex.yaml:/etc/dex/config.yaml:ro,z
+
   rabbitmq:
     image: rabbitmq:4-management
     restart: always

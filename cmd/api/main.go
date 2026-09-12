@@ -114,11 +114,18 @@ func main() {
 		logging.Logger.Panicf("failed to start leader election: %s", err.Error())
 	}
 
-	server.Serve(dp, config.C.Server)
+	shutdown := server.Serve(dp, config.C.Server)
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	<-c
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	err = shutdown(shutdownCtx)
+	if err != nil {
+		logging.Logger.Errorf("shutting down server: %v", err)
+	}
 }
 
 // initApplication sets up the initial application state on the first startup.
@@ -171,6 +178,29 @@ func initApplication(dp *ioc.DependencyProvider) {
 			}{
 				Pem: serviceUser.PublicKey.Pem,
 				Kid: serviceUser.PublicKey.Kid,
+			},
+		})
+	}
+
+	var identityProviders []commands.CreateVirtualServerIdentityProvider = nil //nolint:prealloc
+	for _, identityProvider := range config.C.InitialVirtualServer.IdentityProviders {
+		identityProviders = append(identityProviders, commands.CreateVirtualServerIdentityProvider{
+			Name:                  identityProvider.Name,
+			DisplayName:           identityProvider.DisplayName,
+			Preset:                identityProvider.Preset,
+			Issuer:                identityProvider.Issuer,
+			AuthorizationEndpoint: identityProvider.AuthorizationEndpoint,
+			TokenEndpoint:         identityProvider.TokenEndpoint,
+			UserinfoEndpoint:      identityProvider.UserinfoEndpoint,
+			Scopes:                identityProvider.Scopes,
+			ClientId:              identityProvider.ClientId,
+			ClientSecret:          identityProvider.ClientSecret,
+			ClaimMapping: repositories.IdentityProviderClaimMapping{
+				Subject:       identityProvider.ClaimMapping.Subject,
+				Email:         identityProvider.ClaimMapping.Email,
+				EmailVerified: identityProvider.ClaimMapping.EmailVerified,
+				Name:          identityProvider.ClaimMapping.Name,
+				Username:      identityProvider.ClaimMapping.Username,
 			},
 		})
 	}
@@ -231,9 +261,10 @@ func initApplication(dp *ioc.DependencyProvider) {
 
 		CreateSystemAdminRole: config.C.InitialVirtualServer.CreateSystemAdminRole,
 
-		Admin:        adminConfig,
-		ServiceUsers: serviceUsers,
-		Projects:     projects,
+		Admin:             adminConfig,
+		ServiceUsers:      serviceUsers,
+		IdentityProviders: identityProviders,
+		Projects:          projects,
 	})
 	if err != nil {
 		logging.Logger.Fatalf("failed to create initial virtual server: %v", err)

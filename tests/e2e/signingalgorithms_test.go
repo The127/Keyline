@@ -13,6 +13,7 @@ import (
 	"github.com/The127/Keyline/internal/commands"
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/middlewares"
+	"github.com/The127/Keyline/utils"
 	"github.com/The127/ioc"
 	"github.com/The127/mediatr"
 	. "github.com/onsi/ginkgo/v2"
@@ -34,7 +35,7 @@ func init() {
 				h = newE2eTestHarness(backend.dbMode, nil)
 
 				scope := h.Scope().NewScope()
-				defer scope.Close()
+				defer utils.PanicOnError(scope.Close, "closing scope")
 				ctx := middlewares.ContextWithScope(context.Background(), scope)
 				ctx = authentication.ContextWithCurrentUser(ctx, authentication.SystemUser())
 				m := ioc.GetDependency[mediatr.Mediator](scope)
@@ -177,7 +178,7 @@ func init() {
 					Expect(jwksBefore.Keys).To(HaveLen(1))
 
 					scope := h.Scope().NewScope()
-					defer scope.Close()
+					defer utils.PanicOnError(scope.Close, "closing scope")
 					ctx := middlewares.ContextWithScope(context.Background(), scope)
 					ctx = authentication.ContextWithCurrentUser(ctx, authentication.SystemUser())
 					m := ioc.GetDependency[mediatr.Mediator](scope)
@@ -208,7 +209,7 @@ func init() {
 					// so it should currently have 2 keys. Patching to an empty additional list
 					// should drop back to 1.
 					scope := h.Scope().NewScope()
-					defer scope.Close()
+					defer utils.PanicOnError(scope.Close, "closing scope")
 					ctx := middlewares.ContextWithScope(context.Background(), scope)
 					ctx = authentication.ContextWithCurrentUser(ctx, authentication.SystemUser())
 					m := ioc.GetDependency[mediatr.Mediator](scope)
@@ -236,7 +237,7 @@ func init() {
 			Describe("PATCH to change the primary algorithm", func() {
 				It("updates the primary algorithm and discovery doc reflects the change", func() {
 					scope := h.Scope().NewScope()
-					defer scope.Close()
+					defer utils.PanicOnError(scope.Close, "closing scope")
 					ctx := middlewares.ContextWithScope(context.Background(), scope)
 					ctx = authentication.ContextWithCurrentUser(ctx, authentication.SystemUser())
 					m := ioc.GetDependency[mediatr.Mediator](scope)

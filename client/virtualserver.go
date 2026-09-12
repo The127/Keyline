@@ -24,6 +24,7 @@ type VirtualServerClient interface {
 	Get(ctx context.Context) (api.GetVirtualServerResponseDto, error)
 	GetPublicInfo(ctx context.Context) (api.GetVirtualServerListResponseDto, error)
 	Patch(ctx context.Context, input PatchVirtualServerInput) error
+	IdentityProviders() IdentityProviderClient
 }
 
 func NewVirtualServerClient(transport *Transport) VirtualServerClient {
@@ -34,6 +35,10 @@ func NewVirtualServerClient(transport *Transport) VirtualServerClient {
 
 type virtualServerClient struct {
 	transport *Transport
+}
+
+func (c *virtualServerClient) IdentityProviders() IdentityProviderClient {
+	return NewIdentityProviderClient(c.transport)
 }
 
 func (c *virtualServerClient) Create(ctx context.Context, dto api.CreateVirtualServerRequestDto) error {

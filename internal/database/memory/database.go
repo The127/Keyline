@@ -15,6 +15,7 @@ type Stores struct {
 
 	Applications            map[uuid.UUID]*repositories.Application
 	ApplicationKeys         map[uuid.UUID]*repositories.ApplicationKey
+	IdentityProviders       map[uuid.UUID]*repositories.IdentityProvider
 	ApplicationUserMetadata map[uuid.UUID]*repositories.ApplicationUserMetadata
 	AuditLogs               map[uuid.UUID]*repositories.AuditLog
 	Credentials             map[uuid.UUID]*repositories.Credential
@@ -38,6 +39,7 @@ func newStores() *Stores {
 	return &Stores{
 		Applications:            make(map[uuid.UUID]*repositories.Application),
 		ApplicationKeys:         make(map[uuid.UUID]*repositories.ApplicationKey),
+		IdentityProviders:       make(map[uuid.UUID]*repositories.IdentityProvider),
 		ApplicationUserMetadata: make(map[uuid.UUID]*repositories.ApplicationUserMetadata),
 		AuditLogs:               make(map[uuid.UUID]*repositories.AuditLog),
 		Credentials:             make(map[uuid.UUID]*repositories.Credential),

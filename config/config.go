@@ -97,14 +97,35 @@ type InitialVirtualServerConfig struct {
 		PasswordHash string   `yaml:"passwordHash"`
 		Roles        []string `yaml:"roles"`
 	} `yaml:"admin"`
-	ServiceUsers []ServiceUserConfig    `yaml:"serviceUsers"`
-	Projects     []InitialProjectConfig `yaml:"projects"`
-	Mail         struct {
+	ServiceUsers      []ServiceUserConfig             `yaml:"serviceUsers"`
+	Projects          []InitialProjectConfig          `yaml:"projects"`
+	IdentityProviders []InitialIdentityProviderConfig `yaml:"identityProviders"`
+	Mail              struct {
 		Host     string `yaml:"host"`
 		Port     int    `yaml:"port"`
 		Username string `yaml:"username"`
 		Password string `yaml:"password"`
 	} `yaml:"mail"`
+}
+
+type InitialIdentityProviderConfig struct {
+	Name                  string   `yaml:"name"`
+	DisplayName           string   `yaml:"displayName"`
+	Preset                string   `yaml:"preset,omitempty"`
+	Issuer                string   `yaml:"issuer,omitempty"`
+	AuthorizationEndpoint string   `yaml:"authorizationEndpoint,omitempty"`
+	TokenEndpoint         string   `yaml:"tokenEndpoint,omitempty"`
+	UserinfoEndpoint      string   `yaml:"userinfoEndpoint,omitempty"`
+	Scopes                []string `yaml:"scopes,omitempty"`
+	ClientId              string   `yaml:"clientId"`
+	ClientSecret          string   `yaml:"clientSecret"`
+	ClaimMapping          struct {
+		Subject       string `yaml:"subject,omitempty"`
+		Email         string `yaml:"email,omitempty"`
+		EmailVerified string `yaml:"emailVerified,omitempty"`
+		Name          string `yaml:"name,omitempty"`
+		Username      string `yaml:"username,omitempty"`
+	} `yaml:"claimMapping,omitempty"`
 }
 
 type ServiceUserConfig struct {
@@ -419,6 +440,34 @@ func setInitialVirtualServerDefaultsOrPanic() {
 	setInitialAdminDefaultsOrPanic()
 	setInitialServiceUserDefaultsOrPanic()
 	setInitialProjectsDefaultsOrPanic()
+	setInitialIdentityProvidersDefaultsOrPanic()
+}
+
+func setInitialIdentityProvidersDefaultsOrPanic() {
+	names := map[string]struct{}{}
+	for _, identityProvider := range C.InitialVirtualServer.IdentityProviders {
+		if identityProvider.Name == "" {
+			panic("missing identity provider name")
+		}
+
+		if _, seen := names[identityProvider.Name]; seen {
+			panic("identity provider " + identityProvider.Name + " is declared twice")
+		}
+
+		names[identityProvider.Name] = struct{}{}
+
+		if identityProvider.DisplayName == "" {
+			panic("missing identity provider display name")
+		}
+
+		if identityProvider.ClientId == "" {
+			panic("missing identity provider client id")
+		}
+
+		if identityProvider.ClientSecret == "" {
+			panic("missing identity provider client secret")
+		}
+	}
 }
 
 func setInitialServiceUserDefaultsOrPanic() {

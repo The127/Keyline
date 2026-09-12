@@ -1,3 +1,5 @@
+//go:build e2e
+
 package e2e
 
 import (
@@ -44,6 +46,7 @@ type harness struct {
 	dbMode    config.DatabaseMode
 	scope     *ioc.DependencyProvider
 	serverUrl string
+	shutdown  func(context.Context) error
 }
 
 func (h *harness) SetTime(t time.Time) {
@@ -63,6 +66,10 @@ func (h *harness) Client() client.Client {
 }
 
 func (h *harness) Close() {
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	utils.PanicOnError(func() error { return h.shutdown(shutdownCtx) }, "shutting down server in test")
+
 	// cleanup database
 	dbConnection := ioc.GetDependency[database.Database](h.scope)
 	utils.PanicOnError(h.scope.Close, "closing scope")
@@ -113,7 +120,24 @@ func (h *harness) Scope() *ioc.DependencyProvider {
 	return h.scope
 }
 
-func newE2eTestHarness(dbMode config.DatabaseMode, tokenSourceGenerator func(ctx context.Context, url string) oauth2.TokenSource) *harness {
+type harnessOption func(*harnessOptions)
+
+type harnessOptions struct {
+	port int
+}
+
+func withPort(port int) harnessOption {
+	return func(options *harnessOptions) {
+		options.port = port
+	}
+}
+
+func newE2eTestHarness(dbMode config.DatabaseMode, tokenSourceGenerator func(ctx context.Context, url string) oauth2.TokenSource, harnessOpts ...harnessOption) *harness {
+	options := harnessOptions{}
+	for _, opt := range harnessOpts {
+		opt(&options)
+	}
+
 	ctx := context.Background()
 	dc := ioc.NewDependencyCollection()
 	clockService, timeSetter := clock.NewMockClock(time.Now())
@@ -215,14 +239,19 @@ func newE2eTestHarness(dbMode config.DatabaseMode, tokenSourceGenerator func(ctx
 	ctx = middlewares.ContextWithScope(ctx, scope)
 	ctx = authentication.ContextWithCurrentUser(ctx, authentication.SystemUser())
 
-	port := findPort()
+	port := options.port
+	if port == 0 {
+		port = findPort()
+	}
+
 	serverConfig := config.ServerConfig{
 		Port:           port,
 		Host:           "localhost",
 		AllowedOrigins: []string{"*"},
 		ExternalUrl:    fmt.Sprintf("http://localhost:%d", port),
 	}
-	server.Serve(scope, serverConfig)
+
+	shutdown := server.Serve(scope, serverConfig)
 
 	var opts []client.TransportOptions
 	if tokenSourceGenerator != nil {
@@ -250,6 +279,7 @@ func newE2eTestHarness(dbMode config.DatabaseMode, tokenSourceGenerator func(ctx
 		dbName:    dbName,
 		dbMode:    dbMode,
 		serverUrl: serverConfig.ExternalUrl,
+		shutdown:  shutdown,
 	}
 }
 

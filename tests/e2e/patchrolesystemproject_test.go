@@ -116,14 +116,14 @@ func init() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(projResp.Id).ToNot(BeZero())
 
-				roleResp, err := h.Client().Project().Role("non-system-project-" + backend.name).Create(h.Ctx(), api.CreateRoleRequestDto{
+				roleResp, err := h.Client().Project().Role("non-system-project-"+backend.name).Create(h.Ctx(), api.CreateRoleRequestDto{
 					Name:        "rename-me",
 					Description: "Role for the rename regression check.",
 				})
 				Expect(err).ToNot(HaveOccurred())
 				Expect(roleResp.Id).ToNot(BeZero())
 
-				err = h.Client().Project().Role("non-system-project-" + backend.name).Patch(
+				err = h.Client().Project().Role("non-system-project-"+backend.name).Patch(
 					h.Ctx(),
 					roleResp.Id,
 					api.PatchRoleRequestDto{Name: utils.Ptr("renamed")},
@@ -131,19 +131,19 @@ func init() {
 				Expect(err).ToNot(HaveOccurred(),
 					"the system-project guard must NOT fire on non-system projects")
 
-				role, err := h.Client().Project().Role("non-system-project-" + backend.name).Get(h.Ctx(), roleResp.Id)
+				role, err := h.Client().Project().Role("non-system-project-"+backend.name).Get(h.Ctx(), roleResp.Id)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(role.Name).To(Equal("renamed"))
 			})
 
 			It("still allows DeleteRole on a non-system project role (regression check)", func() {
-				roleResp, err := h.Client().Project().Role("non-system-project-" + backend.name).Create(h.Ctx(), api.CreateRoleRequestDto{
+				roleResp, err := h.Client().Project().Role("non-system-project-"+backend.name).Create(h.Ctx(), api.CreateRoleRequestDto{
 					Name:        "delete-me",
 					Description: "Role for the delete regression check.",
 				})
 				Expect(err).ToNot(HaveOccurred())
 
-				err = h.Client().Project().Role("non-system-project-" + backend.name).Delete(h.Ctx(), roleResp.Id)
+				err = h.Client().Project().Role("non-system-project-"+backend.name).Delete(h.Ctx(), roleResp.Id)
 				Expect(err).ToNot(HaveOccurred(),
 					"the system-project guard must NOT fire on non-system projects")
 			})

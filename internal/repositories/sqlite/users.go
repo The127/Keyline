@@ -113,6 +113,10 @@ func (r *UserRepository) selectQuery(filter *repositories.UserFilter) *sqlbuilde
 		s.Where(s.Equal("username", filter.GetUsername()))
 	}
 
+	if filter.HasPrimaryEmail() {
+		s.Where(s.Equal("primary_email", filter.GetPrimaryEmail()))
+	}
+
 	if filter.HasVirtualServerId() {
 		s.Where(s.Equal("virtual_server_id", filter.GetVirtualServerId()))
 	}

@@ -10,6 +10,7 @@ import (
 	"github.com/The127/Keyline/internal/services"
 	"github.com/The127/Keyline/internal/services/audit"
 	"github.com/The127/Keyline/internal/services/claimsMapping"
+	"github.com/The127/Keyline/internal/services/identityproviders"
 	"github.com/The127/Keyline/internal/services/keyValue"
 
 	"github.com/The127/ioc"
@@ -61,6 +62,10 @@ func Services(dc *ioc.DependencyCollection) {
 	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) services.TemplateService {
 		return services.NewTemplateService()
 	})
+	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) *identityproviders.Client {
+		return identityproviders.NewClient()
+	})
+
 	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) services.TokenService {
 		return services.NewTokenService()
 	})

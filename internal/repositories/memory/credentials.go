@@ -37,7 +37,8 @@ func (r *CredentialRepository) matches(c *repositories.Credential, filter *repos
 	if filter.HasType() && c.Type() != filter.GetType() {
 		return false
 	}
-	if filter.HasDetailKid() || filter.HasDetailPublicKey() || filter.HasDetailsId() {
+
+	if filter.HasDetailKid() || filter.HasDetailPublicKey() || filter.HasDetailsId() || filter.HasDetailIdentityProviderId() || filter.HasDetailSubject() {
 		// marshal details to JSON to do field-level matching
 		detailJson, err := json.Marshal(c.Details())
 		if err != nil {
@@ -63,6 +64,20 @@ func (r *CredentialRepository) matches(c *repositories.Credential, filter *repos
 		if filter.HasDetailsId() {
 			id, _ := detailMap["credentialId"].(string)
 			if id != filter.GetDetailsId() {
+				return false
+			}
+		}
+
+		if filter.HasDetailIdentityProviderId() {
+			identityProviderId, _ := detailMap["identityProviderId"].(string)
+			if identityProviderId != filter.GetDetailIdentityProviderId().String() {
+				return false
+			}
+		}
+
+		if filter.HasDetailSubject() {
+			subject, _ := detailMap["subject"].(string)
+			if subject != filter.GetDetailSubject() {
 				return false
 			}
 		}

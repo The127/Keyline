@@ -2,6 +2,9 @@ version: "2"
 
 run:
   timeout: 5m
+  build-tags:
+    - e2e
+    - integration
   tests: true
   concurrency: 4
 

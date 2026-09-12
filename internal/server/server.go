@@ -1,6 +1,8 @@
 package server
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/authentication"
@@ -19,7 +21,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func Serve(dp *ioc.DependencyProvider, serverConfig config.ServerConfig) {
+func Serve(dp *ioc.DependencyProvider, serverConfig config.ServerConfig) func(context.Context) error {
+	var servers []*http.Server
 	r := mux.NewRouter()
 
 	r.Use(middlewares.RecoverMiddleware())
@@ -62,6 +65,7 @@ func Serve(dp *ioc.DependencyProvider, serverConfig config.ServerConfig) {
 	oidcRouter.HandleFunc("/userinfo", handlers.OidcUserinfo).Methods(http.MethodGet, http.MethodPost, http.MethodOptions)
 	oidcRouter.HandleFunc("/end_session", handlers.OidcEndSession).Methods(http.MethodGet, http.MethodOptions)
 	oidcRouter.HandleFunc("/device", handlers.BeginDeviceFlow).Methods(http.MethodPost, http.MethodOptions)
+	oidcRouter.HandleFunc("/identity-providers/{name}/callback", handlers.IdentityProviderCallback).Methods(http.MethodGet, http.MethodOptions)
 	oidcRouter.HandleFunc("/activate", handlers.GetActivatePage).Methods(http.MethodGet)
 	oidcRouter.HandleFunc("/activate", handlers.PostActivatePage).Methods(http.MethodPost)
 	oidcRouter.HandleFunc("/activate/success", handlers.ActivateSuccess).Methods(http.MethodGet)
@@ -86,6 +90,7 @@ func Serve(dp *ioc.DependencyProvider, serverConfig config.ServerConfig) {
 	loginRouter.HandleFunc("/{loginToken}/finish-login", handlers.FinishLogin).Methods(http.MethodPost, http.MethodOptions)
 	loginRouter.HandleFunc("/{loginToken}/passkey/start", handlers.StartPasskeyLogin).Methods(http.MethodPost, http.MethodOptions)
 	loginRouter.HandleFunc("/{loginToken}/passkey/finish", handlers.FinishPasskeyLogin).Methods(http.MethodPost, http.MethodOptions)
+	loginRouter.HandleFunc("/{loginToken}/identity-providers/{name}/start", handlers.StartIdentityProviderLogin).Methods(http.MethodGet, http.MethodOptions)
 
 	if config.C.Server.ApiPort == 0 {
 		mapApiRoutes(r)
@@ -105,6 +110,7 @@ func Serve(dp *ioc.DependencyProvider, serverConfig config.ServerConfig) {
 			Addr:    apiAddr,
 		}
 
+		servers = append(servers, apiSrv)
 		go serve(apiSrv)
 	}
 
@@ -115,7 +121,17 @@ func Serve(dp *ioc.DependencyProvider, serverConfig config.ServerConfig) {
 		Addr:    addr,
 	}
 
+	servers = append(servers, srv)
 	go serve(srv)
+
+	return func(ctx context.Context) error {
+		var errs []error
+		for _, s := range servers {
+			errs = append(errs, s.Shutdown(ctx))
+		}
+
+		return errors.Join(errs...)
+	}
 }
 
 func mapApiRoutes(r *mux.Router) {
@@ -164,6 +180,9 @@ func mapApiRoutes(r *mux.Router) {
 	vsApiRouter.HandleFunc("/password-policies/rules/{ruleType}", handlers.UpdatePasswordRule).Methods(http.MethodPut, http.MethodOptions)
 
 	vsApiRouter.HandleFunc("/templates", handlers.ListTemplates).Methods(http.MethodGet, http.MethodOptions)
+
+	vsApiRouter.HandleFunc("/identity-providers", handlers.CreateIdentityProvider).Methods(http.MethodPost, http.MethodOptions)
+	vsApiRouter.HandleFunc("/identity-providers/{name}", handlers.GetIdentityProvider).Methods(http.MethodGet, http.MethodOptions)
 	vsApiRouter.HandleFunc("/templates/{templateType}", handlers.GetTemplate).Methods(http.MethodGet, http.MethodOptions)
 
 	vsApiRouter.HandleFunc("/users/register", handlers.RegisterUser).Methods(http.MethodPost, http.MethodOptions)
@@ -224,7 +243,7 @@ func mapApiRoutes(r *mux.Router) {
 
 func serve(srv *http.Server) {
 	err := srv.ListenAndServe()
-	if err != nil {
+	if err != nil && !errors.Is(err, http.ErrServerClosed) {
 		panic(fmt.Errorf("error while running server: %w", err))
 	}
 }

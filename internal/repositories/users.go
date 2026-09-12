@@ -148,6 +148,7 @@ type UserFilter struct {
 	serviceUser     *bool
 	searchFilter    *SearchFilter
 	includeMetadata bool
+	primaryEmail    *string
 }
 
 func NewUserFilter() *UserFilter {
@@ -205,6 +206,20 @@ func (f *UserFilter) Username(username string) *UserFilter {
 	filter := f.Clone()
 	filter.username = &username
 	return filter
+}
+
+func (f *UserFilter) PrimaryEmail(primaryEmail string) *UserFilter {
+	filter := f.Clone()
+	filter.primaryEmail = &primaryEmail
+	return filter
+}
+
+func (f *UserFilter) HasPrimaryEmail() bool {
+	return f.primaryEmail != nil
+}
+
+func (f *UserFilter) GetPrimaryEmail() string {
+	return utils.ZeroIfNil(f.primaryEmail)
 }
 
 func (f *UserFilter) HasUsername() bool {

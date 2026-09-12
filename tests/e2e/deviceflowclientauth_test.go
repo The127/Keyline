@@ -231,7 +231,7 @@ func init() {
 
 func setupDeviceFlowClientAuthFixtures(scope *ioc.DependencyProvider) (string, error) {
 	subscope := scope.NewScope()
-	defer subscope.Close()
+	defer utils.PanicOnError(subscope.Close, "closing scope")
 
 	ctx := context.Background()
 	ctx = middlewares.ContextWithScope(ctx, subscope)
