@@ -30,10 +30,10 @@ func TestMaxFailedPasswordAttempts_LowEnoughForOnlineGuessingMitigation(t *testi
 func TestWebauthnExpectedOrigin(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
-		name         string
-		frontendUrl  string
-		want         string
-		wantErr      bool
+		name        string
+		frontendUrl string
+		want        string
+		wantErr     bool
 	}{
 		{
 			name:        "bare http origin",

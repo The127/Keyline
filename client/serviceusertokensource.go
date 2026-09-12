@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"golang.org/x/oauth2"
 )
 
@@ -45,11 +46,15 @@ func (s *ServiceUserTokenSource) Token() (*oauth2.Token, error) {
 		return nil, fmt.Errorf("parsing private key: %w", err)
 	}
 
+	now := time.Now()
 	claims := jwt.MapClaims{
 		"aud":    s.Application,
 		"iss":    s.Username,
 		"sub":    s.Username,
 		"scopes": "openid profile email",
+		"iat":    now.Unix(),
+		"exp":    now.Add(time.Minute).Unix(),
+		"jti":    uuid.NewString(),
 	}
 	tok := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims)
 	tok.Header["kid"] = s.Kid

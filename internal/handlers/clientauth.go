@@ -11,19 +11,12 @@ import (
 	"github.com/The127/Keyline/utils"
 	"net/http"
 	"slices"
-	"time"
 
-	"github.com/The127/go-clock"
 	"github.com/The127/ioc"
-	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
-const (
-	clientAssertionTypeJwtBearer = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
-	maxClientAssertionLifetime   = 5 * time.Minute
-)
-
-var clientAssertionSigningMethods = []string{string(config.SigningAlgorithmRS256), string(config.SigningAlgorithmEdDSA)}
+const clientAssertionTypeJwtBearer = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
 
 type clientCredentials struct {
 	clientId            string
@@ -147,44 +140,15 @@ func authenticateApplicationWithAssertion(
 
 	scope := middlewares.GetScope(ctx)
 	dbContext := ioc.GetDependency[database.Context](scope)
-	clockService := ioc.GetDependency[clock.Service](scope)
-	now := clockService.Now()
-
-	issuer := fmt.Sprintf("%s/oidc/%s", config.C.Server.ExternalUrl, virtualServer.Name())
-	tokenEndpoint := issuer + "/token"
 
 	var application *repositories.Application
-	token, err := jwt.Parse(credentials.clientAssertion, func(token *jwt.Token) (any, error) {
-		claims, ok := token.Claims.(jwt.MapClaims)
-		if !ok {
-			return nil, fmt.Errorf("invalid claims")
-		}
-
-		subject, err := claims.GetSubject()
-		if err != nil || subject == "" {
-			return nil, fmt.Errorf("client_assertion has no sub")
-		}
-
-		tokenIssuer, err := claims.GetIssuer()
-		if err != nil || tokenIssuer != subject {
-			return nil, fmt.Errorf("client_assertion iss and sub must both be the client_id")
-		}
-
-		if credentials.clientId != "" && credentials.clientId != subject {
-			return nil, fmt.Errorf("client_id does not match client_assertion")
-		}
-
-		kid, ok := token.Header["kid"].(string)
-		if !ok || kid == "" {
-			return nil, fmt.Errorf("client_assertion has no kid header")
-		}
-
+	assertion, err := verifySignedAssertion(ctx, credentials.clientAssertion, services.ClientAssertionJtiTokenType, func(ctx context.Context, subject string, kid string) (uuid.UUID, any, error) {
 		found, err := findApplication(ctx, virtualServer, subject)
 		if err != nil {
-			return nil, err
+			return uuid.Nil, nil, err
 		}
 		if !found.AuthenticatesWith(repositories.TokenEndpointAuthMethodPrivateKeyJwt) {
-			return nil, fmt.Errorf("client does not authenticate with private_key_jwt")
+			return uuid.Nil, nil, fmt.Errorf("client does not authenticate with private_key_jwt")
 		}
 
 		applicationKeyFilter := repositories.NewApplicationKeyFilter().
@@ -192,61 +156,37 @@ func authenticateApplicationWithAssertion(
 			Kid(kid)
 		applicationKey, err := dbContext.ApplicationKeys().FirstOrNil(ctx, applicationKeyFilter)
 		if err != nil {
-			return nil, fmt.Errorf("getting application key: %w", err)
+			return uuid.Nil, nil, fmt.Errorf("getting application key: %w", err)
 		}
 		if applicationKey == nil {
-			return nil, fmt.Errorf("unknown kid")
+			return uuid.Nil, nil, fmt.Errorf("unknown kid")
 		}
 
 		publicKey, err := utils.ParsePublicKeyPem(applicationKey.PublicKey())
 		if err != nil {
-			return nil, fmt.Errorf("parsing application key: %w", err)
+			return uuid.Nil, nil, fmt.Errorf("parsing application key: %w", err)
 		}
 
 		application = found
-		return publicKey, nil
-	},
-		jwt.WithValidMethods(clientAssertionSigningMethods),
-		jwt.WithExpirationRequired(),
-		jwt.WithTimeFunc(func() time.Time { return now }),
-	)
+		return found.Id(), publicKey, nil
+	})
 	if err != nil {
 		return nil, fmt.Errorf("client_assertion is invalid: %w", err)
 	}
-	if !token.Valid || application == nil {
-		return nil, fmt.Errorf("client_assertion is invalid")
+
+	if credentials.clientId != "" && credentials.clientId != assertion.Subject {
+		return nil, fmt.Errorf("client_id does not match client_assertion")
 	}
 
-	claims := token.Claims.(jwt.MapClaims)
+	issuer := fmt.Sprintf("%s/oidc/%s", config.C.Server.ExternalUrl, virtualServer.Name())
+	tokenEndpoint := issuer + "/token"
 
-	audiences, err := claims.GetAudience()
+	audiences, err := assertion.Claims.GetAudience()
 	if err != nil {
 		return nil, fmt.Errorf("client_assertion has no aud")
 	}
 	if !slices.Contains(audiences, issuer) && !slices.Contains(audiences, tokenEndpoint) {
 		return nil, fmt.Errorf("client_assertion aud must be the issuer or the token endpoint")
-	}
-
-	expiresAt, err := claims.GetExpirationTime()
-	if err != nil || expiresAt == nil {
-		return nil, fmt.Errorf("client_assertion has no exp")
-	}
-	if expiresAt.After(now.Add(maxClientAssertionLifetime)) {
-		return nil, fmt.Errorf("client_assertion exp is more than %s in the future", maxClientAssertionLifetime)
-	}
-
-	jti, ok := claims["jti"].(string)
-	if !ok || jti == "" {
-		return nil, fmt.Errorf("client_assertion has no jti")
-	}
-
-	tokenService := ioc.GetDependency[services.TokenService](scope)
-	unused, err := tokenService.StoreTokenIfAbsent(ctx, services.ClientAssertionJtiTokenType, application.Id().String()+":"+jti, "", expiresAt.Sub(now))
-	if err != nil {
-		return nil, fmt.Errorf("recording client_assertion jti: %w", err)
-	}
-	if !unused {
-		return nil, fmt.Errorf("client_assertion jti was already used")
 	}
 
 	return application, nil
