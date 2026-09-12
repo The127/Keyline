@@ -27,6 +27,7 @@ type PatchApplication struct {
 	RedirectUris           *[]string
 	PostLogoutRedirectUris *[]string
 	SigningAlgorithm       *config.SigningAlgorithm
+	UserinfoInAccessToken  *bool
 }
 
 func (a PatchApplication) LogRequest() bool {
@@ -94,6 +95,10 @@ func HandlePatchApplication(ctx context.Context, command PatchApplication) (*Pat
 
 	if command.DeviceFlowEnabled != nil {
 		application.SetDeviceFlowEnabled(*command.DeviceFlowEnabled)
+	}
+
+	if command.UserinfoInAccessToken != nil {
+		application.SetUserinfoInAccessToken(*command.UserinfoInAccessToken)
 	}
 
 	if command.RedirectUris != nil {

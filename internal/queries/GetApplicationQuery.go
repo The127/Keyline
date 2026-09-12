@@ -53,6 +53,7 @@ type GetApplicationResult struct {
 	TokenEndpointAuthMethod *repositories.TokenEndpointAuthMethod
 	CreatedAt               time.Time
 	UpdatedAt               time.Time
+	UserinfoInAccessToken   bool
 }
 
 func HandleGetApplication(ctx context.Context, query GetApplication) (*GetApplicationResult, error) {
@@ -102,5 +103,6 @@ func HandleGetApplication(ctx context.Context, query GetApplication) (*GetApplic
 		TokenEndpointAuthMethod: application.TokenEndpointAuthMethod(),
 		CreatedAt:               application.AuditCreatedAt(),
 		UpdatedAt:               application.AuditUpdatedAt(),
+		UserinfoInAccessToken:   application.UserinfoInAccessToken(),
 	}, nil
 }

@@ -32,6 +32,7 @@ type sqliteApplication struct {
 	deviceFlowEnabled       bool
 	signingAlgorithm        sql.NullString
 	tokenEndpointAuthMethod sql.NullString
+	userinfoInAccessToken   bool
 }
 
 func mapApplication(a *repositories.Application) *sqliteApplication {
@@ -51,6 +52,7 @@ func mapApplication(a *repositories.Application) *sqliteApplication {
 		deviceFlowEnabled:       a.DeviceFlowEnabled(),
 		signingAlgorithm:        sqlitehelpers.WrapStringPointer(utils.MapPtr(a.SigningAlgorithm(), func(alg config.SigningAlgorithm) string { return string(alg) })),
 		tokenEndpointAuthMethod: sqlitehelpers.WrapStringPointer(utils.MapPtr(a.TokenEndpointAuthMethod(), func(method repositories.TokenEndpointAuthMethod) string { return string(method) })),
+		userinfoInAccessToken:   a.UserinfoInAccessToken(),
 	}
 }
 
@@ -71,6 +73,7 @@ func (a *sqliteApplication) Map() *repositories.Application {
 		a.deviceFlowEnabled,
 		utils.MapPtr(sqlitehelpers.UnwrapNullString(a.signingAlgorithm), func(s string) config.SigningAlgorithm { return config.SigningAlgorithm(s) }),
 		utils.MapPtr(sqlitehelpers.UnwrapNullString(a.tokenEndpointAuthMethod), func(s string) repositories.TokenEndpointAuthMethod { return repositories.TokenEndpointAuthMethod(s) }),
+		a.userinfoInAccessToken,
 	)
 }
 
@@ -95,6 +98,7 @@ func (a *sqliteApplication) scan(row sqlitehelpers.Row, additionalPtrs ...any) e
 		&a.deviceFlowEnabled,
 		&a.signingAlgorithm,
 		&a.tokenEndpointAuthMethod,
+		&a.userinfoInAccessToken,
 	}
 
 	ptrs = append(ptrs, additionalPtrs...)
@@ -136,6 +140,7 @@ func (r *ApplicationRepository) selectQuery(filter *repositories.ApplicationFilt
 		"device_flow_enabled",
 		"signing_algorithm",
 		"token_endpoint_auth_method",
+		"userinfo_in_access_token",
 	).From("applications")
 
 	if filter.HasName() {
@@ -262,6 +267,7 @@ func (r *ApplicationRepository) ExecuteInsert(ctx context.Context, tx *sql.Tx, a
 			"device_flow_enabled",
 			"signing_algorithm",
 			"token_endpoint_auth_method",
+			"userinfo_in_access_token",
 		).
 		Values(
 			mapped.id,
@@ -281,6 +287,7 @@ func (r *ApplicationRepository) ExecuteInsert(ctx context.Context, tx *sql.Tx, a
 			mapped.deviceFlowEnabled,
 			mapped.signingAlgorithm,
 			mapped.tokenEndpointAuthMethod,
+			mapped.userinfoInAccessToken,
 		).
 		Returning("version")
 
@@ -346,6 +353,8 @@ func (r *ApplicationRepository) ExecuteUpdate(ctx context.Context, tx *sql.Tx, a
 
 		case repositories.ApplicationChangeTokenEndpointAuthMethod:
 			s.SetMore(s.Assign("token_endpoint_auth_method", mapped.tokenEndpointAuthMethod))
+		case repositories.ApplicationChangeUserinfoInAccessToken:
+			s.SetMore(s.Assign("userinfo_in_access_token", mapped.userinfoInAccessToken))
 
 		default:
 			return fmt.Errorf("updating field %v is not supported", field)

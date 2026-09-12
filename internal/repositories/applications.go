@@ -38,6 +38,7 @@ const (
 	ApplicationChangeDeviceFlowEnabled
 	ApplicationChangeSigningAlgorithm
 	ApplicationChangeTokenEndpointAuthMethod
+	ApplicationChangeUserinfoInAccessToken
 )
 
 type Application struct {
@@ -65,6 +66,7 @@ type Application struct {
 	signingAlgorithm *config.SigningAlgorithm
 
 	tokenEndpointAuthMethod *TokenEndpointAuthMethod
+	userinfoInAccessToken   bool
 }
 
 func NewApplication(virtualServerId uuid.UUID, projectId uuid.UUID, name string, displayName string, type_ ApplicationType, redirectUris []string) *Application {
@@ -104,6 +106,7 @@ func NewApplicationFromDB(
 	deviceFlowEnabled bool,
 	signingAlgorithm *config.SigningAlgorithm,
 	tokenEndpointAuthMethod *TokenEndpointAuthMethod,
+	userinfoInAccessToken bool,
 ) *Application {
 	return &Application{
 		BaseModel:               base,
@@ -122,6 +125,7 @@ func NewApplicationFromDB(
 		deviceFlowEnabled:       deviceFlowEnabled,
 		signingAlgorithm:        signingAlgorithm,
 		tokenEndpointAuthMethod: tokenEndpointAuthMethod,
+		userinfoInAccessToken:   userinfoInAccessToken,
 	}
 }
 
@@ -273,6 +277,19 @@ func (a *Application) SetTokenEndpointAuthMethod(method *TokenEndpointAuthMethod
 
 func (a *Application) AuthenticatesWith(method TokenEndpointAuthMethod) bool {
 	return a.tokenEndpointAuthMethod != nil && *a.tokenEndpointAuthMethod == method
+}
+
+func (a *Application) UserinfoInAccessToken() bool {
+	return a.userinfoInAccessToken
+}
+
+func (a *Application) SetUserinfoInAccessToken(userinfoInAccessToken bool) {
+	if a.userinfoInAccessToken == userinfoInAccessToken {
+		return
+	}
+
+	a.userinfoInAccessToken = userinfoInAccessToken
+	a.TrackChange(ApplicationChangeUserinfoInAccessToken)
 }
 
 type ApplicationFilter struct {

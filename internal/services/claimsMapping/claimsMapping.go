@@ -7,7 +7,6 @@ import (
 	"github.com/The127/Keyline/internal/logging"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/repositories"
-	"slices"
 
 	"github.com/The127/ioc"
 
@@ -37,16 +36,10 @@ func NewClaimsMapper() ClaimsMapper {
 }
 
 func defaultMapping(params Params) map[string]any {
-	claims := map[string]any{
+	return map[string]any{
 		"roles":             params.Roles,
 		"application_roles": params.ApplicationRoles,
 	}
-
-	if slices.Contains(params.Scopes, "profile") {
-		claims["preferred_username"] = params.Username
-	}
-
-	return claims
 }
 
 func (c *claimsMapper) MapClaims(ctx context.Context, applicationId uuid.UUID, params Params) map[string]any {

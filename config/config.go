@@ -161,6 +161,7 @@ type InitialProjectConfig struct {
 		DeviceFlowEnabled       bool                          `yaml:"deviceFlowEnabled"`
 		TokenEndpointAuthMethod *string                       `yaml:"tokenEndpointAuthMethod,omitempty"`
 		PublicKeys              []InitialApplicationKeyConfig `yaml:"publicKeys,omitempty"`
+		UserinfoInAccessToken   bool                          `yaml:"userinfoInAccessToken"`
 	} `yaml:"applications"`
 	ResourceServers []struct {
 		Slug        string `yaml:"slug"`

@@ -191,6 +191,7 @@ func initApplication(dp *ioc.DependencyProvider) {
 				PublicKeys: utils.MapSlice(app.PublicKeys, func(key config.InitialApplicationKeyConfig) commands.CreateVirtualServerApplicationKey {
 					return commands.CreateVirtualServerApplicationKey{Pem: key.Pem, Kid: key.Kid}
 				}),
+				UserinfoInAccessToken: app.UserinfoInAccessToken,
 			})
 		}
 

@@ -7,28 +7,20 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestDefaultMapping_ProfileScopeAddsPreferredUsername(t *testing.T) {
+func TestDefaultMapping_OnlyMapsRoles(t *testing.T) {
 	t.Parallel()
 
 	claims := defaultMapping(Params{
-		Roles:    []string{"system:admin"},
-		Username: "alice",
-		Scopes:   []string{"openid", "profile"},
+		Roles:            []string{"system:admin"},
+		ApplicationRoles: []string{"editor"},
+		Username:         "alice",
+		Scopes:           []string{"openid", "profile", "email"},
 	})
 
-	assert.Equal(t, "alice", claims["preferred_username"])
-	assert.Equal(t, []string{"system:admin"}, claims["roles"])
-}
-
-func TestDefaultMapping_WithoutProfileScopeOmitsPreferredUsername(t *testing.T) {
-	t.Parallel()
-
-	claims := defaultMapping(Params{
-		Username: "alice",
-		Scopes:   []string{"openid", "email"},
-	})
-
-	assert.NotContains(t, claims, "preferred_username")
+	assert.Equal(t, map[string]any{
+		"roles":             []string{"system:admin"},
+		"application_roles": []string{"editor"},
+	}, claims)
 }
 
 func TestCustomScript_CanReadUsernameAndScopes(t *testing.T) {

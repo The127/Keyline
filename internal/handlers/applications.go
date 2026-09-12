@@ -76,6 +76,7 @@ func CreateApplication(w http.ResponseWriter, r *http.Request) {
 		DeviceFlowEnabled:       dto.DeviceFlowEnabled,
 		SigningAlgorithm:        (*config.SigningAlgorithm)(dto.SigningAlgorithm),
 		TokenEndpointAuthMethod: (*repositories.TokenEndpointAuthMethod)(dto.TokenEndpointAuthMethod),
+		UserinfoInAccessToken:   dto.UserinfoInAccessToken,
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -163,6 +164,7 @@ func GetApplication(w http.ResponseWriter, r *http.Request) {
 		TokenEndpointAuthMethod: (*string)(application.TokenEndpointAuthMethod),
 		CreatedAt:               application.CreatedAt,
 		UpdatedAt:               application.UpdatedAt,
+		UserinfoInAccessToken:   application.UserinfoInAccessToken,
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -233,6 +235,7 @@ func PatchApplication(w http.ResponseWriter, r *http.Request) {
 		PostLogoutRedirectUris: postLogoutUris,
 		AccessTokenHeaderType:  dto.AccessTokenHeaderType,
 		SigningAlgorithm:       (*config.SigningAlgorithm)(dto.SigningAlgorithm),
+		UserinfoInAccessToken:  dto.UserinfoInAccessToken,
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)

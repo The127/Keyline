@@ -16,6 +16,7 @@ type CreateApplicationRequestDto struct {
 	DeviceFlowEnabled       bool     `json:"deviceFlowEnabled"`
 	SigningAlgorithm        *string  `json:"signingAlgorithm,omitempty" validate:"omitempty,oneof=RS256 EdDSA"`
 	TokenEndpointAuthMethod *string  `json:"tokenEndpointAuthMethod,omitempty" validate:"omitempty,oneof=client_secret private_key_jwt"`
+	UserinfoInAccessToken   bool     `json:"userinfoInAccessToken"`
 }
 
 type CreateApplicationResponseDto struct {
@@ -43,6 +44,7 @@ type GetApplicationResponseDto struct {
 	SigningAlgorithm *string `json:"signingAlgorithm,omitempty"`
 
 	TokenEndpointAuthMethod *string `json:"tokenEndpointAuthMethod,omitempty"`
+	UserinfoInAccessToken   bool    `json:"userinfoInAccessToken"`
 
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
@@ -56,6 +58,7 @@ type PatchApplicationRequestDto struct {
 	PostLogoutUris        []string `json:"postLogoutUris,omitempty"`
 	AccessTokenHeaderType *string  `json:"accessTokenHeaderType,omitempty" validate:"omitempty,oneof=at+jwt JWT"`
 	SigningAlgorithm      *string  `json:"signingAlgorithm,omitempty" validate:"omitempty,oneof=RS256 EdDSA"`
+	UserinfoInAccessToken *bool    `json:"userinfoInAccessToken,omitempty"`
 }
 
 type AddApplicationKeyRequestDto struct {
