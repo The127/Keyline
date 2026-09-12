@@ -80,6 +80,7 @@ func (c *sqliteCredential) Map() (*repositories.Credential, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to unmarshal external identity details: %w", err)
 		}
+
 		details = &externalIdentity
 
 	default:

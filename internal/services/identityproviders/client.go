@@ -55,6 +55,7 @@ func (c *Client) Exchange(ctx context.Context, settings repositories.IdentityPro
 	if err != nil {
 		return Tokens{}, fmt.Errorf("creating token request: %w", err)
 	}
+
 	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	request.Header.Set("Accept", "application/json")
 
@@ -64,16 +65,20 @@ func (c *Client) Exchange(ctx context.Context, settings repositories.IdentityPro
 		Error            string `json:"error"`
 		ErrorDescription string `json:"error_description"`
 	}
+
 	status, err := c.doJson(request, &response)
 	if err != nil {
 		return Tokens{}, fmt.Errorf("exchanging code: %w", err)
 	}
+
 	if response.Error != "" {
 		return Tokens{}, fmt.Errorf("token endpoint refused the code: %s %s", response.Error, response.ErrorDescription)
 	}
+
 	if status != http.StatusOK {
 		return Tokens{}, fmt.Errorf("token endpoint answered %d", status)
 	}
+
 	if response.AccessToken == "" {
 		return Tokens{}, fmt.Errorf("token endpoint returned no access token")
 	}
@@ -89,6 +94,7 @@ func (c *Client) Userinfo(ctx context.Context, settings repositories.IdentityPro
 	if err != nil {
 		return nil, fmt.Errorf("creating userinfo request: %w", err)
 	}
+
 	request.Header.Set("Authorization", "Bearer "+accessToken)
 	request.Header.Set("Accept", "application/json")
 
@@ -97,6 +103,7 @@ func (c *Client) Userinfo(ctx context.Context, settings repositories.IdentityPro
 	if err != nil {
 		return nil, fmt.Errorf("fetching userinfo: %w", err)
 	}
+
 	if status != http.StatusOK {
 		return nil, fmt.Errorf("userinfo endpoint answered %d", status)
 	}
@@ -117,6 +124,7 @@ func (c *Client) VerifyIdToken(ctx context.Context, settings repositories.Identi
 		if len(keys) == 0 {
 			return nil, fmt.Errorf("id token signed with unknown key %q", kid)
 		}
+
 		return keys[0].Key, nil
 	},
 		jwt.WithJSONNumber(),
@@ -148,23 +156,29 @@ func (c *Client) keySet(ctx context.Context, issuer string) (*jose.JSONWebKeySet
 		Issuer  string `json:"issuer"`
 		JwksUri string `json:"jwks_uri"`
 	}
+
 	status, err := c.doJson(discoveryRequest, &discovery)
 	if err != nil {
 		return nil, fmt.Errorf("fetching discovery document: %w", err)
 	}
+
 	if status != http.StatusOK {
 		return nil, fmt.Errorf("discovery document of %s answered %d", issuer, status)
 	}
+
 	if discovery.Issuer != issuer {
 		return nil, fmt.Errorf("discovery document of %s names issuer %s", issuer, discovery.Issuer)
 	}
+
 	if discovery.JwksUri == "" {
 		return nil, fmt.Errorf("discovery document of %s has no jwks_uri", issuer)
 	}
+
 	issuerUrl, err := url.Parse(issuer)
 	if err != nil {
 		return nil, fmt.Errorf("parsing issuer: %w", err)
 	}
+
 	jwksUrl, err := url.Parse(discovery.JwksUri)
 	if err != nil || jwksUrl.Scheme != issuerUrl.Scheme || jwksUrl.Host == "" {
 		return nil, fmt.Errorf("jwks_uri %s of %s is not on the issuer's scheme", discovery.JwksUri, issuer)
@@ -180,6 +194,7 @@ func (c *Client) keySet(ctx context.Context, issuer string) (*jose.JSONWebKeySet
 	if err != nil {
 		return nil, fmt.Errorf("fetching jwks: %w", err)
 	}
+
 	if status != http.StatusOK {
 		return nil, fmt.Errorf("jwks of %s answered %d", issuer, status)
 	}
@@ -192,6 +207,7 @@ func (c *Client) doJson(request *http.Request, target any) (int, error) {
 	if err != nil {
 		return 0, err
 	}
+
 	defer response.Body.Close() //nolint:errcheck
 
 	body, err := io.ReadAll(io.LimitReader(response.Body, maxResponseSize))

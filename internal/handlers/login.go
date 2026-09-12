@@ -114,12 +114,14 @@ func DetermineNextLoginStep(
 	if err != nil {
 		return "", err
 	}
+
 	temporaryPassword := false
 	if passwordCredential != nil {
 		passwordDetails, err := passwordCredential.PasswordDetails()
 		if err != nil {
 			return "", err
 		}
+
 		temporaryPassword = passwordDetails.Temporary
 	}
 
@@ -232,6 +234,7 @@ func GetLoginState(w http.ResponseWriter, r *http.Request) {
 		TotpSecret:               loginInfo.TotpSecret,
 		IdentityProviders:        make([]LoginIdentityProviderDto, 0, len(identityProviders)),
 	}
+
 	for _, identityProvider := range identityProviders {
 		response.IdentityProviders = append(response.IdentityProviders, LoginIdentityProviderDto{
 			Name:        identityProvider.Name(),

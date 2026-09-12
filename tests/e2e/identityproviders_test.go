@@ -38,6 +38,7 @@ func init() {
 				if backend.dbMode == config.DatabaseModePostgres && !postgresBackendAvailable() {
 					Skip("Postgres not available")
 				}
+
 				h = newE2eTestHarness(backend.dbMode, serviceUserTokenSource)
 			})
 
@@ -313,6 +314,7 @@ func init() {
 				if backend.dbMode == config.DatabaseModePostgres && !postgresBackendAvailable() {
 					Skip("Postgres not available")
 				}
+
 				h = newE2eTestHarness(backend.dbMode, nil)
 			})
 
@@ -477,6 +479,7 @@ func startIdentityProviderLogin(browser *http.Client, h *harness, loginToken str
 	if location := resp.Header.Get("Location"); location != "" {
 		body["authorizationUrl"] = location
 	}
+
 	return resp.StatusCode, body
 }
 

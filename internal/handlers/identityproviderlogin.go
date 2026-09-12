@@ -141,6 +141,7 @@ func StartIdentityProviderLogin(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, fmt.Errorf("marshaling login info: %w", err))
 		return
 	}
+
 	err = tokenService.UpdateToken(ctx, services.LoginSessionTokenType, loginToken, string(updatedLoginInfo), 15*time.Minute)
 	if err != nil {
 		utils.HandleHttpError(w, fmt.Errorf("updating login info: %w", err))
@@ -189,6 +190,7 @@ func loginPageUrl(loginToken string, errorCode string) string {
 	if errorCode != "" {
 		query.Set("error", errorCode)
 	}
+
 	return fmt.Sprintf("%s/login?%s", config.C.Frontend.ExternalUrl, query.Encode())
 }
 
@@ -252,6 +254,7 @@ func IdentityProviderCallback(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "callback from another browser", http.StatusBadRequest)
 		return
 	}
+
 	http.SetCookie(w, newIdentityProviderBrowserCookie(virtualServerName, "", -1))
 
 	loginToken := identityProviderLogin.LoginToken
@@ -277,22 +280,27 @@ func IdentityProviderCallback(w http.ResponseWriter, r *http.Request) {
 		failLogin(fmt.Errorf("callback for %s arrived at %s", identityProviderLogin.ProviderName, providerName))
 		return
 	}
+
 	if loginInfo.VirtualServerName != virtualServerName {
 		failLogin(fmt.Errorf("callback for %s arrived at %s", loginInfo.VirtualServerName, virtualServerName))
 		return
 	}
+
 	if loginInfo.IdentityProviderState != state {
 		failLogin(fmt.Errorf("state is not the current one of the login"))
 		return
 	}
+
 	if loginInfo.Step != jsonTypes.LoginStepPasswordVerification {
 		failLogin(fmt.Errorf("login already identified a user"))
 		return
 	}
+
 	if providerError := r.URL.Query().Get("error"); providerError != "" {
 		failLogin(fmt.Errorf("provider answered %s: %s", providerError, r.URL.Query().Get("error_description")))
 		return
 	}
+
 	if code == "" {
 		failLogin(fmt.Errorf("callback without a code"))
 		return
@@ -307,6 +315,7 @@ func IdentityProviderCallback(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, fmt.Errorf("getting identity provider: %w", err))
 		return
 	}
+
 	if identityProvider == nil {
 		failLogin(fmt.Errorf("identity provider %s no longer exists", providerName))
 		return
@@ -340,11 +349,13 @@ func IdentityProviderCallback(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "login expired", http.StatusBadRequest)
 		return
 	}
+
 	err = json.Unmarshal([]byte(rawLoginInfo), &loginInfo)
 	if err != nil {
 		http.Error(w, "invalid login token", http.StatusBadRequest)
 		return
 	}
+
 	if loginInfo.IdentityProviderState != state || loginInfo.Step != jsonTypes.LoginStepPasswordVerification {
 		failLogin(fmt.Errorf("login changed while the provider was answering"))
 		return
@@ -359,6 +370,7 @@ func IdentityProviderCallback(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, fmt.Errorf("getting external identity: %w", err))
 		return
 	}
+
 	var user *repositories.User
 	if credential != nil {
 		userFilter := repositories.NewUserFilter().
@@ -369,6 +381,7 @@ func IdentityProviderCallback(w http.ResponseWriter, r *http.Request) {
 			utils.HandleHttpError(w, fmt.Errorf("getting user: %w", err))
 			return
 		}
+
 		if user == nil {
 			failLogin(fmt.Errorf("linked user %s is not in virtual server %s", credential.UserId(), virtualServerName))
 			return
@@ -394,6 +407,7 @@ func IdentityProviderCallback(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, fmt.Errorf("marshaling login info: %w", err))
 		return
 	}
+
 	err = tokenService.UpdateToken(ctx, services.LoginSessionTokenType, loginToken, string(updatedLoginInfo), 15*time.Minute)
 	if err != nil {
 		utils.HandleHttpError(w, fmt.Errorf("updating login info: %w", err))
@@ -418,10 +432,12 @@ func resolveExternalIdentity(ctx context.Context, upstream *identityproviders.Cl
 		if tokens.IdToken == "" {
 			return externalIdentity{}, fmt.Errorf("provider with issuer %s returned no id token", settings.Issuer)
 		}
+
 		idTokenClaims, err := upstream.VerifyIdToken(ctx, settings, tokens.IdToken, nonce)
 		if err != nil {
 			return externalIdentity{}, err
 		}
+
 		for name, value := range idTokenClaims {
 			claims[name] = value
 		}
@@ -431,11 +447,13 @@ func resolveExternalIdentity(ctx context.Context, upstream *identityproviders.Cl
 	if err != nil {
 		return externalIdentity{}, err
 	}
+
 	if idTokenSubject, ok := claims["sub"]; ok {
 		if userinfoSubject, ok := userinfo["sub"]; ok && userinfoSubject != idTokenSubject {
 			return externalIdentity{}, fmt.Errorf("userinfo subject differs from the id token subject")
 		}
 	}
+
 	for name, value := range userinfo {
 		claims[name] = value
 	}
@@ -468,12 +486,15 @@ func registerExternalIdentity(ctx context.Context, virtualServerId uuid.UUID, id
 	if err != nil {
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
+
 	if !virtualServer.EnableRegistration() {
 		return nil, fmt.Errorf("no user is linked to subject %s at %s and registration is off", identity.Subject, identityProvider.Name())
 	}
+
 	if identity.Email == "" {
 		return nil, fmt.Errorf("%s returned no email for subject %s", identityProvider.Name(), identity.Subject)
 	}
+
 	if !identity.EmailVerified {
 		return nil, fmt.Errorf("%s does not vouch for the email of subject %s", identityProvider.Name(), identity.Subject)
 	}
@@ -482,9 +503,11 @@ func registerExternalIdentity(ctx context.Context, virtualServerId uuid.UUID, id
 	if username == "" {
 		username = strings.SplitN(identity.Email, "@", 2)[0]
 	}
+
 	if username == "" || len(username) > 255 {
 		return nil, fmt.Errorf("%s returned no usable username for subject %s", identityProvider.Name(), identity.Subject)
 	}
+
 	displayName := strings.TrimSpace(identity.Name)
 	if displayName == "" || len(displayName) > 255 {
 		displayName = username
@@ -494,6 +517,7 @@ func registerExternalIdentity(ctx context.Context, virtualServerId uuid.UUID, id
 	if err != nil {
 		return nil, fmt.Errorf("getting user: %w", err)
 	}
+
 	if sameName != nil {
 		return nil, fmt.Errorf("username %s is taken, subject %s at %s cannot register", username, identity.Subject, identityProvider.Name())
 	}
@@ -502,6 +526,7 @@ func registerExternalIdentity(ctx context.Context, virtualServerId uuid.UUID, id
 	if err != nil {
 		return nil, fmt.Errorf("getting user: %w", err)
 	}
+
 	if sameEmail != nil {
 		return nil, fmt.Errorf("email %s belongs to another user, subject %s at %s cannot register", identity.Email, identity.Subject, identityProvider.Name())
 	}

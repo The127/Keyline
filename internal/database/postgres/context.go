@@ -210,6 +210,7 @@ func (c *Context) SaveChanges(ctx context.Context) error {
 	if len(changes) == 0 {
 		return nil
 	}
+
 	defer c.changeTracker.Clear()
 
 	tx, err := c.db.BeginTx(ctx, nil)

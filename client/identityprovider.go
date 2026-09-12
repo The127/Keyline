@@ -40,6 +40,7 @@ func (c *identityProviderClient) Create(ctx context.Context, dto api.CreateIdent
 	if err != nil {
 		return api.CreateIdentityProviderResponseDto{}, fmt.Errorf("doing request: %w", err)
 	}
+
 	defer response.Body.Close() //nolint:errcheck
 
 	var responseDto api.CreateIdentityProviderResponseDto
@@ -61,6 +62,7 @@ func (c *identityProviderClient) Get(ctx context.Context, name string) (api.GetI
 	if err != nil {
 		return api.GetIdentityProviderResponseDto{}, fmt.Errorf("doing request: %w", err)
 	}
+
 	defer response.Body.Close() //nolint:errcheck
 
 	var responseDto api.GetIdentityProviderResponseDto

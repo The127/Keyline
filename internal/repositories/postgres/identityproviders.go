@@ -152,9 +152,11 @@ func (r *IdentityProviderRepository) FirstOrErr(ctx context.Context, filter *rep
 	if err != nil {
 		return nil, err
 	}
+
 	if result == nil {
 		return nil, utils.ErrIdentityProviderNotFound
 	}
+
 	return result, nil
 }
 
@@ -188,6 +190,7 @@ func (r *IdentityProviderRepository) List(ctx context.Context, filter *repositor
 	if err != nil {
 		return nil, fmt.Errorf("querying db: %w", err)
 	}
+
 	defer utils.PanicOnError(rows.Close, "closing rows")
 
 	var identityProviders []*repositories.IdentityProvider
@@ -257,6 +260,7 @@ func (r *IdentityProviderRepository) ExecuteInsert(ctx context.Context, tx *sql.
 	if pghelpers.IsUniqueViolation(err) {
 		return utils.ErrIdentityProviderExists
 	}
+
 	if err != nil {
 		return fmt.Errorf("inserting identity provider: %w", err)
 	}

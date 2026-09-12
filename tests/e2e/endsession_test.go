@@ -179,6 +179,7 @@ func endSessionAuthCodeFlow(serverUrl, vs, clientId, redirectUri, codeChallenge 
 	if err != nil {
 		return "", fmt.Errorf("authorize: %w", err)
 	}
+
 	_ = resp.Body.Close()
 	if resp.StatusCode != http.StatusFound {
 		return "", fmt.Errorf("authorize: expected 302, got %d", resp.StatusCode)
@@ -202,6 +203,7 @@ func endSessionAuthCodeFlow(serverUrl, vs, clientId, redirectUri, codeChallenge 
 	if err != nil {
 		return "", fmt.Errorf("verify-password: %w", err)
 	}
+
 	_ = resp.Body.Close()
 	if resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("verify-password: status %d", resp.StatusCode)
@@ -211,6 +213,7 @@ func endSessionAuthCodeFlow(serverUrl, vs, clientId, redirectUri, codeChallenge 
 	if err != nil {
 		return "", fmt.Errorf("finish-login: %w", err)
 	}
+
 	_ = resp.Body.Close()
 	if resp.StatusCode != http.StatusFound {
 		return "", fmt.Errorf("finish-login: expected 302, got %d", resp.StatusCode)
@@ -234,6 +237,7 @@ func endSessionAuthCodeFlow(serverUrl, vs, clientId, redirectUri, codeChallenge 
 	if err != nil {
 		return "", fmt.Errorf("second authorize: %w", err)
 	}
+
 	_ = resp.Body.Close()
 	if resp.StatusCode != http.StatusFound {
 		return "", fmt.Errorf("second authorize: expected 302, got %d", resp.StatusCode)

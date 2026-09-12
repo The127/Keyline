@@ -74,6 +74,7 @@ func authCodeFlow(serverUrl, clientId, redirectUri, codeChallenge string) (strin
 	if err != nil {
 		return "", fmt.Errorf("authorize: %w", err)
 	}
+
 	_ = resp.Body.Close()
 	if resp.StatusCode != http.StatusFound {
 		return "", fmt.Errorf("authorize: expected 302, got %d", resp.StatusCode)
@@ -107,6 +108,7 @@ func authCodeFlow(serverUrl, clientId, redirectUri, codeChallenge string) (strin
 	if err != nil {
 		return "", fmt.Errorf("finish-login: %w", err)
 	}
+
 	_ = resp.Body.Close()
 	if resp.StatusCode != http.StatusFound {
 		return "", fmt.Errorf("finish-login: expected 302, got %d", resp.StatusCode)
@@ -130,6 +132,7 @@ func authCodeFlow(serverUrl, clientId, redirectUri, codeChallenge string) (strin
 	if err != nil {
 		return "", fmt.Errorf("second authorize: %w", err)
 	}
+
 	_ = resp.Body.Close()
 	if resp.StatusCode != http.StatusFound {
 		return "", fmt.Errorf("second authorize: expected 302, got %d", resp.StatusCode)
@@ -155,6 +158,7 @@ func postToken(serverUrl string, form url.Values) (int, map[string]any, error) {
 	if err != nil {
 		return 0, nil, err
 	}
+
 	defer resp.Body.Close() //nolint:errcheck
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {

@@ -71,24 +71,31 @@ func (s IdentityProviderSettings) FilledFrom(defaults IdentityProviderSettings) 
 	if filled.Issuer == "" {
 		filled.Issuer = defaults.Issuer
 	}
+
 	if filled.AuthorizationEndpoint == "" {
 		filled.AuthorizationEndpoint = defaults.AuthorizationEndpoint
 	}
+
 	if filled.TokenEndpoint == "" {
 		filled.TokenEndpoint = defaults.TokenEndpoint
 	}
+
 	if filled.UserinfoEndpoint == "" {
 		filled.UserinfoEndpoint = defaults.UserinfoEndpoint
 	}
+
 	if filled.Scopes == nil {
 		filled.Scopes = append([]string{}, defaults.Scopes...)
 	}
+
 	if filled.ClientId == "" {
 		filled.ClientId = defaults.ClientId
 	}
+
 	if filled.ClientSecret == "" {
 		filled.ClientSecret = defaults.ClientSecret
 	}
+
 	return filled
 }
 
@@ -96,32 +103,40 @@ func (s IdentityProviderSettings) Validate() error {
 	if s.AuthorizationEndpoint == "" {
 		return fmt.Errorf("identity provider needs an authorization endpoint: %w", utils.ErrHttpBadRequest)
 	}
+
 	if s.TokenEndpoint == "" {
 		return fmt.Errorf("identity provider needs a token endpoint: %w", utils.ErrHttpBadRequest)
 	}
+
 	if s.UserinfoEndpoint == "" {
 		return fmt.Errorf("identity provider needs a userinfo endpoint: %w", utils.ErrHttpBadRequest)
 	}
+
 	for _, endpoint := range []string{s.Issuer, s.AuthorizationEndpoint, s.TokenEndpoint, s.UserinfoEndpoint} {
 		if endpoint == "" {
 			continue
 		}
+
 		parsed, err := url.Parse(endpoint)
 		if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.Host == "" {
 			return fmt.Errorf("identity provider url %s must be an absolute http or https url: %w", endpoint, utils.ErrHttpBadRequest)
 		}
 	}
+
 	for _, scope := range s.Scopes {
 		if scope == "" {
 			return fmt.Errorf("identity provider scopes must not be empty: %w", utils.ErrHttpBadRequest)
 		}
 	}
+
 	if s.ClientId == "" {
 		return fmt.Errorf("identity provider needs a client id: %w", utils.ErrHttpBadRequest)
 	}
+
 	if s.ClientSecret == "" {
 		return fmt.Errorf("identity provider needs a client secret: %w", utils.ErrHttpBadRequest)
 	}
+
 	return nil
 }
 
@@ -154,9 +169,11 @@ func NewIdentityProviderFromSettings(virtualServerId uuid.UUID, name string, dis
 	if name == "" {
 		return nil, fmt.Errorf("identity provider needs a name: %w", utils.ErrHttpBadRequest)
 	}
+
 	if strings.ContainsAny(name, identityProviderNameForbiddenRunes) {
 		return nil, fmt.Errorf("identity provider name %s must not contain any of %q: %w", name, identityProviderNameForbiddenRunes, utils.ErrHttpBadRequest)
 	}
+
 	if displayName == "" {
 		return nil, fmt.Errorf("identity provider %s needs a display name: %w", name, utils.ErrHttpBadRequest)
 	}
@@ -166,6 +183,7 @@ func NewIdentityProviderFromSettings(virtualServerId uuid.UUID, name string, dis
 		if !ok {
 			return nil, fmt.Errorf("unknown identity provider preset %s: %w", preset, utils.ErrHttpBadRequest)
 		}
+
 		settings = settings.FilledFrom(defaults)
 	}
 

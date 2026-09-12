@@ -47,6 +47,7 @@ func dexAvailable() bool {
 	if err != nil {
 		return false
 	}
+
 	defer resp.Body.Close() //nolint:errcheck
 	return resp.StatusCode == http.StatusOK
 }
@@ -62,9 +63,11 @@ func init() {
 				if backend.dbMode == config.DatabaseModePostgres && !postgresBackendAvailable() {
 					Skip("Postgres not available")
 				}
+
 				if !dexAvailable() {
 					Skip("dex not available")
 				}
+
 				h = newE2eTestHarness(backend.dbMode, serviceUserTokenSource, withPort(dexHarnessPort))
 
 				created, err := h.Client().VirtualServer().IdentityProviders().Create(h.Ctx(), api.CreateIdentityProviderRequestDto{
@@ -278,6 +281,7 @@ func dexSubjectOfAlice() string {
 	var tokens struct {
 		IdToken string `json:"id_token"`
 	}
+
 	Expect(json.NewDecoder(resp.Body).Decode(&tokens)).To(Succeed())
 	return accessTokenClaims(tokens.IdToken)["sub"].(string)
 }
@@ -325,6 +329,7 @@ func dexUsersNamed(h *harness, username string) []api.ListUsersResponseDto {
 			users = append(users, user)
 		}
 	}
+
 	return users
 }
 
@@ -341,6 +346,7 @@ func loginAtDexAs(authorizationUrl string, email string) *url.URL {
 			if strings.HasPrefix(req.URL.String(), "http://localhost:25999/") {
 				return http.ErrUseLastResponse
 			}
+
 			return nil
 		},
 	}

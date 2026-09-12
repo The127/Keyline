@@ -13,5 +13,6 @@ func IsUniqueViolation(err error) bool {
 	if !errors.As(err, &pqErr) {
 		return false
 	}
+
 	return string(pqErr.Code) == uniqueViolationCode
 }

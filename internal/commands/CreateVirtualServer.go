@@ -311,6 +311,7 @@ func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer)
 		if err != nil {
 			return nil, fmt.Errorf("identity provider %s: %w", identityProvider.Name, err)
 		}
+
 		dbContext.IdentityProviders().Insert(newIdentityProvider)
 	}
 

@@ -453,6 +453,7 @@ func setInitialIdentityProvidersDefaultsOrPanic() {
 		if _, seen := names[identityProvider.Name]; seen {
 			panic("identity provider " + identityProvider.Name + " is declared twice")
 		}
+
 		names[identityProvider.Name] = struct{}{}
 
 		if identityProvider.DisplayName == "" {

@@ -63,6 +63,7 @@ func (c *Context) IdentityProviders() repositories.IdentityProviderRepository {
 	if c.identityProviders == nil {
 		c.identityProviders = memrepos.NewIdentityProviderRepository(c.stores.IdentityProviders, &c.stores.mu, c.changeTracker, db.IdentityProviderEntityType)
 	}
+
 	return c.identityProviders
 }
 
@@ -220,6 +221,7 @@ func (c *Context) applyChange(ch *change.Entry) error {
 		if ch.GetChangeType() == change.Added && c.hasIdentityProviderNamed(ch.GetItem().(*repositories.IdentityProvider)) {
 			return utils.ErrIdentityProviderExists
 		}
+
 		return applyChange(c.stores.IdentityProviders, ch, func(e *repositories.IdentityProvider) {
 			e.SetVersion(incrementVersion(e.GetVersion()))
 			e.ClearChanges()
@@ -307,6 +309,7 @@ func (c *Context) hasIdentityProviderNamed(identityProvider *repositories.Identi
 			return true
 		}
 	}
+
 	return false
 }
 

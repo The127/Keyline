@@ -129,6 +129,7 @@ func Serve(dp *ioc.DependencyProvider, serverConfig config.ServerConfig) func(co
 		for _, s := range servers {
 			errs = append(errs, s.Shutdown(ctx))
 		}
+
 		return errors.Join(errs...)
 	}
 }

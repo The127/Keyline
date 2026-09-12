@@ -56,6 +56,7 @@ func HandleCreateIdentityProvider(ctx context.Context, command CreateIdentityPro
 	if err != nil {
 		return nil, err
 	}
+
 	dbContext.IdentityProviders().Insert(identityProvider)
 
 	return &CreateIdentityProviderResponse{

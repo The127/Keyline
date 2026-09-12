@@ -243,12 +243,14 @@ func newE2eTestHarness(dbMode config.DatabaseMode, tokenSourceGenerator func(ctx
 	if port == 0 {
 		port = findPort()
 	}
+
 	serverConfig := config.ServerConfig{
 		Port:           port,
 		Host:           "localhost",
 		AllowedOrigins: []string{"*"},
 		ExternalUrl:    fmt.Sprintf("http://localhost:%d", port),
 	}
+
 	shutdown := server.Serve(scope, serverConfig)
 
 	var opts []client.TransportOptions

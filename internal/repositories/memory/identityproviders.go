@@ -31,12 +31,15 @@ func (r *IdentityProviderRepository) matches(p *repositories.IdentityProvider, f
 	if filter.HasId() && p.Id() != filter.GetId() {
 		return false
 	}
+
 	if filter.HasVirtualServerId() && p.VirtualServerId() != filter.GetVirtualServerId() {
 		return false
 	}
+
 	if filter.HasName() && p.Name() != filter.GetName() {
 		return false
 	}
+
 	return true
 }
 
@@ -47,6 +50,7 @@ func (r *IdentityProviderRepository) filtered(filter *repositories.IdentityProvi
 			result = append(result, p)
 		}
 	}
+
 	sort.Slice(result, func(i, j int) bool {
 		return result[i].AuditCreatedAt().Before(result[j].AuditCreatedAt())
 	})
@@ -58,9 +62,11 @@ func (r *IdentityProviderRepository) FirstOrErr(ctx context.Context, filter *rep
 	if err != nil {
 		return nil, err
 	}
+
 	if result == nil {
 		return nil, utils.ErrIdentityProviderNotFound
 	}
+
 	return result, nil
 }
 
@@ -72,6 +78,7 @@ func (r *IdentityProviderRepository) FirstOrNil(_ context.Context, filter *repos
 	if len(items) == 0 {
 		return nil, nil
 	}
+
 	return items[0], nil
 }
 
