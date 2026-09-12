@@ -7,6 +7,13 @@ var identityProviderPresets = map[string]IdentityProviderSettings{
 		UserinfoEndpoint:      "https://api.github.com/user",
 		Scopes:                []string{"read:user", "user:email"},
 	},
+	"google": {
+		Issuer:                "https://accounts.google.com",
+		AuthorizationEndpoint: "https://accounts.google.com/o/oauth2/v2/auth",
+		TokenEndpoint:         "https://oauth2.googleapis.com/token",
+		UserinfoEndpoint:      "https://openidconnect.googleapis.com/v1/userinfo",
+		Scopes:                []string{"openid", "email", "profile"},
+	},
 }
 
 func IdentityProviderPreset(name string) (IdentityProviderSettings, bool) {

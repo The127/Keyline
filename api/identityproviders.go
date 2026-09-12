@@ -6,6 +6,7 @@ type CreateIdentityProviderRequestDto struct {
 	Name                  string   `json:"name" validate:"required,min=1,max=255,excludesall=/?#%"`
 	DisplayName           string   `json:"displayName" validate:"required,min=1,max=255"`
 	Preset                string   `json:"preset,omitempty"`
+	Issuer                string   `json:"issuer,omitempty" validate:"omitempty,http_url"`
 	AuthorizationEndpoint string   `json:"authorizationEndpoint,omitempty" validate:"omitempty,http_url"`
 	TokenEndpoint         string   `json:"tokenEndpoint,omitempty" validate:"omitempty,http_url"`
 	UserinfoEndpoint      string   `json:"userinfoEndpoint,omitempty" validate:"omitempty,http_url"`
@@ -22,6 +23,7 @@ type GetIdentityProviderResponseDto struct {
 	Name                  string   `json:"name"`
 	DisplayName           string   `json:"displayName"`
 	Preset                string   `json:"preset,omitempty"`
+	Issuer                string   `json:"issuer,omitempty"`
 	AuthorizationEndpoint string   `json:"authorizationEndpoint"`
 	TokenEndpoint         string   `json:"tokenEndpoint"`
 	UserinfoEndpoint      string   `json:"userinfoEndpoint"`

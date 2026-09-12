@@ -121,6 +121,31 @@ func init() {
 				}))
 			})
 
+			It("fills the settings from the google preset", func() {
+				_, err := h.Client().VirtualServer().IdentityProviders().Create(h.Ctx(), api.CreateIdentityProviderRequestDto{
+					Name:         "google",
+					DisplayName:  "Google",
+					Preset:       "google",
+					ClientId:     "g-client",
+					ClientSecret: "g-secret",
+				})
+				Expect(err).ToNot(HaveOccurred())
+
+				got, err := h.Client().VirtualServer().IdentityProviders().Get(h.Ctx(), "google")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(got).To(Equal(api.GetIdentityProviderResponseDto{
+					Name:                  "google",
+					DisplayName:           "Google",
+					Preset:                "google",
+					Issuer:                "https://accounts.google.com",
+					AuthorizationEndpoint: "https://accounts.google.com/o/oauth2/v2/auth",
+					TokenEndpoint:         "https://oauth2.googleapis.com/token",
+					UserinfoEndpoint:      "https://openidconnect.googleapis.com/v1/userinfo",
+					Scopes:                []string{"openid", "email", "profile"},
+					ClientId:              "g-client",
+				}))
+			})
+
 			It("lets explicit settings win over the preset", func() {
 				_, err := h.Client().VirtualServer().IdentityProviders().Create(h.Ctx(), api.CreateIdentityProviderRequestDto{
 					Name:          "github-enterprise",
@@ -188,6 +213,11 @@ func init() {
 					},
 					"with a preset but no client credentials": func() api.CreateIdentityProviderRequestDto {
 						return api.CreateIdentityProviderRequestDto{Name: "no-creds", DisplayName: "No Creds", Preset: "github"}
+					},
+					"with an issuer that is not an http url": func() api.CreateIdentityProviderRequestDto {
+						provider := explicitIdentityProvider("bad-issuer", "Bad Issuer")
+						provider.Issuer = "accounts.google.com"
+						return provider
 					},
 					"with an empty scope": func() api.CreateIdentityProviderRequestDto {
 						provider := explicitIdentityProvider("emptyscope", "Empty Scope")

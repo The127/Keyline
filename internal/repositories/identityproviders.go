@@ -12,6 +12,7 @@ import (
 type IdentityProviderChange int
 
 type IdentityProviderSettings struct {
+	Issuer                string
 	AuthorizationEndpoint string
 	TokenEndpoint         string
 	UserinfoEndpoint      string
@@ -22,6 +23,9 @@ type IdentityProviderSettings struct {
 
 func (s IdentityProviderSettings) FilledFrom(defaults IdentityProviderSettings) IdentityProviderSettings {
 	filled := s
+	if filled.Issuer == "" {
+		filled.Issuer = defaults.Issuer
+	}
 	if filled.AuthorizationEndpoint == "" {
 		filled.AuthorizationEndpoint = defaults.AuthorizationEndpoint
 	}

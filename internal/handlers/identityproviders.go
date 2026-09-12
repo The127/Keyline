@@ -57,6 +57,7 @@ func CreateIdentityProvider(w http.ResponseWriter, r *http.Request) {
 		DisplayName:       dto.DisplayName,
 		Preset:            dto.Preset,
 		Settings: repositories.IdentityProviderSettings{
+			Issuer:                dto.Issuer,
 			AuthorizationEndpoint: dto.AuthorizationEndpoint,
 			TokenEndpoint:         dto.TokenEndpoint,
 			UserinfoEndpoint:      dto.UserinfoEndpoint,
@@ -120,6 +121,7 @@ func GetIdentityProvider(w http.ResponseWriter, r *http.Request) {
 		Name:                  identityProvider.Name,
 		DisplayName:           identityProvider.DisplayName,
 		Preset:                identityProvider.Preset,
+		Issuer:                identityProvider.Settings.Issuer,
 		AuthorizationEndpoint: identityProvider.Settings.AuthorizationEndpoint,
 		TokenEndpoint:         identityProvider.Settings.TokenEndpoint,
 		UserinfoEndpoint:      identityProvider.Settings.UserinfoEndpoint,

@@ -10,6 +10,7 @@ create table identity_providers (
     "name" text not null,
     "display_name" text not null,
     "preset" text not null default '',
+    "issuer" text not null default '',
 
     "authorization_endpoint" text not null,
     "token_endpoint" text not null,

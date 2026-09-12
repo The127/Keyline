@@ -21,6 +21,7 @@ type sqliteIdentityProvider struct {
 	name                  string
 	displayName           string
 	preset                string
+	issuer                string
 	authorizationEndpoint string
 	tokenEndpoint         string
 	userinfoEndpoint      string
@@ -36,6 +37,7 @@ func mapIdentityProvider(identityProvider *repositories.IdentityProvider) *sqlit
 		name:                  identityProvider.Name(),
 		displayName:           identityProvider.DisplayName(),
 		preset:                identityProvider.Preset(),
+		issuer:                identityProvider.Settings().Issuer,
 		authorizationEndpoint: identityProvider.Settings().AuthorizationEndpoint,
 		tokenEndpoint:         identityProvider.Settings().TokenEndpoint,
 		userinfoEndpoint:      identityProvider.Settings().UserinfoEndpoint,
@@ -53,6 +55,7 @@ func (k *sqliteIdentityProvider) Map() *repositories.IdentityProvider {
 		k.displayName,
 		k.preset,
 		repositories.IdentityProviderSettings{
+			Issuer:                k.issuer,
 			AuthorizationEndpoint: k.authorizationEndpoint,
 			TokenEndpoint:         k.tokenEndpoint,
 			UserinfoEndpoint:      k.userinfoEndpoint,
@@ -73,6 +76,7 @@ func (k *sqliteIdentityProvider) scan(row sqlitehelpers.Row, additionalPtrs ...a
 		&k.name,
 		&k.displayName,
 		&k.preset,
+		&k.issuer,
 		&k.authorizationEndpoint,
 		&k.tokenEndpoint,
 		&k.userinfoEndpoint,
@@ -110,6 +114,7 @@ func (r *IdentityProviderRepository) selectQuery(filter *repositories.IdentityPr
 		"name",
 		"display_name",
 		"preset",
+		"issuer",
 		"authorization_endpoint",
 		"token_endpoint",
 		"userinfo_endpoint",
@@ -208,6 +213,7 @@ func (r *IdentityProviderRepository) ExecuteInsert(ctx context.Context, tx *sql.
 			"name",
 			"display_name",
 			"preset",
+			"issuer",
 			"authorization_endpoint",
 			"token_endpoint",
 			"userinfo_endpoint",
@@ -223,6 +229,7 @@ func (r *IdentityProviderRepository) ExecuteInsert(ctx context.Context, tx *sql.
 			mapped.name,
 			mapped.displayName,
 			mapped.preset,
+			mapped.issuer,
 			mapped.authorizationEndpoint,
 			mapped.tokenEndpoint,
 			mapped.userinfoEndpoint,
