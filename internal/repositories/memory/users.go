@@ -36,6 +36,9 @@ func (r *UserRepository) matches(u *repositories.User, filter *repositories.User
 	if filter.HasUsername() && u.Username() != filter.GetUsername() {
 		return false
 	}
+	if filter.HasPrimaryEmail() && u.PrimaryEmail() != filter.GetPrimaryEmail() {
+		return false
+	}
 	if filter.HasServiceUser() && u.IsServiceUser() != filter.GetServiceUser() {
 		return false
 	}

@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/database"
+	"github.com/The127/Keyline/internal/events"
 	"github.com/The127/Keyline/internal/jsonTypes"
 	"github.com/The127/Keyline/internal/logging"
 	"github.com/The127/Keyline/internal/middlewares"
@@ -22,6 +23,8 @@ import (
 	"time"
 
 	"github.com/The127/ioc"
+	"github.com/The127/mediatr"
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
 
@@ -347,22 +350,26 @@ func IdentityProviderCallback(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, fmt.Errorf("getting external identity: %w", err))
 		return
 	}
-	if credential == nil {
-		failLogin(fmt.Errorf("no user is linked to subject %s at %s", identity.Subject, providerName))
-		return
-	}
-
-	userFilter := repositories.NewUserFilter().
-		VirtualServerId(loginInfo.VirtualServerId).
-		Id(credential.UserId())
-	user, err := dbContext.Users().FirstOrNil(ctx, userFilter)
-	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting user: %w", err))
-		return
-	}
-	if user == nil {
-		failLogin(fmt.Errorf("linked user %s is not in virtual server %s", credential.UserId(), virtualServerName))
-		return
+	var user *repositories.User
+	if credential != nil {
+		userFilter := repositories.NewUserFilter().
+			VirtualServerId(loginInfo.VirtualServerId).
+			Id(credential.UserId())
+		user, err = dbContext.Users().FirstOrNil(ctx, userFilter)
+		if err != nil {
+			utils.HandleHttpError(w, fmt.Errorf("getting user: %w", err))
+			return
+		}
+		if user == nil {
+			failLogin(fmt.Errorf("linked user %s is not in virtual server %s", credential.UserId(), virtualServerName))
+			return
+		}
+	} else {
+		user, err = registerExternalIdentity(ctx, loginInfo.VirtualServerId, identityProvider, identity)
+		if err != nil {
+			failLogin(err)
+			return
+		}
 	}
 
 	loginInfo.UserId = user.Id()
@@ -441,4 +448,74 @@ func resolveExternalIdentity(ctx context.Context, upstream *identityproviders.Cl
 		Name:          name,
 		Username:      username,
 	}, nil
+}
+
+func registerExternalIdentity(ctx context.Context, virtualServerId uuid.UUID, identityProvider *repositories.IdentityProvider, identity externalIdentity) (*repositories.User, error) {
+	scope := middlewares.GetScope(ctx)
+	dbContext := ioc.GetDependency[database.Context](scope)
+
+	virtualServer, err := dbContext.VirtualServers().FirstOrErr(ctx, repositories.NewVirtualServerFilter().Id(virtualServerId))
+	if err != nil {
+		return nil, fmt.Errorf("getting virtual server: %w", err)
+	}
+	if !virtualServer.EnableRegistration() {
+		return nil, fmt.Errorf("no user is linked to subject %s at %s and registration is off", identity.Subject, identityProvider.Name())
+	}
+	if identity.Email == "" {
+		return nil, fmt.Errorf("%s returned no email for subject %s", identityProvider.Name(), identity.Subject)
+	}
+	if !identity.EmailVerified {
+		return nil, fmt.Errorf("%s does not vouch for the email of subject %s", identityProvider.Name(), identity.Subject)
+	}
+
+	username := strings.TrimSpace(identity.Username)
+	if username == "" {
+		username = strings.SplitN(identity.Email, "@", 2)[0]
+	}
+	if username == "" || len(username) > 255 {
+		return nil, fmt.Errorf("%s returned no usable username for subject %s", identityProvider.Name(), identity.Subject)
+	}
+	displayName := strings.TrimSpace(identity.Name)
+	if displayName == "" || len(displayName) > 255 {
+		displayName = username
+	}
+
+	sameName, err := dbContext.Users().FirstOrNil(ctx, repositories.NewUserFilter().VirtualServerId(virtualServerId).Username(username))
+	if err != nil {
+		return nil, fmt.Errorf("getting user: %w", err)
+	}
+	if sameName != nil {
+		return nil, fmt.Errorf("username %s is taken, subject %s at %s cannot register", username, identity.Subject, identityProvider.Name())
+	}
+
+	sameEmail, err := dbContext.Users().FirstOrNil(ctx, repositories.NewUserFilter().VirtualServerId(virtualServerId).PrimaryEmail(identity.Email))
+	if err != nil {
+		return nil, fmt.Errorf("getting user: %w", err)
+	}
+	if sameEmail != nil {
+		return nil, fmt.Errorf("email %s belongs to another user, subject %s at %s cannot register", identity.Email, identity.Subject, identityProvider.Name())
+	}
+
+	user := repositories.NewUser(username, displayName, identity.Email, virtualServerId)
+	user.SetEmailVerified(true)
+	dbContext.Users().Insert(user)
+	dbContext.Credentials().Insert(repositories.NewCredential(user.Id(), &repositories.CredentialExternalIdentity{
+		IdentityProviderId: identityProvider.Id(),
+		Subject:            identity.Subject,
+	}))
+
+	m := ioc.GetDependency[mediatr.Mediator](scope)
+	err = mediatr.SendEvent(ctx, m, events.UserCreatedEvent{
+		User: user,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("raising event: %w", err)
+	}
+
+	err = dbContext.SaveChanges(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("saving registered user: %w", err)
+	}
+
+	return user, nil
 }

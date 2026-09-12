@@ -15,6 +15,7 @@ import (
 	"strings"
 
 	"github.com/The127/Keyline/api"
+	"github.com/The127/Keyline/client"
 	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/authentication"
 	"github.com/The127/Keyline/internal/commands"
@@ -106,6 +107,7 @@ func init() {
 			})
 
 			It("sends an unlinked subject back to the login with an error", func() {
+				Expect(h.Client().VirtualServer().Patch(h.Ctx(), client.PatchVirtualServerInput{EnableRegistration: utils.Ptr(false)})).To(Succeed())
 				loginToken := beginLogin(h)
 				browser := newBrowser()
 				_, body := startIdentityProviderLogin(browser, h, loginToken, "dex")
@@ -176,6 +178,49 @@ func init() {
 				resp := callbackAtKeyline(browser, h, "other", callback.Query())
 
 				expectLoginRedirect(resp, loginToken, "identity_provider")
+			})
+
+			It("refuses an unknown subject while registration is off", func() {
+				Expect(h.Client().VirtualServer().Patch(h.Ctx(), client.PatchVirtualServerInput{EnableRegistration: utils.Ptr(false)})).To(Succeed())
+				loginToken := beginLogin(h)
+				browser := newBrowser()
+				_, body := startIdentityProviderLogin(browser, h, loginToken, "dex")
+				callback := loginAtDexAs(body["authorizationUrl"].(string), "bob@example.com")
+
+				resp := callbackAtKeyline(browser, h, "dex", callback.Query())
+
+				expectLoginRedirect(resp, loginToken, "identity_provider")
+				Expect(dexUsersNamed(h, "bob")).To(BeEmpty())
+			})
+
+			It("creates a user for an unknown subject when registration is on", func() {
+				Expect(h.Client().VirtualServer().Patch(h.Ctx(), client.PatchVirtualServerInput{EnableRegistration: utils.Ptr(true)})).To(Succeed())
+				loginToken := beginLogin(h)
+				browser := newBrowser()
+				_, body := startIdentityProviderLogin(browser, h, loginToken, "dex")
+				callback := loginAtDexAs(body["authorizationUrl"].(string), "bob@example.com")
+
+				resp := callbackAtKeyline(browser, h, "dex", callback.Query())
+
+				expectLoginRedirect(resp, loginToken, "")
+				Expect(loginState(h, loginToken)["step"]).To(Equal("finish"))
+				Expect(h.Client().Oidc().FinishLogin(h.Ctx(), loginToken)).To(Succeed())
+				users := dexUsersNamed(h, "bob")
+				Expect(users).To(HaveLen(1))
+				Expect(users[0].PrimaryEmail).To(Equal("bob@example.com"))
+			})
+
+			It("logs the created user in again instead of creating another", func() {
+				loginToken := beginLogin(h)
+				browser := newBrowser()
+				_, body := startIdentityProviderLogin(browser, h, loginToken, "dex")
+				callback := loginAtDexAs(body["authorizationUrl"].(string), "bob@example.com")
+
+				resp := callbackAtKeyline(browser, h, "dex", callback.Query())
+
+				expectLoginRedirect(resp, loginToken, "")
+				Expect(loginState(h, loginToken)["step"]).To(Equal("finish"))
+				Expect(dexUsersNamed(h, "bob")).To(HaveLen(1))
 			})
 
 			It("refuses a callback once the login moved past the password step", func() {
@@ -270,7 +315,24 @@ func readAll(resp *http.Response) string {
 	return string(body)
 }
 
+func dexUsersNamed(h *harness, username string) []api.ListUsersResponseDto {
+	page, err := h.Client().User().List(h.Ctx(), client.ListUserParams{Page: 1, Size: 100})
+	Expect(err).ToNot(HaveOccurred())
+
+	var users []api.ListUsersResponseDto
+	for _, user := range page.Items {
+		if user.Username == username {
+			users = append(users, user)
+		}
+	}
+	return users
+}
+
 func loginAtDex(authorizationUrl string) *url.URL {
+	return loginAtDexAs(authorizationUrl, dexUserEmail)
+}
+
+func loginAtDexAs(authorizationUrl string, email string) *url.URL {
 	jar, err := cookiejar.New(nil)
 	Expect(err).ToNot(HaveOccurred())
 	browser := &http.Client{
@@ -294,7 +356,7 @@ func loginAtDex(authorizationUrl string) *url.URL {
 	Expect(err).ToNot(HaveOccurred())
 
 	result, err := browser.PostForm(formAction.String(), url.Values{
-		"login":    {dexUserEmail},
+		"login":    {email},
 		"password": {dexUserPassword},
 	})
 	Expect(err).ToNot(HaveOccurred())
