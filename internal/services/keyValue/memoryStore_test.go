@@ -90,3 +90,30 @@ func (s *MemoryStoreSuite) TestGetExpired() {
 	s.Equal(ErrNotFound, err)
 	s.Empty(got)
 }
+
+func (s *MemoryStoreSuite) TestSetIfAbsent() {
+	// arrange
+	ctx, setTime := s.createContext()
+	store := NewMemoryStore()
+
+	// act
+	first, err := store.SetIfAbsent(ctx, "key", "value", WithExpiration(time.Second))
+	s.Require().NoError(err)
+
+	second, err := store.SetIfAbsent(ctx, "key", "other", WithExpiration(time.Second))
+	s.Require().NoError(err)
+
+	got, err := store.Get(ctx, "key")
+	s.Require().NoError(err)
+
+	setTime(time.Now().Add(time.Second * 2))
+
+	afterExpiry, err := store.SetIfAbsent(ctx, "key", "again", WithExpiration(time.Second))
+	s.Require().NoError(err)
+
+	// assert
+	s.True(first)
+	s.False(second)
+	s.Equal("value", got)
+	s.True(afterExpiry)
+}

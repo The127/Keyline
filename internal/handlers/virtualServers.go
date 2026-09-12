@@ -87,12 +87,16 @@ func CreateVirtualServer(w http.ResponseWriter, r *http.Request) {
 				Description: project.Description,
 				Applications: utils.MapSlice(project.Applications, func(app api.CreateVirtualServerRequestDtoProjectDtoApplicationDto) commands.CreateVirtualServerProjectApplication {
 					return commands.CreateVirtualServerProjectApplication{
-						Name:           app.Name,
-						DisplayName:    app.DisplayName,
-						Type:           app.Type,
-						HashedSecret:   app.HashedSecret,
-						RedirectUris:   app.RedirectUris,
-						PostLogoutUris: app.PostLogoutUris,
+						Name:                    app.Name,
+						DisplayName:             app.DisplayName,
+						Type:                    app.Type,
+						HashedSecret:            app.HashedSecret,
+						RedirectUris:            app.RedirectUris,
+						PostLogoutUris:          app.PostLogoutUris,
+						TokenEndpointAuthMethod: app.TokenEndpointAuthMethod,
+						PublicKeys: utils.MapSlice(app.PublicKeys, func(key api.CreateVirtualServerRequestDtoProjectDtoApplicationKeyDto) commands.CreateVirtualServerApplicationKey {
+							return commands.CreateVirtualServerApplicationKey{Pem: key.Pem, Kid: key.Kid}
+						}),
 					}
 				}),
 				Roles: utils.MapSlice(project.Roles, func(role api.CreateVirtualServerRequestDtoProjectDtoRoleDto) commands.CreateVirtualServerProjectRole {

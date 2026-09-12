@@ -205,6 +205,9 @@ func mapApiRoutes(r *mux.Router) {
 	vsApiRouter.HandleFunc("/projects/{projectSlug}/applications/{appId}", handlers.GetApplication).Methods(http.MethodGet, http.MethodOptions)
 	vsApiRouter.HandleFunc("/projects/{projectSlug}/applications/{appId}", handlers.PatchApplication).Methods(http.MethodPatch, http.MethodOptions)
 	vsApiRouter.HandleFunc("/projects/{projectSlug}/applications/{appId}", handlers.DeleteApplication).Methods(http.MethodDelete, http.MethodOptions)
+	vsApiRouter.HandleFunc("/projects/{projectSlug}/applications/{appId}/keys", handlers.AddApplicationKey).Methods(http.MethodPost, http.MethodOptions)
+	vsApiRouter.HandleFunc("/projects/{projectSlug}/applications/{appId}/keys", handlers.ListApplicationKeys).Methods(http.MethodGet, http.MethodOptions)
+	vsApiRouter.HandleFunc("/projects/{projectSlug}/applications/{appId}/keys/{kid}", handlers.RemoveApplicationKey).Methods(http.MethodDelete, http.MethodOptions)
 
 	vsApiRouter.HandleFunc("/projects/{projectSlug}/resource-servers", handlers.CreateResourceServer).Methods(http.MethodPost, http.MethodOptions)
 	vsApiRouter.HandleFunc("/projects/{projectSlug}/resource-servers", handlers.ListResourceServers).Methods(http.MethodGet, http.MethodOptions)

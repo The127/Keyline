@@ -55,14 +55,21 @@ type CreateVirtualServerProjectRole struct {
 	Description string
 }
 
+type CreateVirtualServerApplicationKey struct {
+	Pem string
+	Kid string
+}
+
 type CreateVirtualServerProjectApplication struct {
-	Name              string
-	DisplayName       string
-	Type              string
-	HashedSecret      *string
-	RedirectUris      []string
-	PostLogoutUris    []string
-	DeviceFlowEnabled bool
+	Name                    string
+	DisplayName             string
+	Type                    string
+	HashedSecret            *string
+	RedirectUris            []string
+	PostLogoutUris          []string
+	DeviceFlowEnabled       bool
+	TokenEndpointAuthMethod *string
+	PublicKeys              []CreateVirtualServerApplicationKey
 }
 
 type CreateVirtualServerProject struct {
@@ -164,12 +171,38 @@ func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer)
 				repositories.ApplicationType(app.Type),
 				app.RedirectUris,
 			)
+			if app.TokenEndpointAuthMethod != nil {
+				if newApp.Type() != repositories.ApplicationTypeConfidential {
+					return nil, fmt.Errorf("token endpoint auth method is only supported for confidential applications: %w", utils.ErrHttpBadRequest)
+				}
+				newApp.SetTokenEndpointAuthMethod(utils.Ptr(repositories.TokenEndpointAuthMethod(*app.TokenEndpointAuthMethod)))
+			}
+			if newApp.AuthenticatesWith(repositories.TokenEndpointAuthMethodPrivateKeyJwt) && app.HashedSecret != nil {
+				return nil, fmt.Errorf("application secret is not supported for the private_key_jwt token endpoint auth method: %w", utils.ErrHttpBadRequest)
+			}
 			if app.HashedSecret != nil {
 				newApp.SetHashedSecret(*app.HashedSecret)
 			}
 			newApp.SetPostLogoutRedirectUris(app.PostLogoutUris)
 			newApp.SetDeviceFlowEnabled(app.DeviceFlowEnabled)
 			dbContext.Applications().Insert(newApp)
+
+			if len(app.PublicKeys) > 0 && !newApp.AuthenticatesWith(repositories.TokenEndpointAuthMethodPrivateKeyJwt) {
+				return nil, fmt.Errorf("public keys are only supported for the private_key_jwt token endpoint auth method: %w", utils.ErrHttpBadRequest)
+			}
+			kids := make(map[string]struct{}, len(app.PublicKeys))
+			for _, key := range app.PublicKeys {
+				if _, duplicate := kids[key.Kid]; duplicate {
+					return nil, fmt.Errorf("application %s declares kid %s twice: %w", app.Name, key.Kid, utils.ErrHttpBadRequest)
+				}
+				kids[key.Kid] = struct{}{}
+
+				_, err = utils.ParsePublicKeyPem(key.Pem)
+				if err != nil {
+					return nil, fmt.Errorf("parsing public key %s of application %s: %w", key.Kid, app.Name, err)
+				}
+				dbContext.ApplicationKeys().Insert(repositories.NewApplicationKey(newApp.Id(), key.Kid, key.Pem))
+			}
 		}
 
 		for _, role := range project.Roles {

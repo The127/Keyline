@@ -18,6 +18,13 @@ const (
 	ApplicationTypeConfidential ApplicationType = "confidential"
 )
 
+type TokenEndpointAuthMethod string
+
+const (
+	TokenEndpointAuthMethodClientSecret  TokenEndpointAuthMethod = "client_secret"
+	TokenEndpointAuthMethodPrivateKeyJwt TokenEndpointAuthMethod = "private_key_jwt"
+)
+
 type ApplicationChange int
 
 const (
@@ -30,6 +37,7 @@ const (
 	ApplicationChangeSystemApplication
 	ApplicationChangeDeviceFlowEnabled
 	ApplicationChangeSigningAlgorithm
+	ApplicationChangeTokenEndpointAuthMethod
 )
 
 type Application struct {
@@ -55,10 +63,12 @@ type Application struct {
 	deviceFlowEnabled bool
 
 	signingAlgorithm *config.SigningAlgorithm
+
+	tokenEndpointAuthMethod *TokenEndpointAuthMethod
 }
 
 func NewApplication(virtualServerId uuid.UUID, projectId uuid.UUID, name string, displayName string, type_ ApplicationType, redirectUris []string) *Application {
-	return &Application{
+	application := &Application{
 		BaseModel:              NewBaseModel(),
 		List:                   change.NewChanges[ApplicationChange](),
 		virtualServerId:        virtualServerId,
@@ -70,6 +80,12 @@ func NewApplication(virtualServerId uuid.UUID, projectId uuid.UUID, name string,
 		postLogoutRedirectUris: []string{},
 		accessTokenHeaderType:  "at+jwt",
 	}
+
+	if type_ == ApplicationTypeConfidential {
+		application.tokenEndpointAuthMethod = utils.Ptr(TokenEndpointAuthMethodClientSecret)
+	}
+
+	return application
 }
 
 func NewApplicationFromDB(
@@ -87,23 +103,25 @@ func NewApplicationFromDB(
 	accessTokenHeaderType string,
 	deviceFlowEnabled bool,
 	signingAlgorithm *config.SigningAlgorithm,
+	tokenEndpointAuthMethod *TokenEndpointAuthMethod,
 ) *Application {
 	return &Application{
-		BaseModel:              base,
-		List:                   change.NewChanges[ApplicationChange](),
-		virtualServerId:        virtualServerId,
-		projectId:              projectId,
-		name:                   name,
-		displayName:            displayName,
-		type_:                  type_,
-		hashedSecret:           hashedSecret,
-		redirectUris:           redirectUris,
-		postLogoutRedirectUris: postLogoutRedirectUris,
-		systemApplication:      systemApplication,
-		claimsMappingScript:    claimsMappingScript,
-		accessTokenHeaderType:  accessTokenHeaderType,
-		deviceFlowEnabled:      deviceFlowEnabled,
-		signingAlgorithm:       signingAlgorithm,
+		BaseModel:               base,
+		List:                    change.NewChanges[ApplicationChange](),
+		virtualServerId:         virtualServerId,
+		projectId:               projectId,
+		name:                    name,
+		displayName:             displayName,
+		type_:                   type_,
+		hashedSecret:            hashedSecret,
+		redirectUris:            redirectUris,
+		postLogoutRedirectUris:  postLogoutRedirectUris,
+		systemApplication:       systemApplication,
+		claimsMappingScript:     claimsMappingScript,
+		accessTokenHeaderType:   accessTokenHeaderType,
+		deviceFlowEnabled:       deviceFlowEnabled,
+		signingAlgorithm:        signingAlgorithm,
+		tokenEndpointAuthMethod: tokenEndpointAuthMethod,
 	}
 }
 
@@ -242,6 +260,19 @@ func (a *Application) SigningAlgorithm() *config.SigningAlgorithm {
 func (a *Application) SetSigningAlgorithm(alg *config.SigningAlgorithm) {
 	a.signingAlgorithm = alg
 	a.TrackChange(ApplicationChangeSigningAlgorithm)
+}
+
+func (a *Application) TokenEndpointAuthMethod() *TokenEndpointAuthMethod {
+	return a.tokenEndpointAuthMethod
+}
+
+func (a *Application) SetTokenEndpointAuthMethod(method *TokenEndpointAuthMethod) {
+	a.tokenEndpointAuthMethod = method
+	a.TrackChange(ApplicationChangeTokenEndpointAuthMethod)
+}
+
+func (a *Application) AuthenticatesWith(method TokenEndpointAuthMethod) bool {
+	return a.tokenEndpointAuthMethod != nil && *a.tokenEndpointAuthMethod == method
 }
 
 type ApplicationFilter struct {

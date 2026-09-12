@@ -65,16 +65,17 @@ func CreateApplication(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response, err := mediatr.Send[*commands.CreateApplicationResponse](ctx, m, commands.CreateApplication{
-		VirtualServerName:      vsName,
-		ProjectSlug:            projectSlug,
-		Name:                   dto.Name,
-		DisplayName:            dto.DisplayName,
-		Type:                   repositories.ApplicationType(dto.Type),
-		RedirectUris:           dto.RedirectUris,
-		PostLogoutRedirectUris: utils.EmptyIfNil(dto.PostLogoutUris),
-		AccessTokenHeaderType:  accessTokenHeaderType,
-		DeviceFlowEnabled:      dto.DeviceFlowEnabled,
-		SigningAlgorithm:       (*config.SigningAlgorithm)(dto.SigningAlgorithm),
+		VirtualServerName:       vsName,
+		ProjectSlug:             projectSlug,
+		Name:                    dto.Name,
+		DisplayName:             dto.DisplayName,
+		Type:                    repositories.ApplicationType(dto.Type),
+		RedirectUris:            dto.RedirectUris,
+		PostLogoutRedirectUris:  utils.EmptyIfNil(dto.PostLogoutUris),
+		AccessTokenHeaderType:   accessTokenHeaderType,
+		DeviceFlowEnabled:       dto.DeviceFlowEnabled,
+		SigningAlgorithm:        (*config.SigningAlgorithm)(dto.SigningAlgorithm),
+		TokenEndpointAuthMethod: (*repositories.TokenEndpointAuthMethod)(dto.TokenEndpointAuthMethod),
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -148,19 +149,20 @@ func GetApplication(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	err = json.NewEncoder(w).Encode(api.GetApplicationResponseDto{
-		Id:                     application.Id,
-		Name:                   application.Name,
-		DisplayName:            application.DisplayName,
-		Type:                   string(application.Type),
-		RedirectUris:           application.RedirectUris,
-		PostLogoutRedirectUris: application.PostLogoutUris,
-		SystemApplication:      application.SystemApplication,
-		ClaimsMappingScript:    application.ClaimsMappingScript,
-		AccessTokenHeaderType:  application.AccessTokenHeaderType,
-		DeviceFlowEnabled:      application.DeviceFlowEnabled,
-		SigningAlgorithm:       (*string)(application.SigningAlgorithm),
-		CreatedAt:              application.CreatedAt,
-		UpdatedAt:              application.UpdatedAt,
+		Id:                      application.Id,
+		Name:                    application.Name,
+		DisplayName:             application.DisplayName,
+		Type:                    string(application.Type),
+		RedirectUris:            application.RedirectUris,
+		PostLogoutRedirectUris:  application.PostLogoutUris,
+		SystemApplication:       application.SystemApplication,
+		ClaimsMappingScript:     application.ClaimsMappingScript,
+		AccessTokenHeaderType:   application.AccessTokenHeaderType,
+		DeviceFlowEnabled:       application.DeviceFlowEnabled,
+		SigningAlgorithm:        (*string)(application.SigningAlgorithm),
+		TokenEndpointAuthMethod: (*string)(application.TokenEndpointAuthMethod),
+		CreatedAt:               application.CreatedAt,
+		UpdatedAt:               application.UpdatedAt,
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)

@@ -31,6 +31,7 @@ func WithExpiration(expiration time.Duration) Option {
 
 type Store interface {
 	Set(ctx context.Context, key string, value string, opts ...Option) error
+	SetIfAbsent(ctx context.Context, key string, value string, opts ...Option) (bool, error)
 	Get(ctx context.Context, key string) (string, error)
 	Delete(ctx context.Context, key string) error
 }
@@ -82,6 +83,36 @@ func (m *memoryStore) Set(ctx context.Context, key string, value string, opts ..
 	return nil
 }
 
+func (m *memoryStore) SetIfAbsent(ctx context.Context, key string, value string, opts ...Option) (bool, error) {
+	scope := middlewares.GetScope(ctx)
+	clockService := ioc.GetDependency[clock.Service](scope)
+	now := clockService.Now()
+
+	item := memoryStoreItem{
+		value: value,
+	}
+
+	options := Options{}
+	for _, opt := range opts {
+		opt(&options)
+	}
+
+	if options.Expiration != 0 {
+		item.expiration = now.Add(options.Expiration)
+	}
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	existing, ok := m.data[key]
+	if ok && !existing.IsExpired(now) {
+		return false, nil
+	}
+
+	m.data[key] = item
+	return true, nil
+}
+
 func (m *memoryStore) Get(ctx context.Context, key string) (string, error) {
 	scope := middlewares.GetScope(ctx)
 	clockService := ioc.GetDependency[clock.Service](scope)
@@ -128,6 +159,15 @@ func (r *redisKvStore) Set(ctx context.Context, key string, value string, opts .
 		opt(&options)
 	}
 	return client.Set(ctx, key, value, options.Expiration).Err()
+}
+
+func (r *redisKvStore) SetIfAbsent(ctx context.Context, key string, value string, opts ...Option) (bool, error) {
+	client := newRedisClient()
+	options := Options{}
+	for _, opt := range opts {
+		opt(&options)
+	}
+	return client.SetNX(ctx, key, value, options.Expiration).Result()
 }
 
 func (r *redisKvStore) Get(ctx context.Context, key string) (string, error) {

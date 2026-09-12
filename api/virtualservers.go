@@ -28,13 +28,20 @@ type CreateVirtualServerRequestDtoProjectDtoRoleDto struct {
 	Description string `json:"description"`
 }
 
+type CreateVirtualServerRequestDtoProjectDtoApplicationKeyDto struct {
+	Pem string `json:"pem" validate:"required"`
+	Kid string `json:"kid" validate:"required"`
+}
+
 type CreateVirtualServerRequestDtoProjectDtoApplicationDto struct {
-	Name           string   `json:"name" validate:"required,min=1,max=255"`
-	DisplayName    string   `json:"displayName" validate:"required,min=1,max=255"`
-	Type           string   `json:"type" validate:"required,oneof=public confidential"`
-	HashedSecret   *string  `json:"hashedSecret"`
-	RedirectUris   []string `json:"redirectUris" validate:"required,dive,url,min=1"`
-	PostLogoutUris []string `json:"postLogoutUris" validate:"dive,url"`
+	Name                    string                                                     `json:"name" validate:"required,min=1,max=255"`
+	DisplayName             string                                                     `json:"displayName" validate:"required,min=1,max=255"`
+	Type                    string                                                     `json:"type" validate:"required,oneof=public confidential"`
+	HashedSecret            *string                                                    `json:"hashedSecret"`
+	RedirectUris            []string                                                   `json:"redirectUris" validate:"required,dive,url,min=1"`
+	PostLogoutUris          []string                                                   `json:"postLogoutUris" validate:"dive,url"`
+	TokenEndpointAuthMethod *string                                                    `json:"tokenEndpointAuthMethod,omitempty" validate:"omitempty,oneof=client_secret private_key_jwt"`
+	PublicKeys              []CreateVirtualServerRequestDtoProjectDtoApplicationKeyDto `json:"publicKeys,omitempty" validate:"dive"`
 }
 
 type CreateVirtualServerRequestDtoProjectDtoResourceServerDto struct {

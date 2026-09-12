@@ -19,37 +19,39 @@ import (
 
 type postgresApplication struct {
 	postgresBaseModel
-	virtualServerId        uuid.UUID
-	projectId              uuid.UUID
-	name                   string
-	displayName            string
-	type_                  string
-	hashedSecret           string
-	redirectUris           pq.StringArray
-	postLogoutRedirectUris pq.StringArray
-	systemApplication      bool
-	claimsMappingScript    sql.NullString
-	accessTokenHeaderType  string
-	deviceFlowEnabled      bool
-	signingAlgorithm       sql.NullString
+	virtualServerId         uuid.UUID
+	projectId               uuid.UUID
+	name                    string
+	displayName             string
+	type_                   string
+	hashedSecret            string
+	redirectUris            pq.StringArray
+	postLogoutRedirectUris  pq.StringArray
+	systemApplication       bool
+	claimsMappingScript     sql.NullString
+	accessTokenHeaderType   string
+	deviceFlowEnabled       bool
+	signingAlgorithm        sql.NullString
+	tokenEndpointAuthMethod sql.NullString
 }
 
 func mapApplication(a *repositories.Application) *postgresApplication {
 	return &postgresApplication{
-		postgresBaseModel:      mapBase(a.BaseModel),
-		virtualServerId:        a.VirtualServerId(),
-		projectId:              a.ProjectId(),
-		name:                   a.Name(),
-		displayName:            a.DisplayName(),
-		type_:                  string(a.Type()),
-		hashedSecret:           a.HashedSecret(),
-		redirectUris:           a.RedirectUris(),
-		postLogoutRedirectUris: a.PostLogoutRedirectUris(),
-		systemApplication:      a.SystemApplication(),
-		claimsMappingScript:    pghelpers.WrapStringPointer(a.ClaimsMappingScript()),
-		accessTokenHeaderType:  a.AccessTokenHeaderType(),
-		deviceFlowEnabled:      a.DeviceFlowEnabled(),
-		signingAlgorithm:       pghelpers.WrapStringPointer(utils.MapPtr(a.SigningAlgorithm(), func(alg config.SigningAlgorithm) string { return string(alg) })),
+		postgresBaseModel:       mapBase(a.BaseModel),
+		virtualServerId:         a.VirtualServerId(),
+		projectId:               a.ProjectId(),
+		name:                    a.Name(),
+		displayName:             a.DisplayName(),
+		type_:                   string(a.Type()),
+		hashedSecret:            a.HashedSecret(),
+		redirectUris:            a.RedirectUris(),
+		postLogoutRedirectUris:  a.PostLogoutRedirectUris(),
+		systemApplication:       a.SystemApplication(),
+		claimsMappingScript:     pghelpers.WrapStringPointer(a.ClaimsMappingScript()),
+		accessTokenHeaderType:   a.AccessTokenHeaderType(),
+		deviceFlowEnabled:       a.DeviceFlowEnabled(),
+		signingAlgorithm:        pghelpers.WrapStringPointer(utils.MapPtr(a.SigningAlgorithm(), func(alg config.SigningAlgorithm) string { return string(alg) })),
+		tokenEndpointAuthMethod: pghelpers.WrapStringPointer(utils.MapPtr(a.TokenEndpointAuthMethod(), func(method repositories.TokenEndpointAuthMethod) string { return string(method) })),
 	}
 }
 
@@ -69,6 +71,7 @@ func (a *postgresApplication) Map() *repositories.Application {
 		a.accessTokenHeaderType,
 		a.deviceFlowEnabled,
 		utils.MapPtr(pghelpers.UnwrapNullString(a.signingAlgorithm), func(s string) config.SigningAlgorithm { return config.SigningAlgorithm(s) }),
+		utils.MapPtr(pghelpers.UnwrapNullString(a.tokenEndpointAuthMethod), func(s string) repositories.TokenEndpointAuthMethod { return repositories.TokenEndpointAuthMethod(s) }),
 	)
 }
 
@@ -92,6 +95,7 @@ func (a *postgresApplication) scan(row pghelpers.Row, additionalPtrs ...any) err
 		&a.accessTokenHeaderType,
 		&a.deviceFlowEnabled,
 		&a.signingAlgorithm,
+		&a.tokenEndpointAuthMethod,
 	}
 
 	ptrs = append(ptrs, additionalPtrs...)
@@ -132,6 +136,7 @@ func (r *ApplicationRepository) selectQuery(filter *repositories.ApplicationFilt
 		"access_token_header_type",
 		"device_flow_enabled",
 		"signing_algorithm",
+		"token_endpoint_auth_method",
 	).From("applications")
 
 	if filter.HasName() {
@@ -257,6 +262,7 @@ func (r *ApplicationRepository) ExecuteInsert(ctx context.Context, tx *sql.Tx, a
 			"access_token_header_type",
 			"device_flow_enabled",
 			"signing_algorithm",
+			"token_endpoint_auth_method",
 		).
 		Values(
 			mapped.id,
@@ -275,6 +281,7 @@ func (r *ApplicationRepository) ExecuteInsert(ctx context.Context, tx *sql.Tx, a
 			mapped.accessTokenHeaderType,
 			mapped.deviceFlowEnabled,
 			mapped.signingAlgorithm,
+			mapped.tokenEndpointAuthMethod,
 		).
 		Returning("xmin")
 
@@ -336,6 +343,9 @@ func (r *ApplicationRepository) ExecuteUpdate(ctx context.Context, tx *sql.Tx, a
 
 		case repositories.ApplicationChangeSigningAlgorithm:
 			s.SetMore(s.Assign("signing_algorithm", mapped.signingAlgorithm))
+
+		case repositories.ApplicationChangeTokenEndpointAuthMethod:
+			s.SetMore(s.Assign("token_endpoint_auth_method", mapped.tokenEndpointAuthMethod))
 
 		default:
 			return fmt.Errorf("updating field %v is not supported", field)

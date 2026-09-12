@@ -180,13 +180,17 @@ func initApplication(dp *ioc.DependencyProvider) {
 		var apps []commands.CreateVirtualServerProjectApplication = nil
 		for _, app := range project.Applications {
 			apps = append(apps, commands.CreateVirtualServerProjectApplication{
-				Name:              app.Name,
-				DisplayName:       app.DisplayName,
-				Type:              app.Type,
-				HashedSecret:      app.HashedSecret,
-				RedirectUris:      app.RedirectUris,
-				PostLogoutUris:    app.PostLogoutRedirectUris,
-				DeviceFlowEnabled: app.DeviceFlowEnabled,
+				Name:                    app.Name,
+				DisplayName:             app.DisplayName,
+				Type:                    app.Type,
+				HashedSecret:            app.HashedSecret,
+				RedirectUris:            app.RedirectUris,
+				PostLogoutUris:          app.PostLogoutRedirectUris,
+				DeviceFlowEnabled:       app.DeviceFlowEnabled,
+				TokenEndpointAuthMethod: app.TokenEndpointAuthMethod,
+				PublicKeys: utils.MapSlice(app.PublicKeys, func(key config.InitialApplicationKeyConfig) commands.CreateVirtualServerApplicationKey {
+					return commands.CreateVirtualServerApplicationKey{Pem: key.Pem, Kid: key.Kid}
+				}),
 			})
 		}
 

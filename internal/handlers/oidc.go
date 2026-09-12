@@ -183,21 +183,22 @@ func WellKnownJwks(w http.ResponseWriter, r *http.Request) {
 }
 
 type OpenIdConfigurationResponseDto struct {
-	Issuer                            string   `json:"issuer"`
-	AuthorizationEndpoint             string   `json:"authorization_endpoint"`
-	TokenEndpoint                     string   `json:"token_endpoint"`
-	UserinfoEndpoint                  string   `json:"userinfo_endpoint"`
-	EndSessionEndpoint                string   `json:"end_session_endpoint"`
-	DeviceAuthorizationEndpoint       string   `json:"device_authorization_endpoint"`
-	JwksUri                           string   `json:"jwks_uri"`
-	ResponseTypesSupported            []string `json:"response_types_supported"`
-	SubjectTypesSupported             []string `json:"subject_types_supported"`
-	IdTokenSigningAlgValuesSupported  []string `json:"id_token_signing_alg_values_supported"`
-	ScopesSupported                   []string `json:"scopes_supported"`
-	ClaimsSupported                   []string `json:"claims_supported"`
-	TokenEndpointAuthMethodsSupported []string `json:"token_endpoint_auth_methods_supported"`
-	RequestParameterSupported         bool     `json:"request_parameter_supported"`
-	GrantTypesSupported               []string `json:"grant_types_supported"`
+	Issuer                                     string   `json:"issuer"`
+	AuthorizationEndpoint                      string   `json:"authorization_endpoint"`
+	TokenEndpoint                              string   `json:"token_endpoint"`
+	UserinfoEndpoint                           string   `json:"userinfo_endpoint"`
+	EndSessionEndpoint                         string   `json:"end_session_endpoint"`
+	DeviceAuthorizationEndpoint                string   `json:"device_authorization_endpoint"`
+	JwksUri                                    string   `json:"jwks_uri"`
+	ResponseTypesSupported                     []string `json:"response_types_supported"`
+	SubjectTypesSupported                      []string `json:"subject_types_supported"`
+	IdTokenSigningAlgValuesSupported           []string `json:"id_token_signing_alg_values_supported"`
+	ScopesSupported                            []string `json:"scopes_supported"`
+	ClaimsSupported                            []string `json:"claims_supported"`
+	TokenEndpointAuthMethodsSupported          []string `json:"token_endpoint_auth_methods_supported"`
+	TokenEndpointAuthSigningAlgValuesSupported []string `json:"token_endpoint_auth_signing_alg_values_supported"`
+	RequestParameterSupported                  bool     `json:"request_parameter_supported"`
+	GrantTypesSupported                        []string `json:"grant_types_supported"`
 }
 
 // WellKnownOpenIdConfiguration exposes the OIDC discovery document.
@@ -252,8 +253,9 @@ func WellKnownOpenIdConfiguration(w http.ResponseWriter, r *http.Request) {
 			}
 			return result
 		}(),
-		TokenEndpointAuthMethodsSupported: []string{"client_secret_basic", "client_secret_post"},
-		GrantTypesSupported:               []string{"authorization_code", "refresh_token", "urn:ietf:params:oauth:grant-type:token-exchange", "urn:ietf:params:oauth:grant-type:device_code"},
+		TokenEndpointAuthMethodsSupported:          []string{"client_secret_basic", "client_secret_post", "private_key_jwt"},
+		TokenEndpointAuthSigningAlgValuesSupported: clientAssertionSigningMethods,
+		GrantTypesSupported:                        []string{"authorization_code", "refresh_token", "urn:ietf:params:oauth:grant-type:token-exchange", "urn:ietf:params:oauth:grant-type:device_code"},
 
 		ScopesSupported: []string{"openid", "email", "profile"}, // TODO: get from db
 		ClaimsSupported: []string{"sub", "name", "email"},       // TODO: get from db
@@ -914,63 +916,6 @@ func OidcToken(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// authenticateApplication looks up an application by name within the given
-// virtual server and verifies client authentication.
-//
-// Authentication rules:
-//   - Confidential clients MUST present a non-empty client_secret that matches
-//     the stored hash. Empty or wrong secret -> error.
-//   - Public clients MUST NOT send a client_secret (they have none registered).
-//     They authenticate the redemption via PKCE, which is checked separately
-//     by the caller against the bound code.
-//
-// The virtual server scoping closes a tenant-isolation bug: previously the
-// lookup was by name only, which would let a confidential client in tenant A
-// authenticate against a token request bound to tenant B (when names collided).
-func authenticateApplication(
-	ctx context.Context,
-	virtualServer *repositories.VirtualServer,
-	applicationName string,
-	applicationSecret string,
-) (*repositories.Application, error) {
-	scope := middlewares.GetScope(ctx)
-	dbContext := ioc.GetDependency[database.Context](scope)
-
-	applicationFilter := repositories.NewApplicationFilter().
-		VirtualServerId(virtualServer.Id()).
-		Name(applicationName)
-	application, err := dbContext.Applications().FirstOrNil(ctx, applicationFilter)
-	if err != nil {
-		return nil, fmt.Errorf("getting application: %w", err)
-	}
-	if application == nil {
-		return nil, fmt.Errorf("application not found")
-	}
-
-	switch application.Type() {
-	case repositories.ApplicationTypeConfidential:
-		if applicationSecret == "" {
-			return nil, fmt.Errorf("client_secret is required for confidential clients")
-		}
-		if !utils.CheapCompareHash(applicationSecret, application.HashedSecret()) {
-			return nil, fmt.Errorf("invalid secret")
-		}
-		return application, nil
-
-	case repositories.ApplicationTypePublic:
-		if applicationSecret != "" {
-			return nil, fmt.Errorf("public clients must not present a client_secret")
-		}
-		return application, nil
-
-	default:
-		return nil, fmt.Errorf("unsupported application type: %s", application.Type())
-	}
-}
-
-// verifyPKCE checks an RFC 7636 PKCE code_verifier against the stored
-// code_challenge and method. Only S256 is accepted; "plain" is rejected since
-// it provides no protection against an attacker who can read the request.
 func verifyPKCE(verifier, challenge, method string) error {
 	if verifier == "" {
 		return fmt.Errorf("code_verifier is required")
@@ -1030,11 +975,7 @@ func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	clientId, clientSecret, hasBasicAuth := r.BasicAuth()
-	if !hasBasicAuth {
-		clientId = r.Form.Get("client_id")
-		clientSecret = r.Form.Get("client_secret")
-	}
+	credentials := readClientCredentials(r)
 
 	dbContext := ioc.GetDependency[database.Context](scope)
 
@@ -1051,7 +992,7 @@ func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	application, err := authenticateApplication(ctx, virtualServer, clientId, clientSecret)
+	application, err := authenticateApplication(ctx, virtualServer, credentials)
 	if err != nil {
 		writeOAuthError(w, "invalid_client", err.Error())
 		return
@@ -1105,7 +1046,7 @@ func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 	params := TokenGenerationParams{
 		UserId:                codeInfo.UserId,
 		VirtualServerName:     codeInfo.VirtualServerName,
-		ClientId:              clientId,
+		ClientId:              application.Name(),
 		ApplicationId:         application.Id(),
 		GrantedScopes:         codeInfo.GrantedScopes,
 		UserDisplayName:       user.DisplayName(),
@@ -1472,11 +1413,7 @@ func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	scope := middlewares.GetScope(ctx)
 
-	clientId, clientSecret, hasBasicAuth := r.BasicAuth()
-	if !hasBasicAuth {
-		clientId = r.Form.Get("client_id")
-		clientSecret = r.Form.Get("client_secret")
-	}
+	credentials := readClientCredentials(r)
 
 	tokenService := ioc.GetDependency[services.TokenService](scope)
 	refreshTokenInfoString, err := tokenService.GetToken(ctx, services.OidcRefreshTokenTokenType, r.Form.Get("refresh_token"))
@@ -1505,12 +1442,13 @@ func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, err := authenticateApplication(ctx, virtualServer, clientId, clientSecret); err != nil {
+	application, err := authenticateApplication(ctx, virtualServer, credentials)
+	if err != nil {
 		writeOAuthError(w, "invalid_client", err.Error())
 		return
 	}
 
-	if refreshTokenInfo.ClientId != clientId {
+	if refreshTokenInfo.ClientId != application.Name() {
 		writeOAuthError(w, "invalid_grant", "refresh token was issued to a different client")
 		return
 	}
@@ -1535,19 +1473,6 @@ func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 	clockService := ioc.GetDependency[clock.Service](scope)
 	now := clockService.Now()
 
-	applicationFilter := repositories.NewApplicationFilter().
-		VirtualServerId(virtualServer.Id()).
-		Name(clientId)
-	application, err := dbContext.Applications().FirstOrNil(ctx, applicationFilter)
-	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting application: %w", err))
-		return
-	}
-	if application == nil {
-		utils.HandleHttpError(w, fmt.Errorf("application not found"))
-		return
-	}
-
 	keyService := ioc.GetDependency[services.KeyService](scope)
 	keyPair, err := keyService.GetKey(refreshTokenInfo.VirtualServerName, appSigningAlgorithm(virtualServer, application))
 	if err != nil {
@@ -1560,7 +1485,7 @@ func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 	params := TokenGenerationParams{
 		UserId:                refreshTokenInfo.UserId,
 		VirtualServerName:     refreshTokenInfo.VirtualServerName,
-		ClientId:              clientId,
+		ClientId:              application.Name(),
 		ApplicationId:         application.Id(),
 		GrantedScopes:         refreshTokenInfo.GrantedScopes,
 		UserDisplayName:       user.DisplayName(),
@@ -1874,12 +1799,8 @@ func BeginDeviceFlow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	clientId, clientSecret, hasBasicAuth := r.BasicAuth()
-	if !hasBasicAuth {
-		clientId = r.Form.Get("client_id")
-		clientSecret = r.Form.Get("client_secret")
-	}
-	if clientId == "" {
+	credentials := readClientCredentials(r)
+	if credentials.clientId == "" && !credentials.hasAssertion() {
 		writeOAuthError(w, "invalid_client", "client_id is required")
 		return
 	}
@@ -1907,7 +1828,7 @@ func BeginDeviceFlow(w http.ResponseWriter, r *http.Request) {
 
 	// RFC 8628 §3.1: confidential clients MUST authenticate at the device
 	// authorization endpoint per RFC 6749 §3.2.1.
-	application, err := authenticateApplication(ctx, virtualServer, clientId, clientSecret)
+	application, err := authenticateApplication(ctx, virtualServer, credentials)
 	if err != nil {
 		writeOAuthError(w, "invalid_client", err.Error())
 		return
@@ -1922,7 +1843,7 @@ func BeginDeviceFlow(w http.ResponseWriter, r *http.Request) {
 
 	deviceCodeInfo := jsonTypes.DeviceCodeInfo{
 		VirtualServerName: vsName,
-		ClientId:          clientId,
+		ClientId:          application.Name(),
 		GrantedScopes:     scopes,
 		Status:            string(jsonTypes.DeviceCodeStatusPending),
 		UserCode:          userCode,
@@ -1974,11 +1895,7 @@ func handleDeviceCodeGrant(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	scope := middlewares.GetScope(ctx)
 
-	clientId, clientSecret, hasBasicAuth := r.BasicAuth()
-	if !hasBasicAuth {
-		clientId = r.Form.Get("client_id")
-		clientSecret = r.Form.Get("client_secret")
-	}
+	credentials := readClientCredentials(r)
 
 	deviceCode := r.Form.Get("device_code")
 	if deviceCode == "" {
@@ -2031,7 +1948,7 @@ func handleDeviceCodeGrant(w http.ResponseWriter, r *http.Request) {
 	// endpoint per RFC 6749 §3.2.1. authenticateApplication enforces the
 	// per-type rules (confidential => secret required and verified, public =>
 	// no secret allowed) and scopes the lookup to the virtual server.
-	application, err := authenticateApplication(ctx, virtualServer, clientId, clientSecret)
+	application, err := authenticateApplication(ctx, virtualServer, credentials)
 	if err != nil {
 		writeOAuthError(w, "invalid_client", err.Error())
 		return
@@ -2039,7 +1956,7 @@ func handleDeviceCodeGrant(w http.ResponseWriter, r *http.Request) {
 
 	// Bind the device_code to the client it was issued to. Mirrors the
 	// client_id binding check on the auth-code grant.
-	if deviceCodeInfo.ClientId != clientId {
+	if deviceCodeInfo.ClientId != application.Name() {
 		writeOAuthError(w, "invalid_grant", "device code was issued to a different client")
 		return
 	}
@@ -2083,7 +2000,7 @@ func handleDeviceCodeGrant(w http.ResponseWriter, r *http.Request) {
 	params := TokenGenerationParams{
 		UserId:                userId,
 		VirtualServerName:     deviceCodeInfo.VirtualServerName,
-		ClientId:              clientId,
+		ClientId:              application.Name(),
 		ApplicationId:         application.Id(),
 		GrantedScopes:         deviceCodeInfo.GrantedScopes,
 		UserDisplayName:       user.DisplayName(),

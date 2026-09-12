@@ -7,10 +7,12 @@ const (
 
 	AuditView Permission = "audit:view"
 
-	ApplicationCreate Permission = "application:create"
-	ApplicationDelete Permission = "application:delete"
-	ApplicationUpdate Permission = "application:update"
-	ApplicationView   Permission = "application:view"
+	ApplicationCreate    Permission = "application:create"
+	ApplicationDelete    Permission = "application:delete"
+	ApplicationUpdate    Permission = "application:update"
+	ApplicationView      Permission = "application:view"
+	ApplicationAddKey    Permission = "application:add_key"
+	ApplicationRemoveKey Permission = "application:remove_key"
 
 	GroupView Permission = "group:view"
 

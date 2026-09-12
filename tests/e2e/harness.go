@@ -235,6 +235,7 @@ func newE2eTestHarness(dbMode config.DatabaseMode, tokenSourceGenerator func(ctx
 	// to identify which VS's key to fall back to. All e2e tests use "test-vs" as the
 	// initial VS, so set this here to keep the middleware's fallback in sync.
 	config.C.InitialVirtualServer.Name = "test-vs"
+	config.C.Server.ExternalUrl = serverConfig.ExternalUrl
 
 	err = initTest(scope)
 	if err != nil {
