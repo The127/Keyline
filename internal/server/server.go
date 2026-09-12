@@ -86,6 +86,7 @@ func Serve(dp *ioc.DependencyProvider, serverConfig config.ServerConfig) {
 	loginRouter.HandleFunc("/{loginToken}/finish-login", handlers.FinishLogin).Methods(http.MethodPost, http.MethodOptions)
 	loginRouter.HandleFunc("/{loginToken}/passkey/start", handlers.StartPasskeyLogin).Methods(http.MethodPost, http.MethodOptions)
 	loginRouter.HandleFunc("/{loginToken}/passkey/finish", handlers.FinishPasskeyLogin).Methods(http.MethodPost, http.MethodOptions)
+	loginRouter.HandleFunc("/{loginToken}/identity-providers/{name}/start", handlers.StartIdentityProviderLogin).Methods(http.MethodPost, http.MethodOptions)
 
 	if config.C.Server.ApiPort == 0 {
 		mapApiRoutes(r)

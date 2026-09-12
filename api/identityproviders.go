@@ -6,11 +6,11 @@ type CreateIdentityProviderRequestDto struct {
 	Name                  string   `json:"name" validate:"max=255"`
 	DisplayName           string   `json:"displayName" validate:"max=255"`
 	Preset                string   `json:"preset,omitempty"`
-	Issuer                string   `json:"issuer,omitempty" validate:"omitempty,http_url"`
-	AuthorizationEndpoint string   `json:"authorizationEndpoint,omitempty" validate:"omitempty,http_url"`
-	TokenEndpoint         string   `json:"tokenEndpoint,omitempty" validate:"omitempty,http_url"`
-	UserinfoEndpoint      string   `json:"userinfoEndpoint,omitempty" validate:"omitempty,http_url"`
-	Scopes                []string `json:"scopes" validate:"dive,required"`
+	Issuer                string   `json:"issuer,omitempty"`
+	AuthorizationEndpoint string   `json:"authorizationEndpoint,omitempty"`
+	TokenEndpoint         string   `json:"tokenEndpoint,omitempty"`
+	UserinfoEndpoint      string   `json:"userinfoEndpoint,omitempty"`
+	Scopes                []string `json:"scopes"`
 	ClientId              string   `json:"clientId" validate:"required"`
 	ClientSecret          string   `json:"clientSecret" validate:"required"`
 }

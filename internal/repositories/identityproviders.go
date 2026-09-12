@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/The127/Keyline/internal/change"
 	"github.com/The127/Keyline/utils"
+	"net/url"
 	"strings"
 
 	"github.com/google/uuid"
@@ -57,6 +58,20 @@ func (s IdentityProviderSettings) Validate() error {
 	}
 	if s.UserinfoEndpoint == "" {
 		return fmt.Errorf("identity provider needs a userinfo endpoint: %w", utils.ErrHttpBadRequest)
+	}
+	for _, endpoint := range []string{s.Issuer, s.AuthorizationEndpoint, s.TokenEndpoint, s.UserinfoEndpoint} {
+		if endpoint == "" {
+			continue
+		}
+		parsed, err := url.Parse(endpoint)
+		if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.Host == "" {
+			return fmt.Errorf("identity provider url %s must be an absolute http or https url: %w", endpoint, utils.ErrHttpBadRequest)
+		}
+	}
+	for _, scope := range s.Scopes {
+		if scope == "" {
+			return fmt.Errorf("identity provider scopes must not be empty: %w", utils.ErrHttpBadRequest)
+		}
 	}
 	if s.ClientId == "" {
 		return fmt.Errorf("identity provider needs a client id: %w", utils.ErrHttpBadRequest)

@@ -30,6 +30,7 @@ type LoginInfo struct {
 	TotpSecret               string    `json:"totpSecret"`
 	DeviceCode               string    `json:"deviceCode"`
 	FailedPasswordAttempts   int       `json:"failedPasswordAttempts"`
+	IdentityProviderState    string    `json:"identityProviderState"`
 }
 
 func NewLoginInfo(virtualServer *repositories.VirtualServer, application *repositories.Application, originalUrl string) LoginInfo {

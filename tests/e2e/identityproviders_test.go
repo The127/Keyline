@@ -190,6 +190,55 @@ func init() {
 				Expect(got.Scopes).To(Equal([]string{}))
 			})
 
+			It("starts a login at a provider", func() {
+				status, body := startIdentityProviderLogin(h, beginLogin(h), "corp")
+
+				Expect(status).To(Equal(http.StatusOK))
+				authorizationUrl, err := url.Parse(body["authorizationUrl"].(string))
+				Expect(err).ToNot(HaveOccurred())
+				Expect(authorizationUrl.Scheme + "://" + authorizationUrl.Host + authorizationUrl.Path).To(Equal("https://idp.example/authorize"))
+
+				query := authorizationUrl.Query()
+				Expect(query.Get("client_id")).To(Equal("client-123"))
+				Expect(query.Get("redirect_uri")).To(Equal(fmt.Sprintf("%s/oidc/%s/identity-providers/corp/callback", config.C.Server.ExternalUrl, h.VirtualServer())))
+				Expect(query.Get("response_type")).To(Equal("code"))
+				Expect(query.Get("scope")).To(Equal("openid email"))
+				Expect(query.Get("state")).ToNot(BeEmpty())
+				Expect(query.Get("code_challenge_method")).To(Equal("S256"))
+				Expect(query.Get("code_challenge")).To(HaveLen(43))
+				Expect(query.Get("nonce")).ToNot(BeEmpty())
+			})
+
+			It("uses a fresh state for every start", func() {
+				loginToken := beginLogin(h)
+				_, first := startIdentityProviderLogin(h, loginToken, "corp")
+				_, second := startIdentityProviderLogin(h, loginToken, "corp")
+
+				Expect(stateOf(first)).ToNot(Equal(stateOf(second)))
+			})
+
+			It("refuses to start at an unknown provider", func() {
+				status, _ := startIdentityProviderLogin(h, beginLogin(h), "nobody")
+
+				Expect(status).To(Equal(http.StatusNotFound))
+			})
+
+			It("refuses to start with an unknown login token", func() {
+				status, _ := startIdentityProviderLogin(h, "no-such-login", "corp")
+
+				Expect(status).To(Equal(http.StatusUnauthorized))
+			})
+
+			It("refuses to start once a user is identified", func() {
+				createUserinfoUser(h.Scope())
+				loginToken := beginLogin(h)
+				Expect(h.Client().Oidc().VerifyPassword(h.Ctx(), loginToken, userinfoUserUsername, userinfoUserPassword)).To(Succeed())
+
+				status, _ := startIdentityProviderLogin(h, loginToken, "corp")
+
+				Expect(status).To(Equal(http.StatusUnauthorized))
+			})
+
 			It("reads an empty scope list back as an empty list", func() {
 				provider := explicitIdentityProvider("noscopes", "No Scopes")
 				provider.Scopes = nil
@@ -322,6 +371,8 @@ func init() {
 					"that is incomplete":                        {Name: "bare", DisplayName: "Bare", ClientId: "x", ClientSecret: "y"},
 					"with a name that cannot be a path segment": {Name: "a/b", DisplayName: "Slash", Preset: "github", ClientId: "x", ClientSecret: "y"},
 					"without a display name":                    {Name: "nodisplay", Preset: "github", ClientId: "x", ClientSecret: "y"},
+					"with an endpoint that is not an http url":  {Name: "script", DisplayName: "Script", Preset: "github", AuthorizationEndpoint: "javascript:alert(1)", ClientId: "x", ClientSecret: "y"},
+					"with an empty scope":                       {Name: "emptyscope", DisplayName: "Empty", Preset: "github", Scopes: []string{"openid", ""}, ClientId: "x", ClientSecret: "y"},
 				}
 
 				for name, provider := range cases {
@@ -383,6 +434,22 @@ func getRaw(h *harness, url string) string {
 	body, err := io.ReadAll(resp.Body)
 	Expect(err).ToNot(HaveOccurred())
 	return string(body)
+}
+
+func startIdentityProviderLogin(h *harness, loginToken string, name string) (int, map[string]any) {
+	resp, err := http.Post(fmt.Sprintf("%s/logins/%s/identity-providers/%s/start", h.ApiUrl(), loginToken, name), "application/json", nil)
+	Expect(err).ToNot(HaveOccurred())
+	defer resp.Body.Close() //nolint:errcheck
+
+	var body map[string]any
+	_ = json.NewDecoder(resp.Body).Decode(&body)
+	return resp.StatusCode, body
+}
+
+func stateOf(body map[string]any) string {
+	authorizationUrl, err := url.Parse(body["authorizationUrl"].(string))
+	Expect(err).ToNot(HaveOccurred())
+	return authorizationUrl.Query().Get("state")
 }
 
 func beginLogin(h *harness) string {

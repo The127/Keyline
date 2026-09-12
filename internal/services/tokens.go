@@ -24,6 +24,7 @@ const (
 	OidcUserCodeTokenType            TokenType = "oidc_user_code"
 	ClientAssertionJtiTokenType      TokenType = "client_assertion_jti"
 	ServiceUserAssertionJtiTokenType TokenType = "service_user_assertion_jti"
+	IdentityProviderLoginTokenType   TokenType = "identity_provider_login"
 )
 
 func (t TokenType) Key(token string) string {
