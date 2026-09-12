@@ -413,6 +413,7 @@ For detailed information about testing:
 - [API Client Documentation](client/README.md) - Learn how to use the Keyline API client
 - [Service User Authentication](docs/service-user-authentication.md) - Guide for machine-to-machine authentication
 - [Userinfo claims in access tokens](docs/access-token-claims.md) - Per-application setting for identity claims in access tokens
+- [Login with external identity providers](docs/identity-providers.md) - Google, GitHub and OpenID Connect logins per virtual server
 
 ### Linting
 
