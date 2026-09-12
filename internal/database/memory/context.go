@@ -188,13 +188,14 @@ func (c *Context) SaveChanges(_ context.Context) error {
 	c.stores.mu.Lock()
 	defer c.stores.mu.Unlock()
 
+	defer c.changeTracker.Clear()
+
 	for _, ch := range c.changeTracker.GetChanges() {
 		if err := c.applyChange(ch); err != nil {
 			return fmt.Errorf("applying change: %w", err)
 		}
 	}
 
-	c.changeTracker.Clear()
 	return nil
 }
 

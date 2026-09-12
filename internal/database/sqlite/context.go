@@ -201,6 +201,7 @@ func (c *Context) SaveChanges(ctx context.Context) error {
 	if len(changes) == 0 {
 		return nil
 	}
+	defer c.changeTracker.Clear()
 
 	tx, err := c.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -222,7 +223,6 @@ func (c *Context) SaveChanges(ctx context.Context) error {
 		return fmt.Errorf("committing transaction: %w", err)
 	}
 
-	c.changeTracker.Clear()
 	return nil
 }
 
