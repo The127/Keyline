@@ -14,6 +14,7 @@ const (
 	FileEntityType
 	GroupRoleEntityType
 	GroupEntityType
+	IdentityProviderEntityType
 	OutboxMessageEntityType
 	PasswordRuleEntityType
 	ProjectEntityType
@@ -37,6 +38,7 @@ type Context interface {
 	Files() repositories.FileRepository
 	GroupRoles() repositories.GroupRoleRepository
 	Groups() repositories.GroupRepository
+	IdentityProviders() repositories.IdentityProviderRepository
 	OutboxMessages() repositories.OutboxMessageRepository
 	PasswordRules() repositories.PasswordRuleRepository
 	Projects() repositories.ProjectRepository

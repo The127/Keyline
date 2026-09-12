@@ -164,6 +164,8 @@ func mapApiRoutes(r *mux.Router) {
 	vsApiRouter.HandleFunc("/password-policies/rules/{ruleType}", handlers.UpdatePasswordRule).Methods(http.MethodPut, http.MethodOptions)
 
 	vsApiRouter.HandleFunc("/templates", handlers.ListTemplates).Methods(http.MethodGet, http.MethodOptions)
+
+	vsApiRouter.HandleFunc("/identity-providers", handlers.CreateIdentityProvider).Methods(http.MethodPost, http.MethodOptions)
 	vsApiRouter.HandleFunc("/templates/{templateType}", handlers.GetTemplate).Methods(http.MethodGet, http.MethodOptions)
 
 	vsApiRouter.HandleFunc("/users/register", handlers.RegisterUser).Methods(http.MethodPost, http.MethodOptions)

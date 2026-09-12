@@ -37,6 +37,7 @@ func Mediator(dc *ioc.DependencyCollection) {
 	mediatr.RegisterHandler(m, commands.HandleAssociateServiceUserPublicKey)
 	mediatr.RegisterHandler(m, commands.HandleRemoveServiceUserPublicKey)
 	mediatr.RegisterHandler(m, commands.HandleAddApplicationKey)
+	mediatr.RegisterHandler(m, commands.HandleCreateIdentityProvider)
 	mediatr.RegisterHandler(m, commands.HandleRemoveApplicationKey)
 	mediatr.RegisterHandler(m, queries.HandleGetUserMetadata)
 	mediatr.RegisterHandler(m, commands.HandleUpdateUserMetadata)

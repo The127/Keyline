@@ -167,6 +167,13 @@ type GetLoginStateResponseDto struct {
 	VirtualServerName        string `json:"virtualServerName"`
 	SignupEnabled            bool   `json:"signupEnabled"`
 	TotpSecret               string `json:"totpSecret"`
+
+	IdentityProviders []LoginIdentityProviderDto `json:"identityProviders"`
+}
+
+type LoginIdentityProviderDto struct {
+	Name        string `json:"name"`
+	DisplayName string `json:"displayName"`
 }
 
 // GetLoginState returns the current step of the login session.
@@ -204,6 +211,14 @@ func GetLoginState(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	dbContext := ioc.GetDependency[database.Context](scope)
+	identityProviderFilter := repositories.NewIdentityProviderFilter().VirtualServerId(loginInfo.VirtualServerId)
+	identityProviders, err := dbContext.IdentityProviders().List(ctx, identityProviderFilter)
+	if err != nil {
+		utils.HandleHttpError(w, fmt.Errorf("listing identity providers: %w", err))
+		return
+	}
+
 	response := GetLoginStateResponseDto{
 		Step:                     string(loginInfo.Step),
 		ApplicationDisplayName:   loginInfo.ApplicationDisplayName,
@@ -211,6 +226,13 @@ func GetLoginState(w http.ResponseWriter, r *http.Request) {
 		VirtualServerName:        loginInfo.VirtualServerName,
 		SignupEnabled:            loginInfo.RegistrationEnabled,
 		TotpSecret:               loginInfo.TotpSecret,
+		IdentityProviders:        make([]LoginIdentityProviderDto, 0, len(identityProviders)),
+	}
+	for _, identityProvider := range identityProviders {
+		response.IdentityProviders = append(response.IdentityProviders, LoginIdentityProviderDto{
+			Name:        identityProvider.Name(),
+			DisplayName: identityProvider.DisplayName(),
+		})
 	}
 
 	w.Header().Set("Content-Type", "application/json")

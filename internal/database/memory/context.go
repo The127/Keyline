@@ -7,6 +7,7 @@ import (
 	db "github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/repositories"
 	memrepos "github.com/The127/Keyline/internal/repositories/memory"
+	"github.com/The127/Keyline/utils"
 
 	"github.com/google/uuid"
 )
@@ -17,6 +18,7 @@ type Context struct {
 
 	applications            *memrepos.ApplicationRepository
 	applicationKeys         *memrepos.ApplicationKeyRepository
+	identityProviders       *memrepos.IdentityProviderRepository
 	applicationUserMetadata *memrepos.ApplicationUserMetadataRepository
 	auditLogs               *memrepos.AuditLogRepository
 	credentials             *memrepos.CredentialRepository
@@ -55,6 +57,13 @@ func (c *Context) ApplicationKeys() repositories.ApplicationKeyRepository {
 		c.applicationKeys = memrepos.NewApplicationKeyRepository(c.stores.ApplicationKeys, &c.stores.mu, c.changeTracker, db.ApplicationKeyEntityType)
 	}
 	return c.applicationKeys
+}
+
+func (c *Context) IdentityProviders() repositories.IdentityProviderRepository {
+	if c.identityProviders == nil {
+		c.identityProviders = memrepos.NewIdentityProviderRepository(c.stores.IdentityProviders, &c.stores.mu, c.changeTracker, db.IdentityProviderEntityType)
+	}
+	return c.identityProviders
 }
 
 func (c *Context) ApplicationUserMetadata() repositories.ApplicationUserMetadataRepository {
@@ -207,6 +216,15 @@ func (c *Context) applyChange(ch *change.Entry) error {
 	case db.ApplicationKeyEntityType:
 		return applyChange(c.stores.ApplicationKeys, ch, func(e *repositories.ApplicationKey) { e.SetVersion(incrementVersion(e.GetVersion())); e.ClearChanges() })
 
+	case db.IdentityProviderEntityType:
+		if ch.GetChangeType() == change.Added && c.hasIdentityProviderNamed(ch.GetItem().(*repositories.IdentityProvider)) {
+			return utils.ErrIdentityProviderExists
+		}
+		return applyChange(c.stores.IdentityProviders, ch, func(e *repositories.IdentityProvider) {
+			e.SetVersion(incrementVersion(e.GetVersion()))
+			e.ClearChanges()
+		})
+
 	case db.ApplicationUserMetadataEntityType:
 		return applyChange(c.stores.ApplicationUserMetadata, ch, func(e *repositories.ApplicationUserMetadata) {
 			e.SetVersion(incrementVersion(e.GetVersion()))
@@ -281,6 +299,15 @@ func incrementVersion(v any) int {
 
 type entityWithId interface {
 	Id() uuid.UUID
+}
+
+func (c *Context) hasIdentityProviderNamed(identityProvider *repositories.IdentityProvider) bool {
+	for _, existing := range c.stores.IdentityProviders {
+		if existing.VirtualServerId() == identityProvider.VirtualServerId() && existing.Name() == identityProvider.Name() {
+			return true
+		}
+	}
+	return false
 }
 
 func applyChange[T entityWithId](store map[uuid.UUID]T, ch *change.Entry, onWrite func(T)) error {

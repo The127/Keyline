@@ -18,6 +18,7 @@ type Context struct {
 
 	applications            *postgres.ApplicationRepository
 	applicationKeys         *postgres.ApplicationKeyRepository
+	identityProviders       *postgres.IdentityProviderRepository
 	applicationUserMetadata *postgres.ApplicationUserMetadataRepository
 	auditLogs               *postgres.AuditLogRepository
 	credentials             *postgres.CredentialRepository
@@ -51,6 +52,14 @@ func (c *Context) ApplicationKeys() repositories.ApplicationKeyRepository {
 	}
 
 	return c.applicationKeys
+}
+
+func (c *Context) IdentityProviders() repositories.IdentityProviderRepository {
+	if c.identityProviders == nil {
+		c.identityProviders = postgres.NewIdentityProviderRepository(c.db, c.changeTracker, db.IdentityProviderEntityType)
+	}
+
+	return c.identityProviders
 }
 
 func (c *Context) ApplicationUserMetadata() repositories.ApplicationUserMetadataRepository {
@@ -234,6 +243,9 @@ func (c *Context) applyChange(ctx context.Context, tx *sql.Tx, ch *change.Entry)
 	case db.ApplicationKeyEntityType:
 		return c.applyApplicationKeyChange(ctx, tx, ch)
 
+	case db.IdentityProviderEntityType:
+		return c.applyIdentityProviderChange(ctx, tx, ch)
+
 	case db.ApplicationUserMetadataEntityType:
 		return c.applyApplicationUserMetadataChange(ctx, tx, ch)
 
@@ -300,6 +312,16 @@ func (c *Context) applyApplicationChange(ctx context.Context, tx *sql.Tx, ch *ch
 
 	case change.Deleted:
 		return c.applications.ExecuteDelete(ctx, tx, ch.GetItem().(uuid.UUID))
+
+	default:
+		return fmt.Errorf("unsupported change type: %v", ch.GetChangeType())
+	}
+}
+
+func (c *Context) applyIdentityProviderChange(ctx context.Context, tx *sql.Tx, ch *change.Entry) error {
+	switch ch.GetChangeType() {
+	case change.Added:
+		return c.identityProviders.ExecuteInsert(ctx, tx, ch.GetItem().(*repositories.IdentityProvider))
 
 	default:
 		return fmt.Errorf("unsupported change type: %v", ch.GetChangeType())
