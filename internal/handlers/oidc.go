@@ -714,10 +714,27 @@ func extractClientIdFromJwt(idTokenClaims jwt.MapClaims) (string, error) {
 }
 
 type OidcUserInfoResponseDto struct {
-	Sub           string `json:"sub"`
-	Email         string `json:"email,omitempty"`
-	EmailVerified *bool  `json:"email_verified,omitempty"`
-	Name          string `json:"name,omitempty"`
+	Sub               string `json:"sub"`
+	Email             string `json:"email,omitempty"`
+	EmailVerified     *bool  `json:"email_verified,omitempty"`
+	Name              string `json:"name,omitempty"`
+	PreferredUsername string `json:"preferred_username,omitempty"`
+}
+
+func userinfoClaims(user *repositories.User, scopes []string) map[string]any {
+	claims := map[string]any{}
+
+	if slices.Contains(scopes, "email") {
+		claims["email"] = user.PrimaryEmail()
+		claims["email_verified"] = user.EmailVerified()
+	}
+
+	if slices.Contains(scopes, "profile") {
+		claims["name"] = user.DisplayName()
+		claims["preferred_username"] = user.Username()
+	}
+
+	return claims
 }
 
 // OidcUserinfo returns the userinfo for the presented access token.
@@ -810,26 +827,16 @@ func OidcUserinfo(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
-	tempResult := OidcUserInfoResponseDto{
-		Sub: userId.String(),
-	}
-
 	scopes, err := extractScopes(tokenJwt)
 	if err != nil {
 		utils.HandleHttpError(w, fmt.Errorf("extracting scopes: %w", err))
 		return
 	}
 
-	if slices.Contains(scopes, "email") {
-		tempResult.Email = user.PrimaryEmail()
-		tempResult.EmailVerified = utils.Ptr(user.EmailVerified())
-	}
+	result := userinfoClaims(user, scopes)
+	result["sub"] = userId.String()
 
-	if slices.Contains(scopes, "profile") {
-		tempResult.Name = user.DisplayName()
-	}
-
-	err = json.NewEncoder(w).Encode(tempResult)
+	err = json.NewEncoder(w).Encode(result)
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
@@ -1060,6 +1067,7 @@ func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 		Nonce:                 codeInfo.Nonce,
 		AuthenticatedAt:       codeInfo.AuthenticatedAt,
 		AccessTokenHeaderType: application.AccessTokenHeaderType(),
+		UserinfoInAccessToken: application.UserinfoInAccessToken(),
 	}
 
 	tokens, err := generateTokens(ctx, params, tokenService)
@@ -1139,20 +1147,22 @@ type TokenGenerationParams struct {
 	Nonce                 string
 	AuthenticatedAt       time.Time
 	AccessTokenHeaderType string
+	UserinfoInAccessToken bool
 }
 
 func (t *TokenGenerationParams) ToAccessTokenGenerationParams() AccessTokenGenerationParams {
 	return AccessTokenGenerationParams{
-		ExternalUrl:       t.ExternalUrl,
-		VirtualServerName: t.VirtualServerName,
-		ClientId:          t.ClientId,
-		ApplicationId:     t.ApplicationId,
-		GrantedScopes:     t.GrantedScopes,
-		IssuedAt:          t.IssuedAt,
-		Expiry:            t.AccessTokenExpiry,
-		UserId:            t.UserId,
-		KeyPair:           t.KeyPair,
-		HeaderType:        t.AccessTokenHeaderType,
+		ExternalUrl:           t.ExternalUrl,
+		VirtualServerName:     t.VirtualServerName,
+		ClientId:              t.ClientId,
+		ApplicationId:         t.ApplicationId,
+		GrantedScopes:         t.GrantedScopes,
+		IssuedAt:              t.IssuedAt,
+		Expiry:                t.AccessTokenExpiry,
+		UserId:                t.UserId,
+		KeyPair:               t.KeyPair,
+		HeaderType:            t.AccessTokenHeaderType,
+		UserinfoInAccessToken: t.UserinfoInAccessToken,
 	}
 }
 
@@ -1189,16 +1199,17 @@ type RefreshTokenGenerationParams struct {
 }
 
 type AccessTokenGenerationParams struct {
-	ExternalUrl       string
-	VirtualServerName string
-	ClientId          string
-	ApplicationId     uuid.UUID
-	GrantedScopes     []string
-	IssuedAt          time.Time
-	Expiry            time.Duration
-	UserId            uuid.UUID
-	KeyPair           services.KeyPair
-	HeaderType        string
+	ExternalUrl           string
+	VirtualServerName     string
+	ClientId              string
+	ApplicationId         uuid.UUID
+	GrantedScopes         []string
+	IssuedAt              time.Time
+	Expiry                time.Duration
+	UserId                uuid.UUID
+	KeyPair               services.KeyPair
+	HeaderType            string
+	UserinfoInAccessToken bool
 }
 
 type IdTokenGenerationParams struct {
@@ -1357,6 +1368,14 @@ func mapClaims(ctx context.Context, params AccessTokenGenerationParams) (jwt.Map
 		},
 	)
 
+	if params.UserinfoInAccessToken {
+		for name, value := range userinfoClaims(user, params.GrantedScopes) {
+			if _, set := mappedClaims[name]; !set {
+				mappedClaims[name] = value
+			}
+		}
+	}
+
 	claims := jwt.MapClaims(mappedClaims)
 	return claims, nil
 }
@@ -1497,6 +1516,7 @@ func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 		IdTokenExpiry:         tokenDuration,
 		RefreshTokenExpiry:    tokenDuration,
 		AccessTokenHeaderType: application.AccessTokenHeaderType(),
+		UserinfoInAccessToken: application.UserinfoInAccessToken(),
 	}
 
 	tokens, err := generateTokens(ctx, params, tokenService)
@@ -1738,16 +1758,17 @@ func handleTokenExchange(w http.ResponseWriter, r *http.Request) {
 	now := clockService.Now()
 
 	accessToken, err := generateAccessToken(ctx, AccessTokenGenerationParams{
-		UserId:            user.Id(),
-		VirtualServerName: virtualServer.Name(),
-		ClientId:          applicationName,
-		ApplicationId:     application.Id(),
-		GrantedScopes:     scopes,
-		ExternalUrl:       config.C.Server.ExternalUrl,
-		KeyPair:           keyPair,
-		IssuedAt:          now,
-		Expiry:            time.Minute * 5, // TODO: make this configurable per virtual server
-		HeaderType:        application.AccessTokenHeaderType(),
+		UserId:                user.Id(),
+		VirtualServerName:     virtualServer.Name(),
+		ClientId:              applicationName,
+		ApplicationId:         application.Id(),
+		GrantedScopes:         scopes,
+		ExternalUrl:           config.C.Server.ExternalUrl,
+		KeyPair:               keyPair,
+		IssuedAt:              now,
+		Expiry:                time.Minute * 5, // TODO: make this configurable per virtual server
+		HeaderType:            application.AccessTokenHeaderType(),
+		UserinfoInAccessToken: application.UserinfoInAccessToken(),
 	})
 	if err != nil {
 		utils.HandleHttpError(w, fmt.Errorf("generating access token: %w", err))
@@ -2012,6 +2033,7 @@ func handleDeviceCodeGrant(w http.ResponseWriter, r *http.Request) {
 		IdTokenExpiry:         tokenDuration,
 		RefreshTokenExpiry:    tokenDuration,
 		AccessTokenHeaderType: application.AccessTokenHeaderType(),
+		UserinfoInAccessToken: application.UserinfoInAccessToken(),
 	}
 
 	tokens, err := generateTokens(ctx, params, tokenService)

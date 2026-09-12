@@ -31,6 +31,7 @@ type CreateApplication struct {
 	DeviceFlowEnabled       bool
 	SigningAlgorithm        *config.SigningAlgorithm
 	TokenEndpointAuthMethod *repositories.TokenEndpointAuthMethod
+	UserinfoInAccessToken   bool
 }
 
 func (c CreateApplication) LogRequest() bool {
@@ -104,6 +105,7 @@ func HandleCreateApplication(ctx context.Context, command CreateApplication) (*C
 	application.SetPostLogoutRedirectUris(command.PostLogoutRedirectUris)
 	application.SetAccessTokenHeaderType(command.AccessTokenHeaderType)
 	application.SetDeviceFlowEnabled(command.DeviceFlowEnabled)
+	application.SetUserinfoInAccessToken(command.UserinfoInAccessToken)
 
 	if command.SigningAlgorithm != nil {
 		if !virtualServer.HasSigningAlgorithm(*command.SigningAlgorithm) {

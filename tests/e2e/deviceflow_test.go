@@ -122,18 +122,13 @@ func init() {
 					Expect(tokenResp.TokenType).To(Equal("Bearer"))
 				})
 
-				It("includes preferred_username in the access token when profile is requested", func() {
-					tokenResp := runDeviceFlow(h, "openid profile")
+				It("keeps the userinfo claims out of the access token by default", func() {
+					tokenResp := runDeviceFlow(h, "openid profile email")
 
 					claims := accessTokenClaims(tokenResp.AccessToken)
-					Expect(claims["preferred_username"]).To(Equal(deviceUserUsername))
-				})
-
-				It("omits preferred_username from the access token without the profile scope", func() {
-					tokenResp := runDeviceFlow(h, "openid")
-
-					claims := accessTokenClaims(tokenResp.AccessToken)
-					Expect(claims).ToNot(HaveKey("preferred_username"))
+					for _, name := range userinfoClaimNames {
+						Expect(claims).ToNot(HaveKey(name))
+					}
 				})
 
 				It("rejects double use of device_code", func() {

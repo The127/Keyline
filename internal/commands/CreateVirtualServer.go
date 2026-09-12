@@ -70,6 +70,7 @@ type CreateVirtualServerProjectApplication struct {
 	DeviceFlowEnabled       bool
 	TokenEndpointAuthMethod *string
 	PublicKeys              []CreateVirtualServerApplicationKey
+	UserinfoInAccessToken   bool
 }
 
 type CreateVirtualServerProject struct {
@@ -185,6 +186,7 @@ func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer)
 			}
 			newApp.SetPostLogoutRedirectUris(app.PostLogoutUris)
 			newApp.SetDeviceFlowEnabled(app.DeviceFlowEnabled)
+			newApp.SetUserinfoInAccessToken(app.UserinfoInAccessToken)
 			dbContext.Applications().Insert(newApp)
 
 			if len(app.PublicKeys) > 0 && !newApp.AuthenticatesWith(repositories.TokenEndpointAuthMethodPrivateKeyJwt) {

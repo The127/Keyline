@@ -42,6 +42,7 @@ type CreateVirtualServerRequestDtoProjectDtoApplicationDto struct {
 	PostLogoutUris          []string                                                   `json:"postLogoutUris" validate:"dive,url"`
 	TokenEndpointAuthMethod *string                                                    `json:"tokenEndpointAuthMethod,omitempty" validate:"omitempty,oneof=client_secret private_key_jwt"`
 	PublicKeys              []CreateVirtualServerRequestDtoProjectDtoApplicationKeyDto `json:"publicKeys,omitempty" validate:"dive"`
+	UserinfoInAccessToken   bool                                                       `json:"userinfoInAccessToken"`
 }
 
 type CreateVirtualServerRequestDtoProjectDtoResourceServerDto struct {

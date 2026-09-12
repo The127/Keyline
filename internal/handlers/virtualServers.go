@@ -97,6 +97,7 @@ func CreateVirtualServer(w http.ResponseWriter, r *http.Request) {
 						PublicKeys: utils.MapSlice(app.PublicKeys, func(key api.CreateVirtualServerRequestDtoProjectDtoApplicationKeyDto) commands.CreateVirtualServerApplicationKey {
 							return commands.CreateVirtualServerApplicationKey{Pem: key.Pem, Kid: key.Kid}
 						}),
+						UserinfoInAccessToken: app.UserinfoInAccessToken,
 					}
 				}),
 				Roles: utils.MapSlice(project.Roles, func(role api.CreateVirtualServerRequestDtoProjectDtoRoleDto) commands.CreateVirtualServerProjectRole {
