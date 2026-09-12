@@ -158,6 +158,16 @@ jobs:
         with:
           go-version: "1.25"
 
+      - name: Start dex
+        run: |
+          docker run -d --name dex -p 5556:5556 \
+            -v "$PWD/tests/e2e/dex/dex.yaml:/etc/dex/config.yaml:ro,z" \
+            ghcr.io/dexidp/dex:v2.45.1 dex serve /etc/dex/config.yaml
+          for i in $(seq 1 30); do
+            curl -fs http://localhost:5556/dex/.well-known/openid-configuration >/dev/null && break
+            sleep 1
+          done
+
       - name: Run e2e tests
         run: go test -v ./tests/e2e/... -tags=e2e
 

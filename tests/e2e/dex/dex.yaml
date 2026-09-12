@@ -1,0 +1,25 @@
+issuer: http://localhost:5556/dex
+
+storage:
+  type: memory
+
+web:
+  http: 0.0.0.0:5556
+
+oauth2:
+  skipApprovalScreen: true
+
+staticClients:
+  - id: keyline
+    secret: keyline-dex-secret
+    name: Keyline
+    redirectURIs:
+      - http://localhost:25999/oidc/test-vs/identity-providers/dex/callback
+
+enablePasswordDB: true
+
+staticPasswords:
+  - email: alice@example.com
+    hash: "$2a$10$2b2cU8CPhOTaGrs1HRQuAueS7JTT5ZHsHSzYiFPm1leZck7Mc8T4W"
+    username: alice
+    userID: 08a8684b-db88-4b73-90a9-3cd1661f5466

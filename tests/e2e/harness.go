@@ -113,7 +113,18 @@ func (h *harness) Scope() *ioc.DependencyProvider {
 	return h.scope
 }
 
-func newE2eTestHarness(dbMode config.DatabaseMode, tokenSourceGenerator func(ctx context.Context, url string) oauth2.TokenSource) *harness {
+type harnessOption func(*harnessOptions)
+
+type harnessOptions struct {
+	port int
+}
+
+func newE2eTestHarness(dbMode config.DatabaseMode, tokenSourceGenerator func(ctx context.Context, url string) oauth2.TokenSource, harnessOpts ...harnessOption) *harness {
+	options := harnessOptions{}
+	for _, opt := range harnessOpts {
+		opt(&options)
+	}
+
 	ctx := context.Background()
 	dc := ioc.NewDependencyCollection()
 	clockService, timeSetter := clock.NewMockClock(time.Now())
@@ -215,7 +226,10 @@ func newE2eTestHarness(dbMode config.DatabaseMode, tokenSourceGenerator func(ctx
 	ctx = middlewares.ContextWithScope(ctx, scope)
 	ctx = authentication.ContextWithCurrentUser(ctx, authentication.SystemUser())
 
-	port := findPort()
+	port := options.port
+	if port == 0 {
+		port = findPort()
+	}
 	serverConfig := config.ServerConfig{
 		Port:           port,
 		Host:           "localhost",
