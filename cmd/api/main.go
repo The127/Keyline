@@ -195,6 +195,13 @@ func initApplication(dp *ioc.DependencyProvider) {
 			Scopes:                identityProvider.Scopes,
 			ClientId:              identityProvider.ClientId,
 			ClientSecret:          identityProvider.ClientSecret,
+			ClaimMapping: repositories.IdentityProviderClaimMapping{
+				Subject:       identityProvider.ClaimMapping.Subject,
+				Email:         identityProvider.ClaimMapping.Email,
+				EmailVerified: identityProvider.ClaimMapping.EmailVerified,
+				Name:          identityProvider.ClaimMapping.Name,
+				Username:      identityProvider.ClaimMapping.Username,
+			},
 		})
 	}
 

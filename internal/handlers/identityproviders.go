@@ -64,6 +64,7 @@ func CreateIdentityProvider(w http.ResponseWriter, r *http.Request) {
 			Scopes:                dto.Scopes,
 			ClientId:              dto.ClientId,
 			ClientSecret:          dto.ClientSecret,
+			ClaimMapping:          claimMappingFromDto(dto.ClaimMapping),
 		},
 	})
 	if err != nil {
@@ -127,8 +128,33 @@ func GetIdentityProvider(w http.ResponseWriter, r *http.Request) {
 		UserinfoEndpoint:      identityProvider.Settings.UserinfoEndpoint,
 		Scopes:                identityProvider.Settings.Scopes,
 		ClientId:              identityProvider.Settings.ClientId,
+		ClaimMapping:          claimMappingToDto(identityProvider.Settings.ClaimMapping),
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)
+	}
+}
+
+func claimMappingFromDto(dto *api.IdentityProviderClaimMappingDto) repositories.IdentityProviderClaimMapping {
+	if dto == nil {
+		return repositories.IdentityProviderClaimMapping{}
+	}
+
+	return repositories.IdentityProviderClaimMapping{
+		Subject:       dto.Subject,
+		Email:         dto.Email,
+		EmailVerified: dto.EmailVerified,
+		Name:          dto.Name,
+		Username:      dto.Username,
+	}
+}
+
+func claimMappingToDto(claimMapping repositories.IdentityProviderClaimMapping) api.IdentityProviderClaimMappingDto {
+	return api.IdentityProviderClaimMappingDto{
+		Subject:       claimMapping.Subject,
+		Email:         claimMapping.Email,
+		EmailVerified: claimMapping.EmailVerified,
+		Name:          claimMapping.Name,
+		Username:      claimMapping.Username,
 	}
 }

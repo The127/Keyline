@@ -3,6 +3,7 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/The127/Keyline/internal/change"
@@ -28,6 +29,7 @@ type sqliteIdentityProvider struct {
 	scopes                sqlitehelpers.StringSlice
 	clientId              string
 	clientSecret          string
+	claimMapping          string
 }
 
 func mapIdentityProvider(identityProvider *repositories.IdentityProvider) *sqliteIdentityProvider {
@@ -44,6 +46,7 @@ func mapIdentityProvider(identityProvider *repositories.IdentityProvider) *sqlit
 		scopes:                identityProvider.Settings().Scopes,
 		clientId:              identityProvider.Settings().ClientId,
 		clientSecret:          identityProvider.Settings().ClientSecret,
+		claimMapping:          mustMarshalClaimMapping(identityProvider.Settings().ClaimMapping),
 	}
 }
 
@@ -62,6 +65,7 @@ func (k *sqliteIdentityProvider) Map() *repositories.IdentityProvider {
 			Scopes:                k.scopes,
 			ClientId:              k.clientId,
 			ClientSecret:          k.clientSecret,
+			ClaimMapping:          mustUnmarshalClaimMapping(k.claimMapping),
 		},
 	)
 }
@@ -83,6 +87,7 @@ func (k *sqliteIdentityProvider) scan(row sqlitehelpers.Row, additionalPtrs ...a
 		&k.scopes,
 		&k.clientId,
 		&k.clientSecret,
+		&k.claimMapping,
 	}
 
 	ptrs = append(ptrs, additionalPtrs...)
@@ -121,6 +126,7 @@ func (r *IdentityProviderRepository) selectQuery(filter *repositories.IdentityPr
 		"scopes",
 		"client_id",
 		"client_secret",
+		"claim_mapping",
 	).From("identity_providers")
 
 	if filter.HasId() {
@@ -220,6 +226,7 @@ func (r *IdentityProviderRepository) ExecuteInsert(ctx context.Context, tx *sql.
 			"scopes",
 			"client_id",
 			"client_secret",
+			"claim_mapping",
 		).
 		Values(
 			mapped.id,
@@ -236,6 +243,7 @@ func (r *IdentityProviderRepository) ExecuteInsert(ctx context.Context, tx *sql.
 			mapped.scopes,
 			mapped.clientId,
 			mapped.clientSecret,
+			mapped.claimMapping,
 		).
 		Returning("version")
 
@@ -255,4 +263,23 @@ func (r *IdentityProviderRepository) ExecuteInsert(ctx context.Context, tx *sql.
 	identityProvider.SetVersion(version)
 	identityProvider.ClearChanges()
 	return nil
+}
+
+func mustMarshalClaimMapping(claimMapping repositories.IdentityProviderClaimMapping) string {
+	encoded, err := json.Marshal(claimMapping)
+	if err != nil {
+		panic(fmt.Errorf("marshaling claim mapping: %w", err))
+	}
+
+	return string(encoded)
+}
+
+func mustUnmarshalClaimMapping(encoded string) repositories.IdentityProviderClaimMapping {
+	var claimMapping repositories.IdentityProviderClaimMapping
+	err := json.Unmarshal([]byte(encoded), &claimMapping)
+	if err != nil {
+		panic(fmt.Errorf("unmarshaling claim mapping: %w", err))
+	}
+
+	return claimMapping
 }

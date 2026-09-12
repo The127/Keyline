@@ -6,6 +6,10 @@ var identityProviderPresets = map[string]IdentityProviderSettings{
 		TokenEndpoint:         "https://github.com/login/oauth/access_token",
 		UserinfoEndpoint:      "https://api.github.com/user",
 		Scopes:                []string{"read:user", "user:email"},
+		ClaimMapping: IdentityProviderClaimMapping{
+			Subject:  "id",
+			Username: "login",
+		},
 	},
 	"google": {
 		Issuer:                "https://accounts.google.com",

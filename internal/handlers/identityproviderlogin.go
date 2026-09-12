@@ -19,6 +19,7 @@ import (
 	"github.com/The127/Keyline/utils"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -326,6 +327,14 @@ func IdentityProviderCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if identityProvider.Preset() == "github" {
+		identity.Email, identity.EmailVerified, err = upstream.GithubVerifiedEmail(ctx, settings, tokens.AccessToken)
+		if err != nil {
+			failLogin(err)
+			return
+		}
+	}
+
 	rawLoginInfo, err = tokenService.GetToken(ctx, services.LoginSessionTokenType, loginToken)
 	if err != nil {
 		http.Error(w, "login expired", http.StatusBadRequest)
@@ -431,15 +440,16 @@ func resolveExternalIdentity(ctx context.Context, upstream *identityproviders.Cl
 		claims[name] = value
 	}
 
-	subject, _ := claims["sub"].(string)
+	mapping := settings.ClaimMapping
+	subject := claimString(claims[mapping.Subject])
 	if subject == "" {
 		return externalIdentity{}, fmt.Errorf("provider returned no subject")
 	}
 
-	email, _ := claims["email"].(string)
-	emailVerified, _ := claims["email_verified"].(bool)
-	name, _ := claims["name"].(string)
-	username, _ := claims["preferred_username"].(string)
+	email := claimString(claims[mapping.Email])
+	emailVerified, _ := claims[mapping.EmailVerified].(bool)
+	name := claimString(claims[mapping.Name])
+	username := claimString(claims[mapping.Username])
 
 	return externalIdentity{
 		Subject:       subject,
@@ -518,4 +528,17 @@ func registerExternalIdentity(ctx context.Context, virtualServerId uuid.UUID, id
 	}
 
 	return user, nil
+}
+
+func claimString(value any) string {
+	switch typed := value.(type) {
+	case string:
+		return typed
+	case float64:
+		return strconv.FormatFloat(typed, 'f', -1, 64)
+	case json.Number:
+		return typed.String()
+	default:
+		return ""
+	}
 }

@@ -46,6 +46,7 @@ type CreateVirtualServerIdentityProvider struct {
 	Scopes                []string
 	ClientId              string
 	ClientSecret          string `json:"-"`
+	ClaimMapping          repositories.IdentityProviderClaimMapping
 }
 
 type CreateVirtualServerServiceUser struct {
@@ -304,6 +305,7 @@ func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer)
 				Scopes:                identityProvider.Scopes,
 				ClientId:              identityProvider.ClientId,
 				ClientSecret:          identityProvider.ClientSecret,
+				ClaimMapping:          identityProvider.ClaimMapping,
 			},
 		)
 		if err != nil {

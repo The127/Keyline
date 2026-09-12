@@ -1,6 +1,7 @@
 package identityproviders
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -118,6 +119,7 @@ func (c *Client) VerifyIdToken(ctx context.Context, settings repositories.Identi
 		}
 		return keys[0].Key, nil
 	},
+		jwt.WithJSONNumber(),
 		jwt.WithValidMethods([]string{"RS256", "RS384", "RS512", "ES256", "ES384", "ES512", "PS256", "PS384", "PS512", "EdDSA"}),
 		jwt.WithIssuer(settings.Issuer),
 		jwt.WithAudience(settings.ClientId),
@@ -197,10 +199,53 @@ func (c *Client) doJson(request *http.Request, target any) (int, error) {
 		return response.StatusCode, fmt.Errorf("reading response: %w", err)
 	}
 
-	err = json.Unmarshal(body, target)
+	decoder := json.NewDecoder(bytes.NewReader(body))
+	decoder.UseNumber()
+	err = decoder.Decode(target)
 	if err != nil {
 		return response.StatusCode, fmt.Errorf("decoding response with status %d: %w", response.StatusCode, err)
 	}
 
 	return response.StatusCode, nil
+}
+
+func (c *Client) GithubVerifiedEmail(ctx context.Context, settings repositories.IdentityProviderSettings, accessToken string) (string, bool, error) {
+	emailsUrl, err := url.Parse(settings.UserinfoEndpoint)
+	if err != nil {
+		return "", false, fmt.Errorf("parsing userinfo endpoint: %w", err)
+	}
+
+	emailsUrl.Path = strings.TrimSuffix(emailsUrl.Path, "/") + "/emails"
+	emailsUrl.RawQuery = ""
+
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, emailsUrl.String(), nil)
+	if err != nil {
+		return "", false, fmt.Errorf("creating emails request: %w", err)
+	}
+
+	request.Header.Set("Authorization", "Bearer "+accessToken)
+	request.Header.Set("Accept", "application/json")
+
+	var emails []struct {
+		Email    string `json:"email"`
+		Primary  bool   `json:"primary"`
+		Verified bool   `json:"verified"`
+	}
+
+	status, err := c.doJson(request, &emails)
+	if err != nil {
+		return "", false, fmt.Errorf("fetching emails: %w", err)
+	}
+
+	if status != http.StatusOK {
+		return "", false, fmt.Errorf("emails endpoint answered %d", status)
+	}
+
+	for _, email := range emails {
+		if email.Primary && email.Verified {
+			return email.Email, true, nil
+		}
+	}
+
+	return "", false, nil
 }

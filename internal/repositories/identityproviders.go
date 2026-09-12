@@ -13,6 +13,47 @@ import (
 
 type IdentityProviderChange int
 
+type IdentityProviderClaimMapping struct {
+	Subject       string `json:"subject"`
+	Email         string `json:"email"`
+	EmailVerified string `json:"emailVerified"`
+	Name          string `json:"name"`
+	Username      string `json:"username"`
+}
+
+var DefaultIdentityProviderClaimMapping = IdentityProviderClaimMapping{
+	Subject:       "sub",
+	Email:         "email",
+	EmailVerified: "email_verified",
+	Name:          "name",
+	Username:      "preferred_username",
+}
+
+func (m IdentityProviderClaimMapping) FilledFrom(defaults IdentityProviderClaimMapping) IdentityProviderClaimMapping {
+	filled := m
+	if filled.Subject == "" {
+		filled.Subject = defaults.Subject
+	}
+
+	if filled.Email == "" {
+		filled.Email = defaults.Email
+	}
+
+	if filled.EmailVerified == "" {
+		filled.EmailVerified = defaults.EmailVerified
+	}
+
+	if filled.Name == "" {
+		filled.Name = defaults.Name
+	}
+
+	if filled.Username == "" {
+		filled.Username = defaults.Username
+	}
+
+	return filled
+}
+
 type IdentityProviderSettings struct {
 	Issuer                string
 	AuthorizationEndpoint string
@@ -21,10 +62,12 @@ type IdentityProviderSettings struct {
 	Scopes                []string
 	ClientId              string
 	ClientSecret          string `json:"-"`
+	ClaimMapping          IdentityProviderClaimMapping
 }
 
 func (s IdentityProviderSettings) FilledFrom(defaults IdentityProviderSettings) IdentityProviderSettings {
 	filled := s
+	filled.ClaimMapping = filled.ClaimMapping.FilledFrom(defaults.ClaimMapping)
 	if filled.Issuer == "" {
 		filled.Issuer = defaults.Issuer
 	}
@@ -127,6 +170,7 @@ func NewIdentityProviderFromSettings(virtualServerId uuid.UUID, name string, dis
 	}
 
 	settings.Scopes = utils.EmptyIfNil(settings.Scopes)
+	settings.ClaimMapping = settings.ClaimMapping.FilledFrom(DefaultIdentityProviderClaimMapping)
 
 	err := settings.Validate()
 	if err != nil {
@@ -137,6 +181,7 @@ func NewIdentityProviderFromSettings(virtualServerId uuid.UUID, name string, dis
 }
 
 func NewIdentityProviderFromDB(base BaseModel, virtualServerId uuid.UUID, name string, displayName string, preset string, settings IdentityProviderSettings) *IdentityProvider {
+	settings.ClaimMapping = settings.ClaimMapping.FilledFrom(DefaultIdentityProviderClaimMapping)
 	return &IdentityProvider{
 		BaseModel:       base,
 		List:            change.NewChanges[IdentityProviderChange](),

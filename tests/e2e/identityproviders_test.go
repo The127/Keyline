@@ -87,6 +87,7 @@ func init() {
 					UserinfoEndpoint:      "https://idp.example/userinfo",
 					Scopes:                []string{"openid", "email"},
 					ClientId:              "client-123",
+					ClaimMapping:          standardClaimMapping(),
 				}))
 
 				raw := getIdentityProviderRaw(h, "explicit")
@@ -127,6 +128,13 @@ func init() {
 					UserinfoEndpoint:      "https://api.github.com/user",
 					Scopes:                []string{"read:user", "user:email"},
 					ClientId:              "gh-client",
+					ClaimMapping: api.IdentityProviderClaimMappingDto{
+						Subject:       "id",
+						Email:         "email",
+						EmailVerified: "email_verified",
+						Name:          "name",
+						Username:      "login",
+					},
 				}))
 			})
 
@@ -152,6 +160,7 @@ func init() {
 					UserinfoEndpoint:      "https://openidconnect.googleapis.com/v1/userinfo",
 					Scopes:                []string{"openid", "email", "profile"},
 					ClientId:              "g-client",
+					ClaimMapping:          standardClaimMapping(),
 				}))
 			})
 
@@ -396,6 +405,16 @@ func init() {
 				}
 			})
 		})
+	}
+}
+
+func standardClaimMapping() api.IdentityProviderClaimMappingDto {
+	return api.IdentityProviderClaimMappingDto{
+		Subject:       "sub",
+		Email:         "email",
+		EmailVerified: "email_verified",
+		Name:          "name",
+		Username:      "preferred_username",
 	}
 }
 

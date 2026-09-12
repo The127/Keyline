@@ -18,6 +18,7 @@ create table identity_providers (
     "scopes" text[] not null default '{}',
     "client_id" text not null,
     "client_secret" text not null,
+    "claim_mapping" text not null default '{}',
 
     primary key ("id"),
     foreign key ("virtual_server_id") references "virtual_servers" ("id") on delete cascade,

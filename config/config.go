@@ -119,6 +119,13 @@ type InitialIdentityProviderConfig struct {
 	Scopes                []string `yaml:"scopes,omitempty"`
 	ClientId              string   `yaml:"clientId"`
 	ClientSecret          string   `yaml:"clientSecret"`
+	ClaimMapping          struct {
+		Subject       string `yaml:"subject,omitempty"`
+		Email         string `yaml:"email,omitempty"`
+		EmailVerified string `yaml:"emailVerified,omitempty"`
+		Name          string `yaml:"name,omitempty"`
+		Username      string `yaml:"username,omitempty"`
+	} `yaml:"claimMapping,omitempty"`
 }
 
 type ServiceUserConfig struct {
