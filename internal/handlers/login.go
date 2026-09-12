@@ -114,9 +114,13 @@ func DetermineNextLoginStep(
 	if err != nil {
 		return "", err
 	}
-	passwordDetails, err := passwordCredential.PasswordDetails()
-	if err != nil {
-		return "", err
+	temporaryPassword := false
+	if passwordCredential != nil {
+		passwordDetails, err := passwordCredential.PasswordDetails()
+		if err != nil {
+			return "", err
+		}
+		temporaryPassword = passwordDetails.Temporary
 	}
 
 	totpFilter := repositories.NewCredentialFilter().UserId(user.Id()).Type(repositories.CredentialTypeTotp)
@@ -127,7 +131,7 @@ func DetermineNextLoginStep(
 
 	switch loginInfo.Step {
 	case jsonTypes.LoginStepPasswordVerification:
-		if passwordDetails.Temporary {
+		if temporaryPassword {
 			return jsonTypes.LoginStepTemporaryPassword, nil
 		}
 		fallthrough

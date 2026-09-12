@@ -5,4 +5,5 @@ type IdentityProviderLogin struct {
 	ProviderName string `json:"providerName"`
 	CodeVerifier string `json:"codeVerifier"`
 	Nonce        string `json:"nonce"`
+	BrowserToken string `json:"browserToken"`
 }

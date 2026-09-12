@@ -100,6 +100,15 @@ func (c *Credential) TotpDetails() (*CredentialTotpDetails, error) {
 	return nil, fmt.Errorf("expected totp credential, got %s: %w", c._type, ErrWrongCredentialCast)
 }
 
+func (c *Credential) ExternalIdentityDetails() (*CredentialExternalIdentity, error) {
+	details, ok := c.details.(*CredentialExternalIdentity)
+	if ok {
+		return details, nil
+	}
+
+	return nil, fmt.Errorf("expected external identity credential, got %s: %w", c._type, ErrWrongCredentialCast)
+}
+
 func (c *Credential) ServiceUserKeyDetails() (*CredentialServiceUserKey, error) {
 	details, ok := c.details.(*CredentialServiceUserKey)
 	if ok {
@@ -114,14 +123,37 @@ func (c *Credential) ServiceUserKeyDetails() (*CredentialServiceUserKey, error) 
 type CredentialType string
 
 const (
-	CredentialTypePassword       CredentialType = "password"
-	CredentialTypeTotp           CredentialType = "totp"
-	CredentialTypeServiceUserKey CredentialType = "service_user_key"
-	CredentialTypeWebauthn       CredentialType = "webauthn"
+	CredentialTypePassword         CredentialType = "password"
+	CredentialTypeTotp             CredentialType = "totp"
+	CredentialTypeServiceUserKey   CredentialType = "service_user_key"
+	CredentialTypeWebauthn         CredentialType = "webauthn"
+	CredentialTypeExternalIdentity CredentialType = "external_identity"
 )
 
 type CredentialDetails interface {
 	CredentialDetailType() CredentialType
+}
+
+type CredentialExternalIdentity struct {
+	IdentityProviderId uuid.UUID `json:"identityProviderId"`
+	Subject            string    `json:"subject"`
+}
+
+func (d *CredentialExternalIdentity) CredentialDetailType() CredentialType {
+	return CredentialTypeExternalIdentity
+}
+
+func (d *CredentialExternalIdentity) Value() (driver.Value, error) {
+	return json.Marshal(d)
+}
+
+func (d *CredentialExternalIdentity) Scan(value any) error {
+	bytes, ok := value.([]byte)
+	if !ok {
+		return fmt.Errorf("type assertion for credential failed")
+	}
+
+	return json.Unmarshal(bytes, &d)
 }
 
 type CredentialServiceUserKey struct {
@@ -215,12 +247,14 @@ func (d *CredentialTotpDetails) Scan(value any) error {
 }
 
 type CredentialFilter struct {
-	id              *uuid.UUID
-	userId          *uuid.UUID
-	_type           *CredentialType
-	detailId        *string
-	detailKid       *string
-	detailPublicKey *string
+	id                       *uuid.UUID
+	userId                   *uuid.UUID
+	_type                    *CredentialType
+	detailId                 *string
+	detailKid                *string
+	detailPublicKey          *string
+	detailIdentityProviderId *uuid.UUID
+	detailSubject            *string
 }
 
 func NewCredentialFilter() *CredentialFilter {
@@ -300,6 +334,34 @@ func (f *CredentialFilter) HasDetailKid() bool {
 
 func (f *CredentialFilter) GetDetailKid() string {
 	return utils.ZeroIfNil(f.detailKid)
+}
+
+func (f *CredentialFilter) DetailIdentityProviderId(identityProviderId uuid.UUID) *CredentialFilter {
+	filter := f.Clone()
+	filter.detailIdentityProviderId = &identityProviderId
+	return filter
+}
+
+func (f *CredentialFilter) HasDetailIdentityProviderId() bool {
+	return f.detailIdentityProviderId != nil
+}
+
+func (f *CredentialFilter) GetDetailIdentityProviderId() uuid.UUID {
+	return utils.ZeroIfNil(f.detailIdentityProviderId)
+}
+
+func (f *CredentialFilter) DetailSubject(subject string) *CredentialFilter {
+	filter := f.Clone()
+	filter.detailSubject = &subject
+	return filter
+}
+
+func (f *CredentialFilter) HasDetailSubject() bool {
+	return f.detailSubject != nil
+}
+
+func (f *CredentialFilter) GetDetailSubject() string {
+	return utils.ZeroIfNil(f.detailSubject)
 }
 
 func (f *CredentialFilter) DetailsId(id string) *CredentialFilter {

@@ -65,6 +65,7 @@ func Serve(dp *ioc.DependencyProvider, serverConfig config.ServerConfig) func(co
 	oidcRouter.HandleFunc("/userinfo", handlers.OidcUserinfo).Methods(http.MethodGet, http.MethodPost, http.MethodOptions)
 	oidcRouter.HandleFunc("/end_session", handlers.OidcEndSession).Methods(http.MethodGet, http.MethodOptions)
 	oidcRouter.HandleFunc("/device", handlers.BeginDeviceFlow).Methods(http.MethodPost, http.MethodOptions)
+	oidcRouter.HandleFunc("/identity-providers/{name}/callback", handlers.IdentityProviderCallback).Methods(http.MethodGet, http.MethodOptions)
 	oidcRouter.HandleFunc("/activate", handlers.GetActivatePage).Methods(http.MethodGet)
 	oidcRouter.HandleFunc("/activate", handlers.PostActivatePage).Methods(http.MethodPost)
 	oidcRouter.HandleFunc("/activate/success", handlers.ActivateSuccess).Methods(http.MethodGet)
@@ -89,7 +90,7 @@ func Serve(dp *ioc.DependencyProvider, serverConfig config.ServerConfig) func(co
 	loginRouter.HandleFunc("/{loginToken}/finish-login", handlers.FinishLogin).Methods(http.MethodPost, http.MethodOptions)
 	loginRouter.HandleFunc("/{loginToken}/passkey/start", handlers.StartPasskeyLogin).Methods(http.MethodPost, http.MethodOptions)
 	loginRouter.HandleFunc("/{loginToken}/passkey/finish", handlers.FinishPasskeyLogin).Methods(http.MethodPost, http.MethodOptions)
-	loginRouter.HandleFunc("/{loginToken}/identity-providers/{name}/start", handlers.StartIdentityProviderLogin).Methods(http.MethodPost, http.MethodOptions)
+	loginRouter.HandleFunc("/{loginToken}/identity-providers/{name}/start", handlers.StartIdentityProviderLogin).Methods(http.MethodGet, http.MethodOptions)
 
 	if config.C.Server.ApiPort == 0 {
 		mapApiRoutes(r)

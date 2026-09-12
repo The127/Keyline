@@ -3,6 +3,9 @@
 package e2e
 
 import (
+	"context"
+	"encoding/json"
+	"fmt"
 	"html"
 	"io"
 	"net/http"
@@ -13,6 +16,15 @@ import (
 
 	"github.com/The127/Keyline/api"
 	"github.com/The127/Keyline/config"
+	"github.com/The127/Keyline/internal/authentication"
+	"github.com/The127/Keyline/internal/commands"
+	"github.com/The127/Keyline/internal/database"
+	"github.com/The127/Keyline/internal/middlewares"
+	"github.com/The127/Keyline/internal/repositories"
+	"github.com/The127/Keyline/utils"
+	"github.com/The127/ioc"
+	"github.com/The127/mediatr"
+	"github.com/google/uuid"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -43,6 +55,7 @@ func init() {
 		backend := backend
 		Describe("Identity provider login at dex ["+backend.name+"]", Ordered, func() {
 			var h *harness
+			var dexProviderId uuid.UUID
 
 			BeforeAll(func() {
 				if backend.dbMode == config.DatabaseModePostgres && !postgresBackendAvailable() {
@@ -53,7 +66,7 @@ func init() {
 				}
 				h = newE2eTestHarness(backend.dbMode, serviceUserTokenSource, withPort(dexHarnessPort))
 
-				_, err := h.Client().VirtualServer().IdentityProviders().Create(h.Ctx(), api.CreateIdentityProviderRequestDto{
+				created, err := h.Client().VirtualServer().IdentityProviders().Create(h.Ctx(), api.CreateIdentityProviderRequestDto{
 					Name:                  "dex",
 					DisplayName:           "Dex",
 					Issuer:                dexIssuer,
@@ -65,6 +78,7 @@ func init() {
 					ClientSecret:          dexClientSecret,
 				})
 				Expect(err).ToNot(HaveOccurred())
+				dexProviderId = created.Id
 			})
 
 			AfterAll(func() {
@@ -74,8 +88,9 @@ func init() {
 			})
 
 			It("comes back from dex with a code and the state of the start", func() {
-				status, body := startIdentityProviderLogin(h, beginLogin(h), "dex")
-				Expect(status).To(Equal(http.StatusOK))
+				browser := newBrowser()
+				status, body := startIdentityProviderLogin(browser, h, beginLogin(h), "dex")
+				Expect(status).To(Equal(http.StatusFound))
 
 				callback := loginAtDex(body["authorizationUrl"].(string))
 
@@ -83,8 +98,170 @@ func init() {
 				Expect(callback.Query().Get("state")).To(Equal(stateOf(body)))
 				Expect(callback.Query().Get("code")).ToNot(BeEmpty())
 			})
+
+			It("refuses a callback with an unknown state", func() {
+				resp := callbackAtKeyline(newBrowser(), h, "dex", url.Values{"code": {"whatever"}, "state": {"no-such-state"}})
+
+				Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
+			})
+
+			It("sends an unlinked subject back to the login with an error", func() {
+				loginToken := beginLogin(h)
+				browser := newBrowser()
+				_, body := startIdentityProviderLogin(browser, h, loginToken, "dex")
+				callback := loginAtDex(body["authorizationUrl"].(string))
+
+				resp := callbackAtKeyline(browser, h, "dex", callback.Query())
+
+				expectLoginRedirect(resp, loginToken, "identity_provider")
+				Expect(loginState(h, loginToken)["step"]).To(Equal("passwordVerification"))
+			})
+
+			It("logs a linked user in", func() {
+				linkUserToDex(h, dexProviderId, "alice", dexSubjectOfAlice())
+				loginToken := beginLogin(h)
+				browser := newBrowser()
+				_, body := startIdentityProviderLogin(browser, h, loginToken, "dex")
+				callback := loginAtDex(body["authorizationUrl"].(string))
+
+				resp := callbackAtKeyline(browser, h, "dex", callback.Query())
+
+				expectLoginRedirect(resp, loginToken, "")
+				Expect(loginState(h, loginToken)["step"]).To(Equal("finish"))
+				Expect(h.Client().Oidc().FinishLogin(h.Ctx(), loginToken)).To(Succeed())
+			})
+
+			It("refuses a callback from another browser", func() {
+				loginToken := beginLogin(h)
+				browser := newBrowser()
+				_, body := startIdentityProviderLogin(browser, h, loginToken, "dex")
+				callback := loginAtDex(body["authorizationUrl"].(string))
+
+				resp := callbackAtKeyline(newBrowser(), h, "dex", callback.Query())
+
+				Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
+				Expect(loginState(h, loginToken)["step"]).To(Equal("passwordVerification"))
+			})
+
+			It("refuses a reused state", func() {
+				loginToken := beginLogin(h)
+				browser := newBrowser()
+				_, body := startIdentityProviderLogin(browser, h, loginToken, "dex")
+				callback := loginAtDex(body["authorizationUrl"].(string))
+				callbackAtKeyline(browser, h, "dex", callback.Query())
+
+				resp := callbackAtKeyline(browser, h, "dex", callback.Query())
+
+				Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
+			})
+
+			It("refuses a code dex does not know", func() {
+				loginToken := beginLogin(h)
+				browser := newBrowser()
+				_, body := startIdentityProviderLogin(browser, h, loginToken, "dex")
+
+				resp := callbackAtKeyline(browser, h, "dex", url.Values{"code": {"garbage"}, "state": {stateOf(body)}})
+
+				expectLoginRedirect(resp, loginToken, "identity_provider")
+			})
+
+			It("refuses a callback under another provider's name", func() {
+				_, err := h.Client().VirtualServer().IdentityProviders().Create(h.Ctx(), explicitIdentityProvider("other", "Other"))
+				Expect(err).ToNot(HaveOccurred())
+				loginToken := beginLogin(h)
+				browser := newBrowser()
+				_, body := startIdentityProviderLogin(browser, h, loginToken, "dex")
+				callback := loginAtDex(body["authorizationUrl"].(string))
+
+				resp := callbackAtKeyline(browser, h, "other", callback.Query())
+
+				expectLoginRedirect(resp, loginToken, "identity_provider")
+			})
+
+			It("refuses a callback once the login moved past the password step", func() {
+				createUserinfoUser(h.Scope())
+				loginToken := beginLogin(h)
+				browser := newBrowser()
+				_, body := startIdentityProviderLogin(browser, h, loginToken, "dex")
+				callback := loginAtDex(body["authorizationUrl"].(string))
+				Expect(h.Client().Oidc().VerifyPassword(h.Ctx(), loginToken, userinfoUserUsername, userinfoUserPassword)).To(Succeed())
+
+				resp := callbackAtKeyline(browser, h, "dex", callback.Query())
+
+				expectLoginRedirect(resp, loginToken, "identity_provider")
+			})
 		})
 	}
+}
+
+func callbackAtKeyline(browser *http.Client, h *harness, providerName string, query url.Values) *http.Response {
+	resp, err := browser.Get(fmt.Sprintf("%s/oidc/%s/identity-providers/%s/callback?%s", h.ApiUrl(), h.VirtualServer(), providerName, query.Encode()))
+	Expect(err).ToNot(HaveOccurred())
+	defer resp.Body.Close() //nolint:errcheck
+	return resp
+}
+
+func expectLoginRedirect(resp *http.Response, loginToken string, errorCode string) {
+	Expect(resp.StatusCode).To(Equal(http.StatusFound))
+	location, err := url.Parse(resp.Header.Get("Location"))
+	Expect(err).ToNot(HaveOccurred())
+	Expect(resp.Header.Get("Location")).To(HavePrefix(config.C.Frontend.ExternalUrl + "/login?"))
+	Expect(location.Query().Get("token")).To(Equal(loginToken))
+	Expect(location.Query().Get("error")).To(Equal(errorCode))
+}
+
+func dexSubjectOfAlice() string {
+	query := url.Values{}
+	query.Set("client_id", dexClientId)
+	query.Set("redirect_uri", "http://localhost:25999/oidc/test-vs/identity-providers/dex/callback")
+	query.Set("response_type", "code")
+	query.Set("scope", "openid")
+	query.Set("state", "fixture")
+	callback := loginAtDex(dexIssuer + "/auth?" + query.Encode())
+
+	resp, err := http.PostForm(dexIssuer+"/token", url.Values{
+		"grant_type":    {"authorization_code"},
+		"code":          {callback.Query().Get("code")},
+		"redirect_uri":  {"http://localhost:25999/oidc/test-vs/identity-providers/dex/callback"},
+		"client_id":     {dexClientId},
+		"client_secret": {dexClientSecret},
+	})
+	Expect(err).ToNot(HaveOccurred())
+	defer resp.Body.Close() //nolint:errcheck
+	Expect(resp.StatusCode).To(Equal(http.StatusOK))
+
+	var tokens struct {
+		IdToken string `json:"id_token"`
+	}
+	Expect(json.NewDecoder(resp.Body).Decode(&tokens)).To(Succeed())
+	return accessTokenClaims(tokens.IdToken)["sub"].(string)
+}
+
+func linkUserToDex(h *harness, identityProviderId uuid.UUID, username string, subject string) {
+	subscope := h.Scope().NewScope()
+	defer utils.PanicOnError(subscope.Close, "closing scope")
+
+	ctx := middlewares.ContextWithScope(context.Background(), subscope)
+	ctx = authentication.ContextWithCurrentUser(ctx, authentication.SystemUser())
+
+	m := ioc.GetDependency[mediatr.Mediator](subscope)
+	dbContext := ioc.GetDependency[database.Context](subscope)
+
+	userResp, err := mediatr.Send[*commands.CreateUserResponse](ctx, m, commands.CreateUser{
+		VirtualServerName: "test-vs",
+		DisplayName:       "Alice",
+		Username:          username,
+		Email:             username + "@example.com",
+		EmailVerified:     true,
+	})
+	Expect(err).ToNot(HaveOccurred())
+	Expect(dbContext.SaveChanges(ctx)).To(Succeed())
+
+	dbContext.Credentials().Insert(repositories.NewCredential(userResp.Id, &repositories.CredentialExternalIdentity{
+		IdentityProviderId: identityProviderId,
+		Subject:            subject,
+	}))
+	Expect(dbContext.SaveChanges(ctx)).To(Succeed())
 }
 
 func readAll(resp *http.Response) string {

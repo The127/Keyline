@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/cookiejar"
 	"net/url"
 
 	"github.com/The127/Keyline/api"
@@ -191,9 +192,9 @@ func init() {
 			})
 
 			It("starts a login at a provider", func() {
-				status, body := startIdentityProviderLogin(h, beginLogin(h), "corp")
+				status, body := startIdentityProviderLogin(newBrowser(), h, beginLogin(h), "corp")
 
-				Expect(status).To(Equal(http.StatusOK))
+				Expect(status).To(Equal(http.StatusFound))
 				authorizationUrl, err := url.Parse(body["authorizationUrl"].(string))
 				Expect(err).ToNot(HaveOccurred())
 				Expect(authorizationUrl.Scheme + "://" + authorizationUrl.Host + authorizationUrl.Path).To(Equal("https://idp.example/authorize"))
@@ -211,20 +212,21 @@ func init() {
 
 			It("uses a fresh state for every start", func() {
 				loginToken := beginLogin(h)
-				_, first := startIdentityProviderLogin(h, loginToken, "corp")
-				_, second := startIdentityProviderLogin(h, loginToken, "corp")
+				browser := newBrowser()
+				_, first := startIdentityProviderLogin(browser, h, loginToken, "corp")
+				_, second := startIdentityProviderLogin(browser, h, loginToken, "corp")
 
 				Expect(stateOf(first)).ToNot(Equal(stateOf(second)))
 			})
 
 			It("refuses to start at an unknown provider", func() {
-				status, _ := startIdentityProviderLogin(h, beginLogin(h), "nobody")
+				status, _ := startIdentityProviderLogin(newBrowser(), h, beginLogin(h), "nobody")
 
 				Expect(status).To(Equal(http.StatusNotFound))
 			})
 
 			It("refuses to start with an unknown login token", func() {
-				status, _ := startIdentityProviderLogin(h, "no-such-login", "corp")
+				status, _ := startIdentityProviderLogin(newBrowser(), h, "no-such-login", "corp")
 
 				Expect(status).To(Equal(http.StatusUnauthorized))
 			})
@@ -234,7 +236,7 @@ func init() {
 				loginToken := beginLogin(h)
 				Expect(h.Client().Oidc().VerifyPassword(h.Ctx(), loginToken, userinfoUserUsername, userinfoUserPassword)).To(Succeed())
 
-				status, _ := startIdentityProviderLogin(h, loginToken, "corp")
+				status, _ := startIdentityProviderLogin(newBrowser(), h, loginToken, "corp")
 
 				Expect(status).To(Equal(http.StatusUnauthorized))
 			})
@@ -436,13 +438,26 @@ func getRaw(h *harness, url string) string {
 	return string(body)
 }
 
-func startIdentityProviderLogin(h *harness, loginToken string, name string) (int, map[string]any) {
-	resp, err := http.Post(fmt.Sprintf("%s/logins/%s/identity-providers/%s/start", h.ApiUrl(), loginToken, name), "application/json", nil)
+func newBrowser() *http.Client {
+	jar, err := cookiejar.New(nil)
+	Expect(err).ToNot(HaveOccurred())
+	return &http.Client{
+		Jar: jar,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+}
+
+func startIdentityProviderLogin(browser *http.Client, h *harness, loginToken string, name string) (int, map[string]any) {
+	resp, err := browser.Get(fmt.Sprintf("%s/logins/%s/identity-providers/%s/start", h.ApiUrl(), loginToken, name))
 	Expect(err).ToNot(HaveOccurred())
 	defer resp.Body.Close() //nolint:errcheck
 
-	var body map[string]any
-	_ = json.NewDecoder(resp.Body).Decode(&body)
+	body := map[string]any{}
+	if location := resp.Header.Get("Location"); location != "" {
+		body["authorizationUrl"] = location
+	}
 	return resp.StatusCode, body
 }
 
