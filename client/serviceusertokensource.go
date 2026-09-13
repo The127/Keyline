@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"sync"
 	"time"
 
@@ -18,25 +19,42 @@ import (
 // WithServiceUser authenticates every request as the given service user through Keyline's RFC 7523 JWT bearer grant.
 func WithServiceUser(privateKeyPem string, kid string, username string, application string) TransportOptions {
 	return func(transport *Transport) {
-		tokenSource := &serviceUserTokenSource{
-			transport:     transport,
-			privateKeyPem: privateKeyPem,
-			kid:           kid,
-			username:      username,
-			application:   application,
-			httpClient: &http.Client{
-				Timeout: 10 * time.Second,
-				CheckRedirect: func(*http.Request, []*http.Request) error {
-					return http.ErrUseLastResponse
-				},
-			},
-		}
+		tokenSource := newServiceUserTokenSource(privateKeyPem, kid, username, application, func(endpoint string) string {
+			return oidcUrl(transport.baseURL, transport.virtualServer, endpoint)
+		})
 		WithOidc(tokenSource)(transport)
 	}
 }
 
+// NewServiceUserTokenSource logs the given service user in through Keyline's RFC 7523 JWT bearer grant and hands out the access token itself.
+//
+// WithServiceUser is the way to call Keyline's own API as a service user. This constructor exists for
+// programs that need the token as a value, because they present it to another service that trusts
+// Keyline as its issuer. Both share one login so a change to the grant reaches every caller.
+func NewServiceUserTokenSource(keylineURL string, virtualServer string, privateKeyPem string, kid string, username string, application string) oauth2.TokenSource {
+	return newServiceUserTokenSource(privateKeyPem, kid, username, application, func(endpoint string) string {
+		return oidcUrl(keylineURL, virtualServer, endpoint)
+	})
+}
+
+func newServiceUserTokenSource(privateKeyPem string, kid string, username string, application string, oidcEndpoint func(endpoint string) string) *serviceUserTokenSource {
+	return &serviceUserTokenSource{
+		oidcEndpoint:  oidcEndpoint,
+		privateKeyPem: privateKeyPem,
+		kid:           kid,
+		username:      username,
+		application:   application,
+		httpClient: &http.Client{
+			Timeout: 10 * time.Second,
+			CheckRedirect: func(*http.Request, []*http.Request) error {
+				return http.ErrUseLastResponse
+			},
+		},
+	}
+}
+
 type serviceUserTokenSource struct {
-	transport     *Transport
+	oidcEndpoint  func(endpoint string) string
 	privateKeyPem string
 	kid           string
 	username      string
@@ -66,7 +84,7 @@ func (tokenSource *serviceUserTokenSource) Token() (*oauth2.Token, error) {
 	}
 
 	resp, err := tokenSource.httpClient.PostForm(
-		tokenSource.oidcUrl("/token"),
+		tokenSource.oidcEndpoint("/token"),
 		url.Values{
 			"grant_type": {"urn:ietf:params:oauth:grant-type:jwt-bearer"},
 			"assertion":  {signed},
@@ -99,7 +117,7 @@ func (tokenSource *serviceUserTokenSource) Token() (*oauth2.Token, error) {
 }
 
 func (tokenSource *serviceUserTokenSource) discoverIssuer() (string, error) {
-	resp, err := tokenSource.httpClient.Get(tokenSource.oidcUrl("/.well-known/openid-configuration"))
+	resp, err := tokenSource.httpClient.Get(tokenSource.oidcEndpoint("/.well-known/openid-configuration"))
 	if err != nil {
 		return "", fmt.Errorf("discovery request: %w", err)
 	}
@@ -151,6 +169,6 @@ func (tokenSource *serviceUserTokenSource) signAssertion(issuer string) (string,
 	return signed, nil
 }
 
-func (tokenSource *serviceUserTokenSource) oidcUrl(endpoint string) string {
-	return fmt.Sprintf("%s/oidc/%s%s", tokenSource.transport.baseURL, tokenSource.transport.virtualServer, endpoint)
+func oidcUrl(baseURL string, virtualServer string, endpoint string) string {
+	return fmt.Sprintf("%s/oidc/%s%s", strings.TrimSuffix(baseURL, "/"), virtualServer, endpoint)
 }

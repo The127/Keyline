@@ -96,6 +96,20 @@ c := client.NewClient(
 )
 ```
 
+### Service User Token Source
+
+Hands out the service user's access token as a value, for programs that present it to another service that trusts Keyline as its issuer. Calls to Keyline's own API use `WithServiceUser` instead.
+
+```go
+source := client.NewServiceUserTokenSource(
+    "http://keyline.svc:8080",
+    "my-virtual-server",
+    privateKeyPEM, keyId, "my-service-user", "my-application",
+)
+
+token, err := source.Token()
+```
+
 ### Custom HTTP Client
 
 Provide your own `http.Client` for custom timeouts, TLS configuration, etc.:
