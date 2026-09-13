@@ -74,6 +74,39 @@ func (s *ServiceUserTokenSourceSuite) TestAsksForTheIssuerOnEveryLogin() {
 	s.Equal(2, keyline.discoveries)
 }
 
+func (s *ServiceUserTokenSourceSuite) TestHandsOutTheAccessTokenWithoutATransport() {
+	// arrange
+	publicKey, privateKeyPem := s.newKeyPair()
+	keyline := s.newFakeKeyline(publicKey, 300)
+	defer keyline.server.Close()
+
+	testee := NewServiceUserTokenSource(keyline.server.URL, "test", privateKeyPem, "kid-1", "svc", "my-app")
+
+	// act
+	token, err := testee.Token()
+
+	// assert
+	s.Require().NoError(err)
+	s.Equal("issued-token", token.AccessToken)
+	s.Equal(1, keyline.logins)
+}
+
+func (s *ServiceUserTokenSourceSuite) TestToleratesATrailingSlashOnTheKeylineURL() {
+	// arrange
+	publicKey, privateKeyPem := s.newKeyPair()
+	keyline := s.newFakeKeyline(publicKey, 300)
+	defer keyline.server.Close()
+
+	testee := NewServiceUserTokenSource(keyline.server.URL+"/", "test", privateKeyPem, "kid-1", "svc", "my-app")
+
+	// act
+	token, err := testee.Token()
+
+	// assert
+	s.Require().NoError(err)
+	s.Equal("issued-token", token.AccessToken)
+}
+
 type fakeKeyline struct {
 	server        *httptest.Server
 	authorization string
