@@ -253,7 +253,7 @@ func WellKnownOpenIdConfiguration(w http.ResponseWriter, r *http.Request) {
 		}(),
 		TokenEndpointAuthMethodsSupported:          []string{"client_secret_basic", "client_secret_post", "private_key_jwt"},
 		TokenEndpointAuthSigningAlgValuesSupported: assertionSigningMethods,
-		GrantTypesSupported:                        []string{"authorization_code", "refresh_token", "urn:ietf:params:oauth:grant-type:token-exchange", "urn:ietf:params:oauth:grant-type:device_code"},
+		GrantTypesSupported:                        []string{"authorization_code", "refresh_token", "urn:ietf:params:oauth:grant-type:token-exchange", "urn:ietf:params:oauth:grant-type:jwt-bearer", "urn:ietf:params:oauth:grant-type:device_code"},
 
 		ScopesSupported: []string{"openid", "email", "profile"}, // TODO: get from db
 		ClaimsSupported: []string{"sub", "name", "email"},       // TODO: get from db
@@ -911,6 +911,9 @@ func OidcToken(w http.ResponseWriter, r *http.Request) {
 
 	case "urn:ietf:params:oauth:grant-type:token-exchange":
 		handleTokenExchange(w, r)
+
+	case "urn:ietf:params:oauth:grant-type:jwt-bearer":
+		handleJwtBearer(w, r)
 
 	case "urn:ietf:params:oauth:grant-type:device_code":
 		handleDeviceCodeGrant(w, r)
@@ -1591,46 +1594,7 @@ func handleTokenExchange(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var user *repositories.User
-	assertion, err := verifySignedAssertion(ctx, subjectToken, services.ServiceUserAssertionJtiTokenType, func(ctx context.Context, subject string, kid string) (uuid.UUID, any, error) {
-		userFilter := repositories.NewUserFilter().
-			VirtualServerId(virtualServer.Id()).
-			Username(subject)
-		found, err := dbContext.Users().FirstOrNil(ctx, userFilter)
-		if err != nil {
-			return uuid.Nil, nil, fmt.Errorf("getting user: %w", err)
-		}
-		if found == nil {
-			return uuid.Nil, nil, fmt.Errorf("user not found")
-		}
-		if !found.IsServiceUser() {
-			return uuid.Nil, nil, fmt.Errorf("user is not a service user")
-		}
-
-		credentialFilter := repositories.NewCredentialFilter().
-			Type(repositories.CredentialTypeServiceUserKey).
-			UserId(found.Id()).
-			DetailKid(kid)
-		credential, err := dbContext.Credentials().FirstOrNil(ctx, credentialFilter)
-		if err != nil {
-			return uuid.Nil, nil, fmt.Errorf("getting credential: %w", err)
-		}
-		if credential == nil {
-			return uuid.Nil, nil, fmt.Errorf("unknown kid")
-		}
-
-		serviceUserKeyDetails, err := credential.ServiceUserKeyDetails()
-		if err != nil {
-			return uuid.Nil, nil, fmt.Errorf("getting service user key details: %w", err)
-		}
-
-		publicKey, err := utils.ParsePublicKeyPem(serviceUserKeyDetails.PublicKey)
-		if err != nil {
-			return uuid.Nil, nil, fmt.Errorf("parsing service user key: %w", err)
-		}
-
-		user = found
-		return found.Id(), publicKey, nil
-	})
+	assertion, err := verifySignedAssertion(ctx, subjectToken, services.ServiceUserAssertionJtiTokenType, resolveServiceUserKey(dbContext, virtualServer, &user))
 	if err != nil {
 		writeOAuthError(w, "invalid_grant", fmt.Sprintf("subject_token is invalid: %s", err.Error()))
 		return
@@ -1667,8 +1631,15 @@ func handleTokenExchange(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	issueServiceUserAccessToken(w, r, virtualServer, application, user, scopes)
+}
+
+func issueServiceUserAccessToken(w http.ResponseWriter, r *http.Request, virtualServer *repositories.VirtualServer, application *repositories.Application, user *repositories.User, scopes []string) {
+	ctx := r.Context()
+	scope := middlewares.GetScope(ctx)
+
 	keyService := ioc.GetDependency[services.KeyService](scope)
-	keyPair, err := keyService.GetKey(virtualServerName, appSigningAlgorithm(virtualServer, application))
+	keyPair, err := keyService.GetKey(virtualServer.Name(), appSigningAlgorithm(virtualServer, application))
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
@@ -1680,7 +1651,7 @@ func handleTokenExchange(w http.ResponseWriter, r *http.Request) {
 	accessToken, err := generateAccessToken(ctx, AccessTokenGenerationParams{
 		UserId:                user.Id(),
 		VirtualServerName:     virtualServer.Name(),
-		ClientId:              applicationName,
+		ClientId:              application.Name(),
 		ApplicationId:         application.Id(),
 		GrantedScopes:         scopes,
 		ExternalUrl:           config.C.Server.ExternalUrl,
