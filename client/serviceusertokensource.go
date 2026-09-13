@@ -15,8 +15,8 @@ import (
 	"golang.org/x/oauth2"
 )
 
-// ServiceUserTokenSource implements oauth2.TokenSource via Keyline's RFC 8693
-// token exchange, signing a short-lived JWT with a service user's Ed25519 private key.
+// ServiceUserTokenSource implements oauth2.TokenSource via Keyline's RFC 7523
+// JWT bearer grant, signing a short-lived JWT with a service user's Ed25519 private key.
 type ServiceUserTokenSource struct {
 	KeylineURL    string
 	VirtualServer string
@@ -48,13 +48,12 @@ func (s *ServiceUserTokenSource) Token() (*oauth2.Token, error) {
 
 	now := time.Now()
 	claims := jwt.MapClaims{
-		"aud":    s.Application,
-		"iss":    s.Username,
-		"sub":    s.Username,
-		"scopes": "openid profile email",
-		"iat":    now.Unix(),
-		"exp":    now.Add(time.Minute).Unix(),
-		"jti":    uuid.NewString(),
+		"aud": fmt.Sprintf("%s/oidc/%s", s.KeylineURL, s.VirtualServer),
+		"iss": s.Username,
+		"sub": s.Username,
+		"iat": now.Unix(),
+		"exp": now.Add(time.Minute).Unix(),
+		"jti": uuid.NewString(),
 	}
 	tok := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims)
 	tok.Header["kid"] = s.Kid
@@ -68,18 +67,19 @@ func (s *ServiceUserTokenSource) Token() (*oauth2.Token, error) {
 	resp, err := httpClient.PostForm(
 		fmt.Sprintf("%s/oidc/%s/token", s.KeylineURL, s.VirtualServer),
 		url.Values{
-			"grant_type":         {"urn:ietf:params:oauth:grant-type:token-exchange"},
-			"subject_token":      {signed},
-			"subject_token_type": {"urn:ietf:params:oauth:token-type:access_token"},
+			"grant_type": {"urn:ietf:params:oauth:grant-type:jwt-bearer"},
+			"assertion":  {signed},
+			"client_id":  {s.Application},
+			"scope":      {"openid profile email"},
 		},
 	)
 	if err != nil {
-		return nil, fmt.Errorf("token exchange request: %w", err)
+		return nil, fmt.Errorf("token request: %w", err)
 	}
 	defer resp.Body.Close() //nolint:errcheck
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("token exchange returned %d", resp.StatusCode)
+		return nil, fmt.Errorf("token endpoint returned %d", resp.StatusCode)
 	}
 
 	var body struct {

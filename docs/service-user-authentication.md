@@ -1,6 +1,6 @@
 # Service User Authentication
 
-Service users (also known as service accounts) are a special type of user in Keyline designed for machine-to-machine authentication. Unlike regular users who authenticate with passwords or passkeys, service users authenticate using public/private key pairs and the OAuth 2.0 Token Exchange grant type.
+Service users (also known as service accounts) are a special type of user in Keyline designed for machine-to-machine authentication. Unlike regular users who authenticate with passwords or passkeys, service users authenticate using public/private key pairs and the OAuth 2.0 JWT bearer grant.
 
 ## Overview
 
@@ -9,9 +9,9 @@ Service user authentication in Keyline uses the following flow:
 1. **Create a service user** - An administrator creates a service user account
 2. **Associate a public key** - Register the service user's public key with Keyline
 3. **Create and sign a JWT** - The service application creates a JWT signed with its private key
-4. **Exchange for access token** - The signed JWT is exchanged for an access token via the token endpoint
+4. **Request an access token** - The signed JWT is presented to the token endpoint as the authorization grant
 
-This approach is based on the [OAuth 2.0 Token Exchange (RFC 8693)](https://datatracker.ietf.org/doc/html/rfc8693) specification and is ideal for:
+This approach is the JWT bearer grant from [RFC 7523](https://datatracker.ietf.org/doc/html/rfc7523), the same flow Google and ZITADEL use for service accounts, and is ideal for:
 
 - Service-to-service authentication
 - CI/CD pipelines
@@ -85,8 +85,7 @@ The service application must create a JWT with the following characteristics:
 {
   "iss": "<service-user-username>",
   "sub": "<service-user-username>",
-  "aud": "<target-application-name>",
-  "scopes": "openid profile email",
+  "aud": "<keyline-url>/oidc/<virtual-server-name>",
   "exp": 1700000060,
   "jti": "<unique-id>"
 }
@@ -94,8 +93,7 @@ The service application must create a JWT with the following characteristics:
 
 **Key Requirements:**
 - `iss` (issuer) must equal `sub` (subject) - both must be the service user's username
-- `aud` (audience) must be the name of the target application
-- `scopes` must be a space-separated string and must include "openid"
+- `aud` (audience) must be the issuer of the virtual server, `<keyline-url>/oidc/<virtual-server-name>`. The target application and the scopes are request parameters, not claims
 - The JWT must be signed with the private key corresponding to the registered public key
 - The `kid` header must match the Key ID returned when associating the public key
 - `exp` is required and may be at most five minutes in the future
@@ -124,13 +122,12 @@ if err != nil {
 // Create JWT claims
 now := time.Now()
 claims := jwt.MapClaims{
-    "aud":    "my-application",
-    "iss":    serviceUserUsername,
-    "sub":    serviceUserUsername,
-    "scopes": "openid profile email",
-    "iat":    now.Unix(),
-    "exp":    now.Add(time.Minute).Unix(),
-    "jti":    uuid.NewString(),
+    "aud": fmt.Sprintf("%s/oidc/%s", keylineURL, virtualServer),
+    "iss": serviceUserUsername,
+    "sub": serviceUserUsername,
+    "iat": now.Unix(),
+    "exp": now.Add(time.Minute).Unix(),
+    "jti": uuid.NewString(),
 }
 
 // Create and sign the token
@@ -142,9 +139,9 @@ if err != nil {
 }
 ```
 
-### Step 2: Exchange the JWT for an Access Token
+### Step 2: Request an Access Token
 
-Once you have the signed JWT, exchange it for an access token using the token endpoint with the Token Exchange grant type.
+Once you have the signed JWT, present it to the token endpoint as the authorization grant.
 
 **Endpoint:**
 ```
@@ -153,18 +150,20 @@ Content-Type: application/x-www-form-urlencoded
 ```
 
 **Request Parameters:**
-- `grant_type`: Must be `urn:ietf:params:oauth:grant-type:token-exchange`
-- `subject_token`: The signed JWT from Step 1
-- `subject_token_type`: Must be `urn:ietf:params:oauth:token-type:access_token`
+- `grant_type`: Must be `urn:ietf:params:oauth:grant-type:jwt-bearer`
+- `assertion`: The signed JWT from Step 1
+- `client_id`: The name of the application the access token is issued for
+- `scope`: Space-separated scopes, must include `openid`
 
 **Example Request:**
 
 ```bash
 curl -X POST "https://keyline.example.com/oidc/my-virtual-server/token" \
   -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "grant_type=urn:ietf:params:oauth:grant-type:token-exchange" \
-  -d "subject_token=${SIGNED_JWT}" \
-  -d "subject_token_type=urn:ietf:params:oauth:token-type:access_token"
+  -d "grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer" \
+  -d "assertion=${SIGNED_JWT}" \
+  -d "client_id=my-application" \
+  -d "scope=openid profile email"
 ```
 
 **Example in Go:**
@@ -178,9 +177,10 @@ import (
 resp, err := http.PostForm(
     fmt.Sprintf("%s/oidc/%s/token", keylineURL, virtualServer),
     url.Values{
-        "grant_type":         {"urn:ietf:params:oauth:grant-type:token-exchange"},
-        "subject_token":      {signedJWT},
-        "subject_token_type": {"urn:ietf:params:oauth:token-type:access_token"},
+        "grant_type": {"urn:ietf:params:oauth:grant-type:jwt-bearer"},
+        "assertion":  {signedJWT},
+        "client_id":  {"my-application"},
+        "scope":      {"openid profile email"},
     },
 )
 ```
@@ -189,8 +189,8 @@ resp, err := http.PostForm(
 ```json
 {
   "access_token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCIsImtpZCI6IjEyMzQ1Njc4LTkwYWItY2RlZi0xMjM0LTU2Nzg5MGFiY2RlZiJ9...",
-  "issued_token_type": "urn:ietf:params:oauth:token-type:access_token",
-  "token_type": "Bearer"
+  "token_type": "Bearer",
+  "expires_in": 300
 }
 ```
 
@@ -200,13 +200,13 @@ The returned `access_token` is a JWT that can be used to authenticate API reques
 ```json
 {
   "error": "invalid_grant",
-  "error_description": "Invalid subject token"
+  "error_description": "assertion is invalid"
 }
 ```
 
-## Token Exchange Implementation Details
+## Implementation Details
 
-The token exchange process in Keyline performs the following validations (see `internal/handlers/oidc.go`, `handleTokenExchange` function):
+The JWT bearer grant in Keyline performs the following validations (see `internal/handlers/jwtbearer.go`):
 
 ### Validation Steps
 
@@ -229,22 +229,21 @@ The token exchange process in Keyline performs the following validations (see `i
    - Decodes the stored public key (PEM format)
    - Uses the public key to verify the JWT signature
 
-5. **Validate Claims**
-   - Checks `aud` (audience) contains exactly one application name
-   - Validates `scopes` claim is present and contains "openid"
-   - Validates the target application exists in the virtual server
+5. **Validate Claims and Request**
+   - Checks `aud` (audience) is exactly the issuer of the virtual server
+   - Validates the `scope` parameter is present and contains "openid"
+   - Validates the application named by `client_id` exists in the virtual server
 
 6. **Generate Access Token**
    - Creates a new JWT access token signed by Keyline's key
    - Token includes user ID, scopes, application ID, and custom claims
-   - Token expires after 5 minutes (configurable)
+   - Token expires after 5 minutes
 
 ### Security Considerations
 
 - **Private Key Security**: The service user's private key must be kept secure and never committed to source control
 - **Key Rotation**: Public keys can be rotated by associating a new key and updating the application to use the new `kid`
-- **Token Expiry**: Access tokens are short-lived (5 minutes by default) to limit exposure
-- **Scope Validation**: Only requested scopes that are valid for the application are granted
+- **Token Expiry**: Access tokens are short-lived (5 minutes) to limit exposure
 - **Issuer Validation**: The self-issued token pattern ensures only the service user can authenticate as itself
 
 ## Complete Example
@@ -261,8 +260,10 @@ import (
     "fmt"
     "net/http"
     "net/url"
-    
+    "time"
+
     "github.com/golang-jwt/jwt/v5"
+    "github.com/google/uuid"
 )
 
 const (
@@ -273,7 +274,6 @@ gSEA3M7NYNpucIwsMNDHPswe1yvLtMzIau2ddMB2FX40few=
 )
 
 func main() {
-    // Configuration
     keylineURL := "https://keyline.example.com"
     virtualServer := "my-virtual-server"
     serviceUserUsername := "service-user"
@@ -292,11 +292,14 @@ func main() {
     }
     
     // Step 2: Create JWT claims
+    now := time.Now()
     claims := jwt.MapClaims{
-        "aud":    applicationName,
-        "iss":    serviceUserUsername,
-        "sub":    serviceUserUsername,
-        "scopes": "openid profile email",
+        "aud": fmt.Sprintf("%s/oidc/%s", keylineURL, virtualServer),
+        "iss": serviceUserUsername,
+        "sub": serviceUserUsername,
+        "iat": now.Unix(),
+        "exp": now.Add(time.Minute).Unix(),
+        "jti": uuid.NewString(),
     }
     
     // Step 3: Sign the JWT
@@ -307,13 +310,14 @@ func main() {
         panic(err)
     }
     
-    // Step 4: Exchange for access token
+    // Step 4: Request the access token
     resp, err := http.PostForm(
         fmt.Sprintf("%s/oidc/%s/token", keylineURL, virtualServer),
         url.Values{
-            "grant_type":         {"urn:ietf:params:oauth:grant-type:token-exchange"},
-            "subject_token":      {signedJWT},
-            "subject_token_type": {"urn:ietf:params:oauth:token-type:access_token"},
+            "grant_type": {"urn:ietf:params:oauth:grant-type:jwt-bearer"},
+            "assertion":  {signedJWT},
+            "client_id":  {applicationName},
+            "scope":      {"openid profile email"},
         },
     )
     if err != nil {
@@ -358,7 +362,7 @@ The algorithm is determined by the public key type when you associate the key wi
 
 ## Troubleshooting
 
-### "Invalid subject token"
+### "assertion is invalid"
 
 - Verify the JWT is signed with the correct private key
 - Ensure the `kid` header matches the key ID from the associate key response
@@ -378,12 +382,16 @@ The algorithm is determined by the public key type when you associate the key wi
 ### "Invalid issuer"
 
 - The `iss` claim must equal the `sub` claim (both must be the service user username)
-- This is a security requirement for service user token exchange
+- This is a security requirement for service user login
 
-### "Application not found"
+### "client_id names an unknown application"
 
-- Verify the `aud` claim contains the correct application name
+- Verify the `client_id` parameter is the application name
 - Ensure the application is registered in the same virtual server
+
+### "assertion aud must be this server's issuer"
+
+- The `aud` claim must be `<keyline-url>/oidc/<virtual-server-name>`, exactly as the server advertises it in its discovery document
 
 ## API Reference
 
@@ -414,23 +422,24 @@ The algorithm is determined by the public key type when you associate the key wi
 
 **Required Permission:** `ServiceUserAssociateKey`
 
-### Token Exchange Endpoint
+### Token Endpoint, JWT Bearer Grant
 
 **Endpoint:** `POST /oidc/{virtualServerName}/token`
 
 **Content-Type:** `application/x-www-form-urlencoded`
 
 **Parameters:**
-- `grant_type` (required) - Must be `urn:ietf:params:oauth:grant-type:token-exchange`
-- `subject_token` (required) - The signed JWT
-- `subject_token_type` (required) - Must be `urn:ietf:params:oauth:token-type:access_token`
+- `grant_type` (required) - Must be `urn:ietf:params:oauth:grant-type:jwt-bearer`
+- `assertion` (required) - The signed JWT
+- `client_id` (required) - The application the token is issued for
+- `scope` (required) - Space-separated scopes, must include `openid`
 
 **Success Response (200 OK):**
 ```json
 {
   "access_token": "string",
-  "issued_token_type": "urn:ietf:params:oauth:token-type:access_token",
-  "token_type": "Bearer"
+  "token_type": "Bearer",
+  "expires_in": 300
 }
 ```
 
@@ -446,12 +455,12 @@ The algorithm is determined by the public key type when you associate the key wi
 
 - [OIDC Discovery](/.well-known/openid-configuration) - OpenID Connect configuration endpoint
 - [JWKS Endpoint](/.well-known/jwks.json) - Public keys for token verification
-- [OAuth 2.0 Token Exchange (RFC 8693)](https://datatracker.ietf.org/doc/html/rfc8693) - Token exchange specification
+- [JWT Profile for OAuth 2.0 Authorization Grants (RFC 7523)](https://datatracker.ietf.org/doc/html/rfc7523) - JWT bearer grant specification
 - [Testing Guide](onboarding/06-testing-guide.md) - Writing tests for authentication flows
 
 ## Source Code References
 
-- **Handler Implementation:** `internal/handlers/oidc.go` - `handleTokenExchange` function (lines 1454-1695)
+- **Handler Implementation:** `internal/handlers/jwtbearer.go`
 - **E2E Test:** `tests/e2e/serviceuserlogin_test.go` - Complete working example
 - **Create Service User Command:** `internal/commands/CreateServiceUser.go`
 - **Associate Key Command:** `internal/commands/AssociateServiceUserPublicKey.go`

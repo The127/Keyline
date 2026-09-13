@@ -139,13 +139,12 @@ func acquireTokenForServiceUserOnVS(h *harness, vsName, appName, username, kid, 
 
 	now := time.Now()
 	claims := jwt.MapClaims{
-		"aud":    appName,
-		"iss":    username,
-		"sub":    username,
-		"scopes": "openid profile email",
-		"iat":    now.Unix(),
-		"exp":    now.Add(time.Minute).Unix(),
-		"jti":    uuid.NewString(),
+		"aud": fmt.Sprintf("%s/oidc/%s", h.ApiUrl(), vsName),
+		"iss": username,
+		"sub": username,
+		"iat": now.Unix(),
+		"exp": now.Add(time.Minute).Unix(),
+		"jti": uuid.NewString(),
 	}
 	jwtToken := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims)
 	jwtToken.Header["kid"] = kid
@@ -155,9 +154,10 @@ func acquireTokenForServiceUserOnVS(h *harness, vsName, appName, username, kid, 
 	resp, err := http.PostForm(
 		fmt.Sprintf("%s/oidc/%s/token", h.ApiUrl(), vsName),
 		url.Values{
-			"grant_type":         {"urn:ietf:params:oauth:grant-type:token-exchange"},
-			"subject_token":      {signedJWT},
-			"subject_token_type": {"urn:ietf:params:oauth:token-type:access_token"},
+			"grant_type": {"urn:ietf:params:oauth:grant-type:jwt-bearer"},
+			"assertion":  {signedJWT},
+			"client_id":  {appName},
+			"scope":      {"openid profile email"},
 		},
 	)
 	Expect(err).ToNot(HaveOccurred())

@@ -253,7 +253,7 @@ func WellKnownOpenIdConfiguration(w http.ResponseWriter, r *http.Request) {
 		}(),
 		TokenEndpointAuthMethodsSupported:          []string{"client_secret_basic", "client_secret_post", "private_key_jwt"},
 		TokenEndpointAuthSigningAlgValuesSupported: assertionSigningMethods,
-		GrantTypesSupported:                        []string{"authorization_code", "refresh_token", "urn:ietf:params:oauth:grant-type:token-exchange", "urn:ietf:params:oauth:grant-type:jwt-bearer", "urn:ietf:params:oauth:grant-type:device_code"},
+		GrantTypesSupported:                        []string{"authorization_code", "refresh_token", "urn:ietf:params:oauth:grant-type:jwt-bearer", "urn:ietf:params:oauth:grant-type:device_code"},
 
 		ScopesSupported: []string{"openid", "email", "profile"}, // TODO: get from db
 		ClaimsSupported: []string{"sub", "name", "email"},       // TODO: get from db
@@ -883,14 +883,16 @@ func extractAccessToken(r *http.Request) (string, error) {
 // @Tags         OIDC
 // @Accept       application/x-www-form-urlencoded
 // @Produce      json
-// @Param        grant_type    formData  string true  "authorization_code | refresh_token"
+// @Param        grant_type    formData  string true  "authorization_code | refresh_token | urn:ietf:params:oauth:grant-type:jwt-bearer | urn:ietf:params:oauth:grant-type:device_code"
 // @Param        code          formData  string false "Required when grant_type=authorization_code"
 // @Param        refresh_token formData  string false "Required when grant_type=refresh_token"
+// @Param        assertion     formData  string false "Required when grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer, the service user's signed JWT"
+// @Param        scope         formData  string false "Required when grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer, must include openid"
 // @Param        client_id     formData  string false "If no Authorization header"
 // @Security     BasicAuth
 // @Success      200  {object}  handlers.CodeFlowResponse      "When grant_type=authorization_code"
 // @Success      200  {object}  handlers.RefreshTokenResponse  "When grant_type=refresh_token"
-// @Success      200  {object}  handlers.TokenExchangeResponse "When grant_type=urn:ietf:params:oauth:grant-type:token-exchange"
+// @Success      200  {object}  handlers.ServiceUserTokenResponse "When grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer"
 // @Failure      400  {string}  string
 // @Router       /oidc/{virtualServerName}/token [post]
 func OidcToken(w http.ResponseWriter, r *http.Request) {
@@ -909,9 +911,6 @@ func OidcToken(w http.ResponseWriter, r *http.Request) {
 	case "refresh_token":
 		handleRefreshToken(w, r)
 
-	case "urn:ietf:params:oauth:grant-type:token-exchange":
-		handleTokenExchange(w, r)
-
 	case "urn:ietf:params:oauth:grant-type:jwt-bearer":
 		handleJwtBearer(w, r)
 
@@ -919,7 +918,7 @@ func OidcToken(w http.ResponseWriter, r *http.Request) {
 		handleDeviceCodeGrant(w, r)
 
 	default:
-		utils.HandleHttpError(w, fmt.Errorf("unsupported grant type: %s", grantType))
+		writeOAuthError(w, "unsupported_grant_type", fmt.Sprintf("unsupported grant type: %s", grantType))
 		return
 	}
 }
@@ -1544,95 +1543,13 @@ func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-type TokenExchangeResponse struct {
-	AccessToken     string `json:"access_token"`
-	IssuedTokenType string `json:"issued_token_type"`
-	TokenType       string `json:"token_type"`
-	ExpiresIn       int    `json:"expires_in"`
+type ServiceUserTokenResponse struct {
+	AccessToken string `json:"access_token"`
+	TokenType   string `json:"token_type"`
+	ExpiresIn   int    `json:"expires_in"`
 }
 
 const serviceUserAccessTokenLifetime = 5 * time.Minute
-
-func handleTokenExchange(w http.ResponseWriter, r *http.Request) {
-	subjectToken := r.Form.Get("subject_token")
-	subjectTokenType := r.Form.Get("subject_token_type")
-
-	if subjectToken == "" {
-		writeOAuthError(w, "invalid_request", "subject_token is required")
-		return
-	}
-
-	if subjectTokenType == "" {
-		writeOAuthError(w, "invalid_request", "subject_token_type is required")
-		return
-	}
-
-	if subjectTokenType != "urn:ietf:params:oauth:token-type:access_token" {
-		writeOAuthError(w, "invalid_request", fmt.Sprintf("unsupported subject_token_type: %s", subjectTokenType))
-		return
-	}
-
-	ctx := r.Context()
-	scope := middlewares.GetScope(ctx)
-	dbContext := ioc.GetDependency[database.Context](scope)
-
-	virtualServerName, err := middlewares.GetVirtualServerName(ctx)
-	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting virtual server name: %w", err))
-		return
-	}
-
-	virtualServerFilter := repositories.NewVirtualServerFilter().Name(virtualServerName)
-	virtualServer, err := dbContext.VirtualServers().FirstOrNil(ctx, virtualServerFilter)
-	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting virtual server: %w", err))
-		return
-	}
-	if virtualServer == nil {
-		utils.HandleHttpError(w, fmt.Errorf("virtual server not found"))
-		return
-	}
-
-	var user *repositories.User
-	assertion, err := verifySignedAssertion(ctx, subjectToken, services.ServiceUserAssertionJtiTokenType, resolveServiceUserKey(dbContext, virtualServer, &user))
-	if err != nil {
-		writeOAuthError(w, "invalid_grant", fmt.Sprintf("subject_token is invalid: %s", err.Error()))
-		return
-	}
-
-	audience, err := assertion.Claims.GetAudience()
-	if err != nil || len(audience) != 1 {
-		writeOAuthError(w, "invalid_grant", "subject_token aud must be a single application name")
-		return
-	}
-	applicationName := audience[0]
-
-	scopesClaim, ok := assertion.Claims["scopes"].(string)
-	if !ok || scopesClaim == "" {
-		writeOAuthError(w, "invalid_grant", "subject_token scopes must be a space separated string")
-		return
-	}
-	scopes := strings.Split(scopesClaim, " ")
-	if !slices.Contains(scopes, "openid") {
-		writeOAuthError(w, "invalid_grant", "subject_token scopes must contain openid")
-		return
-	}
-
-	applicationFilter := repositories.NewApplicationFilter().
-		VirtualServerId(virtualServer.Id()).
-		Name(applicationName)
-	application, err := dbContext.Applications().FirstOrNil(ctx, applicationFilter)
-	if err != nil {
-		utils.HandleHttpError(w, fmt.Errorf("getting application: %w", err))
-		return
-	}
-	if application == nil {
-		writeOAuthError(w, "invalid_grant", "subject_token aud names an unknown application")
-		return
-	}
-
-	issueServiceUserAccessToken(w, r, virtualServer, application, user, scopes)
-}
 
 func issueServiceUserAccessToken(w http.ResponseWriter, r *http.Request, virtualServer *repositories.VirtualServer, application *repositories.Application, user *repositories.User, scopes []string) {
 	ctx := r.Context()
@@ -1669,11 +1586,10 @@ func issueServiceUserAccessToken(w http.ResponseWriter, r *http.Request, virtual
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("Content-Type", "application/json")
 
-	response := TokenExchangeResponse{
-		AccessToken:     accessToken,
-		IssuedTokenType: "urn:ietf:params:oauth:token-type:access_token",
-		TokenType:       "Bearer",
-		ExpiresIn:       int(serviceUserAccessTokenLifetime.Seconds()),
+	response := ServiceUserTokenResponse{
+		AccessToken: accessToken,
+		TokenType:   "Bearer",
+		ExpiresIn:   int(serviceUserAccessTokenLifetime.Seconds()),
 	}
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
