@@ -142,7 +142,7 @@ func init() {
 				}
 			})
 
-			It("no longer accepts the assertion at the token exchange grant", func() {
+			It("is refused at the token exchange grant", func() {
 				status, body := loginServiceUser(h, serviceUserAssertion(serviceUserPrivateKey, issuer, now, nil), func(form url.Values) {
 					form.Set("grant_type", "urn:ietf:params:oauth:grant-type:token-exchange")
 					form.Set("subject_token", form.Get("assertion"))
@@ -150,7 +150,7 @@ func init() {
 				})
 
 				Expect(status).To(Equal(http.StatusBadRequest))
-				Expect(body["error"]).To(Equal("unsupported_grant_type"))
+				Expect(body["error"]).To(Equal("invalid_request"))
 			})
 
 			Describe("refuses a request", func() {
