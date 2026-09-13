@@ -139,6 +139,15 @@ type CreateVirtualServerResponse struct {
 }
 
 func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer) (*CreateVirtualServerResponse, error) {
+	for _, project := range command.Projects {
+		for _, app := range project.Applications {
+			err := repositories.ValidateApplicationName(app.Name)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
 	scope := middlewares.GetScope(ctx)
 	dbContext := ioc.GetDependency[database.Context](scope)
 

@@ -3,10 +3,12 @@ package repositories
 import (
 	"context"
 	"encoding/base64"
+	"fmt"
 	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/change"
 	"github.com/The127/Keyline/utils"
 	"slices"
+	"strings"
 
 	"github.com/google/uuid"
 )
@@ -69,6 +71,16 @@ type Application struct {
 	tokenEndpointAuthMethod *TokenEndpointAuthMethod
 	userinfoInAccessToken   bool
 	trustedExchangers       []string
+}
+
+// ValidateApplicationName refuses a name that could be read as a project scoped name.
+func ValidateApplicationName(name string) error {
+	// project scoped names such as roles are written as project:name, an application
+	// name with a colon could be taken for one wherever both appear side by side
+	if strings.Contains(name, ":") {
+		return fmt.Errorf("application name %q must not contain a colon: %w", name, utils.ErrHttpBadRequest)
+	}
+	return nil
 }
 
 func NewApplication(virtualServerId uuid.UUID, projectId uuid.UUID, name string, displayName string, type_ ApplicationType, redirectUris []string) *Application {

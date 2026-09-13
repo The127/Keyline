@@ -80,6 +80,11 @@ func HandleCreateApplication(ctx context.Context, command CreateApplication) (*C
 		}
 	}
 
+	err = repositories.ValidateApplicationName(command.Name)
+	if err != nil {
+		return nil, err
+	}
+
 	application := repositories.NewApplication(virtualServer.Id(), project.Id(), command.Name, command.DisplayName, command.Type, command.RedirectUris)
 
 	if command.TokenEndpointAuthMethod != nil {
