@@ -3,32 +3,17 @@
 package e2e
 
 import (
-	"context"
-
 	"github.com/The127/Keyline/api"
 	"github.com/The127/Keyline/client"
 	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/commands"
 	"github.com/The127/Keyline/utils"
 
-	"golang.org/x/oauth2"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-// serviceUserTokenSource returns a token source signed with the harness's default
-// service user private key, targeting the given VS's admin application.
-func serviceUserTokenSource(ctx context.Context, url string) oauth2.TokenSource {
-	return &client.ServiceUserTokenSource{
-		KeylineURL:    url,
-		VirtualServer: "test-vs",
-		PrivKeyPEM:    serviceUserPrivateKey,
-		Kid:           serviceUserKid,
-		Username:      serviceUserUsername,
-		Application:   commands.AdminApplicationName,
-	}
-}
+var serviceUserLogin = client.WithServiceUser(serviceUserPrivateKey, serviceUserKid, serviceUserUsername, commands.AdminApplicationName)
 
 func init() {
 	for _, backend := range testBackends {
@@ -40,7 +25,7 @@ func init() {
 				if backend.dbMode == config.DatabaseModePostgres && !postgresBackendAvailable() {
 					Skip("Postgres not available")
 				}
-				h = newE2eTestHarness(backend.dbMode, serviceUserTokenSource)
+				h = newE2eTestHarness(backend.dbMode, serviceUserLogin)
 			})
 
 			AfterAll(func() {

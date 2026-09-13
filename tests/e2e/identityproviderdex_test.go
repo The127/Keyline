@@ -68,7 +68,7 @@ func init() {
 					Skip("dex not available")
 				}
 
-				h = newE2eTestHarness(backend.dbMode, serviceUserTokenSource, withPort(dexHarnessPort))
+				h = newE2eTestHarness(backend.dbMode, serviceUserLogin, withPort(dexHarnessPort))
 
 				created, err := h.Client().VirtualServer().IdentityProviders().Create(h.Ctx(), api.CreateIdentityProviderRequestDto{
 					Name:                  "dex",

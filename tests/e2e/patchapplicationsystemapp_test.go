@@ -49,7 +49,7 @@ func init() {
 				// `application:update` but should still not be able to
 				// edit the system admin-ui application's redirect URI
 				// list.
-				h = newE2eTestHarness(backend.dbMode, serviceUserTokenSource)
+				h = newE2eTestHarness(backend.dbMode, serviceUserLogin)
 			})
 
 			AfterAll(func() {

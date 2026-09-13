@@ -32,7 +32,7 @@ func init() {
 				// exactly the attacker profile for this bug: a VS admin
 				// trying to grant a user a privileged system-project
 				// role-name.
-				h = newE2eTestHarness(backend.dbMode, serviceUserTokenSource)
+				h = newE2eTestHarness(backend.dbMode, serviceUserLogin)
 			})
 
 			AfterAll(func() {

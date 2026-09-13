@@ -40,7 +40,7 @@ func init() {
 				if backend.dbMode == config.DatabaseModePostgres && !postgresBackendAvailable() {
 					Skip("Postgres not available")
 				}
-				h = newE2eTestHarness(backend.dbMode, serviceUserTokenSource)
+				h = newE2eTestHarness(backend.dbMode, serviceUserLogin)
 
 				_, err := h.Client().Project().Create(h.Ctx(), api.CreateProjectRequestDto{
 					Slug: appKeysProjectSlug,

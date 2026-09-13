@@ -39,7 +39,7 @@ func init() {
 					Skip("Postgres not available")
 				}
 
-				h = newE2eTestHarness(backend.dbMode, serviceUserTokenSource)
+				h = newE2eTestHarness(backend.dbMode, serviceUserLogin)
 			})
 
 			AfterAll(func() {
@@ -442,14 +442,12 @@ func getIdentityProviderRaw(h *harness, name string) map[string]any {
 }
 
 func getRaw(h *harness, url string) string {
-	token, err := serviceUserTokenSource(h.Ctx(), h.ApiUrl()).Token()
+	transport := client.NewTransport(h.ApiUrl(), h.VirtualServer(), serviceUserLogin)
+
+	request, err := transport.NewRootRequest(h.Ctx(), http.MethodGet, url, nil)
 	Expect(err).ToNot(HaveOccurred())
 
-	request, err := http.NewRequest(http.MethodGet, url, nil)
-	Expect(err).ToNot(HaveOccurred())
-	request.Header.Set("Authorization", "Bearer "+token.AccessToken)
-
-	resp, err := http.DefaultClient.Do(request)
+	resp, err := transport.DoRaw(request)
 	Expect(err).ToNot(HaveOccurred())
 	defer resp.Body.Close() //nolint:errcheck
 	Expect(resp.StatusCode).To(Equal(http.StatusOK))

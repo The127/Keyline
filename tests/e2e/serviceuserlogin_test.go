@@ -28,6 +28,7 @@ func init() {
 		Describe("Service user login ["+backend.name+"]", Ordered, func() {
 			var h *harness
 			var now time.Time
+			var issuer string
 
 			BeforeAll(func() {
 				if backend.dbMode == config.DatabaseModePostgres && !postgresBackendAvailable() {
@@ -36,6 +37,7 @@ func init() {
 				h = newE2eTestHarness(backend.dbMode, nil)
 				now = time.Now().Truncate(time.Second)
 				h.SetTime(now)
+				issuer = fmt.Sprintf("%s/oidc/%s", h.ApiUrl(), h.VirtualServer())
 			})
 
 			AfterAll(func() {
@@ -44,8 +46,8 @@ func init() {
 				}
 			})
 
-			It("exchanges a signed assertion for an access token", func() {
-				status, body := exchangeServiceUserToken(h, serviceUserAssertion(serviceUserPrivateKey, now, nil))
+			It("logs in with a signed assertion and gets an access token", func() {
+				status, body := loginServiceUser(h, serviceUserAssertion(serviceUserPrivateKey, issuer, now, nil), nil)
 
 				Expect(status).To(Equal(http.StatusOK))
 				Expect(body["access_token"]).ToNot(BeEmpty())
@@ -54,77 +56,74 @@ func init() {
 			})
 
 			It("refuses a replayed assertion and accepts a fresh one", func() {
-				assertion := serviceUserAssertion(serviceUserPrivateKey, now, nil)
+				assertion := serviceUserAssertion(serviceUserPrivateKey, issuer, now, nil)
 
-				status, _ := exchangeServiceUserToken(h, assertion)
+				status, _ := loginServiceUser(h, assertion, nil)
 				Expect(status).To(Equal(http.StatusOK))
 
-				status, body := exchangeServiceUserToken(h, assertion)
+				status, body := loginServiceUser(h, assertion, nil)
 				expectInvalidGrant(status, body)
 
-				status, _ = exchangeServiceUserToken(h, serviceUserAssertion(serviceUserPrivateKey, now, nil))
+				status, _ = loginServiceUser(h, serviceUserAssertion(serviceUserPrivateKey, issuer, now, nil), nil)
 				Expect(status).To(Equal(http.StatusOK))
 			})
 
 			It("accepts a replayed jti again once the original assertion has expired", func() {
 				fixedJti := func(c jwt.MapClaims) { c["jti"] = "fixed-service-user-jti" }
-				status, _ := exchangeServiceUserToken(h, serviceUserAssertion(serviceUserPrivateKey, now, fixedJti))
+				status, _ := loginServiceUser(h, serviceUserAssertion(serviceUserPrivateKey, issuer, now, fixedJti), nil)
 				Expect(status).To(Equal(http.StatusOK))
 
 				later := now.Add(2 * time.Minute)
 				h.SetTime(later)
 				defer h.SetTime(now)
 
-				status, _ = exchangeServiceUserToken(h, serviceUserAssertion(serviceUserPrivateKey, later, fixedJti))
+				status, _ = loginServiceUser(h, serviceUserAssertion(serviceUserPrivateKey, issuer, later, fixedJti), nil)
 				Expect(status).To(Equal(http.StatusOK))
 			})
 
 			Describe("refuses an assertion", func() {
 				cases := map[string]func() string{
 					"signed with the wrong key": func() string {
-						return serviceUserAssertion(wrongPrivateKey, now, nil)
+						return serviceUserAssertion(wrongPrivateKey, issuer, now, nil)
 					},
 					"with an unknown kid": func() string {
-						return signServiceUserAssertion(serviceUserPrivateKey, "no-such-kid", serviceUserAssertionClaims(now))
+						return signServiceUserAssertion(serviceUserPrivateKey, "no-such-kid", serviceUserAssertionClaims(issuer, now))
 					},
 					"without a kid header": func() string {
-						return signServiceUserAssertion(serviceUserPrivateKey, "", serviceUserAssertionClaims(now))
+						return signServiceUserAssertion(serviceUserPrivateKey, "", serviceUserAssertionClaims(issuer, now))
 					},
 					"whose iss differs from sub": func() string {
-						return serviceUserAssertion(serviceUserPrivateKey, now, func(c jwt.MapClaims) { c["iss"] = "someone-else" })
+						return serviceUserAssertion(serviceUserPrivateKey, issuer, now, func(c jwt.MapClaims) { c["iss"] = "someone-else" })
 					},
 					"naming an unknown user": func() string {
-						return serviceUserAssertion(serviceUserPrivateKey, now, func(c jwt.MapClaims) { c["iss"] = "nobody"; c["sub"] = "nobody" })
+						return serviceUserAssertion(serviceUserPrivateKey, issuer, now, func(c jwt.MapClaims) { c["iss"] = "nobody"; c["sub"] = "nobody" })
 					},
 					"naming a regular user": func() string {
-						return serviceUserAssertion(serviceUserPrivateKey, now, func(c jwt.MapClaims) { c["iss"] = "admin"; c["sub"] = "admin" })
+						return serviceUserAssertion(serviceUserPrivateKey, issuer, now, func(c jwt.MapClaims) { c["iss"] = "admin"; c["sub"] = "admin" })
 					},
-					"addressed to an unknown application": func() string {
-						return serviceUserAssertion(serviceUserPrivateKey, now, func(c jwt.MapClaims) { c["aud"] = "no-such-app" })
+					"addressed to another server": func() string {
+						return serviceUserAssertion(serviceUserPrivateKey, issuer, now, func(c jwt.MapClaims) { c["aud"] = "https://elsewhere.example/oidc/other" })
+					},
+					"addressed to an application instead of the server": func() string {
+						return serviceUserAssertion(serviceUserPrivateKey, issuer, now, func(c jwt.MapClaims) { c["aud"] = commands.AdminApplicationName })
 					},
 					"without aud": func() string {
-						return serviceUserAssertion(serviceUserPrivateKey, now, func(c jwt.MapClaims) { delete(c, "aud") })
-					},
-					"without the openid scope": func() string {
-						return serviceUserAssertion(serviceUserPrivateKey, now, func(c jwt.MapClaims) { c["scopes"] = "profile" })
-					},
-					"without scopes": func() string {
-						return serviceUserAssertion(serviceUserPrivateKey, now, func(c jwt.MapClaims) { delete(c, "scopes") })
+						return serviceUserAssertion(serviceUserPrivateKey, issuer, now, func(c jwt.MapClaims) { delete(c, "aud") })
 					},
 					"without exp": func() string {
-						return serviceUserAssertion(serviceUserPrivateKey, now, func(c jwt.MapClaims) { delete(c, "exp") })
+						return serviceUserAssertion(serviceUserPrivateKey, issuer, now, func(c jwt.MapClaims) { delete(c, "exp") })
 					},
 					"that has expired": func() string {
-						return serviceUserAssertion(serviceUserPrivateKey, now, func(c jwt.MapClaims) { c["exp"] = now.Add(-time.Second).Unix() })
+						return serviceUserAssertion(serviceUserPrivateKey, issuer, now, func(c jwt.MapClaims) { c["exp"] = now.Add(-time.Second).Unix() })
 					},
 					"that lives longer than five minutes": func() string {
-						return serviceUserAssertion(serviceUserPrivateKey, now, func(c jwt.MapClaims) { c["exp"] = now.Add(time.Hour).Unix() })
+						return serviceUserAssertion(serviceUserPrivateKey, issuer, now, func(c jwt.MapClaims) { c["exp"] = now.Add(time.Hour).Unix() })
 					},
 					"without jti": func() string {
-						return serviceUserAssertion(serviceUserPrivateKey, now, func(c jwt.MapClaims) { delete(c, "jti") })
+						return serviceUserAssertion(serviceUserPrivateKey, issuer, now, func(c jwt.MapClaims) { delete(c, "jti") })
 					},
 					"signed with hmac using the public key": func() string {
-						token := jwt.NewWithClaims(jwt.SigningMethodHS256, serviceUserAssertionClaims(now))
+						token := jwt.NewWithClaims(jwt.SigningMethodHS256, serviceUserAssertionClaims(issuer, now))
 						token.Header["kid"] = serviceUserKid
 						signed, err := token.SignedString([]byte(serviceUserPublicKey))
 						Expect(err).ToNot(HaveOccurred())
@@ -137,7 +136,42 @@ func init() {
 
 				for name, assertion := range cases {
 					It(name, func() {
-						status, body := exchangeServiceUserToken(h, assertion())
+						status, body := loginServiceUser(h, assertion(), nil)
+						expectInvalidGrant(status, body)
+					})
+				}
+			})
+
+			It("no longer accepts the assertion at the token exchange grant", func() {
+				status, body := loginServiceUser(h, serviceUserAssertion(serviceUserPrivateKey, issuer, now, nil), func(form url.Values) {
+					form.Set("grant_type", "urn:ietf:params:oauth:grant-type:token-exchange")
+					form.Set("subject_token", form.Get("assertion"))
+					form.Set("subject_token_type", "urn:ietf:params:oauth:token-type:jwt")
+				})
+
+				Expect(status).To(Equal(http.StatusBadRequest))
+				Expect(body["error"]).To(Equal("unsupported_grant_type"))
+			})
+
+			Describe("refuses a request", func() {
+				cases := map[string]func(url.Values){
+					"for an unknown application": func(form url.Values) {
+						form.Set("client_id", "no-such-app")
+					},
+					"without client_id": func(form url.Values) {
+						form.Del("client_id")
+					},
+					"without the openid scope": func(form url.Values) {
+						form.Set("scope", "profile")
+					},
+					"without scope": func(form url.Values) {
+						form.Del("scope")
+					},
+				}
+
+				for name, mutate := range cases {
+					It(name, func() {
+						status, body := loginServiceUser(h, serviceUserAssertion(serviceUserPrivateKey, issuer, now, nil), mutate)
 						expectInvalidGrant(status, body)
 					})
 				}
@@ -146,20 +180,19 @@ func init() {
 	}
 }
 
-func serviceUserAssertionClaims(now time.Time) jwt.MapClaims {
+func serviceUserAssertionClaims(issuer string, now time.Time) jwt.MapClaims {
 	return jwt.MapClaims{
-		"aud":    commands.AdminApplicationName,
-		"iss":    serviceUserUsername,
-		"sub":    serviceUserUsername,
-		"scopes": "openid profile email",
-		"iat":    now.Unix(),
-		"exp":    now.Add(time.Minute).Unix(),
-		"jti":    uuid.NewString(),
+		"aud": issuer,
+		"iss": serviceUserUsername,
+		"sub": serviceUserUsername,
+		"iat": now.Unix(),
+		"exp": now.Add(time.Minute).Unix(),
+		"jti": uuid.NewString(),
 	}
 }
 
-func serviceUserAssertion(privateKeyPem string, now time.Time, mutate func(jwt.MapClaims)) string {
-	claims := serviceUserAssertionClaims(now)
+func serviceUserAssertion(privateKeyPem string, issuer string, now time.Time, mutate func(jwt.MapClaims)) string {
+	claims := serviceUserAssertionClaims(issuer, now)
 	if mutate != nil {
 		mutate(claims)
 	}
@@ -182,14 +215,18 @@ func signServiceUserAssertion(privateKeyPem string, kid string, claims jwt.MapCl
 	return signed
 }
 
-func exchangeServiceUserToken(h *harness, assertion string) (int, map[string]any) {
-	resp, err := http.PostForm(fmt.Sprintf("%s/oidc/%s/token", h.ApiUrl(), h.VirtualServer()),
-		url.Values{
-			"grant_type":         {"urn:ietf:params:oauth:grant-type:token-exchange"},
-			"subject_token":      {assertion},
-			"subject_token_type": {"urn:ietf:params:oauth:token-type:access_token"},
-		},
-	)
+func loginServiceUser(h *harness, assertion string, mutate func(url.Values)) (int, map[string]any) {
+	form := url.Values{
+		"grant_type": {"urn:ietf:params:oauth:grant-type:jwt-bearer"},
+		"assertion":  {assertion},
+		"client_id":  {commands.AdminApplicationName},
+		"scope":      {"openid profile email"},
+	}
+	if mutate != nil {
+		mutate(form)
+	}
+
+	resp, err := http.PostForm(fmt.Sprintf("%s/oidc/%s/token", h.ApiUrl(), h.VirtualServer()), form)
 	Expect(err).ToNot(HaveOccurred())
 	defer resp.Body.Close() //nolint:errcheck
 

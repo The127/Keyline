@@ -147,7 +147,7 @@ func init() {
 					Skip("Postgres not available")
 				}
 
-				h = newE2eTestHarness(backend.dbMode, serviceUserTokenSource)
+				h = newE2eTestHarness(backend.dbMode, serviceUserLogin)
 				github = newStubGithub()
 
 				_, err := h.Client().VirtualServer().IdentityProviders().Create(h.Ctx(), api.CreateIdentityProviderRequestDto{

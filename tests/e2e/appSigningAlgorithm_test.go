@@ -119,13 +119,13 @@ func init() {
 			})
 
 			It("tokens issued for RS256 app are signed with RS256", func() {
-				token := issueTokenViaTokenExchange(h, vsName, "rs256-app")
+				token := issueTokenForApplication(h, vsName, "rs256-app")
 				alg := jwtAlgorithm(token)
 				Expect(alg).To(Equal("RS256"))
 			})
 
 			It("tokens issued for app with no override use VS primary (EdDSA)", func() {
-				token := issueTokenViaTokenExchange(h, vsName, "default-app")
+				token := issueTokenForApplication(h, vsName, "default-app")
 				alg := jwtAlgorithm(token)
 				Expect(alg).To(Equal("EdDSA"))
 			})
@@ -172,10 +172,7 @@ func init() {
 	}
 }
 
-// issueTokenViaTokenExchange exchanges a service-user JWT for an access token issued to the given app.
-// The app name is used as the audience in the subject JWT, which causes the server to sign the
-// resulting token with the algorithm configured on that application.
-func issueTokenViaTokenExchange(h *harness, vsName, appName string) string {
+func issueTokenForApplication(h *harness, vsName, appName string) string {
 	return acquireTokenForServiceUserOnVS(h, vsName, appName, appAlgServiceUserName, serviceUserKid, serviceUserPrivateKey)
 }
 

@@ -5,6 +5,12 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/The127/Keyline/client"
 	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/authentication"
@@ -16,11 +22,6 @@ import (
 	"github.com/The127/Keyline/internal/server"
 	"github.com/The127/Keyline/internal/setup"
 	"github.com/The127/Keyline/utils"
-	"os"
-	"path/filepath"
-	"strings"
-	"sync"
-	"time"
 
 	"github.com/The127/go-clock"
 	"github.com/The127/ioc"
@@ -28,7 +29,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/huandu/go-sqlbuilder"
-	"golang.org/x/oauth2"
 )
 
 const (
@@ -132,7 +132,7 @@ func withPort(port int) harnessOption {
 	}
 }
 
-func newE2eTestHarness(dbMode config.DatabaseMode, tokenSourceGenerator func(ctx context.Context, url string) oauth2.TokenSource, harnessOpts ...harnessOption) *harness {
+func newE2eTestHarness(dbMode config.DatabaseMode, login client.TransportOptions, harnessOpts ...harnessOption) *harness {
 	options := harnessOptions{}
 	for _, opt := range harnessOpts {
 		opt(&options)
@@ -254,8 +254,8 @@ func newE2eTestHarness(dbMode config.DatabaseMode, tokenSourceGenerator func(ctx
 	shutdown := server.Serve(scope, serverConfig)
 
 	var opts []client.TransportOptions
-	if tokenSourceGenerator != nil {
-		opts = append(opts, client.WithOidc(tokenSourceGenerator(ctx, serverConfig.ExternalUrl)))
+	if login != nil {
+		opts = append(opts, login)
 	}
 
 	cl := client.NewClient(serverConfig.ExternalUrl, "test-vs", opts...)

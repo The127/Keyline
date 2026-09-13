@@ -22,7 +22,7 @@ func init() {
 				if backend.dbMode == config.DatabaseModePostgres && !postgresBackendAvailable() {
 					Skip("Postgres not available")
 				}
-				h = newE2eTestHarness(backend.dbMode, serviceUserTokenSource)
+				h = newE2eTestHarness(backend.dbMode, serviceUserLogin)
 			})
 
 			AfterAll(func() {
