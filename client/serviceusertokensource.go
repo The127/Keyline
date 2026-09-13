@@ -44,7 +44,6 @@ type serviceUserTokenSource struct {
 	httpClient    *http.Client
 
 	mu     sync.Mutex
-	issuer string
 	cached *oauth2.Token
 }
 
@@ -100,10 +99,6 @@ func (tokenSource *serviceUserTokenSource) Token() (*oauth2.Token, error) {
 }
 
 func (tokenSource *serviceUserTokenSource) discoverIssuer() (string, error) {
-	if tokenSource.issuer != "" {
-		return tokenSource.issuer, nil
-	}
-
 	resp, err := tokenSource.httpClient.Get(tokenSource.oidcUrl("/.well-known/openid-configuration"))
 	if err != nil {
 		return "", fmt.Errorf("discovery request: %w", err)
@@ -124,7 +119,6 @@ func (tokenSource *serviceUserTokenSource) discoverIssuer() (string, error) {
 		return "", fmt.Errorf("discovery response has no issuer")
 	}
 
-	tokenSource.issuer = body.Issuer
 	return body.Issuer, nil
 }
 

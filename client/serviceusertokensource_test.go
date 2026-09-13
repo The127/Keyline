@@ -26,46 +26,73 @@ func TestServiceUserTokenSourceSuite(t *testing.T) {
 func (s *ServiceUserTokenSourceSuite) TestLogsInWithTheIssuerAdvertisedByTheServer() {
 	// arrange
 	publicKey, privateKeyPem := s.newKeyPair()
-	var authorization string
-	server := s.newFakeKeyline(publicKey, &authorization)
-	defer server.Close()
+	keyline := s.newFakeKeyline(publicKey, 300)
+	defer keyline.server.Close()
 
-	testee := NewClient(server.URL, "test", WithServiceUser(privateKeyPem, "kid-1", "svc", "my-app")).Oidc()
+	testee := NewClient(keyline.server.URL, "test", WithServiceUser(privateKeyPem, "kid-1", "svc", "my-app")).Oidc()
 
 	// act
 	_, err := testee.BeginDeviceFlow(s.T().Context(), "my-app", "openid")
 
 	// assert
 	s.Require().NoError(err)
-	s.Equal("Bearer issued-token", authorization)
+	s.Equal("Bearer issued-token", keyline.authorization)
 }
 
 func (s *ServiceUserTokenSourceSuite) TestLogsInThroughABareCustomHttpClient() {
 	// arrange
 	publicKey, privateKeyPem := s.newKeyPair()
-	var authorization string
-	server := s.newFakeKeyline(publicKey, &authorization)
-	defer server.Close()
+	keyline := s.newFakeKeyline(publicKey, 300)
+	defer keyline.server.Close()
 
-	testee := NewClient(server.URL, "test", WithClient(&http.Client{}), WithServiceUser(privateKeyPem, "kid-1", "svc", "my-app")).Oidc()
+	testee := NewClient(keyline.server.URL, "test", WithClient(&http.Client{}), WithServiceUser(privateKeyPem, "kid-1", "svc", "my-app")).Oidc()
 
 	// act
 	_, err := testee.BeginDeviceFlow(s.T().Context(), "my-app", "openid")
 
 	// assert
 	s.Require().NoError(err)
-	s.Equal("Bearer issued-token", authorization)
+	s.Equal("Bearer issued-token", keyline.authorization)
 }
 
-func (s *ServiceUserTokenSourceSuite) newFakeKeyline(publicKey ed25519.PublicKey, authorization *string) *httptest.Server {
-	const advertisedIssuer = "https://public.example/oidc/test"
+func (s *ServiceUserTokenSourceSuite) TestAsksForTheIssuerOnEveryLogin() {
+	// arrange
+	publicKey, privateKeyPem := s.newKeyPair()
+	keyline := s.newFakeKeyline(publicKey, 0)
+	defer keyline.server.Close()
 
-	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	testee := NewClient(keyline.server.URL, "test", WithServiceUser(privateKeyPem, "kid-1", "svc", "my-app")).Oidc()
+	_, err := testee.BeginDeviceFlow(s.T().Context(), "my-app", "openid")
+	s.Require().NoError(err)
+
+	// act
+	_, err = testee.BeginDeviceFlow(s.T().Context(), "my-app", "openid")
+
+	// assert
+	s.Require().NoError(err)
+	s.Equal(2, keyline.logins)
+	s.Equal(2, keyline.discoveries)
+}
+
+type fakeKeyline struct {
+	server        *httptest.Server
+	authorization string
+	discoveries   int
+	logins        int
+}
+
+func (s *ServiceUserTokenSourceSuite) newFakeKeyline(publicKey ed25519.PublicKey, expiresIn int) *fakeKeyline {
+	const advertisedIssuer = "https://public.example/oidc/test"
+	keyline := &fakeKeyline{}
+
+	keyline.server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/oidc/test/.well-known/openid-configuration":
+			keyline.discoveries++
 			_ = json.NewEncoder(w).Encode(map[string]string{"issuer": advertisedIssuer})
 
 		case "/oidc/test/token":
+			keyline.logins++
 			s.NoError(r.ParseForm())
 			s.Equal("urn:ietf:params:oauth:grant-type:jwt-bearer", r.Form.Get("grant_type"))
 			s.Equal("my-app", r.Form.Get("client_id"))
@@ -83,16 +110,18 @@ func (s *ServiceUserTokenSourceSuite) newFakeKeyline(publicKey ed25519.PublicKey
 			s.NotEmpty(claims["jti"])
 			s.NotNil(claims["exp"])
 
-			_ = json.NewEncoder(w).Encode(map[string]any{"access_token": "issued-token", "expires_in": 300})
+			_ = json.NewEncoder(w).Encode(map[string]any{"access_token": "issued-token", "expires_in": expiresIn})
 
 		case "/oidc/test/device":
-			*authorization = r.Header.Get("Authorization")
+			keyline.authorization = r.Header.Get("Authorization")
 			_ = json.NewEncoder(w).Encode(map[string]any{})
 
 		default:
 			s.Failf("unexpected request", "%s %s", r.Method, r.URL.Path)
 		}
 	}))
+
+	return keyline
 }
 
 func (s *ServiceUserTokenSourceSuite) newKeyPair() (ed25519.PublicKey, string) {
