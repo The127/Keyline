@@ -84,6 +84,18 @@ Result: http://localhost:8081/api/virtual-servers/my-virtual-server/applications
 
 The client supports several configuration options:
 
+### Service User Login
+
+Authenticates every request as a service user through the JWT bearer grant. The client discovers the server's issuer itself, so the base URL may be an internal address.
+
+```go
+c := client.NewClient(
+    "http://keyline.svc:8080",
+    "my-virtual-server",
+    client.WithServiceUser(privateKeyPEM, keyId, "my-service-user", "my-application"),
+)
+```
+
 ### Custom HTTP Client
 
 Provide your own `http.Client` for custom timeouts, TLS configuration, etc.:

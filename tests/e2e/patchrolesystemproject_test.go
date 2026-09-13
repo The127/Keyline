@@ -53,7 +53,7 @@ func init() {
 				// project's `admin` role -- exactly the attacker profile
 				// for this bug: VirtualServerAdmin trying to mutate a
 				// privileged role-name.
-				h = newE2eTestHarness(backend.dbMode, serviceUserTokenSource)
+				h = newE2eTestHarness(backend.dbMode, serviceUserLogin)
 			})
 
 			AfterAll(func() {

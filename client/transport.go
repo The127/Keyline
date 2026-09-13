@@ -41,7 +41,12 @@ func WithOidc(tokenSource oauth2.TokenSource) TransportOptions {
 
 func WithRoundTripper(roundTripperFactory func(next http.RoundTripper) http.RoundTripper) TransportOptions {
 	return func(t *Transport) {
-		t.client.Transport = roundTripperFactory(t.client.Transport)
+		next := t.client.Transport
+		if next == nil {
+			next = http.DefaultTransport
+		}
+
+		t.client.Transport = roundTripperFactory(next)
 	}
 }
 

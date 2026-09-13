@@ -15,61 +15,63 @@ import (
 	"golang.org/x/oauth2"
 )
 
-// ServiceUserTokenSource implements oauth2.TokenSource via Keyline's RFC 7523
-// JWT bearer grant, signing a short-lived JWT with a service user's Ed25519 private key.
-type ServiceUserTokenSource struct {
-	KeylineURL    string
-	VirtualServer string
-	PrivKeyPEM    string
-	Kid           string
-	Username      string
-	Application   string
+// WithServiceUser authenticates every request as the given service user through Keyline's RFC 7523 JWT bearer grant.
+func WithServiceUser(privateKeyPem string, kid string, username string, application string) TransportOptions {
+	return func(transport *Transport) {
+		tokenSource := &serviceUserTokenSource{
+			transport:     transport,
+			privateKeyPem: privateKeyPem,
+			kid:           kid,
+			username:      username,
+			application:   application,
+			httpClient: &http.Client{
+				Timeout: 10 * time.Second,
+				CheckRedirect: func(*http.Request, []*http.Request) error {
+					return http.ErrUseLastResponse
+				},
+			},
+		}
+		WithOidc(tokenSource)(transport)
+	}
+}
+
+type serviceUserTokenSource struct {
+	transport     *Transport
+	privateKeyPem string
+	kid           string
+	username      string
+	application   string
+	httpClient    *http.Client
 
 	mu     sync.Mutex
+	issuer string
 	cached *oauth2.Token
 }
 
-func (s *ServiceUserTokenSource) Token() (*oauth2.Token, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+func (tokenSource *serviceUserTokenSource) Token() (*oauth2.Token, error) {
+	tokenSource.mu.Lock()
+	defer tokenSource.mu.Unlock()
 
-	if s.cached != nil && s.cached.Valid() {
-		return s.cached, nil
+	if tokenSource.cached != nil && tokenSource.cached.Valid() {
+		return tokenSource.cached, nil
 	}
 
-	block, _ := pem.Decode([]byte(s.PrivKeyPEM))
-	if block == nil {
-		return nil, fmt.Errorf("failed to decode private key PEM")
-	}
-	rawKey, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+	issuer, err := tokenSource.discoverIssuer()
 	if err != nil {
-		return nil, fmt.Errorf("parsing private key: %w", err)
+		return nil, err
 	}
 
-	now := time.Now()
-	claims := jwt.MapClaims{
-		"aud": fmt.Sprintf("%s/oidc/%s", s.KeylineURL, s.VirtualServer),
-		"iss": s.Username,
-		"sub": s.Username,
-		"iat": now.Unix(),
-		"exp": now.Add(time.Minute).Unix(),
-		"jti": uuid.NewString(),
-	}
-	tok := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims)
-	tok.Header["kid"] = s.Kid
-
-	signed, err := tok.SignedString(rawKey)
+	signed, err := tokenSource.signAssertion(issuer)
 	if err != nil {
-		return nil, fmt.Errorf("signing JWT: %w", err)
+		return nil, err
 	}
 
-	httpClient := &http.Client{Timeout: 10 * time.Second}
-	resp, err := httpClient.PostForm(
-		fmt.Sprintf("%s/oidc/%s/token", s.KeylineURL, s.VirtualServer),
+	resp, err := tokenSource.httpClient.PostForm(
+		tokenSource.oidcUrl("/token"),
 		url.Values{
 			"grant_type": {"urn:ietf:params:oauth:grant-type:jwt-bearer"},
 			"assertion":  {signed},
-			"client_id":  {s.Application},
+			"client_id":  {tokenSource.application},
 			"scope":      {"openid profile email"},
 		},
 	)
@@ -90,9 +92,71 @@ func (s *ServiceUserTokenSource) Token() (*oauth2.Token, error) {
 		return nil, fmt.Errorf("decoding token response: %w", err)
 	}
 
-	s.cached = &oauth2.Token{
+	tokenSource.cached = &oauth2.Token{
 		AccessToken: body.AccessToken,
 		Expiry:      time.Now().Add(time.Duration(body.ExpiresIn) * time.Second),
 	}
-	return s.cached, nil
+	return tokenSource.cached, nil
+}
+
+func (tokenSource *serviceUserTokenSource) discoverIssuer() (string, error) {
+	if tokenSource.issuer != "" {
+		return tokenSource.issuer, nil
+	}
+
+	resp, err := tokenSource.httpClient.Get(tokenSource.oidcUrl("/.well-known/openid-configuration"))
+	if err != nil {
+		return "", fmt.Errorf("discovery request: %w", err)
+	}
+	defer resp.Body.Close() //nolint:errcheck
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("discovery endpoint returned %d", resp.StatusCode)
+	}
+
+	var body struct {
+		Issuer string `json:"issuer"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+		return "", fmt.Errorf("decoding discovery response: %w", err)
+	}
+	if body.Issuer == "" {
+		return "", fmt.Errorf("discovery response has no issuer")
+	}
+
+	tokenSource.issuer = body.Issuer
+	return body.Issuer, nil
+}
+
+func (tokenSource *serviceUserTokenSource) signAssertion(issuer string) (string, error) {
+	block, _ := pem.Decode([]byte(tokenSource.privateKeyPem))
+	if block == nil {
+		return "", fmt.Errorf("failed to decode private key PEM")
+	}
+	rawKey, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+	if err != nil {
+		return "", fmt.Errorf("parsing private key: %w", err)
+	}
+
+	now := time.Now()
+	claims := jwt.MapClaims{
+		"aud": issuer,
+		"iss": tokenSource.username,
+		"sub": tokenSource.username,
+		"iat": now.Unix(),
+		"exp": now.Add(time.Minute).Unix(),
+		"jti": uuid.NewString(),
+	}
+	assertion := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims)
+	assertion.Header["kid"] = tokenSource.kid
+
+	signed, err := assertion.SignedString(rawKey)
+	if err != nil {
+		return "", fmt.Errorf("signing assertion: %w", err)
+	}
+	return signed, nil
+}
+
+func (tokenSource *serviceUserTokenSource) oidcUrl(endpoint string) string {
+	return fmt.Sprintf("%s/oidc/%s%s", tokenSource.transport.baseURL, tokenSource.transport.virtualServer, endpoint)
 }
