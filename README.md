@@ -414,6 +414,7 @@ For detailed information about testing:
 - [Service User Authentication](docs/service-user-authentication.md) - Guide for machine-to-machine authentication
 - [Userinfo claims in access tokens](docs/access-token-claims.md) - Per-application setting for identity claims in access tokens
 - [Login with external identity providers](docs/identity-providers.md) - Google, GitHub and OpenID Connect logins per virtual server
+- [Token exchange](docs/token-exchange.md) - Letting an application act toward another application on a user's behalf
 
 ### Linting
 

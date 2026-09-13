@@ -39,6 +39,7 @@ const (
 	ApplicationChangeSigningAlgorithm
 	ApplicationChangeTokenEndpointAuthMethod
 	ApplicationChangeUserinfoInAccessToken
+	ApplicationChangeTrustedExchangers
 )
 
 type Application struct {
@@ -67,6 +68,7 @@ type Application struct {
 
 	tokenEndpointAuthMethod *TokenEndpointAuthMethod
 	userinfoInAccessToken   bool
+	trustedExchangers       []string
 }
 
 func NewApplication(virtualServerId uuid.UUID, projectId uuid.UUID, name string, displayName string, type_ ApplicationType, redirectUris []string) *Application {
@@ -80,6 +82,7 @@ func NewApplication(virtualServerId uuid.UUID, projectId uuid.UUID, name string,
 		type_:                  type_,
 		redirectUris:           redirectUris,
 		postLogoutRedirectUris: []string{},
+		trustedExchangers:      []string{},
 		accessTokenHeaderType:  "at+jwt",
 	}
 
@@ -107,6 +110,7 @@ func NewApplicationFromDB(
 	signingAlgorithm *config.SigningAlgorithm,
 	tokenEndpointAuthMethod *TokenEndpointAuthMethod,
 	userinfoInAccessToken bool,
+	trustedExchangers []string,
 ) *Application {
 	return &Application{
 		BaseModel:               base,
@@ -126,6 +130,7 @@ func NewApplicationFromDB(
 		signingAlgorithm:        signingAlgorithm,
 		tokenEndpointAuthMethod: tokenEndpointAuthMethod,
 		userinfoInAccessToken:   userinfoInAccessToken,
+		trustedExchangers:       trustedExchangers,
 	}
 }
 
@@ -290,6 +295,27 @@ func (a *Application) SetUserinfoInAccessToken(userinfoInAccessToken bool) {
 
 	a.userinfoInAccessToken = userinfoInAccessToken
 	a.TrackChange(ApplicationChangeUserinfoInAccessToken)
+}
+
+func (a *Application) TrustedExchangers() []string {
+	return a.trustedExchangers
+}
+
+func (a *Application) SetTrustedExchangers(trustedExchangers []string) {
+	if trustedExchangers == nil {
+		trustedExchangers = []string{}
+	}
+
+	if slices.Equal(a.trustedExchangers, trustedExchangers) {
+		return
+	}
+
+	a.trustedExchangers = trustedExchangers
+	a.TrackChange(ApplicationChangeTrustedExchangers)
+}
+
+func (a *Application) TrustsExchanger(name string) bool {
+	return slices.Contains(a.trustedExchangers, name)
 }
 
 type ApplicationFilter struct {

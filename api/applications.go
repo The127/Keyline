@@ -17,6 +17,7 @@ type CreateApplicationRequestDto struct {
 	SigningAlgorithm        *string  `json:"signingAlgorithm,omitempty" validate:"omitempty,oneof=RS256 EdDSA"`
 	TokenEndpointAuthMethod *string  `json:"tokenEndpointAuthMethod,omitempty" validate:"omitempty,oneof=client_secret private_key_jwt"`
 	UserinfoInAccessToken   bool     `json:"userinfoInAccessToken"`
+	TrustedExchangers       []string `json:"trustedExchangers,omitempty" validate:"dive,min=1,max=255"`
 }
 
 type CreateApplicationResponseDto struct {
@@ -48,6 +49,8 @@ type GetApplicationResponseDto struct {
 
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
+
+	TrustedExchangers []string `json:"trustedExchangers"`
 }
 
 type PatchApplicationRequestDto struct {
@@ -59,6 +62,7 @@ type PatchApplicationRequestDto struct {
 	AccessTokenHeaderType *string  `json:"accessTokenHeaderType,omitempty" validate:"omitempty,oneof=at+jwt JWT"`
 	SigningAlgorithm      *string  `json:"signingAlgorithm,omitempty" validate:"omitempty,oneof=RS256 EdDSA"`
 	UserinfoInAccessToken *bool    `json:"userinfoInAccessToken,omitempty"`
+	TrustedExchangers     []string `json:"trustedExchangers" validate:"dive,min=1,max=255"`
 }
 
 type AddApplicationKeyRequestDto struct {

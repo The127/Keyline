@@ -253,7 +253,7 @@ func WellKnownOpenIdConfiguration(w http.ResponseWriter, r *http.Request) {
 		}(),
 		TokenEndpointAuthMethodsSupported:          []string{"client_secret_basic", "client_secret_post", "private_key_jwt"},
 		TokenEndpointAuthSigningAlgValuesSupported: assertionSigningMethods,
-		GrantTypesSupported:                        []string{"authorization_code", "refresh_token", "urn:ietf:params:oauth:grant-type:jwt-bearer", "urn:ietf:params:oauth:grant-type:device_code"},
+		GrantTypesSupported:                        []string{"authorization_code", "refresh_token", "urn:ietf:params:oauth:grant-type:jwt-bearer", "urn:ietf:params:oauth:grant-type:token-exchange", "urn:ietf:params:oauth:grant-type:device_code"},
 
 		ScopesSupported: []string{"openid", "email", "profile"}, // TODO: get from db
 		ClaimsSupported: []string{"sub", "name", "email"},       // TODO: get from db
@@ -914,6 +914,9 @@ func OidcToken(w http.ResponseWriter, r *http.Request) {
 	case "urn:ietf:params:oauth:grant-type:jwt-bearer":
 		handleJwtBearer(w, r)
 
+	case "urn:ietf:params:oauth:grant-type:token-exchange":
+		handleTokenExchange(w, r)
+
 	case "urn:ietf:params:oauth:grant-type:device_code":
 		handleDeviceCodeGrant(w, r)
 
@@ -1210,6 +1213,7 @@ type AccessTokenGenerationParams struct {
 	KeyPair               services.KeyPair
 	HeaderType            string
 	UserinfoInAccessToken bool
+	Actor                 map[string]any
 }
 
 type IdTokenGenerationParams struct {
@@ -1285,6 +1289,9 @@ func generateAccessToken(ctx context.Context, params AccessTokenGenerationParams
 	accessTokenClaims["scopes"] = params.GrantedScopes
 	accessTokenClaims["iat"] = params.IssuedAt.Unix()
 	accessTokenClaims["exp"] = params.IssuedAt.Add(params.Expiry).Unix()
+	if params.Actor != nil {
+		accessTokenClaims["act"] = params.Actor
+	}
 
 	accessToken := jwt.NewWithClaims(jwtSigningMethod, accessTokenClaims)
 	accessToken.Header["kid"] = kid

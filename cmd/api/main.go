@@ -222,6 +222,7 @@ func initApplication(dp *ioc.DependencyProvider) {
 					return commands.CreateVirtualServerApplicationKey{Pem: key.Pem, Kid: key.Kid}
 				}),
 				UserinfoInAccessToken: app.UserinfoInAccessToken,
+				TrustedExchangers:     app.TrustedExchangers,
 			})
 		}
 

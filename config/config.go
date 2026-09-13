@@ -183,6 +183,7 @@ type InitialProjectConfig struct {
 		TokenEndpointAuthMethod *string                       `yaml:"tokenEndpointAuthMethod,omitempty"`
 		PublicKeys              []InitialApplicationKeyConfig `yaml:"publicKeys,omitempty"`
 		UserinfoInAccessToken   bool                          `yaml:"userinfoInAccessToken"`
+		TrustedExchangers       []string                      `yaml:"trustedExchangers,omitempty"`
 	} `yaml:"applications"`
 	ResourceServers []struct {
 		Slug        string `yaml:"slug"`
