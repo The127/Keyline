@@ -80,6 +80,42 @@ func (s *CreateApplicationCommandSuite) TestVirtualServerError() {
 	s.Error(err)
 }
 
+func (s *CreateApplicationCommandSuite) TestNameWithAColonIsRefused() {
+	// arrange
+	ctrl := gomock.NewController(s.T())
+	defer ctrl.Finish()
+
+	now := time.Now()
+
+	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
+	virtualServer.Mock(now)
+	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
+	virtualServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
+
+	project := repositories.NewProject(virtualServer.Id(), "project", "Project", "Test Project")
+	project.Mock(now)
+	projectRepository := mocks.NewMockProjectRepository(ctrl)
+	projectRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(project, nil)
+
+	applicationRepository := mocks.NewMockApplicationRepository(ctrl)
+
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, applicationRepository)
+	cmd := CreateApplication{
+		VirtualServerName: virtualServer.Name(),
+		ProjectSlug:       "project",
+		Name:              "project:api",
+		DisplayName:       "Display Name",
+		Type:              repositories.ApplicationTypePublic,
+		RedirectUris:      []string{"redirectUri"},
+	}
+
+	// act
+	_, err := HandleCreateApplication(ctx, cmd)
+
+	// assert
+	s.ErrorIs(err, utils.ErrHttpBadRequest)
+}
+
 func (s *CreateApplicationCommandSuite) TestPublicApplicationHappyPath() {
 	// arrange
 	ctrl := gomock.NewController(s.T())

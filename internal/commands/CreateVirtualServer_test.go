@@ -144,3 +144,97 @@ func (s *CreateVirtualServerCommandSuite) TestHappyPath() {
 	s.Require().NoError(err)
 	s.NotNil(resp)
 }
+
+func (s *CreateVirtualServerCommandSuite) TestApplicationNameWithAColonIsRefusedBeforeAnythingIsCreated() {
+	// arrange
+	ctrl := gomock.NewController(s.T())
+	defer ctrl.Finish()
+
+	ctx := s.createContext(ctrl, nil, nil, nil, nil, nil, nil, nil, nil)
+	cmd := CreateVirtualServer{
+		Name:        "virtualServer",
+		DisplayName: "Virtual Server",
+		Projects: []CreateVirtualServerProject{
+			{
+				Slug: "project",
+				Name: "Project",
+				Applications: []CreateVirtualServerProjectApplication{
+					{
+						Name:         "project:api",
+						DisplayName:  "API",
+						Type:         "public",
+						RedirectUris: []string{"http://localhost/callback"},
+					},
+				},
+			},
+		},
+	}
+
+	// act
+	_, err := HandleCreateVirtualServer(ctx, cmd)
+
+	// assert
+	s.ErrorIs(err, utils.ErrHttpBadRequest)
+}
+
+func (s *CreateVirtualServerCommandSuite) TestApplicationWithAHyphenatedNameIsCreated() {
+	// arrange
+	ctrl := gomock.NewController(s.T())
+	defer ctrl.Finish()
+
+	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
+	virtualServerRepository.EXPECT().Insert(gomock.Any())
+
+	templateRepository := mocks.NewMockTemplateRepository(ctrl)
+	templateRepository.EXPECT().Insert(gomock.Any()).AnyTimes()
+
+	fileRepository := mocks.NewMockFileRepository(ctrl)
+	fileRepository.EXPECT().Insert(gomock.Any()).AnyTimes()
+
+	roleRepository := mocks.NewMockRoleRepository(ctrl)
+	roleRepository.EXPECT().Insert(gomock.Any()).AnyTimes()
+
+	keyService := serviceMocks.NewMockKeyService(ctrl)
+	keyService.EXPECT().
+		Generate(gomock.Any(), "virtualServer", gomock.Any()).
+		Return(services.KeyPair{}, nil)
+
+	applicationRepository := mocks.NewMockApplicationRepository(ctrl)
+	applicationRepository.EXPECT().Insert(gomock.Cond(func(x *repositories.Application) bool {
+		return x.Name() == "my-app"
+	}))
+	applicationRepository.EXPECT().Insert(gomock.Cond(func(x *repositories.Application) bool {
+		return x.Name() != "my-app"
+	})).AnyTimes()
+
+	projectRepository := mocks.NewMockProjectRepository(ctrl)
+	projectRepository.EXPECT().Insert(gomock.Any()).AnyTimes()
+
+	mediator := mediatorMock.NewMockMediator(ctrl)
+
+	ctx := s.createContext(ctrl, virtualServerRepository, templateRepository, fileRepository, roleRepository, keyService, applicationRepository, projectRepository, mediator)
+	cmd := CreateVirtualServer{
+		Name:        "virtualServer",
+		DisplayName: "Virtual Server",
+		Projects: []CreateVirtualServerProject{
+			{
+				Slug: "project",
+				Name: "Project",
+				Applications: []CreateVirtualServerProjectApplication{
+					{
+						Name:         "my-app",
+						DisplayName:  "My App",
+						Type:         "public",
+						RedirectUris: []string{"http://localhost/callback"},
+					},
+				},
+			},
+		},
+	}
+
+	// act
+	_, err := HandleCreateVirtualServer(ctx, cmd)
+
+	// assert
+	s.Require().NoError(err)
+}
