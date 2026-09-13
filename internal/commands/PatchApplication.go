@@ -28,6 +28,7 @@ type PatchApplication struct {
 	PostLogoutRedirectUris *[]string
 	SigningAlgorithm       *config.SigningAlgorithm
 	UserinfoInAccessToken  *bool
+	TrustedExchangers      *[]string
 }
 
 func (a PatchApplication) LogRequest() bool {
@@ -99,6 +100,10 @@ func HandlePatchApplication(ctx context.Context, command PatchApplication) (*Pat
 
 	if command.UserinfoInAccessToken != nil {
 		application.SetUserinfoInAccessToken(*command.UserinfoInAccessToken)
+	}
+
+	if command.TrustedExchangers != nil {
+		application.SetTrustedExchangers(*command.TrustedExchangers)
 	}
 
 	if command.RedirectUris != nil {

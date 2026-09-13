@@ -77,6 +77,7 @@ func CreateApplication(w http.ResponseWriter, r *http.Request) {
 		SigningAlgorithm:        (*config.SigningAlgorithm)(dto.SigningAlgorithm),
 		TokenEndpointAuthMethod: (*repositories.TokenEndpointAuthMethod)(dto.TokenEndpointAuthMethod),
 		UserinfoInAccessToken:   dto.UserinfoInAccessToken,
+		TrustedExchangers:       dto.TrustedExchangers,
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -165,6 +166,7 @@ func GetApplication(w http.ResponseWriter, r *http.Request) {
 		CreatedAt:               application.CreatedAt,
 		UpdatedAt:               application.UpdatedAt,
 		UserinfoInAccessToken:   application.UserinfoInAccessToken,
+		TrustedExchangers:       application.TrustedExchangers,
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -224,6 +226,11 @@ func PatchApplication(w http.ResponseWriter, r *http.Request) {
 		postLogoutUris = &dto.PostLogoutUris
 	}
 
+	var trustedExchangers *[]string
+	if dto.TrustedExchangers != nil {
+		trustedExchangers = &dto.TrustedExchangers
+	}
+
 	_, err = mediatr.Send[*commands.PatchApplicationResponse](ctx, m, commands.PatchApplication{
 		VirtualServerName:      vsName,
 		ProjectSlug:            projectSlug,
@@ -236,6 +243,7 @@ func PatchApplication(w http.ResponseWriter, r *http.Request) {
 		AccessTokenHeaderType:  dto.AccessTokenHeaderType,
 		SigningAlgorithm:       (*config.SigningAlgorithm)(dto.SigningAlgorithm),
 		UserinfoInAccessToken:  dto.UserinfoInAccessToken,
+		TrustedExchangers:      trustedExchangers,
 	})
 	if err != nil {
 		utils.HandleHttpError(w, err)

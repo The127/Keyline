@@ -43,6 +43,7 @@ type CreateVirtualServerRequestDtoProjectDtoApplicationDto struct {
 	TokenEndpointAuthMethod *string                                                    `json:"tokenEndpointAuthMethod,omitempty" validate:"omitempty,oneof=client_secret private_key_jwt"`
 	PublicKeys              []CreateVirtualServerRequestDtoProjectDtoApplicationKeyDto `json:"publicKeys,omitempty" validate:"dive"`
 	UserinfoInAccessToken   bool                                                       `json:"userinfoInAccessToken"`
+	TrustedExchangers       []string                                                   `json:"trustedExchangers,omitempty" validate:"dive,min=1,max=255"`
 }
 
 type CreateVirtualServerRequestDtoProjectDtoResourceServerDto struct {

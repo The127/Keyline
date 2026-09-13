@@ -54,6 +54,7 @@ type GetApplicationResult struct {
 	CreatedAt               time.Time
 	UpdatedAt               time.Time
 	UserinfoInAccessToken   bool
+	TrustedExchangers       []string
 }
 
 func HandleGetApplication(ctx context.Context, query GetApplication) (*GetApplicationResult, error) {
@@ -104,5 +105,6 @@ func HandleGetApplication(ctx context.Context, query GetApplication) (*GetApplic
 		CreatedAt:               application.AuditCreatedAt(),
 		UpdatedAt:               application.AuditUpdatedAt(),
 		UserinfoInAccessToken:   application.UserinfoInAccessToken(),
+		TrustedExchangers:       application.TrustedExchangers(),
 	}, nil
 }

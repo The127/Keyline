@@ -32,6 +32,7 @@ type CreateApplication struct {
 	SigningAlgorithm        *config.SigningAlgorithm
 	TokenEndpointAuthMethod *repositories.TokenEndpointAuthMethod
 	UserinfoInAccessToken   bool
+	TrustedExchangers       []string
 }
 
 func (c CreateApplication) LogRequest() bool {
@@ -106,6 +107,7 @@ func HandleCreateApplication(ctx context.Context, command CreateApplication) (*C
 	application.SetAccessTokenHeaderType(command.AccessTokenHeaderType)
 	application.SetDeviceFlowEnabled(command.DeviceFlowEnabled)
 	application.SetUserinfoInAccessToken(command.UserinfoInAccessToken)
+	application.SetTrustedExchangers(command.TrustedExchangers)
 
 	if command.SigningAlgorithm != nil {
 		if !virtualServer.HasSigningAlgorithm(*command.SigningAlgorithm) {
