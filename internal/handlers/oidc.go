@@ -681,7 +681,7 @@ func OidcEndSession(w http.ResponseWriter, r *http.Request) {
 
 	redirectUri.RawQuery = query.Encode()
 
-	http.Redirect(w, r, redirectUriString, http.StatusFound)
+	http.Redirect(w, r, redirectUri.String(), http.StatusFound)
 }
 
 func extractClientIdFromJwt(idTokenClaims jwt.MapClaims) (string, error) {
