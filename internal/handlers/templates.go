@@ -21,7 +21,7 @@ import (
 // @Produce      json
 // @Param        virtualServerName  path   string true  "Virtual server name"  default(keyline)
 // @Param        templateType       path   string true  "Template type"
-// @Success      200  {object}  GetTemplateResponseDto
+// @Success      200  {object}  api.GetTemplateResponseDto
 // @Failure      404  {string}  string
 // @Router       /api/virtual-servers/{virtualServerName}/templates/{templateType} [get]
 func GetTemplate(w http.ResponseWriter, r *http.Request) {
@@ -74,7 +74,7 @@ func GetTemplate(w http.ResponseWriter, r *http.Request) {
 // @Tags         Templates
 // @Produce      json
 // @Param        virtualServerName  path   string true  "Virtual server name"  default(keyline)
-// @Success      200  {object}  PagedTemplatesResponseDto
+// @Success      200  {object}  api.PagedTemplatesResponseDto
 // @Failure      400  {string} string
 // @Router       /api/virtual-servers/{virtualServerName}/templates [get]
 func ListTemplates(w http.ResponseWriter, r *http.Request) {

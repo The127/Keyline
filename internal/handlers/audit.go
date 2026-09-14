@@ -23,7 +23,7 @@ import (
 // @param       orderBy            query  string  false "Order by field (e.g., name, createdAt)"
 // @param       orderDir           query  string  false "Order direction (asc|desc)"
 // @security    BearerAuth
-// @success     200  {object}  handlers.PagedAuditLogResponseDto
+// @success     200  {object}  api.PagedAuditLogResponseDto
 // @failure     400  {string}  string "Bad Request"
 // @router      /api/virtual-servers/{virtualServerName}/audit [get]
 func ListAuditLog(w http.ResponseWriter, r *http.Request) {

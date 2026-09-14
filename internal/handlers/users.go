@@ -72,7 +72,7 @@ func VerifyEmail(w http.ResponseWriter, r *http.Request) {
 // @Accept       json
 // @Produce      plain
 // @Param        virtualServerName  path  string                   true "Virtual server name"  default(keyline)
-// @Param        body               body  RegisterUserRequestDto   true "User data"
+// @Param        body               body  api.RegisterUserRequestDto   true "User data"
 // @Success      204                {string} string "No Content"
 // @Failure      400                {string} string
 // @Router       /api/virtual-servers/{virtualServerName}/users/register [post]
@@ -121,8 +121,8 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 // @Tags         Users
 // @Produce      json
 // @Param        virtualServerName  path  string true  "Virtual server name"  default(keyline)
-// @Param        body               body  CreateUserRequestDto   true "User data"
-// @Success      201  {object}  CreateUserResponseDto
+// @Param        body               body  api.CreateUserRequestDto   true "User data"
+// @Success      201  {object}  api.CreateUserResponseDto
 // @Failure      400  {string}  string
 // @Router       /api/virtual-servers/{virtualServerName}/users [post]
 func CreateUser(w http.ResponseWriter, r *http.Request) {
@@ -192,7 +192,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 // @Param        page               query  int    false "Page number"
 // @Param        pageSize           query  int    false "Page size"
 // @Param        search             query  string false "Search term"
-// @Success      200  {object}  PagedUsersResponseDto
+// @Success      200  {object}  api.PagedUsersResponseDto
 // @Failure      400  {string}  string
 // @Router       /api/virtual-servers/{virtualServerName}/users [get]
 func ListUsers(w http.ResponseWriter, r *http.Request) {
@@ -253,7 +253,7 @@ func ListUsers(w http.ResponseWriter, r *http.Request) {
 // @Produce      json
 // @Param        virtualServerName  path  string true  "Virtual server name"  default(keyline)
 // @Param        userId             path  string true  "User ID (UUID)"
-// @Success      200  {object}  GetUserByIdResponseDto
+// @Success      200  {object}  api.GetUserByIdResponseDto
 // @Failure      404  {string}  string
 // @Router       /api/virtual-servers/{virtualServerName}/users/{userId} [get]
 func GetUserById(w http.ResponseWriter, r *http.Request) {
@@ -313,7 +313,7 @@ func GetUserById(w http.ResponseWriter, r *http.Request) {
 // @Param        virtualServerName  path  string true  "Virtual server name"  default(keyline)
 // @Param        userId             path  string true  "User ID (UUID)"
 // @Param        appId              path  string true  "Application ID (UUID)"
-// @Success      200  {object}  GetUserApplicationMetadataResponseDto
+// @Success      200  {object}  api.GetUserApplicationMetadataResponseDto
 // @Failure      404  {string}  string
 // @Router       /api/virtual-servers/{virtualServerName}/users/{userId}/metadata/application/{appId} [get]
 func GetUserApplicationMetadata(w http.ResponseWriter, r *http.Request) {
@@ -376,7 +376,7 @@ func GetUserApplicationMetadata(w http.ResponseWriter, r *http.Request) {
 // @Produce      json
 // @Param        virtualServerName  path  string true  "Virtual server name"  default(keyline)
 // @Param        userId             path  string true  "User ID (UUID)"
-// @Success      200  {object}  GetUserGlobalMetadataResponseDto
+// @Success      200  {object}  api.GetUserGlobalMetadataResponseDto
 // @Failure      404  {string}  string
 // @Router       /api/virtual-servers/{virtualServerName}/users/{userId}/metadata/user [get]
 func GetUserGlobalMetadata(w http.ResponseWriter, r *http.Request) {
@@ -432,7 +432,7 @@ func GetUserGlobalMetadata(w http.ResponseWriter, r *http.Request) {
 // @Produce      json
 // @Param        virtualServerName  path  string true  "Virtual server name"  default(keyline)
 // @Param        userId             path  string true  "User ID (UUID)"
-// @Success      200  {object}  GetUserMetadataResponseDto
+// @Success      200  {object}  api.GetUserMetadataResponseDto
 // @Failure      404  {string}  string
 // @Router       /api/virtual-servers/{virtualServerName}/users/{userId}/metadata [get]
 func GetUserMetadata(w http.ResponseWriter, r *http.Request) {
@@ -503,7 +503,7 @@ func GetUserMetadata(w http.ResponseWriter, r *http.Request) {
 // @Produce      json
 // @Param        virtualServerName  path  string true  "Virtual server name"  default(keyline)
 // @Param        userId             path  string true  "User ID (UUID)"
-// @Param        body               body  UpdateUserGlobalMetadataRequestDto   true "Metadata"
+// @Param        body               body  api.UpdateUserGlobalMetadataRequestDto   true "Metadata"
 // @Success      204  {string}  string  "No Content"
 // @Failure      404  {string}  string
 // @Router       /api/virtual-servers/{virtualServerName}/users/{userId}/metadata/user [put]
@@ -550,7 +550,7 @@ func UpdateUserGlobalMetadata(w http.ResponseWriter, r *http.Request) {
 // @Produce      json
 // @Param        virtualServerName  path  string true  "Virtual server name"  default(keyline)
 // @Param        userId             path  string true  "User ID (UUID)"
-// @Param        body               body  PatchUserGlobalMetadataRequestDto   true "Patch document"
+// @Param        body               body  api.PatchUserGlobalMetadataRequestDto   true "Patch document"
 // @Accept       json
 // @Accept       application/merge-patch+json
 // @Success      204  {string}  string  "No Content"
@@ -601,7 +601,7 @@ func PatchUserGlobalMetadata(w http.ResponseWriter, r *http.Request) {
 // @Param        virtualServerName  path  string true  "Virtual server name"  default(keyline)
 // @Param        userId             path  string true  "User ID (UUID)"
 // @Param        appId              path  string true  "Application ID (UUID)"
-// @Param        body               body  UpdateUserApplicationMetadataRequestDto   true "Metadata"
+// @Param        body               body  api.UpdateUserApplicationMetadataRequestDto   true "Metadata"
 // @Success      204  {string}  string  "No Content"
 // @Failure      404  {string}  string
 // @Router       /api/virtual-servers/{virtualServerName}/users/{userId}/metadata/application/{appId} [put]
@@ -657,7 +657,7 @@ func UpdateUserApplicationMetadata(w http.ResponseWriter, r *http.Request) {
 // @Param        virtualServerName  path  string true  "Virtual server name"  default(keyline)
 // @Param        userId             path  string true  "User ID (UUID)"
 // @Param        appId              path  string true  "Application ID (UUID)"
-// @Param        body               body  PatchUserApplicationMetadataRequestDto   true "Patch document"
+// @Param        body               body  api.PatchUserApplicationMetadataRequestDto   true "Patch document"
 // @Accept       json
 // @Accept       application/merge-patch+json
 // @Success      204  {string}  string  "No Content"
@@ -714,7 +714,7 @@ func PatchUserApplicationMetadata(w http.ResponseWriter, r *http.Request) {
 // @Produce      plain
 // @Param        virtualServerName  path  string                true "Virtual server name"  default(keyline)
 // @Param        userId             path  string                true "User ID (UUID)"
-// @Param        body               body  PatchUserRequestDto   true "Patch document"
+// @Param        body               body  api.PatchUserRequestDto   true "Patch document"
 // @Success      204  {string} string "No Content"
 // @Failure      400  {string} string
 // @Router       /api/virtual-servers/{virtualServerName}/users/{userId} [patch]
@@ -765,8 +765,8 @@ func PatchUser(w http.ResponseWriter, r *http.Request) {
 // @Accept       json
 // @Produce      json
 // @Param        virtualServerName  path  string                true "Virtual server name"  default(keyline)
-// @Param        body               body  CreateServiceUserRequestDto   true "User data"
-// @Success      200  {object} CreateServiceUserResponseDto
+// @Param        body               body  api.CreateServiceUserRequestDto   true "User data"
+// @Success      200  {object} api.CreateServiceUserResponseDto
 // @Failure      400  {string} string
 // @Router       /api/virtual-servers/{virtualServerName}/users/service-users [post]
 func CreateServiceUser(w http.ResponseWriter, r *http.Request) {
@@ -818,8 +818,8 @@ func CreateServiceUser(w http.ResponseWriter, r *http.Request) {
 // @Accept       json
 // @Produce      json
 // @Param        virtualServerName  path  string                true "Virtual server name"  default(keyline)
-// @Param        body               body  AssociateServiceUserPublicKeyRequestDto   true "Public key data"
-// @Success      200  {object} AssociateServiceUserPublicKeyResponseDto
+// @Param        body               body  api.AssociateServiceUserPublicKeyRequestDto   true "Public key data"
+// @Success      200  {object} api.AssociateServiceUserPublicKeyResponseDto
 // @Failure      400  {string} string
 // @Router       /api/virtual-servers/{virtualServerName}/users/service-users/{serviceUserId}/keys [post]
 func AssociateServiceUserPublicKey(w http.ResponseWriter, r *http.Request) {

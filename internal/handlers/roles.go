@@ -25,7 +25,7 @@ import (
 // @param       projectSlug  path  string  true  "Project slug"
 // @param       roleId             path  string  true  "Role ID (UUID)"
 // @security    BearerAuth
-// @success     200  {object}  handlers.GetRoleByIdResponseDto
+// @success     200  {object}  api.GetRoleByIdResponseDto
 // @failure     400  {string}  string "Bad Request"
 // @failure     404  {string}  string "Not Found"
 // @router      /api/virtual-servers/{virtualServerName}/projects/{projectSlug}/roles/{roleId} [get]
@@ -91,7 +91,7 @@ func GetRoleById(w http.ResponseWriter, r *http.Request) {
 // @param       orderDir           query  string  false "Order direction (asc|desc)"
 // @param       search             query  string  false "Search term"
 // @security    BearerAuth
-// @success     200  {object}  handlers.PagedRolesResponseDto
+// @success     200  {object}  api.PagedRolesResponseDto
 // @failure     400  {string}  string "Bad Request"
 // @router      /api/virtual-servers/{virtualServerName}/projects/{projectSlug}/roles [get]
 func ListRoles(w http.ResponseWriter, r *http.Request) {
@@ -156,9 +156,9 @@ func ListRoles(w http.ResponseWriter, r *http.Request) {
 // @produce     application/json
 // @param       virtualServerName  path   string                         true  "Virtual server name"  default(keyline)
 // @param       projectSlug  path   string                         true  "Project slug"
-// @param       body               body   handlers.CreateRoleRequestDto  true  "Role data"
+// @param       body               body   api.CreateRoleRequestDto  true  "Role data"
 // @security    BearerAuth
-// @success     201  {object}  handlers.CreateRoleResponseDto
+// @success     201  {object}  api.CreateRoleResponseDto
 // @failure     400  {string}  string "Bad Request"
 // @router      /api/virtual-servers/{virtualServerName}/projects/{projectSlug}/roles [post]
 func CreateRole(w http.ResponseWriter, r *http.Request) {
@@ -218,7 +218,7 @@ func CreateRole(w http.ResponseWriter, r *http.Request) {
 // @param       virtualServerName  path   string                          true  "Virtual server name"  default(keyline)
 // @param       projectSlug        path   string                          true  "Project slug"
 // @param       roleId             path   string                          true  "Role ID (UUID)"
-// @param       body               body   handlers.AssignRoleRequestDto   true  "Assignment data"
+// @param       body               body   api.AssignRoleRequestDto   true  "Assignment data"
 // @security    BearerAuth
 // @success     204  {string}  string "No Content"
 // @failure     400  {string}  string "Bad Request"
@@ -287,7 +287,7 @@ func AssignRole(w http.ResponseWriter, r *http.Request) {
 // @Param orderBy query string false "Order by field"
 // @Param orderDir query string false "Order direction (asc|desc)"
 // @Param search query string false "Search term"
-// @Success 200 {object} PagedUsersInRoleResponseDto
+// @Success 200 {object} api.PagedUsersInRoleResponseDto
 // @Failure 400
 // @Failure 500
 // @Router /api/virtual-servers/{vsName}/projects/{projectSlug}/roles/{roleId}/users [get]
@@ -359,7 +359,7 @@ func ListUsersInRole(w http.ResponseWriter, r *http.Request) {
 // @Param virtualServerName path string true "Virtual server name" default(keyline)
 // @Param projectSlug path string true "Project slug"
 // @Param roleId path string true "Role ID (UUID)"
-// @Param request body PatchRoleRequestDto true "Role data"
+// @Param request body api.PatchRoleRequestDto true "Role data"
 // @Security BearerAuth
 // @Success 204 {string} string "No Content"
 // @Failure 400

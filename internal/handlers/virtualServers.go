@@ -19,7 +19,7 @@ import (
 // @Tags         Admin
 // @Accept       json
 // @Produce      json
-// @Param        body  body  handlers.CreateVirtualServerRequestDto  true  "Virtual server"
+// @Param        body  body  api.CreateVirtualServerRequestDto  true  "Virtual server"
 // @Success      204   {string}  string  "No Content"
 // @Failure      400   {string}  string
 // @Router       /api/virtual-servers [post]
@@ -130,7 +130,7 @@ func CreateVirtualServer(w http.ResponseWriter, r *http.Request) {
 // @Tags         Admin
 // @Produce      json
 // @Param        virtualServerName  path  string  true  "Virtual server name"  default(keyline)
-// @Success      200  {object}  handlers.GetVirtualServerResponseDto
+// @Success      200  {object}  api.GetVirtualServerResponseDto
 // @Failure      404  {string}  string
 // @Router       /api/virtual-servers/{virtualServerName} [get]
 func GetVirtualServer(w http.ResponseWriter, r *http.Request) {
@@ -182,7 +182,7 @@ func GetVirtualServer(w http.ResponseWriter, r *http.Request) {
 // @Tags         Admin
 // @Produce      json
 // @Param        virtualServerName  path  string  true  "Virtual server name"  default(keyline)
-// @Success      200  {object}  handlers.GetVirtualServerListResponseDto
+// @Success      200  {object}  api.GetVirtualServerListResponseDto
 // @Failure      404  {string}  string
 // @Router       /api/virtual-servers/{virtualServerName}/public-info [get]
 func GetVirtualServerPublicInfo(w http.ResponseWriter, r *http.Request) {
@@ -224,7 +224,7 @@ func GetVirtualServerPublicInfo(w http.ResponseWriter, r *http.Request) {
 // @Accept       json
 // @Produce      plain
 // @Param        virtualServerName  path  string  true  "Virtual server name"  default(keyline)
-// @Param        body  body  PatchVirtualServerRequestDto  true  "Patch document"
+// @Param        body  body  api.PatchVirtualServerRequestDto  true  "Patch document"
 // @Success      204  {string} string "No Content"
 // @Failure      404  {string}  string
 // @Router       /api/virtual-servers/{virtualServerName} [patch]

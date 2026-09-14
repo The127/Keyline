@@ -1,46 +1,58 @@
 basePath: /
 definitions:
-  handlers.AssignRoleRequestDto:
+  api.AddApplicationKeyRequestDto:
+    properties:
+      kid:
+        type: string
+      publicKey:
+        type: string
+    required:
+    - publicKey
+    type: object
+  api.AddApplicationKeyResponseDto:
+    properties:
+      kid:
+        type: string
+    type: object
+  api.ApplicationKeyResponseDto:
+    properties:
+      createdAt:
+        type: string
+      kid:
+        type: string
+      publicKey:
+        type: string
+    type: object
+  api.AssignRoleRequestDto:
     properties:
       userId:
         type: string
     required:
     - userId
     type: object
-  handlers.AssociateServiceUserPublicKeyRequestDto:
+  api.AssociateServiceUserPublicKeyRequestDto:
     properties:
+      kid:
+        type: string
       publicKey:
         type: string
     required:
     - publicKey
     type: object
-  handlers.AssociateServiceUserPublicKeyResponseDto:
+  api.AssociateServiceUserPublicKeyResponseDto:
     properties:
       kid:
         type: string
     type: object
-  handlers.CodeFlowResponse:
-    properties:
-      access_token:
-        type: string
-      expires_in:
-        type: integer
-      id_token:
-        type: string
-      refresh_token:
-        type: string
-      scope:
-        type: string
-      token_type:
-        type: string
-    type: object
-  handlers.CreateApplicationRequestDto:
+  api.CreateApplicationRequestDto:
     properties:
       accessTokenHeaderType:
         enum:
         - at+jwt
         - JWT
         type: string
+      deviceFlowEnabled:
+        type: boolean
       displayName:
         maxLength: 255
         minLength: 1
@@ -57,25 +69,78 @@ definitions:
         items:
           type: string
         type: array
+      signingAlgorithm:
+        enum:
+        - RS256
+        - EdDSA
+        type: string
+      tokenEndpointAuthMethod:
+        enum:
+        - client_secret
+        - private_key_jwt
+        type: string
+      trustedExchangers:
+        items:
+          type: string
+        type: array
       type:
         enum:
         - public
         - confidential
         type: string
+      userinfoInAccessToken:
+        type: boolean
     required:
     - displayName
     - name
     - redirectUris
     - type
     type: object
-  handlers.CreateApplicationResponseDto:
+  api.CreateApplicationResponseDto:
     properties:
       id:
         type: string
       secret:
         type: string
     type: object
-  handlers.CreatePasswordRuleRequestDto:
+  api.CreateIdentityProviderRequestDto:
+    properties:
+      authorizationEndpoint:
+        type: string
+      claimMapping:
+        $ref: '#/definitions/api.IdentityProviderClaimMappingDto'
+      clientId:
+        type: string
+      clientSecret:
+        type: string
+      displayName:
+        maxLength: 255
+        type: string
+      issuer:
+        type: string
+      name:
+        maxLength: 255
+        type: string
+      preset:
+        type: string
+      scopes:
+        items:
+          type: string
+        type: array
+      tokenEndpoint:
+        type: string
+      userinfoEndpoint:
+        type: string
+    required:
+    - clientId
+    - clientSecret
+    type: object
+  api.CreateIdentityProviderResponseDto:
+    properties:
+      id:
+        type: string
+    type: object
+  api.CreatePasswordRuleRequestDto:
     properties:
       details:
         additionalProperties: true
@@ -86,7 +151,7 @@ definitions:
     - details
     - type
     type: object
-  handlers.CreateProjectRequestDto:
+  api.CreateProjectRequestDto:
     properties:
       description:
         type: string
@@ -102,12 +167,12 @@ definitions:
     - name
     - slug
     type: object
-  handlers.CreateProjectResponseDto:
+  api.CreateProjectResponseDto:
     properties:
       id:
         type: string
     type: object
-  handlers.CreateResourceServerRequestDto:
+  api.CreateResourceServerRequestDto:
     properties:
       description:
         type: string
@@ -121,7 +186,7 @@ definitions:
     - name
     - slug
     type: object
-  handlers.CreateResourceServerScopeRequestDto:
+  api.CreateResourceServerScopeRequestDto:
     properties:
       description:
         type: string
@@ -137,12 +202,12 @@ definitions:
     - name
     - scope
     type: object
-  handlers.CreateResourceServerScopeResponseDto:
+  api.CreateResourceServerScopeResponseDto:
     properties:
       id:
         type: string
     type: object
-  handlers.CreateRoleRequestDto:
+  api.CreateRoleRequestDto:
     properties:
       description:
         maxLength: 1024
@@ -154,12 +219,12 @@ definitions:
     required:
     - name
     type: object
-  handlers.CreateRoleResponseDto:
+  api.CreateRoleResponseDto:
     properties:
       id:
         type: string
     type: object
-  handlers.CreateServiceUserRequestDto:
+  api.CreateServiceUserRequestDto:
     properties:
       username:
         maxLength: 255
@@ -168,12 +233,12 @@ definitions:
     required:
     - username
     type: object
-  handlers.CreateServiceUserResponseDto:
+  api.CreateServiceUserResponseDto:
     properties:
       id:
         type: string
     type: object
-  handlers.CreateUserRequestDto:
+  api.CreateUserRequestDto:
     properties:
       displayName:
         type: string
@@ -182,16 +247,15 @@ definitions:
       emailVerified:
         type: boolean
       password:
-        $ref: '#/definitions/handlers.CreateUserRequestDtoPasword'
+        $ref: '#/definitions/api.CreateUserRequestDtoPasword'
       username:
         type: string
     required:
     - displayName
     - email
-    - emailVerified
     - username
     type: object
-  handlers.CreateUserRequestDtoPasword:
+  api.CreateUserRequestDtoPasword:
     properties:
       plain:
         type: string
@@ -200,15 +264,19 @@ definitions:
     required:
     - plain
     type: object
-  handlers.CreateUserResponseDto:
+  api.CreateUserResponseDto:
     properties:
       id:
         type: string
     type: object
-  handlers.CreateVirtualServerRequestDto:
+  api.CreateVirtualServerRequestDto:
     properties:
+      additionalSigningAlgorithms:
+        items:
+          type: string
+        type: array
       admin:
-        $ref: '#/definitions/handlers.CreateVirtualServerRequestDtoAdminDto'
+        $ref: '#/definitions/api.CreateVirtualServerRequestDtoAdminDto'
       displayName:
         maxLength: 255
         minLength: 1
@@ -219,26 +287,26 @@ definitions:
         maxLength: 255
         minLength: 1
         type: string
+      primarySigningAlgorithm:
+        enum:
+        - RS256
+        - EdDSA
+        type: string
       projects:
         items:
-          $ref: '#/definitions/handlers.CreateVirtualServerRequestDtoProjectDto'
+          $ref: '#/definitions/api.CreateVirtualServerRequestDtoProjectDto'
         type: array
       require2fa:
         type: boolean
       serviceUsers:
         items:
-          $ref: '#/definitions/handlers.CreateVirtualServerRequestDtoServiceUserDto'
+          $ref: '#/definitions/api.CreateVirtualServerRequestDtoServiceUserDto'
         type: array
-      signingAlgorithm:
-        enum:
-        - RS256
-        - EdDSA
-        type: string
     required:
     - displayName
     - name
     type: object
-  handlers.CreateVirtualServerRequestDtoAdminDto:
+  api.CreateVirtualServerRequestDtoAdminDto:
     properties:
       displayName:
         maxLength: 255
@@ -262,11 +330,11 @@ definitions:
     - primaryEmail
     - username
     type: object
-  handlers.CreateVirtualServerRequestDtoProjectDto:
+  api.CreateVirtualServerRequestDtoProjectDto:
     properties:
       applications:
         items:
-          $ref: '#/definitions/handlers.CreateVirtualServerRequestDtoProjectDtoApplicationDto'
+          $ref: '#/definitions/api.CreateVirtualServerRequestDtoProjectDtoApplicationDto'
         type: array
       description:
         type: string
@@ -276,11 +344,11 @@ definitions:
         type: string
       resourceServers:
         items:
-          $ref: '#/definitions/handlers.CreateVirtualServerRequestDtoProjectDtoResourceServerDto'
+          $ref: '#/definitions/api.CreateVirtualServerRequestDtoProjectDtoResourceServerDto'
         type: array
       roles:
         items:
-          $ref: '#/definitions/handlers.CreateVirtualServerRequestDtoProjectDtoRoleDto'
+          $ref: '#/definitions/api.CreateVirtualServerRequestDtoProjectDtoRoleDto'
         type: array
       slug:
         maxLength: 255
@@ -290,7 +358,7 @@ definitions:
     - name
     - slug
     type: object
-  handlers.CreateVirtualServerRequestDtoProjectDtoApplicationDto:
+  api.CreateVirtualServerRequestDtoProjectDtoApplicationDto:
     properties:
       displayName:
         maxLength: 255
@@ -306,7 +374,20 @@ definitions:
         items:
           type: string
         type: array
+      publicKeys:
+        items:
+          $ref: '#/definitions/api.CreateVirtualServerRequestDtoProjectDtoApplicationKeyDto'
+        type: array
       redirectUris:
+        items:
+          type: string
+        type: array
+      tokenEndpointAuthMethod:
+        enum:
+        - client_secret
+        - private_key_jwt
+        type: string
+      trustedExchangers:
         items:
           type: string
         type: array
@@ -315,13 +396,25 @@ definitions:
         - public
         - confidential
         type: string
+      userinfoInAccessToken:
+        type: boolean
     required:
     - displayName
     - name
     - redirectUris
     - type
     type: object
-  handlers.CreateVirtualServerRequestDtoProjectDtoResourceServerDto:
+  api.CreateVirtualServerRequestDtoProjectDtoApplicationKeyDto:
+    properties:
+      kid:
+        type: string
+      pem:
+        type: string
+    required:
+    - kid
+    - pem
+    type: object
+  api.CreateVirtualServerRequestDtoProjectDtoResourceServerDto:
     properties:
       description:
         type: string
@@ -337,7 +430,7 @@ definitions:
     - name
     - slug
     type: object
-  handlers.CreateVirtualServerRequestDtoProjectDtoRoleDto:
+  api.CreateVirtualServerRequestDtoProjectDtoRoleDto:
     properties:
       description:
         type: string
@@ -348,7 +441,7 @@ definitions:
     required:
     - name
     type: object
-  handlers.CreateVirtualServerRequestDtoServiceUserDto:
+  api.CreateVirtualServerRequestDtoServiceUserDto:
     properties:
       publicKey:
         properties:
@@ -372,12 +465,16 @@ definitions:
     - publicKey
     - username
     type: object
-  handlers.GetApplicationResponseDto:
+  api.GetApplicationResponseDto:
     properties:
+      accessTokenHeaderType:
+        type: string
       createdAt:
         type: string
       customClaimsMappingScript:
         type: string
+      deviceFlowEnabled:
+        type: boolean
       displayName:
         type: string
       id:
@@ -392,31 +489,49 @@ definitions:
         items:
           type: string
         type: array
+      signingAlgorithm:
+        type: string
       systemApplication:
         type: boolean
+      tokenEndpointAuthMethod:
+        type: string
+      trustedExchangers:
+        items:
+          type: string
+        type: array
       type:
         type: string
       updatedAt:
         type: string
-    type: object
-  handlers.GetLoginStateResponseDto:
-    properties:
-      applicationDisplayName:
-        type: string
-      signupEnabled:
+      userinfoInAccessToken:
         type: boolean
-      step:
-        description: 'Step is one of: password_verification | temporary_password |
-          email_verification | finish'
+    type: object
+  api.GetIdentityProviderResponseDto:
+    properties:
+      authorizationEndpoint:
         type: string
-      totpSecret:
+      claimMapping:
+        $ref: '#/definitions/api.IdentityProviderClaimMappingDto'
+      clientId:
         type: string
-      virtualServerDisplayName:
+      displayName:
         type: string
-      virtualServerName:
+      issuer:
+        type: string
+      name:
+        type: string
+      preset:
+        type: string
+      scopes:
+        items:
+          type: string
+        type: array
+      tokenEndpoint:
+        type: string
+      userinfoEndpoint:
         type: string
     type: object
-  handlers.GetResourceServerResponseDto:
+  api.GetResourceServerResponseDto:
     properties:
       createdAt:
         type: string
@@ -431,7 +546,7 @@ definitions:
       updatedAt:
         type: string
     type: object
-  handlers.GetResourceServerScopeResponseDto:
+  api.GetResourceServerScopeResponseDto:
     properties:
       createdAt:
         type: string
@@ -446,7 +561,7 @@ definitions:
       updatedAt:
         type: string
     type: object
-  handlers.GetRoleByIdResponseDto:
+  api.GetRoleByIdResponseDto:
     properties:
       createdAt:
         type: string
@@ -459,7 +574,7 @@ definitions:
       updatedAt:
         type: string
     type: object
-  handlers.GetTemplateResponseDto:
+  api.GetTemplateResponseDto:
     properties:
       createdAt:
         type: string
@@ -468,14 +583,14 @@ definitions:
       text:
         type: string
       type:
-        $ref: '#/definitions/repositories.TemplateType'
+        type: string
       updatedAt:
         type: string
     type: object
-  handlers.GetUserApplicationMetadataResponseDto:
+  api.GetUserApplicationMetadataResponseDto:
     additionalProperties: {}
     type: object
-  handlers.GetUserByIdResponseDto:
+  api.GetUserByIdResponseDto:
     properties:
       createdAt:
         type: string
@@ -494,10 +609,10 @@ definitions:
       username:
         type: string
     type: object
-  handlers.GetUserGlobalMetadataResponseDto:
+  api.GetUserGlobalMetadataResponseDto:
     additionalProperties: {}
     type: object
-  handlers.GetUserMetadataResponseDto:
+  api.GetUserMetadataResponseDto:
     properties:
       applicationMetadata:
         additionalProperties: {}
@@ -506,7 +621,7 @@ definitions:
         additionalProperties: {}
         type: object
     type: object
-  handlers.GetVirtualServerListResponseDto:
+  api.GetVirtualServerListResponseDto:
     properties:
       displayName:
         type: string
@@ -515,8 +630,12 @@ definitions:
       registrationEnabled:
         type: boolean
     type: object
-  handlers.GetVirtualServerResponseDto:
+  api.GetVirtualServerResponseDto:
     properties:
+      additionalSigningAlgorithms:
+        items:
+          type: string
+        type: array
       createdAt:
         type: string
       displayName:
@@ -525,24 +644,31 @@ definitions:
         type: string
       name:
         type: string
+      primarySigningAlgorithm:
+        type: string
       registrationEnabled:
         type: boolean
       require2fa:
         type: boolean
       requireEmailVerification:
         type: boolean
-      signingAlgorithm:
-        type: string
       updatedAt:
         type: string
     type: object
-  handlers.JwksResponseDto:
+  api.IdentityProviderClaimMappingDto:
     properties:
-      keys:
-        items: {}
-        type: array
+      email:
+        type: string
+      emailVerified:
+        type: string
+      name:
+        type: string
+      subject:
+        type: string
+      username:
+        type: string
     type: object
-  handlers.ListApplicationsResponseDto:
+  api.ListApplicationsResponseDto:
     properties:
       displayName:
         type: string
@@ -555,7 +681,7 @@ definitions:
       type:
         type: string
     type: object
-  handlers.ListAuditLogResponseDto:
+  api.ListAuditLogResponseDto:
     properties:
       allowReason:
         additionalProperties: {}
@@ -579,14 +705,14 @@ definitions:
       userId:
         type: string
     type: object
-  handlers.ListGroupsResponseDto:
+  api.ListGroupsResponseDto:
     properties:
       id:
         type: string
       name:
         type: string
     type: object
-  handlers.ListPasswordRulesResponseDto:
+  api.ListPasswordRulesResponseDto:
     properties:
       details:
         additionalProperties: {}
@@ -596,7 +722,7 @@ definitions:
       type:
         type: string
     type: object
-  handlers.ListProjectsResponseDto:
+  api.ListProjectsResponseDto:
     properties:
       id:
         type: string
@@ -607,7 +733,7 @@ definitions:
       systemProject:
         type: boolean
     type: object
-  handlers.ListResourceServerScopesResponseDto:
+  api.ListResourceServerScopesResponseDto:
     properties:
       id:
         type: string
@@ -616,7 +742,7 @@ definitions:
       scope:
         type: string
     type: object
-  handlers.ListResourceServersResponseDto:
+  api.ListResourceServersResponseDto:
     properties:
       id:
         type: string
@@ -625,21 +751,21 @@ definitions:
       slug:
         type: string
     type: object
-  handlers.ListRolesResponseDto:
+  api.ListRolesResponseDto:
     properties:
       id:
         type: string
       name:
         type: string
     type: object
-  handlers.ListTemplatesResponseDto:
+  api.ListTemplatesResponseDto:
     properties:
       id:
         type: string
       type:
-        $ref: '#/definitions/repositories.TemplateType'
+        type: string
     type: object
-  handlers.ListUsersInRoleResponseDto:
+  api.ListUsersInRoleResponseDto:
     properties:
       displayName:
         type: string
@@ -648,7 +774,7 @@ definitions:
       username:
         type: string
     type: object
-  handlers.ListUsersResponseDto:
+  api.ListUsersResponseDto:
     properties:
       displayName:
         type: string
@@ -661,167 +787,104 @@ definitions:
       username:
         type: string
     type: object
-  handlers.OidcUserInfoResponseDto:
-    properties:
-      email:
-        type: string
-      email_verified:
-        type: boolean
-      name:
-        type: string
-      sub:
-        type: string
-    type: object
-  handlers.OnboardTotpRequestDto:
-    properties:
-      totpCode:
-        type: string
-    required:
-    - totpCode
-    type: object
-  handlers.OpenIdConfigurationResponseDto:
-    properties:
-      authorization_endpoint:
-        type: string
-      claims_supported:
-        items:
-          type: string
-        type: array
-      end_session_endpoint:
-        type: string
-      grant_types_supported:
-        items:
-          type: string
-        type: array
-      id_token_signing_alg_values_supported:
-        items:
-          type: string
-        type: array
-      issuer:
-        type: string
-      jwks_uri:
-        type: string
-      request_parameter_supported:
-        type: boolean
-      response_types_supported:
-        items:
-          type: string
-        type: array
-      scopes_supported:
-        items:
-          type: string
-        type: array
-      subject_types_supported:
-        items:
-          type: string
-        type: array
-      token_endpoint:
-        type: string
-      token_endpoint_auth_methods_supported:
-        items:
-          type: string
-        type: array
-      userinfo_endpoint:
-        type: string
-    type: object
-  handlers.PagedApplicationsResponseDto:
+  api.PagedApplicationsResponseDto:
     properties:
       items:
         items:
-          $ref: '#/definitions/handlers.ListApplicationsResponseDto'
+          $ref: '#/definitions/api.ListApplicationsResponseDto'
         type: array
       pagination:
-        $ref: '#/definitions/handlers.Pagination'
+        $ref: '#/definitions/api.Pagination'
     type: object
-  handlers.PagedAuditLogResponseDto:
+  api.PagedAuditLogResponseDto:
     properties:
       items:
         items:
-          $ref: '#/definitions/handlers.ListAuditLogResponseDto'
+          $ref: '#/definitions/api.ListAuditLogResponseDto'
         type: array
       pagination:
-        $ref: '#/definitions/handlers.Pagination'
+        $ref: '#/definitions/api.Pagination'
     type: object
-  handlers.PagedGroupsResponseDto:
+  api.PagedGroupsResponseDto:
     properties:
       items:
         items:
-          $ref: '#/definitions/handlers.ListGroupsResponseDto'
+          $ref: '#/definitions/api.ListGroupsResponseDto'
         type: array
       pagination:
-        $ref: '#/definitions/handlers.Pagination'
+        $ref: '#/definitions/api.Pagination'
     type: object
-  handlers.PagedPasswordRuleResponseDto:
+  api.PagedPasswordRuleResponseDto:
     properties:
       items:
         items:
-          $ref: '#/definitions/handlers.ListPasswordRulesResponseDto'
+          $ref: '#/definitions/api.ListPasswordRulesResponseDto'
         type: array
     type: object
-  handlers.PagedProjectsResponseDto:
+  api.PagedProjectsResponseDto:
     properties:
       items:
         items:
-          $ref: '#/definitions/handlers.ListProjectsResponseDto'
-        type: array
-      pagination:
-        $ref: '#/definitions/handlers.Pagination'
-    type: object
-  handlers.PagedResourceServerScopeResponseDto:
-    properties:
-      items:
-        items:
-          $ref: '#/definitions/handlers.ListResourceServerScopesResponseDto'
+          $ref: '#/definitions/api.ListProjectsResponseDto'
         type: array
       pagination:
-        $ref: '#/definitions/handlers.Pagination'
+        $ref: '#/definitions/api.Pagination'
     type: object
-  handlers.PagedResourceServersResponseDto:
+  api.PagedResourceServerScopeResponseDto:
     properties:
       items:
         items:
-          $ref: '#/definitions/handlers.ListResourceServersResponseDto'
+          $ref: '#/definitions/api.ListResourceServerScopesResponseDto'
         type: array
       pagination:
-        $ref: '#/definitions/handlers.Pagination'
+        $ref: '#/definitions/api.Pagination'
     type: object
-  handlers.PagedRolesResponseDto:
+  api.PagedResourceServersResponseDto:
     properties:
       items:
         items:
-          $ref: '#/definitions/handlers.ListRolesResponseDto'
+          $ref: '#/definitions/api.ListResourceServersResponseDto'
         type: array
       pagination:
-        $ref: '#/definitions/handlers.Pagination'
+        $ref: '#/definitions/api.Pagination'
     type: object
-  handlers.PagedTemplatesResponseDto:
+  api.PagedRolesResponseDto:
     properties:
       items:
         items:
-          $ref: '#/definitions/handlers.ListTemplatesResponseDto'
+          $ref: '#/definitions/api.ListRolesResponseDto'
         type: array
       pagination:
-        $ref: '#/definitions/handlers.Pagination'
+        $ref: '#/definitions/api.Pagination'
     type: object
-  handlers.PagedUsersInRoleResponseDto:
+  api.PagedTemplatesResponseDto:
     properties:
       items:
         items:
-          $ref: '#/definitions/handlers.ListUsersInRoleResponseDto'
+          $ref: '#/definitions/api.ListTemplatesResponseDto'
         type: array
       pagination:
-        $ref: '#/definitions/handlers.Pagination'
+        $ref: '#/definitions/api.Pagination'
     type: object
-  handlers.PagedUsersResponseDto:
+  api.PagedUsersInRoleResponseDto:
     properties:
       items:
         items:
-          $ref: '#/definitions/handlers.ListUsersResponseDto'
+          $ref: '#/definitions/api.ListUsersInRoleResponseDto'
         type: array
       pagination:
-        $ref: '#/definitions/handlers.Pagination'
+        $ref: '#/definitions/api.Pagination'
     type: object
-  handlers.Pagination:
+  api.PagedUsersResponseDto:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/api.ListUsersResponseDto'
+        type: array
+      pagination:
+        $ref: '#/definitions/api.Pagination'
+    type: object
+  api.Pagination:
     properties:
       page:
         type: integer
@@ -832,52 +895,83 @@ definitions:
       totalPages:
         type: integer
     type: object
-  handlers.PatchApplicationRequestDto:
+  api.PatchApplicationRequestDto:
     properties:
+      accessTokenHeaderType:
+        enum:
+        - at+jwt
+        - JWT
+        type: string
       customClaimsMappingScript:
         type: string
+      deviceFlowEnabled:
+        type: boolean
       displayName:
         type: string
+      postLogoutUris:
+        items:
+          type: string
+        type: array
+      redirectUris:
+        items:
+          type: string
+        type: array
+      signingAlgorithm:
+        enum:
+        - RS256
+        - EdDSA
+        type: string
+      trustedExchangers:
+        items:
+          type: string
+        type: array
+      userinfoInAccessToken:
+        type: boolean
     type: object
-  handlers.PatchPasswordRuleRequestDto:
+  api.PatchPasswordRuleRequestDto:
     additionalProperties: {}
     type: object
-  handlers.PatchUserApplicationMetadataRequestDto:
+  api.PatchRoleRequestDto:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+    type: object
+  api.PatchUserApplicationMetadataRequestDto:
     additionalProperties: {}
     type: object
-  handlers.PatchUserGlobalMetadataRequestDto:
+  api.PatchUserGlobalMetadataRequestDto:
     additionalProperties: {}
     type: object
-  handlers.PatchUserRequestDto:
+  api.PatchUserRequestDto:
     properties:
       displayName:
         type: string
+      emailVerified:
+        type: boolean
     type: object
-  handlers.PatchVirtualServerRequestDto:
+  api.PatchVirtualServerRequestDto:
     properties:
+      additionalSigningAlgorithms:
+        items:
+          type: string
+        type: array
       displayName:
         type: string
       enableRegistration:
         type: boolean
+      primarySigningAlgorithm:
+        enum:
+        - RS256
+        - EdDSA
+        type: string
       require2fa:
         type: boolean
       requireEmailVerification:
         type: boolean
     type: object
-  handlers.RefreshTokenResponse:
-    properties:
-      access_token:
-        type: string
-      expires_in:
-        type: integer
-      id_token:
-        type: string
-      refresh_token:
-        type: string
-      token_type:
-        type: string
-    type: object
-  handlers.RegisterUserRequestDto:
+  api.RegisterUserRequestDto:
     properties:
       displayName:
         maxLength: 255
@@ -897,6 +991,147 @@ definitions:
     - password
     - username
     type: object
+  api.UpdateUserApplicationMetadataRequestDto:
+    additionalProperties: {}
+    type: object
+  api.UpdateUserGlobalMetadataRequestDto:
+    additionalProperties: {}
+    type: object
+  handlers.CodeFlowResponse:
+    properties:
+      access_token:
+        type: string
+      expires_in:
+        type: integer
+      id_token:
+        type: string
+      refresh_token:
+        type: string
+      scope:
+        type: string
+      token_type:
+        type: string
+    type: object
+  handlers.GetLoginStateResponseDto:
+    properties:
+      applicationDisplayName:
+        type: string
+      identityProviders:
+        items:
+          $ref: '#/definitions/handlers.LoginIdentityProviderDto'
+        type: array
+      signupEnabled:
+        type: boolean
+      step:
+        description: 'Step is one of: password_verification | temporary_password |
+          email_verification | finish'
+        type: string
+      totpSecret:
+        type: string
+      virtualServerDisplayName:
+        type: string
+      virtualServerName:
+        type: string
+    type: object
+  handlers.JwksResponseDto:
+    properties:
+      keys:
+        items: {}
+        type: array
+    type: object
+  handlers.LoginIdentityProviderDto:
+    properties:
+      displayName:
+        type: string
+      name:
+        type: string
+    type: object
+  handlers.OidcUserInfoResponseDto:
+    properties:
+      email:
+        type: string
+      email_verified:
+        type: boolean
+      name:
+        type: string
+      preferred_username:
+        type: string
+      sub:
+        type: string
+    type: object
+  handlers.OnboardTotpRequestDto:
+    properties:
+      totpCode:
+        type: string
+    required:
+    - totpCode
+    type: object
+  handlers.OpenIdConfigurationResponseDto:
+    properties:
+      authorization_endpoint:
+        type: string
+      claims_supported:
+        items:
+          type: string
+        type: array
+      device_authorization_endpoint:
+        type: string
+      end_session_endpoint:
+        type: string
+      grant_types_supported:
+        items:
+          type: string
+        type: array
+      id_token_signing_alg_values_supported:
+        items:
+          type: string
+        type: array
+      issuer:
+        type: string
+      jwks_uri:
+        type: string
+      request_parameter_supported:
+        type: boolean
+      request_uri_parameter_supported:
+        type: boolean
+      response_types_supported:
+        items:
+          type: string
+        type: array
+      scopes_supported:
+        items:
+          type: string
+        type: array
+      subject_types_supported:
+        items:
+          type: string
+        type: array
+      token_endpoint:
+        type: string
+      token_endpoint_auth_methods_supported:
+        items:
+          type: string
+        type: array
+      token_endpoint_auth_signing_alg_values_supported:
+        items:
+          type: string
+        type: array
+      userinfo_endpoint:
+        type: string
+    type: object
+  handlers.RefreshTokenResponse:
+    properties:
+      access_token:
+        type: string
+      expires_in:
+        type: integer
+      id_token:
+        type: string
+      refresh_token:
+        type: string
+      token_type:
+        type: string
+    type: object
   handlers.ResetTemporaryPasswordRequestDto:
     properties:
       newPassword:
@@ -904,30 +1139,14 @@ definitions:
     required:
     - newPassword
     type: object
-  handlers.TokenExchangeResponse:
+  handlers.ServiceUserTokenResponse:
     properties:
       access_token:
         type: string
-      issued_token_type:
-        type: string
+      expires_in:
+        type: integer
       token_type:
         type: string
-    type: object
-  handlers.UpdateUserApplicationMetadataRequestDto:
-    additionalProperties: {}
-    type: object
-  handlers.UpdateUserGlobalMetadataRequestDto:
-    additionalProperties: {}
-    type: object
-  handlers.VerifyPasswordRequestDto:
-    properties:
-      password:
-        type: string
-      username:
-        type: string
-    required:
-    - password
-    - username
     type: object
   handlers.VerifyTotpRequestDto:
     properties:
@@ -936,12 +1155,6 @@ definitions:
     required:
     - totpCode
     type: object
-  repositories.TemplateType:
-    enum:
-    - email_verification
-    type: string
-    x-enum-varnames:
-    - EmailVerificationMailTemplate
 info:
   contact: {}
   description: Open source OIDC/IDP server.
@@ -957,7 +1170,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/handlers.CreateVirtualServerRequestDto'
+          $ref: '#/definitions/api.CreateVirtualServerRequestDto'
       produces:
       - application/json
       responses:
@@ -987,7 +1200,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handlers.GetVirtualServerResponseDto'
+            $ref: '#/definitions/api.GetVirtualServerResponseDto'
         "404":
           description: Not Found
           schema:
@@ -1010,7 +1223,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/handlers.PatchVirtualServerRequestDto'
+          $ref: '#/definitions/api.PatchVirtualServerRequestDto'
       produces:
       - text/plain
       responses:
@@ -1058,7 +1271,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handlers.PagedAuditLogResponseDto'
+            $ref: '#/definitions/api.PagedAuditLogResponseDto'
         "400":
           description: Bad Request
           schema:
@@ -1115,7 +1328,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handlers.PagedPasswordRuleResponseDto'
+            $ref: '#/definitions/api.PagedPasswordRuleResponseDto'
         "400":
           description: Bad Request
           schema:
@@ -1140,7 +1353,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/handlers.CreatePasswordRuleRequestDto'
+          $ref: '#/definitions/api.CreatePasswordRuleRequestDto'
       responses:
         "204":
           description: No Content
@@ -1171,7 +1384,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/handlers.PatchPasswordRuleRequestDto'
+          $ref: '#/definitions/api.PatchPasswordRuleRequestDto'
       responses:
         "204":
           description: No Content
@@ -1227,7 +1440,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handlers.PagedRolesResponseDto'
+            $ref: '#/definitions/api.PagedRolesResponseDto'
         "400":
           description: Bad Request
           schema:
@@ -1258,14 +1471,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/handlers.CreateRoleRequestDto'
+          $ref: '#/definitions/api.CreateRoleRequestDto'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/handlers.CreateRoleResponseDto'
+            $ref: '#/definitions/api.CreateRoleResponseDto'
         "400":
           description: Bad Request
           schema:
@@ -1276,6 +1489,37 @@ paths:
       tags:
       - Roles
   /api/virtual-servers/{virtualServerName}/projects/{projectSlug}/roles/{roleId}:
+    delete:
+      description: Delete a role by ID from a project
+      parameters:
+      - default: keyline
+        description: Virtual server name
+        in: path
+        name: virtualServerName
+        required: true
+        type: string
+      - description: Project slug
+        in: path
+        name: projectSlug
+        required: true
+        type: string
+      - description: Role ID (UUID)
+        in: path
+        name: roleId
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+      security:
+      - BearerAuth: []
+      summary: Delete role
+      tags:
+      - Roles
     get:
       description: Get a role by its ID within a project.
       parameters:
@@ -1301,7 +1545,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handlers.GetRoleByIdResponseDto'
+            $ref: '#/definitions/api.GetRoleByIdResponseDto'
         "400":
           description: Bad Request
           schema:
@@ -1313,6 +1557,47 @@ paths:
       security:
       - BearerAuth: []
       summary: Get role
+      tags:
+      - Roles
+    patch:
+      consumes:
+      - application/json
+      description: Update a role by ID within a project
+      parameters:
+      - default: keyline
+        description: Virtual server name
+        in: path
+        name: virtualServerName
+        required: true
+        type: string
+      - description: Project slug
+        in: path
+        name: projectSlug
+        required: true
+        type: string
+      - description: Role ID (UUID)
+        in: path
+        name: roleId
+        required: true
+        type: string
+      - description: Role data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.PatchRoleRequestDto'
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+        "404":
+          description: Role not found
+      security:
+      - BearerAuth: []
+      summary: Patch role
       tags:
       - Roles
   /api/virtual-servers/{virtualServerName}/projects/{projectSlug}/roles/{roleId}/assign:
@@ -1342,7 +1627,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/handlers.AssignRoleRequestDto'
+          $ref: '#/definitions/api.AssignRoleRequestDto'
       responses:
         "204":
           description: No Content
@@ -1376,7 +1661,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handlers.GetVirtualServerListResponseDto'
+            $ref: '#/definitions/api.GetVirtualServerListResponseDto'
         "404":
           description: Not Found
           schema:
@@ -1399,7 +1684,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handlers.PagedTemplatesResponseDto'
+            $ref: '#/definitions/api.PagedTemplatesResponseDto'
         "400":
           description: Bad Request
           schema:
@@ -1427,7 +1712,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handlers.GetTemplateResponseDto'
+            $ref: '#/definitions/api.GetTemplateResponseDto'
         "404":
           description: Not Found
           schema:
@@ -1462,7 +1747,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handlers.PagedUsersResponseDto'
+            $ref: '#/definitions/api.PagedUsersResponseDto'
         "400":
           description: Bad Request
           schema:
@@ -1483,14 +1768,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/handlers.CreateUserRequestDto'
+          $ref: '#/definitions/api.CreateUserRequestDto'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/handlers.CreateUserResponseDto'
+            $ref: '#/definitions/api.CreateUserResponseDto'
         "400":
           description: Bad Request
           schema:
@@ -1518,7 +1803,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handlers.GetUserByIdResponseDto'
+            $ref: '#/definitions/api.GetUserByIdResponseDto'
         "404":
           description: Not Found
           schema:
@@ -1546,7 +1831,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/handlers.PatchUserRequestDto'
+          $ref: '#/definitions/api.PatchUserRequestDto'
       produces:
       - text/plain
       responses:
@@ -1581,7 +1866,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handlers.GetUserMetadataResponseDto'
+            $ref: '#/definitions/api.GetUserMetadataResponseDto'
         "404":
           description: Not Found
           schema:
@@ -1614,7 +1899,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handlers.GetUserApplicationMetadataResponseDto'
+            $ref: '#/definitions/api.GetUserApplicationMetadataResponseDto'
         "404":
           description: Not Found
           schema:
@@ -1645,7 +1930,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/handlers.UpdateUserApplicationMetadataRequestDto'
+          $ref: '#/definitions/api.UpdateUserApplicationMetadataRequestDto'
       produces:
       - application/json
       responses:
@@ -1680,7 +1965,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handlers.GetUserGlobalMetadataResponseDto'
+            $ref: '#/definitions/api.GetUserGlobalMetadataResponseDto'
         "404":
           description: Not Found
           schema:
@@ -1715,7 +2000,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/handlers.PatchUserApplicationMetadataRequestDto'
+          $ref: '#/definitions/api.PatchUserApplicationMetadataRequestDto'
       produces:
       - application/json
       responses:
@@ -1748,7 +2033,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/handlers.UpdateUserGlobalMetadataRequestDto'
+          $ref: '#/definitions/api.UpdateUserGlobalMetadataRequestDto'
       produces:
       - application/json
       responses:
@@ -1779,7 +2064,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/handlers.RegisterUserRequestDto'
+          $ref: '#/definitions/api.RegisterUserRequestDto'
       produces:
       - text/plain
       responses:
@@ -1810,14 +2095,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/handlers.CreateServiceUserRequestDto'
+          $ref: '#/definitions/api.CreateServiceUserRequestDto'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handlers.CreateServiceUserResponseDto'
+            $ref: '#/definitions/api.CreateServiceUserResponseDto'
         "400":
           description: Bad Request
           schema:
@@ -1841,19 +2126,56 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/handlers.AssociateServiceUserPublicKeyRequestDto'
+          $ref: '#/definitions/api.AssociateServiceUserPublicKeyRequestDto'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handlers.AssociateServiceUserPublicKeyResponseDto'
+            $ref: '#/definitions/api.AssociateServiceUserPublicKeyResponseDto'
         "400":
           description: Bad Request
           schema:
             type: string
       summary: Associate a public key with a service user
+      tags:
+      - Users
+  /api/virtual-servers/{virtualServerName}/users/service-users/{serviceUserId}/keys/{kid}:
+    delete:
+      parameters:
+      - default: keyline
+        description: Virtual server name
+        in: path
+        name: virtualServerName
+        required: true
+        type: string
+      - description: Service user ID
+        in: path
+        name: serviceUserId
+        required: true
+        type: string
+      - description: Key ID
+        in: path
+        name: kid
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      summary: Remove a public key from a service user
       tags:
       - Users
   /api/virtual-servers/{virtualServerName}/users/verify-email:
@@ -1922,7 +2244,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handlers.PagedGroupsResponseDto'
+            $ref: '#/definitions/api.PagedGroupsResponseDto'
         "400":
           description: Bad Request
         "500":
@@ -1930,6 +2252,63 @@ paths:
       summary: List groups
       tags:
       - Groups
+  /api/virtual-servers/{vsName}/identity-providers:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - default: keyline
+        description: Virtual server name
+        in: path
+        name: vsName
+        required: true
+        type: string
+      - description: Identity provider
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.CreateIdentityProviderRequestDto'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.CreateIdentityProviderResponseDto'
+        "400":
+          description: Bad Request
+        "409":
+          description: Name already exists
+      summary: Create identity provider
+      tags:
+      - IdentityProviders
+  /api/virtual-servers/{vsName}/identity-providers/{name}:
+    get:
+      parameters:
+      - default: keyline
+        description: Virtual server name
+        in: path
+        name: vsName
+        required: true
+        type: string
+      - description: Identity provider name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.GetIdentityProviderResponseDto'
+        "404":
+          description: Not Found
+      summary: Get identity provider
+      tags:
+      - IdentityProviders
   /api/virtual-servers/{vsName}/projects:
     get:
       consumes:
@@ -1968,7 +2347,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handlers.PagedProjectsResponseDto'
+            $ref: '#/definitions/api.PagedProjectsResponseDto'
         "400":
           description: Bad Request
         "500":
@@ -1992,14 +2371,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/handlers.CreateProjectRequestDto'
+          $ref: '#/definitions/api.CreateProjectRequestDto'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/handlers.CreateProjectResponseDto'
+            $ref: '#/definitions/api.CreateProjectResponseDto'
         "400":
           description: Bad Request
         "500":
@@ -2050,7 +2429,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handlers.PagedApplicationsResponseDto'
+            $ref: '#/definitions/api.PagedApplicationsResponseDto'
         "400":
           description: Bad Request
         "500":
@@ -2079,14 +2458,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/handlers.CreateApplicationRequestDto'
+          $ref: '#/definitions/api.CreateApplicationRequestDto'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/handlers.CreateApplicationResponseDto'
+            $ref: '#/definitions/api.CreateApplicationResponseDto'
         "400":
           description: Bad Request
         "500":
@@ -2155,7 +2534,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handlers.GetApplicationResponseDto'
+            $ref: '#/definitions/api.GetApplicationResponseDto'
         "400":
           description: Bad Request
         "404":
@@ -2191,7 +2570,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/handlers.PatchApplicationRequestDto'
+          $ref: '#/definitions/api.PatchApplicationRequestDto'
       produces:
       - application/json
       responses:
@@ -2206,6 +2585,123 @@ paths:
         "500":
           description: Internal Server Error
       summary: Patch application
+      tags:
+      - Applications
+  /api/virtual-servers/{vsName}/projects/{projectSlug}/applications/{appId}/keys:
+    get:
+      parameters:
+      - default: keyline
+        description: Virtual server name
+        in: path
+        name: vsName
+        required: true
+        type: string
+      - description: Project slug
+        in: path
+        name: projectSlug
+        required: true
+        type: string
+      - description: Application ID (UUID)
+        in: path
+        name: appId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.ApplicationKeyResponseDto'
+            type: array
+        "400":
+          description: Bad Request
+        "404":
+          description: Application not found
+      summary: List application keys
+      tags:
+      - Applications
+    post:
+      consumes:
+      - application/json
+      description: Register a PEM encoded public key the application signs its client
+        assertions with
+      parameters:
+      - default: keyline
+        description: Virtual server name
+        in: path
+        name: vsName
+        required: true
+        type: string
+      - description: Project slug
+        in: path
+        name: projectSlug
+        required: true
+        type: string
+      - description: Application ID (UUID)
+        in: path
+        name: appId
+        required: true
+        type: string
+      - description: Public key
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.AddApplicationKeyRequestDto'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.AddApplicationKeyResponseDto'
+        "400":
+          description: Bad Request
+        "404":
+          description: Application not found
+        "409":
+          description: Key ID already exists
+      summary: Add application key
+      tags:
+      - Applications
+  /api/virtual-servers/{vsName}/projects/{projectSlug}/applications/{appId}/keys/{kid}:
+    delete:
+      parameters:
+      - default: keyline
+        description: Virtual server name
+        in: path
+        name: vsName
+        required: true
+        type: string
+      - description: Project slug
+        in: path
+        name: projectSlug
+        required: true
+        type: string
+      - description: Application ID (UUID)
+        in: path
+        name: appId
+        required: true
+        type: string
+      - description: Key ID
+        in: path
+        name: kid
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+        "404":
+          description: Application or key not found
+      summary: Remove application key
       tags:
       - Applications
   /api/virtual-servers/{vsName}/projects/{projectSlug}/resource-server/{resourceServerId}/scopes:
@@ -2256,7 +2752,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handlers.PagedResourceServerScopeResponseDto'
+            $ref: '#/definitions/api.PagedResourceServerScopeResponseDto'
         "400":
           description: Bad Request
         "500":
@@ -2290,14 +2786,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/handlers.CreateResourceServerScopeRequestDto'
+          $ref: '#/definitions/api.CreateResourceServerScopeRequestDto'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/handlers.CreateResourceServerScopeResponseDto'
+            $ref: '#/definitions/api.CreateResourceServerScopeResponseDto'
         "400":
           description: Bad Request
         "500":
@@ -2338,7 +2834,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handlers.GetResourceServerScopeResponseDto'
+            $ref: '#/definitions/api.GetResourceServerScopeResponseDto'
         "400":
           description: Bad Request
         "404":
@@ -2391,7 +2887,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handlers.PagedResourceServersResponseDto'
+            $ref: '#/definitions/api.PagedResourceServersResponseDto'
         "400":
           description: Bad Request
         "500":
@@ -2420,7 +2916,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/handlers.CreateResourceServerRequestDto'
+          $ref: '#/definitions/api.CreateResourceServerRequestDto'
       responses:
         "204":
           description: No Content
@@ -2461,7 +2957,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handlers.GetResourceServerResponseDto'
+            $ref: '#/definitions/api.GetResourceServerResponseDto'
         "400":
           description: Bad Request
         "404":
@@ -2519,7 +3015,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handlers.PagedUsersInRoleResponseDto'
+            $ref: '#/definitions/api.PagedUsersInRoleResponseDto'
         "400":
           description: Bad Request
         "500":
@@ -2618,6 +3114,35 @@ paths:
           schema:
             type: string
       summary: Finish login
+      tags:
+      - Logins
+  /logins/{loginToken}/identity-providers/{name}/start:
+    get:
+      parameters:
+      - description: Login session token
+        in: path
+        name: loginToken
+        required: true
+        type: string
+      - description: Identity provider name
+        in: path
+        name: name
+        required: true
+        type: string
+      responses:
+        "302":
+          description: Redirect to the provider
+          schema:
+            type: string
+        "401":
+          description: Unknown token or wrong step
+          schema:
+            type: string
+        "404":
+          description: Unknown identity provider
+          schema:
+            type: string
+      summary: Start identity provider login
       tags:
       - Logins
   /logins/{loginToken}/onboard-totp:
@@ -2738,40 +3263,6 @@ paths:
           schema:
             type: string
       summary: Verify email token (advance state)
-      tags:
-      - Logins
-  /logins/{loginToken}/verify-password:
-    post:
-      consumes:
-      - application/json
-      parameters:
-      - description: Login session token
-        in: path
-        name: loginToken
-        required: true
-        type: string
-      - description: Credentials
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/handlers.VerifyPasswordRequestDto'
-      produces:
-      - text/plain
-      responses:
-        "204":
-          description: No Content
-          schema:
-            type: string
-        "400":
-          description: Bad Request
-          schema:
-            type: string
-        "401":
-          description: Unauthorized or wrong step
-          schema:
-            type: string
-      summary: Verify password
       tags:
       - Logins
   /logins/{loginToken}/verify-totp:
@@ -3040,12 +3531,48 @@ paths:
       summary: End session
       tags:
       - OIDC
+  /oidc/{virtualServerName}/identity-providers/{name}/callback:
+    get:
+      parameters:
+      - default: keyline
+        description: Virtual server name
+        in: path
+        name: virtualServerName
+        required: true
+        type: string
+      - description: Identity provider name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Authorization code
+        in: query
+        name: code
+        type: string
+      - description: State from the start
+        in: query
+        name: state
+        required: true
+        type: string
+      responses:
+        "302":
+          description: Redirect to the login page
+          schema:
+            type: string
+        "400":
+          description: Unknown state
+          schema:
+            type: string
+      summary: Identity provider callback
+      tags:
+      - OIDC
   /oidc/{virtualServerName}/token:
     post:
       consumes:
       - application/x-www-form-urlencoded
       parameters:
-      - description: authorization_code | refresh_token
+      - description: authorization_code | refresh_token | urn:ietf:params:oauth:grant-type:jwt-bearer
+          | urn:ietf:params:oauth:grant-type:device_code
         in: formData
         name: grant_type
         required: true
@@ -3058,6 +3585,16 @@ paths:
         in: formData
         name: refresh_token
         type: string
+      - description: Required when grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer,
+          the service user's signed JWT
+        in: formData
+        name: assertion
+        type: string
+      - description: Required when grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer,
+          must include openid
+        in: formData
+        name: scope
+        type: string
       - description: If no Authorization header
         in: formData
         name: client_id
@@ -3066,9 +3603,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: When grant_type=urn:ietf:params:oauth:grant-type:token-exchange
+          description: When grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer
           schema:
-            $ref: '#/definitions/handlers.TokenExchangeResponse'
+            $ref: '#/definitions/handlers.ServiceUserTokenResponse'
         "400":
           description: Bad Request
           schema:
