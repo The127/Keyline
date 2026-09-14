@@ -89,6 +89,19 @@ setup:
     test -f go.work || go work init . ./client
 
 # -----------------------------
+# Release
+# -----------------------------
+
+# tag and push a release: signed tags for the server and client modules
+release version:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    test -z "$(git status --porcelain)" || { echo "working tree not clean"; exit 1; }
+    git tag -s "client/v{{version}}" -m "client/v{{version}}"
+    git tag -s "v{{version}}" -m "v{{version}}"
+    git push origin "client/v{{version}}" "v{{version}}"
+
+# -----------------------------
 # CI Convenience
 # -----------------------------
 
