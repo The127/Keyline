@@ -3,6 +3,7 @@
 package e2e
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -34,42 +35,51 @@ func init() {
 				}
 			})
 
-			for _, claim := range []string{"response_type", "client_id", "redirect_uri", "scope", "state", "nonce", "response_mode"} {
-				It("refuses a "+claim+" claim that is not a string", func() {
-					status, _ := authorizeWithRequestObject(h, unsignedRequestObject(jwt.MapClaims{
-						claim: 123,
-					}))
+			It("answers a request object with request_not_supported", func() {
+				requestObject, err := jwt.NewWithClaims(jwt.SigningMethodNone, jwt.MapClaims{
+					"scope": "openid",
+				}).SignedString(jwt.UnsafeAllowNoneSignatureType)
+				Expect(err).ToNot(HaveOccurred())
 
-					Expect(status).To(Equal(http.StatusBadRequest))
-				})
-			}
-
-			It("refuses a request object that is not a JWT", func() {
-				status, _ := authorizeWithRequestObject(h, "not.a.jwt")
-
-				Expect(status).To(Equal(http.StatusBadRequest))
-			})
-
-			It("applies a string claim", func() {
-				status, location := authorizeWithRequestObject(h, unsignedRequestObject(jwt.MapClaims{
-					"response_type": "token",
-				}))
+				status, location := authorizeWith(h, url.Values{"request": {requestObject}})
 
 				Expect(status).To(Equal(http.StatusFound))
-				Expect(location.Query().Get("error")).To(Equal("unsupported_response_type"))
+				Expect(location.Scheme + "://" + location.Host + location.Path).To(Equal(authCodeRedirect))
+				Expect(location.Query().Get("error")).To(Equal("request_not_supported"))
+				Expect(location.Query().Get("state")).To(Equal("request-object-state"))
+			})
+
+			It("answers a request that is not a JWT with request_not_supported", func() {
+				status, location := authorizeWith(h, url.Values{"request": {"not.a.jwt"}})
+
+				Expect(status).To(Equal(http.StatusFound))
+				Expect(location.Query().Get("error")).To(Equal("request_not_supported"))
+			})
+
+			It("answers a request_uri with request_uri_not_supported", func() {
+				status, location := authorizeWith(h, url.Values{"request_uri": {"https://client.example/request.jwt"}})
+
+				Expect(status).To(Equal(http.StatusFound))
+				Expect(location.Query().Get("error")).To(Equal("request_uri_not_supported"))
+			})
+
+			It("advertises neither request objects nor request_uri", func() {
+				response, err := http.Get(fmt.Sprintf("%s/oidc/%s/.well-known/openid-configuration", h.ApiUrl(), h.VirtualServer()))
+				Expect(err).ToNot(HaveOccurred())
+				defer response.Body.Close() //nolint:errcheck
+
+				var discovery map[string]any
+				Expect(json.NewDecoder(response.Body).Decode(&discovery)).To(Succeed())
+
+				Expect(discovery).To(HaveKeyWithValue("request_parameter_supported", false))
+				Expect(discovery).To(HaveKeyWithValue("request_uri_parameter_supported", false))
+				Expect(discovery).ToNot(HaveKey("request_object_signing_alg_values_supported"))
 			})
 		})
 	}
 }
 
-func unsignedRequestObject(claims jwt.MapClaims) string {
-	requestObject, err := jwt.NewWithClaims(jwt.SigningMethodNone, claims).SignedString(jwt.UnsafeAllowNoneSignatureType)
-	Expect(err).ToNot(HaveOccurred())
-
-	return requestObject
-}
-
-func authorizeWithRequestObject(h *harness, requestObject string) (int, *url.URL) {
+func authorizeWith(h *harness, extra url.Values) (int, *url.URL) {
 	httpClient := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
@@ -81,9 +91,12 @@ func authorizeWithRequestObject(h *harness, requestObject string) (int, *url.URL
 	query.Set("client_id", authCodePublicAppName)
 	query.Set("redirect_uri", authCodeRedirect)
 	query.Set("scope", "openid")
+	query.Set("state", "request-object-state")
 	query.Set("code_challenge", authCodePkceChallenge(authCodePkceVerifier))
 	query.Set("code_challenge_method", "S256")
-	query.Set("request", requestObject)
+	for key, values := range extra {
+		query[key] = values
+	}
 
 	response, err := httpClient.Get(fmt.Sprintf("%s/oidc/%s/authorize?%s", h.ApiUrl(), h.VirtualServer(), query.Encode()))
 	Expect(err).ToNot(HaveOccurred())
