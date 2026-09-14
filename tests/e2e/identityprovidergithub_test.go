@@ -11,8 +11,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/The127/Keyline/api"
 	"github.com/The127/Keyline/client"
+	"github.com/The127/Keyline/client/api"
 	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/utils"
 

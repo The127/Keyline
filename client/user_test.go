@@ -3,7 +3,7 @@ package client
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/The127/Keyline/api"
+	"github.com/The127/Keyline/client/api"
 	"github.com/The127/Keyline/utils"
 	"net/http"
 	"net/http/httptest"

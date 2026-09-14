@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/The127/Keyline/api"
+	"github.com/The127/Keyline/client/api"
 	"github.com/google/uuid"
 )
 

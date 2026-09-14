@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/The127/Keyline/api"
+	"github.com/The127/Keyline/client/api"
 	"github.com/The127/Keyline/utils"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
