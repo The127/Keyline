@@ -140,6 +140,11 @@ type CreateVirtualServerResponse struct {
 
 func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer) (*CreateVirtualServerResponse, error) {
 	for _, project := range command.Projects {
+		err := repositories.ValidateProjectSlug(project.Slug)
+		if err != nil {
+			return nil, err
+		}
+
 		for _, app := range project.Applications {
 			err := repositories.ValidateApplicationName(app.Name)
 			if err != nil {
