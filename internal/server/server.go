@@ -9,6 +9,7 @@ import (
 	"github.com/The127/Keyline/internal/handlers"
 	"github.com/The127/Keyline/internal/logging"
 	"github.com/The127/Keyline/internal/middlewares"
+	"net"
 	"net/http"
 
 	"github.com/The127/ioc"
@@ -21,7 +22,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func Serve(dp *ioc.DependencyProvider, serverConfig config.ServerConfig) func(context.Context) error {
+func Serve(dp *ioc.DependencyProvider, serverConfig config.ServerConfig) (func(context.Context) error, error) {
 	var servers []*http.Server
 	r := mux.NewRouter()
 
@@ -104,6 +105,11 @@ func Serve(dp *ioc.DependencyProvider, serverConfig config.ServerConfig) func(co
 		mapApiRoutes(apiRouter)
 
 		apiAddr := fmt.Sprintf("%s:%d", serverConfig.Host, serverConfig.ApiPort)
+		apiListener, err := net.Listen("tcp", apiAddr)
+		if err != nil {
+			return nil, fmt.Errorf("listening on %s: %w", apiAddr, err)
+		}
+
 		logging.Logger.Infof("running api server at %s", apiAddr)
 		apiSrv := &http.Server{
 			Handler: apiRouter,
@@ -111,20 +117,10 @@ func Serve(dp *ioc.DependencyProvider, serverConfig config.ServerConfig) func(co
 		}
 
 		servers = append(servers, apiSrv)
-		go serve(apiSrv)
+		go serve(apiSrv, apiListener)
 	}
 
-	addr := fmt.Sprintf("%s:%d", serverConfig.Host, serverConfig.Port)
-	logging.Logger.Infof("running server at %s", addr)
-	srv := &http.Server{
-		Handler: r,
-		Addr:    addr,
-	}
-
-	servers = append(servers, srv)
-	go serve(srv)
-
-	return func(ctx context.Context) error {
+	shutdown := func(ctx context.Context) error {
 		var errs []error
 		for _, s := range servers {
 			errs = append(errs, s.Shutdown(ctx))
@@ -132,6 +128,24 @@ func Serve(dp *ioc.DependencyProvider, serverConfig config.ServerConfig) func(co
 
 		return errors.Join(errs...)
 	}
+
+	addr := fmt.Sprintf("%s:%d", serverConfig.Host, serverConfig.Port)
+	listener, err := net.Listen("tcp", addr)
+	if err != nil {
+		_ = shutdown(context.Background())
+		return nil, fmt.Errorf("listening on %s: %w", addr, err)
+	}
+
+	logging.Logger.Infof("running server at %s", addr)
+	srv := &http.Server{
+		Handler: r,
+		Addr:    addr,
+	}
+
+	servers = append(servers, srv)
+	go serve(srv, listener)
+
+	return shutdown, nil
 }
 
 func mapApiRoutes(r *mux.Router) {
@@ -241,8 +255,8 @@ func mapApiRoutes(r *mux.Router) {
 	r.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
 }
 
-func serve(srv *http.Server) {
-	err := srv.ListenAndServe()
+func serve(srv *http.Server, listener net.Listener) {
+	err := srv.Serve(listener)
 	if err != nil && !errors.Is(err, http.ErrServerClosed) {
 		panic(fmt.Errorf("error while running server: %w", err))
 	}

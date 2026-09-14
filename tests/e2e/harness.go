@@ -251,7 +251,10 @@ func newE2eTestHarness(dbMode config.DatabaseMode, login client.TransportOptions
 		ExternalUrl:    fmt.Sprintf("http://localhost:%d", port),
 	}
 
-	shutdown := server.Serve(scope, serverConfig)
+	shutdown, err := server.Serve(scope, serverConfig)
+	if err != nil {
+		panic(fmt.Errorf("failed to start server: %w", err))
+	}
 
 	var opts []client.TransportOptions
 	if login != nil {

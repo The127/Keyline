@@ -114,7 +114,10 @@ func main() {
 		logging.Logger.Panicf("failed to start leader election: %s", err.Error())
 	}
 
-	shutdown := server.Serve(dp, config.C.Server)
+	shutdown, err := server.Serve(dp, config.C.Server)
+	if err != nil {
+		logging.Logger.Panicf("failed to start server: %s", err.Error())
+	}
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
