@@ -1,6 +1,6 @@
 package handlers
 
-import "github.com/The127/Keyline/api"
+import "github.com/The127/Keyline/client/api"
 
 func NewPagedResponseDto[T any](items []T, queryOps *QueryOps, totalItems int) api.PagedResponseDto[T] {
 	var pagination *api.Pagination

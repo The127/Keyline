@@ -3,8 +3,7 @@ package client
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/The127/Keyline/api"
-	"github.com/The127/Keyline/utils"
+	"github.com/The127/Keyline/client/api"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -28,7 +27,7 @@ func (s *UserClientSuite) TestCreateUser_HappyPath() {
 		Username:      "newuser",
 		DisplayName:   "New User",
 		Email:         "newuser@example.com",
-		EmailVerified: utils.Ptr(true),
+		EmailVerified: new(true),
 		Password: &api.CreateUserRequestDtoPasword{
 			Plain:     "hunter2",
 			Temporary: true,
@@ -143,7 +142,7 @@ func (s *UserClientSuite) TestAssociateServiceUserPublicKey_HappyPath() {
 	serviceUserId := uuid.New()
 	request := api.AssociateServiceUserPublicKeyRequestDto{
 		PublicKey: "-----BEGIN PUBLIC KEY-----\nabc\n-----END PUBLIC KEY-----",
-		Kid:       utils.Ptr("my-kid"),
+		Kid:       new("my-kid"),
 	}
 	response := api.AssociateServiceUserPublicKeyResponseDto{Kid: "my-kid"}
 
@@ -224,7 +223,7 @@ func (s *UserClientSuite) TestPatchUser_HappyPath() {
 	// arrange
 	requestId := uuid.New()
 	request := api.PatchUserRequestDto{
-		DisplayName: utils.Ptr("New display name"),
+		DisplayName: new("New display name"),
 	}
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

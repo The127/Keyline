@@ -7,8 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/The127/Keyline/api"
-	"github.com/The127/Keyline/utils"
+	"github.com/The127/Keyline/client/api"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
 )
@@ -34,7 +33,7 @@ func (s *ApplicationClientSuite) TestCreateApplication_HappyPath() {
 
 	response := api.CreateApplicationResponseDto{
 		Id:     uuid.New(),
-		Secret: utils.Ptr("secret"),
+		Secret: new("secret"),
 	}
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -159,7 +158,7 @@ func (s *ApplicationClientSuite) TestPatchApplication_HappyPath() {
 	// arrange
 	requestId := uuid.New()
 	request := api.PatchApplicationRequestDto{
-		DisplayName:         utils.Ptr("New display name"),
+		DisplayName:         new("New display name"),
 		ClaimsMappingScript: nil,
 	}
 
@@ -192,7 +191,7 @@ func (s *ApplicationClientSuite) TestCreateApplication_WithSigningAlgorithm() {
 		DisplayName:      "RS256 App",
 		RedirectUris:     []string{"http://localhost/callback"},
 		Type:             "public",
-		SigningAlgorithm: utils.Ptr("RS256"),
+		SigningAlgorithm: new("RS256"),
 	}
 
 	response := api.CreateApplicationResponseDto{
@@ -226,7 +225,7 @@ func (s *ApplicationClientSuite) TestPatchApplication_WithSigningAlgorithm() {
 	// arrange
 	requestId := uuid.New()
 	request := api.PatchApplicationRequestDto{
-		SigningAlgorithm: utils.Ptr("RS256"),
+		SigningAlgorithm: new("RS256"),
 	}
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -257,7 +256,7 @@ func (s *ApplicationClientSuite) TestGetApplication_ReturnsSigningAlgorithm() {
 		Name:             "rs256-app",
 		DisplayName:      "RS256 App",
 		Type:             "public",
-		SigningAlgorithm: utils.Ptr("RS256"),
+		SigningAlgorithm: new("RS256"),
 	}
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -282,7 +281,7 @@ func (s *ApplicationClientSuite) TestAddApplicationKey_HappyPath() {
 	applicationId := uuid.New()
 	request := api.AddApplicationKeyRequestDto{
 		PublicKey: "-----BEGIN PUBLIC KEY-----\nabc\n-----END PUBLIC KEY-----\n",
-		Kid:       utils.Ptr("key-1"),
+		Kid:       new("key-1"),
 	}
 	response := api.AddApplicationKeyResponseDto{Kid: "key-1"}
 

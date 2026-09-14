@@ -2,7 +2,10 @@ module github.com/The127/Keyline
 
 go 1.26.0
 
+replace github.com/The127/Keyline/client => ./client
+
 require (
+	github.com/The127/Keyline/client v0.0.0-00010101000000-000000000000
 	github.com/The127/go-clock v0.0.0-20251223175028-de53998b7f1b
 	github.com/The127/ioc v0.0.0-20251106160055-64edcb05f08d
 	github.com/The127/mediatr v0.0.0-20251106154229-12859853c010
@@ -33,10 +36,11 @@ require (
 	github.com/swaggo/swag v1.16.6
 	go.uber.org/mock v0.6.0
 	go.uber.org/zap v1.28.0
-	golang.org/x/oauth2 v0.37.0
 	gopkg.in/mail.v2 v2.3.1
 	modernc.org/sqlite v1.58.0
 )
+
+require golang.org/x/oauth2 v0.37.0 // indirect
 
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect

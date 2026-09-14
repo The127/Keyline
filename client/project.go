@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/The127/Keyline/api"
+	"github.com/The127/Keyline/client/api"
 )
 
 type ProjectClient interface {

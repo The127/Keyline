@@ -2,8 +2,7 @@ package client
 
 import (
 	"encoding/json"
-	"github.com/The127/Keyline/api"
-	"github.com/The127/Keyline/utils"
+	"github.com/The127/Keyline/client/api"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -27,7 +26,7 @@ func (s *VirtualServerClientSuite) TestCreate_HappyPath() {
 		DisplayName:             "Display Name",
 		EnableRegistration:      false,
 		Require2fa:              false,
-		PrimarySigningAlgorithm: utils.Ptr("EdDSA"),
+		PrimarySigningAlgorithm: new("EdDSA"),
 	}
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -110,9 +109,9 @@ func (s *VirtualServerClientSuite) TestGetPublic_InfoHappyPath() {
 func (s *VirtualServerClientSuite) TestPatch_HappyPath() {
 	// arrange
 	request := PatchVirtualServerInput{
-		DisplayName:              utils.Ptr("New display name"),
-		EnableRegistration:       utils.Ptr(true),
-		Require2fa:               utils.Ptr(false),
+		DisplayName:              new("New display name"),
+		EnableRegistration:       new(true),
+		Require2fa:               new(false),
 		RequireEmailVerification: nil,
 	}
 
@@ -142,7 +141,7 @@ func (s *VirtualServerClientSuite) TestPatch_WithSigningAlgorithms() {
 	// arrange
 	additional := []string{"RS256"}
 	request := PatchVirtualServerInput{
-		PrimarySigningAlgorithm:     utils.Ptr("EdDSA"),
+		PrimarySigningAlgorithm:     new("EdDSA"),
 		AdditionalSigningAlgorithms: &additional,
 	}
 

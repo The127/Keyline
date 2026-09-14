@@ -749,7 +749,11 @@ By signing off, you agree to the [Developer Certificate of Origin](DCO.md).
 
 ## License
 
-This project is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0). See the [LICENSE](LICENSE) file for details.
+- The Keyline server (this repository's root module) is licensed under
+  [AGPL-3.0](LICENSE).
+- The Go client in [`client/`](client/), including its request and
+  response types in `client/api`, is a separate module licensed under
+  [MIT](client/LICENSE), so it can be used without copyleft obligations.
 
 ## Support
 
