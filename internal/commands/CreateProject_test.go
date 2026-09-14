@@ -111,3 +111,31 @@ func (s *CreateProjectCommandSuite) TestVirtualServerError() {
 	s.Require().Error(err)
 	s.Nil(resp)
 }
+
+func (s *CreateProjectCommandSuite) TestSlugWithAColonIsRefused() {
+	// arrange
+	ctrl := gomock.NewController(s.T())
+	defer ctrl.Finish()
+
+	now := time.Now()
+
+	virtualServer := repositories.NewVirtualServer("virtual-server", "Virtual Server")
+	virtualServer.Mock(now)
+	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
+	virtualServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
+
+	projectRepository := mocks.NewMockProjectRepository(ctrl)
+
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository)
+	cmd := CreateProject{
+		VirtualServerName: virtualServer.Name(),
+		Slug:              "team:clusters",
+		Name:              "Name",
+	}
+
+	// act
+	_, err := HandleCreateProject(ctx, cmd)
+
+	// assert
+	s.ErrorIs(err, utils.ErrHttpBadRequest)
+}

@@ -2,8 +2,10 @@ package repositories
 
 import (
 	"context"
+	"fmt"
 	"github.com/The127/Keyline/internal/change"
 	"github.com/The127/Keyline/utils"
+	"strings"
 
 	"github.com/google/uuid"
 )
@@ -26,6 +28,13 @@ type Project struct {
 	description string
 
 	systemProject bool
+}
+
+func ValidateProjectSlug(slug string) error {
+	if strings.Contains(slug, ":") {
+		return fmt.Errorf("project slug %q must not contain a colon: %w", slug, utils.ErrHttpBadRequest)
+	}
+	return nil
 }
 
 func NewProject(virtualServerId uuid.UUID, slug string, name string, description string) *Project {

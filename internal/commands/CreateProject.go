@@ -51,6 +51,11 @@ func HandleCreateProject(ctx context.Context, command CreateProject) (*CreatePro
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
+	err = repositories.ValidateProjectSlug(command.Slug)
+	if err != nil {
+		return nil, err
+	}
+
 	project := repositories.NewProject(virtualServer.Id(), command.Slug, command.Name, command.Description)
 	dbContext.Projects().Insert(project)
 

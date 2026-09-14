@@ -177,6 +177,30 @@ func (s *CreateVirtualServerCommandSuite) TestApplicationNameWithAColonIsRefused
 	s.ErrorIs(err, utils.ErrHttpBadRequest)
 }
 
+func (s *CreateVirtualServerCommandSuite) TestProjectSlugWithAColonIsRefusedBeforeAnythingIsCreated() {
+	// arrange
+	ctrl := gomock.NewController(s.T())
+	defer ctrl.Finish()
+
+	ctx := s.createContext(ctrl, nil, nil, nil, nil, nil, nil, nil, nil)
+	cmd := CreateVirtualServer{
+		Name:        "virtualServer",
+		DisplayName: "Virtual Server",
+		Projects: []CreateVirtualServerProject{
+			{
+				Slug: "team:clusters",
+				Name: "Team Clusters",
+			},
+		},
+	}
+
+	// act
+	_, err := HandleCreateVirtualServer(ctx, cmd)
+
+	// assert
+	s.ErrorIs(err, utils.ErrHttpBadRequest)
+}
+
 func (s *CreateVirtualServerCommandSuite) TestApplicationWithAHyphenatedNameIsCreated() {
 	// arrange
 	ctrl := gomock.NewController(s.T())
