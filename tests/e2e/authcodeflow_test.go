@@ -232,6 +232,24 @@ func init() {
 					Expect(err).ToNot(HaveOccurred())
 					Expect(loc.Query().Get("error")).To(Equal("invalid_request"))
 				})
+
+				It("does not redirect to an unregistered redirect_uri", func() {
+					httpClient := &http.Client{
+						CheckRedirect: func(req *http.Request, via []*http.Request) error {
+							return http.ErrUseLastResponse
+						},
+					}
+					q := url.Values{}
+					q.Set("response_type", "code")
+					q.Set("client_id", authCodePublicAppName)
+					q.Set("redirect_uri", "https://attacker.example/callback")
+					q.Set("scope", "openid")
+					resp, err := httpClient.Get(fmt.Sprintf("%s/oidc/test-vs/authorize?%s", h.ApiUrl(), q.Encode()))
+					Expect(err).ToNot(HaveOccurred())
+					_ = resp.Body.Close()
+					Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
+					Expect(resp.Header.Get("Location")).To(BeEmpty())
+				})
 			})
 
 			Describe("/token authorization_code", func() {
