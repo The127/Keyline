@@ -74,6 +74,11 @@ jobs:
         working-directory: client
         run: go run github.com/arch-go/arch-go@v1.7.0
 
+      - name: Check swagger docs are up to date
+        run: |
+          go generate ./swag.go
+          git diff --exit-code -- docs
+
   test:
     runs-on: ubuntu-latest
     needs: [signoff]

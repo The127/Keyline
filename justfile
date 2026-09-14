@@ -76,6 +76,10 @@ arch:
     @echo "🏛️ Checking client module dependencies..."
     cd client && go run github.com/arch-go/arch-go@v1.7.0
 
+docs:
+    @echo "📚 Generating swagger docs..."
+    go generate ./swag.go
+
 # -----------------------------
 # Utility
 # -----------------------------
