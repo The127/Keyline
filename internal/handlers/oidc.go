@@ -54,6 +54,16 @@ var (
 		ErrorDescription: "The requested scope is invalid, unknown, or malformed.",
 		ErrorUri:         "https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.2.1",
 	}
+	requestNotSupported = OidcError{
+		Error:            "request_not_supported",
+		ErrorDescription: "The request parameter is not supported.",
+		ErrorUri:         "https://openid.net/specs/openid-connect-core-1_0.html#AuthError",
+	}
+	requestUriNotSupported = OidcError{
+		Error:            "request_uri_not_supported",
+		ErrorDescription: "The request_uri parameter is not supported.",
+		ErrorUri:         "https://openid.net/specs/openid-connect-core-1_0.html#AuthError",
+	}
 )
 
 type Ed25519JWK struct {
@@ -196,6 +206,7 @@ type OpenIdConfigurationResponseDto struct {
 	TokenEndpointAuthMethodsSupported          []string `json:"token_endpoint_auth_methods_supported"`
 	TokenEndpointAuthSigningAlgValuesSupported []string `json:"token_endpoint_auth_signing_alg_values_supported"`
 	RequestParameterSupported                  bool     `json:"request_parameter_supported"`
+	RequestUriParameterSupported               bool     `json:"request_uri_parameter_supported"`
 	GrantTypesSupported                        []string `json:"grant_types_supported"`
 }
 
@@ -240,9 +251,10 @@ func WellKnownOpenIdConfiguration(w http.ResponseWriter, r *http.Request) {
 		DeviceAuthorizationEndpoint: fmt.Sprintf("%s/oidc/%s/device", config.C.Server.ExternalUrl, vsName),
 		JwksUri:                     fmt.Sprintf("%s/oidc/%s/.well-known/jwks.json", config.C.Server.ExternalUrl, vsName),
 
-		ResponseTypesSupported:    []string{"code"}, // TODO: maybe support more
-		RequestParameterSupported: true,
-		SubjectTypesSupported:     []string{"public"},
+		ResponseTypesSupported:       []string{"code"}, // TODO: maybe support more
+		RequestParameterSupported:    false,
+		RequestUriParameterSupported: false,
+		SubjectTypesSupported:        []string{"public"},
 		IdTokenSigningAlgValuesSupported: func() []string {
 			algs := virtualServer.AllSigningAlgorithms()
 			result := make([]string, len(algs))
@@ -331,40 +343,6 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 		PKCEChallengeMethod: r.Form.Get("code_challenge_method"),
 	}
 
-	requestParam := r.Form.Get("request")
-	if requestParam != "" {
-		token, _, err := new(jwt.Parser).ParseUnverified(requestParam, jwt.MapClaims{})
-		if err != nil {
-			utils.HandleHttpError(w, fmt.Errorf("parsing request parameter: %w: %w", err, utils.ErrHttpBadRequest))
-			return
-		}
-
-		if claims, ok := token.Claims.(jwt.MapClaims); ok {
-			setters := map[string]func(string){
-				"response_type": func(value string) { authRequest.ResponseTypes = strings.Split(value, " ") },
-				"client_id":     func(value string) { authRequest.ApplicationName = value },
-				"redirect_uri":  func(value string) { authRequest.RedirectUri = value },
-				"scope":         func(value string) { authRequest.Scopes = strings.Split(value, " ") },
-				"state":         func(value string) { authRequest.State = value },
-				"nonce":         func(value string) { authRequest.Nonce = value },
-				"response_mode": func(value string) { authRequest.ResponseMode = value },
-			}
-
-			for name, set := range setters {
-				value, present, err := requestObjectClaim(claims, name)
-				if err != nil {
-					utils.HandleHttpError(w, err)
-					return
-				}
-
-				if present {
-					set(value)
-				}
-			}
-		}
-
-	}
-
 	// TODO: use validation annotations to validate the auth request
 	dbContext := ioc.GetDependency[database.Context](scope)
 
@@ -408,6 +386,16 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 	}
 	if !redirectOk {
 		utils.HandleHttpError(w, fmt.Errorf("redirect_uri is not registered for this application: %w", utils.ErrHttpBadRequest))
+		return
+	}
+
+	if r.Form.Get("request") != "" {
+		errorRedirect(w, r, authRequest, requestNotSupported)
+		return
+	}
+
+	if r.Form.Get("request_uri") != "" {
+		errorRedirect(w, r, authRequest, requestUriNotSupported)
 		return
 	}
 
@@ -566,20 +554,6 @@ func asksForResourceServerScope(scopes []string) bool {
 	return slices.ContainsFunc(scopes, func(requestedScope string) bool {
 		return strings.Contains(requestedScope, ":")
 	})
-}
-
-func requestObjectClaim(claims jwt.MapClaims, name string) (string, bool, error) {
-	value, present := claims[name]
-	if !present || value == nil {
-		return "", false, nil
-	}
-
-	text, isString := value.(string)
-	if !isString {
-		return "", false, fmt.Errorf("request object claim %s must be a string: %w", name, utils.ErrHttpBadRequest)
-	}
-
-	return text, true, nil
 }
 
 // OidcEndSession ends the user session and redirects.

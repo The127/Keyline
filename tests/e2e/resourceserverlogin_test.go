@@ -10,7 +10,6 @@ import (
 	"github.com/The127/Keyline/client/api"
 	"github.com/The127/Keyline/config"
 
-	"github.com/golang-jwt/jwt/v5"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -63,7 +62,7 @@ func init() {
 			})
 
 			It("refuses a resource server scope", func() {
-				location := authorizeWithScope(h, "openid "+resourceServerLoginProjectSlug+":k8s", nil)
+				location := authorizeWithScope(h, "openid "+resourceServerLoginProjectSlug+":k8s")
 
 				Expect(location.Scheme + "://" + location.Host + location.Path).To(Equal(resourceServerLoginRedirect))
 				Expect(location.Query().Get("error")).To(Equal("invalid_scope"))
@@ -71,30 +70,19 @@ func init() {
 			})
 
 			It("refuses a scope the project does not have", func() {
-				location := authorizeWithScope(h, "openid "+resourceServerLoginProjectSlug+":grafana", nil)
+				location := authorizeWithScope(h, "openid "+resourceServerLoginProjectSlug+":grafana")
 
 				Expect(location.Query().Get("error")).To(Equal("invalid_scope"))
 			})
 
 			It("refuses a scope of a project that does not exist", func() {
-				location := authorizeWithScope(h, "openid no-such-project:k8s", nil)
-
-				Expect(location.Query().Get("error")).To(Equal("invalid_scope"))
-			})
-
-			It("refuses a resource server scope sent in a request object", func() {
-				requestObject, err := jwt.NewWithClaims(jwt.SigningMethodNone, jwt.MapClaims{
-					"scope": "openid " + resourceServerLoginProjectSlug + ":k8s",
-				}).SignedString(jwt.UnsafeAllowNoneSignatureType)
-				Expect(err).ToNot(HaveOccurred())
-
-				location := authorizeWithScope(h, "openid", url.Values{"request": {requestObject}})
+				location := authorizeWithScope(h, "openid no-such-project:k8s")
 
 				Expect(location.Query().Get("error")).To(Equal("invalid_scope"))
 			})
 
 			It("lets plain scopes through to the login", func() {
-				location := authorizeWithScope(h, "openid email profile", nil)
+				location := authorizeWithScope(h, "openid email profile")
 
 				Expect(location.Query().Get("error")).To(BeEmpty())
 				Expect(location.String()).ToNot(HavePrefix(resourceServerLoginRedirect))
@@ -103,7 +91,7 @@ func init() {
 	}
 }
 
-func authorizeWithScope(h *harness, scope string, extra url.Values) *url.URL {
+func authorizeWithScope(h *harness, scope string) *url.URL {
 	httpClient := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
@@ -118,9 +106,6 @@ func authorizeWithScope(h *harness, scope string, extra url.Values) *url.URL {
 	query.Set("state", "resource-server-login-state")
 	query.Set("code_challenge", authCodePkceChallenge(authCodePkceVerifier))
 	query.Set("code_challenge_method", "S256")
-	for key, values := range extra {
-		query[key] = values
-	}
 
 	response, err := httpClient.Get(fmt.Sprintf("%s/oidc/%s/authorize?%s", h.ApiUrl(), h.VirtualServer(), query.Encode()))
 	Expect(err).ToNot(HaveOccurred())
