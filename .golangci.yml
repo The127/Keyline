@@ -21,7 +21,6 @@ linters:
     - unparam        # unused function parameters
     - dogsled        # too many assignments to same variable
     - nakedret       # naked returns
-    - prealloc       # slice/map preallocation
     - misspell       # typos
     - dupl           # duplicate code
     - testifylint    # test hygiene
