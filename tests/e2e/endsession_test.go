@@ -108,6 +108,27 @@ func init() {
 					Expect(resp.Header.Get("Location")).To(HavePrefix(endSessionVictimURI))
 				})
 
+				It("passes state back to the post_logout_redirect_uri", func() {
+					idTok := mintIdToken()
+					httpClient := &http.Client{
+						CheckRedirect: func(req *http.Request, via []*http.Request) error {
+							return http.ErrUseLastResponse
+						},
+					}
+					q := url.Values{}
+					q.Set("id_token_hint", idTok)
+					q.Set("post_logout_redirect_uri", endSessionVictimURI)
+					q.Set("state", "logout-state")
+					resp, err := httpClient.Get(fmt.Sprintf("%s/oidc/%s/end_session?%s", h.ApiUrl(), h.VirtualServer(), q.Encode()))
+					Expect(err).ToNot(HaveOccurred())
+					defer resp.Body.Close() //nolint:errcheck
+
+					Expect(resp.StatusCode).To(Equal(http.StatusFound))
+					location, err := url.Parse(resp.Header.Get("Location"))
+					Expect(err).ToNot(HaveOccurred())
+					Expect(location.Query().Get("state")).To(Equal("logout-state"))
+				})
+
 				It("rejects a post_logout_redirect_uri that is registered ONLY in another VS's same-named app (REGRESSION: cross-tenant lookup)", func() {
 					// endSessionAttackerVS has an app with the same name as
 					// the victim's, but its PostLogoutRedirectUris contains
