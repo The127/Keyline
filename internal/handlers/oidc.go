@@ -426,11 +426,9 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for _, requestedScope := range authRequest.Scopes {
-		if strings.Contains(requestedScope, ":") {
-			errorRedirect(w, r, authRequest, invalidScope)
-			return
-		}
+	if asksForResourceServerScope(authRequest.Scopes) {
+		errorRedirect(w, r, authRequest, invalidScope)
+		return
 	}
 
 	// PKCE policy (OAuth 2.1): the authorization code flow MUST use PKCE.
@@ -567,6 +565,12 @@ func errorRedirect(w http.ResponseWriter, r *http.Request, authRequest Authoriza
 	errorUrl.RawQuery = query.Encode()
 
 	http.Redirect(w, r, errorUrl.String(), http.StatusFound)
+}
+
+func asksForResourceServerScope(scopes []string) bool {
+	return slices.ContainsFunc(scopes, func(requestedScope string) bool {
+		return strings.Contains(requestedScope, ":")
+	})
 }
 
 // OidcEndSession ends the user session and redirects.
