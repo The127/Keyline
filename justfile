@@ -29,6 +29,7 @@ build:
     @echo "🔧 Building Keyline API..."
     mkdir -p "{{BINARY_DIR}}"
     go build -o "{{BINARY_DIR}}/keyline-api" "./cmd/api"
+    cd client && go build ./...
 
 run: build
     @echo "🚀 Running Keyline API (environment={{ENV}})..."
@@ -43,6 +44,7 @@ run: build
 test:
     @echo "🧪 Running unit tests..."
     go test -race -count=1 ./...
+    cd client && go test -race -count=1 ./...
 
 integration:
     @echo "🔬 Running integration tests..."
@@ -60,14 +62,15 @@ lint fix="":
     @echo "🔍 Running linter..."
     if [ "{{fix}}" = "fix" ]; then \
         echo "🧹 Auto-fixing lint issues..."; \
-        golangci-lint run --fix; \
+        golangci-lint run --fix && (cd client && golangci-lint run --fix); \
     else \
-        golangci-lint run; \
+        golangci-lint run && (cd client && golangci-lint run); \
     fi
 
 fmt:
     @echo "🎨 Formatting code..."
     go fmt ./...
+    cd client && go fmt ./...
 
 # -----------------------------
 # Utility
@@ -76,6 +79,10 @@ fmt:
 clean:
     @echo "🧹 Cleaning build artifacts..."
     rm -rf "{{BINARY_DIR}}"
+
+# one-time dev setup after cloning: local go workspace
+setup:
+    test -f go.work || go work init . ./client
 
 # -----------------------------
 # CI Convenience

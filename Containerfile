@@ -9,6 +9,7 @@ ENV CGO_ENABLED=0 GOOS=linux GOARCH=amd64
 
 # Cache dependencies first
 COPY go.mod go.sum ./
+COPY client/go.mod client/go.sum ./client/
 RUN go mod download
 
 # Copy source
