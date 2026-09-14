@@ -60,6 +60,7 @@ func (s *sqliteResourceServerScope) scan(row sqlitehelpers.Row, additionalPtrs .
 		&s.resourceServerId,
 		&s.scope,
 		&s.name,
+		&s.description,
 	}
 
 	ptrs = append(ptrs, additionalPtrs...)

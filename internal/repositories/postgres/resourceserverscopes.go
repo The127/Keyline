@@ -60,6 +60,7 @@ func (s *postgresResourceServerScope) scan(row pghelpers.Row, additionalPtrs ...
 		&s.resourceServerId,
 		&s.scope,
 		&s.name,
+		&s.description,
 	}
 
 	ptrs = append(ptrs, additionalPtrs...)
