@@ -25,7 +25,7 @@ import (
 // @param       virtualServerName  path   string  true  "Virtual server name"  default(keyline)
 // @param       page query int true "Page number"  default(1)
 // @param       pageSize query int true "Page size"  default(10)
-// @success     200 {object} PagedPasswordRuleResponseDto
+// @success     200 {object} api.PagedPasswordRuleResponseDto
 // @failure     400  {string}  string "Bad Request"
 // @router      /api/virtual-servers/{virtualServerName}/password-policies/rules [get]
 func ListPasswordRules(w http.ResponseWriter, r *http.Request) {
@@ -80,7 +80,7 @@ func ListPasswordRules(w http.ResponseWriter, r *http.Request) {
 // @tags        Password rules
 // @accept      application/json
 // @param       virtualServerName  path   string  true  "Virtual server name"  default(keyline)
-// @param       body  body   CreatePasswordRuleRequestDto  true  "Password rule details"
+// @param       body  body   api.CreatePasswordRuleRequestDto  true  "Password rule details"
 // @success     204 "No Content"
 // @failure     400  {string}  string "Bad Request"
 // @failure     409  {string}  string "Conflict"
@@ -128,7 +128,7 @@ func CreatePasswordRule(w http.ResponseWriter, r *http.Request) {
 // @tags        Password rules
 // @accept      application/json
 // @param       virtualServerName  path   string  true  "Virtual server name"  default(keyline)
-// @param       body  body   PatchPasswordRuleRequestDto  true  "Password rule details"
+// @param       body  body   api.PatchPasswordRuleRequestDto  true  "Password rule details"
 // @success     204 "No Content"
 // @failure     400  {string}  string "Bad Request"
 // @failure     404  {string}  string "Not Found"

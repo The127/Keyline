@@ -26,8 +26,8 @@ import (
 // @Param vsName path string true "Virtual server name"  default(keyline)
 // @Param projectSlug path string true "Project slug"
 // @Param appId path string true "Application ID (UUID)"
-// @Param request body AddApplicationKeyRequestDto true "Public key"
-// @Success 201 {object} AddApplicationKeyResponseDto
+// @Param request body api.AddApplicationKeyRequestDto true "Public key"
+// @Success 201 {object} api.AddApplicationKeyResponseDto
 // @Failure 400
 // @Failure 404 "Application not found"
 // @Failure 409 "Key ID already exists"
@@ -96,7 +96,7 @@ func AddApplicationKey(w http.ResponseWriter, r *http.Request) {
 // @Param vsName path string true "Virtual server name"  default(keyline)
 // @Param projectSlug path string true "Project slug"
 // @Param appId path string true "Application ID (UUID)"
-// @Success 200 {array} ApplicationKeyResponseDto
+// @Success 200 {array} api.ApplicationKeyResponseDto
 // @Failure 400
 // @Failure 404 "Application not found"
 // @Router /api/virtual-servers/{vsName}/projects/{projectSlug}/applications/{appId}/keys [get]

@@ -26,8 +26,8 @@ import (
 // @Produce json
 // @Param vsName path string true "Virtual server name"  default(keyline)
 // @Param projectSlug path string true "Project slug"
-// @Param request body CreateApplicationRequestDto true "Application data"
-// @Success 201 {object} CreateApplicationResponseDto
+// @Param request body api.CreateApplicationRequestDto true "Application data"
+// @Success 201 {object} api.CreateApplicationResponseDto
 // @Failure 400
 // @Failure 500
 // @Router /api/virtual-servers/{vsName}/projects/{projectSlug}/applications [post]
@@ -105,7 +105,7 @@ func CreateApplication(w http.ResponseWriter, r *http.Request) {
 // @Param vsName path string true "Virtual server name"  default(keyline)
 // @Param projectSlug path string true "Project slug"
 // @Param appId path string true "Application ID (UUID)"
-// @Success 200 {object} GetApplicationResponseDto
+// @Success 200 {object} api.GetApplicationResponseDto
 // @Failure 400
 // @Failure 404 "Application not found"
 // @Failure 500
@@ -182,7 +182,7 @@ func GetApplication(w http.ResponseWriter, r *http.Request) {
 // @Param vsName path string true "Virtual server name"  default(keyline)
 // @Param projectSlug path string true "Project slug"
 // @Param appId path string true "Application ID (UUID)"
-// @Param request body PatchApplicationRequestDto true "Application data"
+// @Param request body api.PatchApplicationRequestDto true "Application data"
 // @Success 204 {string} string "No Content"
 // @Failure 400
 // @Failure 404 "Application not found"
@@ -313,7 +313,7 @@ func DeleteApplication(w http.ResponseWriter, r *http.Request) {
 // @Param orderBy query string false "Order by field"
 // @Param orderDir query string false "Order direction (asc|desc)"
 // @Param search query string false "Search term"
-// @Success 200 {object} PagedApplicationsResponseDto
+// @Success 200 {object} api.PagedApplicationsResponseDto
 // @Failure 400
 // @Failure 500
 // @Router /api/virtual-servers/{vsName}/projects/{projectSlug}/applications [get]

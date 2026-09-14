@@ -24,7 +24,7 @@ import (
 // @Param orderBy query string false "Order by field"
 // @Param orderDir query string false "Order direction (asc|desc)"
 // @Param search query string false "Search term"
-// @Success 200 {object} PagedGroupsResponseDto
+// @Success 200 {object} api.PagedGroupsResponseDto
 // @Failure 400
 // @Failure 500
 // @Router /api/virtual-servers/{vsName}/groups [get]

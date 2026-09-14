@@ -25,8 +25,8 @@ import (
 // @Param vsName path string true "Virtual server name"  default(keyline)
 // @Param projectSlug path string true "Project slug"
 // @Param resourceServerId path string true "Resource server ID (UUID)"
-// @Param request body CreateResourceServerScopeRequestDto true "Application data"
-// @Success 201 {object} CreateResourceServerScopeResponseDto
+// @Param request body api.CreateResourceServerScopeRequestDto true "Application data"
+// @Success 201 {object} api.CreateResourceServerScopeResponseDto
 // @Failure 400
 // @Failure 500
 // @Router /api/virtual-servers/{vsName}/projects/{projectSlug}/resource-server/{resourceServerId}/scopes [post]
@@ -104,7 +104,7 @@ func CreateResourceServerScope(w http.ResponseWriter, r *http.Request) {
 // @Param orderBy query string false "Order by field"
 // @Param orderDir query string false "Order direction (asc|desc)"
 // @Param search query string false "Search term"
-// @Success 200 {object} PagedResourceServerScopeResponseDto
+// @Success 200 {object} api.PagedResourceServerScopeResponseDto
 // @Failure 400
 // @Failure 500
 // @Router /api/virtual-servers/{vsName}/projects/{projectSlug}/resource-server/{resourceServerId}/scopes [get]
@@ -179,7 +179,7 @@ func ListResourceServerScopes(w http.ResponseWriter, r *http.Request) {
 // @Param projectSlug path string true "Project slug"
 // @Param resourceServerId path string true "Resource server ID (UUID)"
 // @Param scopeId path string true "Scope ID (UUID)"
-// @Success 200 {object} GetResourceServerScopeResponseDto
+// @Success 200 {object} api.GetResourceServerScopeResponseDto
 // @Failure 400
 // @Failure 404 "Resource server scope not found"
 // @Failure 500

@@ -34,7 +34,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.CreateVirtualServerRequestDto"
+                            "$ref": "#/definitions/api.CreateVirtualServerRequestDto"
                         }
                     }
                 ],
@@ -77,7 +77,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handlers.GetVirtualServerResponseDto"
+                            "$ref": "#/definitions/api.GetVirtualServerResponseDto"
                         }
                     },
                     "404": {
@@ -114,7 +114,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.PatchVirtualServerRequestDto"
+                            "$ref": "#/definitions/api.PatchVirtualServerRequestDto"
                         }
                     }
                 ],
@@ -187,7 +187,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handlers.PagedAuditLogResponseDto"
+                            "$ref": "#/definitions/api.PagedAuditLogResponseDto"
                         }
                     },
                     "400": {
@@ -268,7 +268,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handlers.PagedPasswordRuleResponseDto"
+                            "$ref": "#/definitions/api.PagedPasswordRuleResponseDto"
                         }
                     },
                     "400": {
@@ -305,7 +305,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.PatchPasswordRuleRequestDto"
+                            "$ref": "#/definitions/api.PatchPasswordRuleRequestDto"
                         }
                     }
                 ],
@@ -351,7 +351,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.CreatePasswordRuleRequestDto"
+                            "$ref": "#/definitions/api.CreatePasswordRuleRequestDto"
                         }
                     }
                 ],
@@ -440,7 +440,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handlers.PagedRolesResponseDto"
+                            "$ref": "#/definitions/api.PagedRolesResponseDto"
                         }
                     },
                     "400": {
@@ -490,7 +490,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.CreateRoleRequestDto"
+                            "$ref": "#/definitions/api.CreateRoleRequestDto"
                         }
                     }
                 ],
@@ -498,7 +498,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/handlers.CreateRoleResponseDto"
+                            "$ref": "#/definitions/api.CreateRoleResponseDto"
                         }
                     },
                     "400": {
@@ -553,7 +553,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handlers.GetRoleByIdResponseDto"
+                            "$ref": "#/definitions/api.GetRoleByIdResponseDto"
                         }
                     },
                     "400": {
@@ -567,6 +567,115 @@ const docTemplate = `{
                         "schema": {
                             "type": "string"
                         }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Delete a role by ID from a project",
+                "tags": [
+                    "Roles"
+                ],
+                "summary": "Delete role",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "keyline",
+                        "description": "Virtual server name",
+                        "name": "virtualServerName",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Project slug",
+                        "name": "projectSlug",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Role ID (UUID)",
+                        "name": "roleId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update a role by ID within a project",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Roles"
+                ],
+                "summary": "Patch role",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "keyline",
+                        "description": "Virtual server name",
+                        "name": "virtualServerName",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Project slug",
+                        "name": "projectSlug",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Role ID (UUID)",
+                        "name": "roleId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Role data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.PatchRoleRequestDto"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "404": {
+                        "description": "Role not found"
                     }
                 }
             }
@@ -615,7 +724,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.AssignRoleRequestDto"
+                            "$ref": "#/definitions/api.AssignRoleRequestDto"
                         }
                     }
                 ],
@@ -664,7 +773,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handlers.GetVirtualServerListResponseDto"
+                            "$ref": "#/definitions/api.GetVirtualServerListResponseDto"
                         }
                     },
                     "404": {
@@ -699,7 +808,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handlers.PagedTemplatesResponseDto"
+                            "$ref": "#/definitions/api.PagedTemplatesResponseDto"
                         }
                     },
                     "400": {
@@ -741,7 +850,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handlers.GetTemplateResponseDto"
+                            "$ref": "#/definitions/api.GetTemplateResponseDto"
                         }
                     },
                     "404": {
@@ -794,7 +903,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handlers.PagedUsersResponseDto"
+                            "$ref": "#/definitions/api.PagedUsersResponseDto"
                         }
                     },
                     "400": {
@@ -828,7 +937,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.CreateUserRequestDto"
+                            "$ref": "#/definitions/api.CreateUserRequestDto"
                         }
                     }
                 ],
@@ -836,7 +945,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/handlers.CreateUserResponseDto"
+                            "$ref": "#/definitions/api.CreateUserResponseDto"
                         }
                     },
                     "400": {
@@ -875,7 +984,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.RegisterUserRequestDto"
+                            "$ref": "#/definitions/api.RegisterUserRequestDto"
                         }
                     }
                 ],
@@ -922,7 +1031,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.CreateServiceUserRequestDto"
+                            "$ref": "#/definitions/api.CreateServiceUserRequestDto"
                         }
                     }
                 ],
@@ -930,7 +1039,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handlers.CreateServiceUserResponseDto"
+                            "$ref": "#/definitions/api.CreateServiceUserResponseDto"
                         }
                     },
                     "400": {
@@ -969,7 +1078,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.AssociateServiceUserPublicKeyRequestDto"
+                            "$ref": "#/definitions/api.AssociateServiceUserPublicKeyRequestDto"
                         }
                     }
                 ],
@@ -977,11 +1086,66 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handlers.AssociateServiceUserPublicKeyResponseDto"
+                            "$ref": "#/definitions/api.AssociateServiceUserPublicKeyResponseDto"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/virtual-servers/{virtualServerName}/users/service-users/{serviceUserId}/keys/{kid}": {
+            "delete": {
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Remove a public key from a service user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "keyline",
+                        "description": "Virtual server name",
+                        "name": "virtualServerName",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Service user ID",
+                        "name": "serviceUserId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Key ID",
+                        "name": "kid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "type": "string"
                         }
@@ -1061,7 +1225,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handlers.GetUserByIdResponseDto"
+                            "$ref": "#/definitions/api.GetUserByIdResponseDto"
                         }
                     },
                     "404": {
@@ -1105,7 +1269,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.PatchUserRequestDto"
+                            "$ref": "#/definitions/api.PatchUserRequestDto"
                         }
                     }
                 ],
@@ -1155,7 +1319,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handlers.GetUserMetadataResponseDto"
+                            "$ref": "#/definitions/api.GetUserMetadataResponseDto"
                         }
                     },
                     "404": {
@@ -1204,7 +1368,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handlers.GetUserApplicationMetadataResponseDto"
+                            "$ref": "#/definitions/api.GetUserApplicationMetadataResponseDto"
                         }
                     },
                     "404": {
@@ -1252,7 +1416,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.UpdateUserApplicationMetadataRequestDto"
+                            "$ref": "#/definitions/api.UpdateUserApplicationMetadataRequestDto"
                         }
                     }
                 ],
@@ -1303,7 +1467,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handlers.GetUserGlobalMetadataResponseDto"
+                            "$ref": "#/definitions/api.GetUserGlobalMetadataResponseDto"
                         }
                     },
                     "404": {
@@ -1344,7 +1508,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.UpdateUserGlobalMetadataRequestDto"
+                            "$ref": "#/definitions/api.UpdateUserGlobalMetadataRequestDto"
                         }
                     }
                 ],
@@ -1404,7 +1568,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.PatchUserApplicationMetadataRequestDto"
+                            "$ref": "#/definitions/api.PatchUserApplicationMetadataRequestDto"
                         }
                     }
                 ],
@@ -1481,7 +1645,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handlers.PagedGroupsResponseDto"
+                            "$ref": "#/definitions/api.PagedGroupsResponseDto"
                         }
                     },
                     "400": {
@@ -1489,6 +1653,92 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/virtual-servers/{vsName}/identity-providers": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "IdentityProviders"
+                ],
+                "summary": "Create identity provider",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "keyline",
+                        "description": "Virtual server name",
+                        "name": "vsName",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Identity provider",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.CreateIdentityProviderRequestDto"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/api.CreateIdentityProviderResponseDto"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "409": {
+                        "description": "Name already exists"
+                    }
+                }
+            }
+        },
+        "/api/virtual-servers/{vsName}/identity-providers/{name}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "IdentityProviders"
+                ],
+                "summary": "Get identity provider",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "keyline",
+                        "description": "Virtual server name",
+                        "name": "vsName",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Identity provider name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.GetIdentityProviderResponseDto"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found"
                     }
                 }
             }
@@ -1550,7 +1800,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handlers.PagedProjectsResponseDto"
+                            "$ref": "#/definitions/api.PagedProjectsResponseDto"
                         }
                     },
                     "400": {
@@ -1588,7 +1838,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.CreateProjectRequestDto"
+                            "$ref": "#/definitions/api.CreateProjectRequestDto"
                         }
                     }
                 ],
@@ -1596,7 +1846,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/handlers.CreateProjectResponseDto"
+                            "$ref": "#/definitions/api.CreateProjectResponseDto"
                         }
                     },
                     "400": {
@@ -1672,7 +1922,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handlers.PagedApplicationsResponseDto"
+                            "$ref": "#/definitions/api.PagedApplicationsResponseDto"
                         }
                     },
                     "400": {
@@ -1717,7 +1967,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.CreateApplicationRequestDto"
+                            "$ref": "#/definitions/api.CreateApplicationRequestDto"
                         }
                     }
                 ],
@@ -1725,7 +1975,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/handlers.CreateApplicationResponseDto"
+                            "$ref": "#/definitions/api.CreateApplicationResponseDto"
                         }
                     },
                     "400": {
@@ -1778,7 +2028,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handlers.GetApplicationResponseDto"
+                            "$ref": "#/definitions/api.GetApplicationResponseDto"
                         }
                     },
                     "400": {
@@ -1881,7 +2131,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.PatchApplicationRequestDto"
+                            "$ref": "#/definitions/api.PatchApplicationRequestDto"
                         }
                     }
                 ],
@@ -1900,6 +2150,177 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/virtual-servers/{vsName}/projects/{projectSlug}/applications/{appId}/keys": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Applications"
+                ],
+                "summary": "List application keys",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "keyline",
+                        "description": "Virtual server name",
+                        "name": "vsName",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Project slug",
+                        "name": "projectSlug",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Application ID (UUID)",
+                        "name": "appId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.ApplicationKeyResponseDto"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "404": {
+                        "description": "Application not found"
+                    }
+                }
+            },
+            "post": {
+                "description": "Register a PEM encoded public key the application signs its client assertions with",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Applications"
+                ],
+                "summary": "Add application key",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "keyline",
+                        "description": "Virtual server name",
+                        "name": "vsName",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Project slug",
+                        "name": "projectSlug",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Application ID (UUID)",
+                        "name": "appId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Public key",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.AddApplicationKeyRequestDto"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/api.AddApplicationKeyResponseDto"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "404": {
+                        "description": "Application not found"
+                    },
+                    "409": {
+                        "description": "Key ID already exists"
+                    }
+                }
+            }
+        },
+        "/api/virtual-servers/{vsName}/projects/{projectSlug}/applications/{appId}/keys/{kid}": {
+            "delete": {
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Applications"
+                ],
+                "summary": "Remove application key",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "keyline",
+                        "description": "Virtual server name",
+                        "name": "vsName",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Project slug",
+                        "name": "projectSlug",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Application ID (UUID)",
+                        "name": "appId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Key ID",
+                        "name": "kid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "404": {
+                        "description": "Application or key not found"
                     }
                 }
             }
@@ -1975,7 +2396,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handlers.PagedResourceServerScopeResponseDto"
+                            "$ref": "#/definitions/api.PagedResourceServerScopeResponseDto"
                         }
                     },
                     "400": {
@@ -2027,7 +2448,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.CreateResourceServerScopeRequestDto"
+                            "$ref": "#/definitions/api.CreateResourceServerScopeRequestDto"
                         }
                     }
                 ],
@@ -2035,7 +2456,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/handlers.CreateResourceServerScopeResponseDto"
+                            "$ref": "#/definitions/api.CreateResourceServerScopeResponseDto"
                         }
                     },
                     "400": {
@@ -2095,7 +2516,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handlers.GetResourceServerScopeResponseDto"
+                            "$ref": "#/definitions/api.GetResourceServerScopeResponseDto"
                         }
                     },
                     "400": {
@@ -2174,7 +2595,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handlers.PagedResourceServersResponseDto"
+                            "$ref": "#/definitions/api.PagedResourceServersResponseDto"
                         }
                     },
                     "400": {
@@ -2216,7 +2637,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.CreateResourceServerRequestDto"
+                            "$ref": "#/definitions/api.CreateResourceServerRequestDto"
                         }
                     }
                 ],
@@ -2277,7 +2698,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handlers.GetResourceServerResponseDto"
+                            "$ref": "#/definitions/api.GetResourceServerResponseDto"
                         }
                     },
                     "400": {
@@ -2363,7 +2784,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handlers.PagedUsersInRoleResponseDto"
+                            "$ref": "#/definitions/api.PagedUsersInRoleResponseDto"
                         }
                     },
                     "400": {
@@ -2512,6 +2933,50 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized or wrong step",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/logins/{loginToken}/identity-providers/{name}/start": {
+            "get": {
+                "tags": [
+                    "Logins"
+                ],
+                "summary": "Start identity provider login",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Login session token",
+                        "name": "loginToken",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Identity provider name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "302": {
+                        "description": "Redirect to the provider",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unknown token or wrong step",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Unknown identity provider",
                         "schema": {
                             "type": "string"
                         }
@@ -2679,58 +3144,6 @@ const docTemplate = `{
                         "name": "loginToken",
                         "in": "path",
                         "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No Content",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized or wrong step",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/logins/{loginToken}/verify-password": {
-            "post": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "text/plain"
-                ],
-                "tags": [
-                    "Logins"
-                ],
-                "summary": "Verify password",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Login session token",
-                        "name": "loginToken",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Credentials",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handlers.VerifyPasswordRequestDto"
-                        }
                     }
                 ],
                 "responses": {
@@ -3143,6 +3556,58 @@ const docTemplate = `{
                 }
             }
         },
+        "/oidc/{virtualServerName}/identity-providers/{name}/callback": {
+            "get": {
+                "tags": [
+                    "OIDC"
+                ],
+                "summary": "Identity provider callback",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "keyline",
+                        "description": "Virtual server name",
+                        "name": "virtualServerName",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Identity provider name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authorization code",
+                        "name": "code",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "State from the start",
+                        "name": "state",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "302": {
+                        "description": "Redirect to the login page",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Unknown state",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/oidc/{virtualServerName}/token": {
             "post": {
                 "security": [
@@ -3163,7 +3628,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "authorization_code | refresh_token",
+                        "description": "authorization_code | refresh_token | urn:ietf:params:oauth:grant-type:jwt-bearer | urn:ietf:params:oauth:grant-type:device_code",
                         "name": "grant_type",
                         "in": "formData",
                         "required": true
@@ -3182,6 +3647,18 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "description": "Required when grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer, the service user's signed JWT",
+                        "name": "assertion",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Required when grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer, must include openid",
+                        "name": "scope",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
                         "description": "If no Authorization header",
                         "name": "client_id",
                         "in": "formData"
@@ -3189,9 +3666,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "When grant_type=urn:ietf:params:oauth:grant-type:token-exchange",
+                        "description": "When grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer",
                         "schema": {
-                            "$ref": "#/definitions/handlers.TokenExchangeResponse"
+                            "$ref": "#/definitions/handlers.ServiceUserTokenResponse"
                         }
                     },
                     "400": {
@@ -3245,7 +3722,43 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "handlers.AssignRoleRequestDto": {
+        "api.AddApplicationKeyRequestDto": {
+            "type": "object",
+            "required": [
+                "publicKey"
+            ],
+            "properties": {
+                "kid": {
+                    "type": "string"
+                },
+                "publicKey": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.AddApplicationKeyResponseDto": {
+            "type": "object",
+            "properties": {
+                "kid": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.ApplicationKeyResponseDto": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "kid": {
+                    "type": "string"
+                },
+                "publicKey": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.AssignRoleRequestDto": {
             "type": "object",
             "required": [
                 "userId"
@@ -3256,18 +3769,21 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.AssociateServiceUserPublicKeyRequestDto": {
+        "api.AssociateServiceUserPublicKeyRequestDto": {
             "type": "object",
             "required": [
                 "publicKey"
             ],
             "properties": {
+                "kid": {
+                    "type": "string"
+                },
                 "publicKey": {
                     "type": "string"
                 }
             }
         },
-        "handlers.AssociateServiceUserPublicKeyResponseDto": {
+        "api.AssociateServiceUserPublicKeyResponseDto": {
             "type": "object",
             "properties": {
                 "kid": {
@@ -3275,30 +3791,7 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.CodeFlowResponse": {
-            "type": "object",
-            "properties": {
-                "access_token": {
-                    "type": "string"
-                },
-                "expires_in": {
-                    "type": "integer"
-                },
-                "id_token": {
-                    "type": "string"
-                },
-                "refresh_token": {
-                    "type": "string"
-                },
-                "scope": {
-                    "type": "string"
-                },
-                "token_type": {
-                    "type": "string"
-                }
-            }
-        },
-        "handlers.CreateApplicationRequestDto": {
+        "api.CreateApplicationRequestDto": {
             "type": "object",
             "required": [
                 "displayName",
@@ -3313,6 +3806,9 @@ const docTemplate = `{
                         "at+jwt",
                         "JWT"
                     ]
+                },
+                "deviceFlowEnabled": {
+                    "type": "boolean"
                 },
                 "displayName": {
                     "type": "string",
@@ -3336,16 +3832,39 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
+                "signingAlgorithm": {
+                    "type": "string",
+                    "enum": [
+                        "RS256",
+                        "EdDSA"
+                    ]
+                },
+                "tokenEndpointAuthMethod": {
+                    "type": "string",
+                    "enum": [
+                        "client_secret",
+                        "private_key_jwt"
+                    ]
+                },
+                "trustedExchangers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "type": {
                     "type": "string",
                     "enum": [
                         "public",
                         "confidential"
                     ]
+                },
+                "userinfoInAccessToken": {
+                    "type": "boolean"
                 }
             }
         },
-        "handlers.CreateApplicationResponseDto": {
+        "api.CreateApplicationResponseDto": {
             "type": "object",
             "properties": {
                 "id": {
@@ -3356,7 +3875,62 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.CreatePasswordRuleRequestDto": {
+        "api.CreateIdentityProviderRequestDto": {
+            "type": "object",
+            "required": [
+                "clientId",
+                "clientSecret"
+            ],
+            "properties": {
+                "authorizationEndpoint": {
+                    "type": "string"
+                },
+                "claimMapping": {
+                    "$ref": "#/definitions/api.IdentityProviderClaimMappingDto"
+                },
+                "clientId": {
+                    "type": "string"
+                },
+                "clientSecret": {
+                    "type": "string"
+                },
+                "displayName": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "issuer": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "preset": {
+                    "type": "string"
+                },
+                "scopes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "tokenEndpoint": {
+                    "type": "string"
+                },
+                "userinfoEndpoint": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.CreateIdentityProviderResponseDto": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.CreatePasswordRuleRequestDto": {
             "type": "object",
             "required": [
                 "details",
@@ -3372,7 +3946,7 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.CreateProjectRequestDto": {
+        "api.CreateProjectRequestDto": {
             "type": "object",
             "required": [
                 "name",
@@ -3394,7 +3968,7 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.CreateProjectResponseDto": {
+        "api.CreateProjectResponseDto": {
             "type": "object",
             "properties": {
                 "id": {
@@ -3402,7 +3976,7 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.CreateResourceServerRequestDto": {
+        "api.CreateResourceServerRequestDto": {
             "type": "object",
             "required": [
                 "name",
@@ -3422,7 +3996,7 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.CreateResourceServerScopeRequestDto": {
+        "api.CreateResourceServerScopeRequestDto": {
             "type": "object",
             "required": [
                 "name",
@@ -3444,7 +4018,7 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.CreateResourceServerScopeResponseDto": {
+        "api.CreateResourceServerScopeResponseDto": {
             "type": "object",
             "properties": {
                 "id": {
@@ -3452,7 +4026,7 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.CreateRoleRequestDto": {
+        "api.CreateRoleRequestDto": {
             "type": "object",
             "required": [
                 "name"
@@ -3469,7 +4043,7 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.CreateRoleResponseDto": {
+        "api.CreateRoleResponseDto": {
             "type": "object",
             "properties": {
                 "id": {
@@ -3477,7 +4051,7 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.CreateServiceUserRequestDto": {
+        "api.CreateServiceUserRequestDto": {
             "type": "object",
             "required": [
                 "username"
@@ -3490,7 +4064,7 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.CreateServiceUserResponseDto": {
+        "api.CreateServiceUserResponseDto": {
             "type": "object",
             "properties": {
                 "id": {
@@ -3498,12 +4072,11 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.CreateUserRequestDto": {
+        "api.CreateUserRequestDto": {
             "type": "object",
             "required": [
                 "displayName",
                 "email",
-                "emailVerified",
                 "username"
             ],
             "properties": {
@@ -3517,14 +4090,14 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "password": {
-                    "$ref": "#/definitions/handlers.CreateUserRequestDtoPasword"
+                    "$ref": "#/definitions/api.CreateUserRequestDtoPasword"
                 },
                 "username": {
                     "type": "string"
                 }
             }
         },
-        "handlers.CreateUserRequestDtoPasword": {
+        "api.CreateUserRequestDtoPasword": {
             "type": "object",
             "required": [
                 "plain"
@@ -3538,7 +4111,7 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.CreateUserResponseDto": {
+        "api.CreateUserResponseDto": {
             "type": "object",
             "properties": {
                 "id": {
@@ -3546,15 +4119,21 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.CreateVirtualServerRequestDto": {
+        "api.CreateVirtualServerRequestDto": {
             "type": "object",
             "required": [
                 "displayName",
                 "name"
             ],
             "properties": {
+                "additionalSigningAlgorithms": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "admin": {
-                    "$ref": "#/definitions/handlers.CreateVirtualServerRequestDtoAdminDto"
+                    "$ref": "#/definitions/api.CreateVirtualServerRequestDtoAdminDto"
                 },
                 "displayName": {
                     "type": "string",
@@ -3569,10 +4148,17 @@ const docTemplate = `{
                     "maxLength": 255,
                     "minLength": 1
                 },
+                "primarySigningAlgorithm": {
+                    "type": "string",
+                    "enum": [
+                        "RS256",
+                        "EdDSA"
+                    ]
+                },
                 "projects": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/handlers.CreateVirtualServerRequestDtoProjectDto"
+                        "$ref": "#/definitions/api.CreateVirtualServerRequestDtoProjectDto"
                     }
                 },
                 "require2fa": {
@@ -3581,19 +4167,12 @@ const docTemplate = `{
                 "serviceUsers": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/handlers.CreateVirtualServerRequestDtoServiceUserDto"
+                        "$ref": "#/definitions/api.CreateVirtualServerRequestDtoServiceUserDto"
                     }
-                },
-                "signingAlgorithm": {
-                    "type": "string",
-                    "enum": [
-                        "RS256",
-                        "EdDSA"
-                    ]
                 }
             }
         },
-        "handlers.CreateVirtualServerRequestDtoAdminDto": {
+        "api.CreateVirtualServerRequestDtoAdminDto": {
             "type": "object",
             "required": [
                 "displayName",
@@ -3626,7 +4205,7 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.CreateVirtualServerRequestDtoProjectDto": {
+        "api.CreateVirtualServerRequestDtoProjectDto": {
             "type": "object",
             "required": [
                 "name",
@@ -3636,7 +4215,7 @@ const docTemplate = `{
                 "applications": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/handlers.CreateVirtualServerRequestDtoProjectDtoApplicationDto"
+                        "$ref": "#/definitions/api.CreateVirtualServerRequestDtoProjectDtoApplicationDto"
                     }
                 },
                 "description": {
@@ -3650,13 +4229,13 @@ const docTemplate = `{
                 "resourceServers": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/handlers.CreateVirtualServerRequestDtoProjectDtoResourceServerDto"
+                        "$ref": "#/definitions/api.CreateVirtualServerRequestDtoProjectDtoResourceServerDto"
                     }
                 },
                 "roles": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/handlers.CreateVirtualServerRequestDtoProjectDtoRoleDto"
+                        "$ref": "#/definitions/api.CreateVirtualServerRequestDtoProjectDtoRoleDto"
                     }
                 },
                 "slug": {
@@ -3666,7 +4245,7 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.CreateVirtualServerRequestDtoProjectDtoApplicationDto": {
+        "api.CreateVirtualServerRequestDtoProjectDtoApplicationDto": {
             "type": "object",
             "required": [
                 "displayName",
@@ -3694,7 +4273,26 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
+                "publicKeys": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.CreateVirtualServerRequestDtoProjectDtoApplicationKeyDto"
+                    }
+                },
                 "redirectUris": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "tokenEndpointAuthMethod": {
+                    "type": "string",
+                    "enum": [
+                        "client_secret",
+                        "private_key_jwt"
+                    ]
+                },
+                "trustedExchangers": {
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -3706,10 +4304,28 @@ const docTemplate = `{
                         "public",
                         "confidential"
                     ]
+                },
+                "userinfoInAccessToken": {
+                    "type": "boolean"
                 }
             }
         },
-        "handlers.CreateVirtualServerRequestDtoProjectDtoResourceServerDto": {
+        "api.CreateVirtualServerRequestDtoProjectDtoApplicationKeyDto": {
+            "type": "object",
+            "required": [
+                "kid",
+                "pem"
+            ],
+            "properties": {
+                "kid": {
+                    "type": "string"
+                },
+                "pem": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.CreateVirtualServerRequestDtoProjectDtoResourceServerDto": {
             "type": "object",
             "required": [
                 "name",
@@ -3731,7 +4347,7 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.CreateVirtualServerRequestDtoProjectDtoRoleDto": {
+        "api.CreateVirtualServerRequestDtoProjectDtoRoleDto": {
             "type": "object",
             "required": [
                 "name"
@@ -3747,7 +4363,7 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.CreateVirtualServerRequestDtoServiceUserDto": {
+        "api.CreateVirtualServerRequestDtoServiceUserDto": {
             "type": "object",
             "required": [
                 "publicKey",
@@ -3782,14 +4398,20 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.GetApplicationResponseDto": {
+        "api.GetApplicationResponseDto": {
             "type": "object",
             "properties": {
+                "accessTokenHeaderType": {
+                    "type": "string"
+                },
                 "createdAt": {
                     "type": "string"
                 },
                 "customClaimsMappingScript": {
                     "type": "string"
+                },
+                "deviceFlowEnabled": {
+                    "type": "boolean"
                 },
                 "displayName": {
                     "type": "string"
@@ -3812,42 +4434,71 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
+                "signingAlgorithm": {
+                    "type": "string"
+                },
                 "systemApplication": {
                     "type": "boolean"
+                },
+                "tokenEndpointAuthMethod": {
+                    "type": "string"
+                },
+                "trustedExchangers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "type": {
                     "type": "string"
                 },
                 "updatedAt": {
                     "type": "string"
+                },
+                "userinfoInAccessToken": {
+                    "type": "boolean"
                 }
             }
         },
-        "handlers.GetLoginStateResponseDto": {
+        "api.GetIdentityProviderResponseDto": {
             "type": "object",
             "properties": {
-                "applicationDisplayName": {
+                "authorizationEndpoint": {
                     "type": "string"
                 },
-                "signupEnabled": {
-                    "type": "boolean"
+                "claimMapping": {
+                    "$ref": "#/definitions/api.IdentityProviderClaimMappingDto"
                 },
-                "step": {
-                    "description": "Step is one of: password_verification | temporary_password | email_verification | finish",
+                "clientId": {
                     "type": "string"
                 },
-                "totpSecret": {
+                "displayName": {
                     "type": "string"
                 },
-                "virtualServerDisplayName": {
+                "issuer": {
                     "type": "string"
                 },
-                "virtualServerName": {
+                "name": {
+                    "type": "string"
+                },
+                "preset": {
+                    "type": "string"
+                },
+                "scopes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "tokenEndpoint": {
+                    "type": "string"
+                },
+                "userinfoEndpoint": {
                     "type": "string"
                 }
             }
         },
-        "handlers.GetResourceServerResponseDto": {
+        "api.GetResourceServerResponseDto": {
             "type": "object",
             "properties": {
                 "createdAt": {
@@ -3870,7 +4521,7 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.GetResourceServerScopeResponseDto": {
+        "api.GetResourceServerScopeResponseDto": {
             "type": "object",
             "properties": {
                 "createdAt": {
@@ -3893,7 +4544,7 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.GetRoleByIdResponseDto": {
+        "api.GetRoleByIdResponseDto": {
             "type": "object",
             "properties": {
                 "createdAt": {
@@ -3913,7 +4564,7 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.GetTemplateResponseDto": {
+        "api.GetTemplateResponseDto": {
             "type": "object",
             "properties": {
                 "createdAt": {
@@ -3926,18 +4577,18 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "type": {
-                    "$ref": "#/definitions/repositories.TemplateType"
+                    "type": "string"
                 },
                 "updatedAt": {
                     "type": "string"
                 }
             }
         },
-        "handlers.GetUserApplicationMetadataResponseDto": {
+        "api.GetUserApplicationMetadataResponseDto": {
             "type": "object",
             "additionalProperties": {}
         },
-        "handlers.GetUserByIdResponseDto": {
+        "api.GetUserByIdResponseDto": {
             "type": "object",
             "properties": {
                 "createdAt": {
@@ -3966,11 +4617,11 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.GetUserGlobalMetadataResponseDto": {
+        "api.GetUserGlobalMetadataResponseDto": {
             "type": "object",
             "additionalProperties": {}
         },
-        "handlers.GetUserMetadataResponseDto": {
+        "api.GetUserMetadataResponseDto": {
             "type": "object",
             "properties": {
                 "applicationMetadata": {
@@ -3983,7 +4634,7 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.GetVirtualServerListResponseDto": {
+        "api.GetVirtualServerListResponseDto": {
             "type": "object",
             "properties": {
                 "displayName": {
@@ -3997,9 +4648,15 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.GetVirtualServerResponseDto": {
+        "api.GetVirtualServerResponseDto": {
             "type": "object",
             "properties": {
+                "additionalSigningAlgorithms": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "createdAt": {
                     "type": "string"
                 },
@@ -4012,6 +4669,9 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
+                "primarySigningAlgorithm": {
+                    "type": "string"
+                },
                 "registrationEnabled": {
                     "type": "boolean"
                 },
@@ -4021,24 +4681,32 @@ const docTemplate = `{
                 "requireEmailVerification": {
                     "type": "boolean"
                 },
-                "signingAlgorithm": {
-                    "type": "string"
-                },
                 "updatedAt": {
                     "type": "string"
                 }
             }
         },
-        "handlers.JwksResponseDto": {
+        "api.IdentityProviderClaimMappingDto": {
             "type": "object",
             "properties": {
-                "keys": {
-                    "type": "array",
-                    "items": {}
+                "email": {
+                    "type": "string"
+                },
+                "emailVerified": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "subject": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
                 }
             }
         },
-        "handlers.ListApplicationsResponseDto": {
+        "api.ListApplicationsResponseDto": {
             "type": "object",
             "properties": {
                 "displayName": {
@@ -4058,7 +4726,7 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.ListAuditLogResponseDto": {
+        "api.ListAuditLogResponseDto": {
             "type": "object",
             "properties": {
                 "allowReason": {
@@ -4093,7 +4761,7 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.ListGroupsResponseDto": {
+        "api.ListGroupsResponseDto": {
             "type": "object",
             "properties": {
                 "id": {
@@ -4104,7 +4772,7 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.ListPasswordRulesResponseDto": {
+        "api.ListPasswordRulesResponseDto": {
             "type": "object",
             "properties": {
                 "details": {
@@ -4119,7 +4787,7 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.ListProjectsResponseDto": {
+        "api.ListProjectsResponseDto": {
             "type": "object",
             "properties": {
                 "id": {
@@ -4136,7 +4804,7 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.ListResourceServerScopesResponseDto": {
+        "api.ListResourceServerScopesResponseDto": {
             "type": "object",
             "properties": {
                 "id": {
@@ -4150,7 +4818,7 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.ListResourceServersResponseDto": {
+        "api.ListResourceServersResponseDto": {
             "type": "object",
             "properties": {
                 "id": {
@@ -4164,7 +4832,7 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.ListRolesResponseDto": {
+        "api.ListRolesResponseDto": {
             "type": "object",
             "properties": {
                 "id": {
@@ -4175,18 +4843,18 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.ListTemplatesResponseDto": {
+        "api.ListTemplatesResponseDto": {
             "type": "object",
             "properties": {
                 "id": {
                     "type": "string"
                 },
                 "type": {
-                    "$ref": "#/definitions/repositories.TemplateType"
+                    "type": "string"
                 }
             }
         },
-        "handlers.ListUsersInRoleResponseDto": {
+        "api.ListUsersInRoleResponseDto": {
             "type": "object",
             "properties": {
                 "displayName": {
@@ -4200,7 +4868,7 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.ListUsersResponseDto": {
+        "api.ListUsersResponseDto": {
             "type": "object",
             "properties": {
                 "displayName": {
@@ -4220,6 +4888,395 @@ const docTemplate = `{
                 }
             }
         },
+        "api.PagedApplicationsResponseDto": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.ListApplicationsResponseDto"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/api.Pagination"
+                }
+            }
+        },
+        "api.PagedAuditLogResponseDto": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.ListAuditLogResponseDto"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/api.Pagination"
+                }
+            }
+        },
+        "api.PagedGroupsResponseDto": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.ListGroupsResponseDto"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/api.Pagination"
+                }
+            }
+        },
+        "api.PagedPasswordRuleResponseDto": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.ListPasswordRulesResponseDto"
+                    }
+                }
+            }
+        },
+        "api.PagedProjectsResponseDto": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.ListProjectsResponseDto"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/api.Pagination"
+                }
+            }
+        },
+        "api.PagedResourceServerScopeResponseDto": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.ListResourceServerScopesResponseDto"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/api.Pagination"
+                }
+            }
+        },
+        "api.PagedResourceServersResponseDto": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.ListResourceServersResponseDto"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/api.Pagination"
+                }
+            }
+        },
+        "api.PagedRolesResponseDto": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.ListRolesResponseDto"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/api.Pagination"
+                }
+            }
+        },
+        "api.PagedTemplatesResponseDto": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.ListTemplatesResponseDto"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/api.Pagination"
+                }
+            }
+        },
+        "api.PagedUsersInRoleResponseDto": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.ListUsersInRoleResponseDto"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/api.Pagination"
+                }
+            }
+        },
+        "api.PagedUsersResponseDto": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.ListUsersResponseDto"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/api.Pagination"
+                }
+            }
+        },
+        "api.Pagination": {
+            "type": "object",
+            "properties": {
+                "page": {
+                    "type": "integer"
+                },
+                "size": {
+                    "type": "integer"
+                },
+                "totalItems": {
+                    "type": "integer"
+                },
+                "totalPages": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api.PatchApplicationRequestDto": {
+            "type": "object",
+            "properties": {
+                "accessTokenHeaderType": {
+                    "type": "string",
+                    "enum": [
+                        "at+jwt",
+                        "JWT"
+                    ]
+                },
+                "customClaimsMappingScript": {
+                    "type": "string"
+                },
+                "deviceFlowEnabled": {
+                    "type": "boolean"
+                },
+                "displayName": {
+                    "type": "string"
+                },
+                "postLogoutUris": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "redirectUris": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "signingAlgorithm": {
+                    "type": "string",
+                    "enum": [
+                        "RS256",
+                        "EdDSA"
+                    ]
+                },
+                "trustedExchangers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "userinfoInAccessToken": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "api.PatchPasswordRuleRequestDto": {
+            "type": "object",
+            "additionalProperties": {}
+        },
+        "api.PatchRoleRequestDto": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.PatchUserApplicationMetadataRequestDto": {
+            "type": "object",
+            "additionalProperties": {}
+        },
+        "api.PatchUserGlobalMetadataRequestDto": {
+            "type": "object",
+            "additionalProperties": {}
+        },
+        "api.PatchUserRequestDto": {
+            "type": "object",
+            "properties": {
+                "displayName": {
+                    "type": "string"
+                },
+                "emailVerified": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "api.PatchVirtualServerRequestDto": {
+            "type": "object",
+            "properties": {
+                "additionalSigningAlgorithms": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "displayName": {
+                    "type": "string"
+                },
+                "enableRegistration": {
+                    "type": "boolean"
+                },
+                "primarySigningAlgorithm": {
+                    "type": "string",
+                    "enum": [
+                        "RS256",
+                        "EdDSA"
+                    ]
+                },
+                "require2fa": {
+                    "type": "boolean"
+                },
+                "requireEmailVerification": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "api.RegisterUserRequestDto": {
+            "type": "object",
+            "required": [
+                "displayName",
+                "email",
+                "password",
+                "username"
+            ],
+            "properties": {
+                "displayName": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                },
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                }
+            }
+        },
+        "api.UpdateUserApplicationMetadataRequestDto": {
+            "type": "object",
+            "additionalProperties": {}
+        },
+        "api.UpdateUserGlobalMetadataRequestDto": {
+            "type": "object",
+            "additionalProperties": {}
+        },
+        "handlers.CodeFlowResponse": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string"
+                },
+                "expires_in": {
+                    "type": "integer"
+                },
+                "id_token": {
+                    "type": "string"
+                },
+                "refresh_token": {
+                    "type": "string"
+                },
+                "scope": {
+                    "type": "string"
+                },
+                "token_type": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.GetLoginStateResponseDto": {
+            "type": "object",
+            "properties": {
+                "applicationDisplayName": {
+                    "type": "string"
+                },
+                "identityProviders": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.LoginIdentityProviderDto"
+                    }
+                },
+                "signupEnabled": {
+                    "type": "boolean"
+                },
+                "step": {
+                    "description": "Step is one of: password_verification | temporary_password | email_verification | finish",
+                    "type": "string"
+                },
+                "totpSecret": {
+                    "type": "string"
+                },
+                "virtualServerDisplayName": {
+                    "type": "string"
+                },
+                "virtualServerName": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.JwksResponseDto": {
+            "type": "object",
+            "properties": {
+                "keys": {
+                    "type": "array",
+                    "items": {}
+                }
+            }
+        },
+        "handlers.LoginIdentityProviderDto": {
+            "type": "object",
+            "properties": {
+                "displayName": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
         "handlers.OidcUserInfoResponseDto": {
             "type": "object",
             "properties": {
@@ -4230,6 +5287,9 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "name": {
+                    "type": "string"
+                },
+                "preferred_username": {
                     "type": "string"
                 },
                 "sub": {
@@ -4260,6 +5320,9 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
+                "device_authorization_endpoint": {
+                    "type": "string"
+                },
                 "end_session_endpoint": {
                     "type": "string"
                 },
@@ -4282,6 +5345,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "request_parameter_supported": {
+                    "type": "boolean"
+                },
+                "request_uri_parameter_supported": {
                     "type": "boolean"
                 },
                 "response_types_supported": {
@@ -4311,224 +5377,14 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
+                "token_endpoint_auth_signing_alg_values_supported": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "userinfo_endpoint": {
                     "type": "string"
-                }
-            }
-        },
-        "handlers.PagedApplicationsResponseDto": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/handlers.ListApplicationsResponseDto"
-                    }
-                },
-                "pagination": {
-                    "$ref": "#/definitions/handlers.Pagination"
-                }
-            }
-        },
-        "handlers.PagedAuditLogResponseDto": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/handlers.ListAuditLogResponseDto"
-                    }
-                },
-                "pagination": {
-                    "$ref": "#/definitions/handlers.Pagination"
-                }
-            }
-        },
-        "handlers.PagedGroupsResponseDto": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/handlers.ListGroupsResponseDto"
-                    }
-                },
-                "pagination": {
-                    "$ref": "#/definitions/handlers.Pagination"
-                }
-            }
-        },
-        "handlers.PagedPasswordRuleResponseDto": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/handlers.ListPasswordRulesResponseDto"
-                    }
-                }
-            }
-        },
-        "handlers.PagedProjectsResponseDto": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/handlers.ListProjectsResponseDto"
-                    }
-                },
-                "pagination": {
-                    "$ref": "#/definitions/handlers.Pagination"
-                }
-            }
-        },
-        "handlers.PagedResourceServerScopeResponseDto": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/handlers.ListResourceServerScopesResponseDto"
-                    }
-                },
-                "pagination": {
-                    "$ref": "#/definitions/handlers.Pagination"
-                }
-            }
-        },
-        "handlers.PagedResourceServersResponseDto": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/handlers.ListResourceServersResponseDto"
-                    }
-                },
-                "pagination": {
-                    "$ref": "#/definitions/handlers.Pagination"
-                }
-            }
-        },
-        "handlers.PagedRolesResponseDto": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/handlers.ListRolesResponseDto"
-                    }
-                },
-                "pagination": {
-                    "$ref": "#/definitions/handlers.Pagination"
-                }
-            }
-        },
-        "handlers.PagedTemplatesResponseDto": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/handlers.ListTemplatesResponseDto"
-                    }
-                },
-                "pagination": {
-                    "$ref": "#/definitions/handlers.Pagination"
-                }
-            }
-        },
-        "handlers.PagedUsersInRoleResponseDto": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/handlers.ListUsersInRoleResponseDto"
-                    }
-                },
-                "pagination": {
-                    "$ref": "#/definitions/handlers.Pagination"
-                }
-            }
-        },
-        "handlers.PagedUsersResponseDto": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/handlers.ListUsersResponseDto"
-                    }
-                },
-                "pagination": {
-                    "$ref": "#/definitions/handlers.Pagination"
-                }
-            }
-        },
-        "handlers.Pagination": {
-            "type": "object",
-            "properties": {
-                "page": {
-                    "type": "integer"
-                },
-                "size": {
-                    "type": "integer"
-                },
-                "totalItems": {
-                    "type": "integer"
-                },
-                "totalPages": {
-                    "type": "integer"
-                }
-            }
-        },
-        "handlers.PatchApplicationRequestDto": {
-            "type": "object",
-            "properties": {
-                "customClaimsMappingScript": {
-                    "type": "string"
-                },
-                "displayName": {
-                    "type": "string"
-                }
-            }
-        },
-        "handlers.PatchPasswordRuleRequestDto": {
-            "type": "object",
-            "additionalProperties": {}
-        },
-        "handlers.PatchUserApplicationMetadataRequestDto": {
-            "type": "object",
-            "additionalProperties": {}
-        },
-        "handlers.PatchUserGlobalMetadataRequestDto": {
-            "type": "object",
-            "additionalProperties": {}
-        },
-        "handlers.PatchUserRequestDto": {
-            "type": "object",
-            "properties": {
-                "displayName": {
-                    "type": "string"
-                }
-            }
-        },
-        "handlers.PatchVirtualServerRequestDto": {
-            "type": "object",
-            "properties": {
-                "displayName": {
-                    "type": "string"
-                },
-                "enableRegistration": {
-                    "type": "boolean"
-                },
-                "require2fa": {
-                    "type": "boolean"
-                },
-                "requireEmailVerification": {
-                    "type": "boolean"
                 }
             }
         },
@@ -4552,33 +5408,6 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.RegisterUserRequestDto": {
-            "type": "object",
-            "required": [
-                "displayName",
-                "email",
-                "password",
-                "username"
-            ],
-            "properties": {
-                "displayName": {
-                    "type": "string",
-                    "maxLength": 255,
-                    "minLength": 1
-                },
-                "email": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string"
-                },
-                "username": {
-                    "type": "string",
-                    "maxLength": 255,
-                    "minLength": 1
-                }
-            }
-        },
         "handlers.ResetTemporaryPasswordRequestDto": {
             "type": "object",
             "required": [
@@ -4590,39 +5419,16 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.TokenExchangeResponse": {
+        "handlers.ServiceUserTokenResponse": {
             "type": "object",
             "properties": {
                 "access_token": {
                     "type": "string"
                 },
-                "issued_token_type": {
-                    "type": "string"
+                "expires_in": {
+                    "type": "integer"
                 },
                 "token_type": {
-                    "type": "string"
-                }
-            }
-        },
-        "handlers.UpdateUserApplicationMetadataRequestDto": {
-            "type": "object",
-            "additionalProperties": {}
-        },
-        "handlers.UpdateUserGlobalMetadataRequestDto": {
-            "type": "object",
-            "additionalProperties": {}
-        },
-        "handlers.VerifyPasswordRequestDto": {
-            "type": "object",
-            "required": [
-                "password",
-                "username"
-            ],
-            "properties": {
-                "password": {
-                    "type": "string"
-                },
-                "username": {
                     "type": "string"
                 }
             }
@@ -4637,15 +5443,6 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
-        },
-        "repositories.TemplateType": {
-            "type": "string",
-            "enum": [
-                "email_verification"
-            ],
-            "x-enum-varnames": [
-                "EmailVerificationMailTemplate"
-            ]
         }
     },
     "securityDefinitions": {

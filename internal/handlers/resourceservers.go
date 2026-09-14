@@ -23,7 +23,7 @@ import (
 // @Accept json
 // @Param vsName path string true "Virtual server name"  default(keyline)
 // @Param projectSlug path string true "Project slug"
-// @Param request body CreateResourceServerRequestDto true "Application data"
+// @Param request body api.CreateResourceServerRequestDto true "Application data"
 // @Success      204  {string} string "No Content"
 // @Failure 400
 // @Failure 500
@@ -84,7 +84,7 @@ func CreateResourceServer(w http.ResponseWriter, r *http.Request) {
 // @Param orderBy query string false "Order by field"
 // @Param orderDir query string false "Order direction (asc|desc)"
 // @Param search query string false "Search term"
-// @Success 200 {object} PagedResourceServersResponseDto
+// @Success 200 {object} api.PagedResourceServersResponseDto
 // @Failure 400
 // @Failure 500
 // @Router /api/virtual-servers/{vsName}/projects/{projectSlug}/resource-servers [get]
@@ -148,7 +148,7 @@ func ListResourceServers(w http.ResponseWriter, r *http.Request) {
 // @Param vsName path string true "Virtual server name"  default(keyline)
 // @Param projectSlug path string true "Project slug"
 // @Param resourceServerId path string true "Resource server ID (UUID)"
-// @Success 200 {object} GetResourceServerResponseDto
+// @Success 200 {object} api.GetResourceServerResponseDto
 // @Failure 400
 // @Failure 404 "Resource server not found"
 // @Failure 500

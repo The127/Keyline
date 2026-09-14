@@ -22,8 +22,8 @@ import (
 // @Accept json
 // @Produce json
 // @Param vsName path string true "Virtual server name"  default(keyline)
-// @Param request body CreateProjectRequestDto true "Application data"
-// @Success 201 {object} CreateProjectResponseDto
+// @Param request body api.CreateProjectRequestDto true "Application data"
+// @Success 201 {object} api.CreateProjectResponseDto
 // @Failure 400
 // @Failure 500
 // @Router /api/virtual-servers/{vsName}/projects [post]
@@ -87,7 +87,7 @@ func CreateProject(w http.ResponseWriter, r *http.Request) {
 // @Param orderBy query string false "Order by field"
 // @Param orderDir query string false "Order direction (asc|desc)"
 // @Param search query string false "Search term"
-// @Success 200 {object} PagedProjectsResponseDto
+// @Success 200 {object} api.PagedProjectsResponseDto
 // @Failure 400
 // @Failure 500
 // @Router /api/virtual-servers/{vsName}/projects [get]
