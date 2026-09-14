@@ -70,6 +70,10 @@ jobs:
           version: v2.13.2
           working-directory: client
 
+      - name: Check client module dependencies
+        working-directory: client
+        run: go run github.com/arch-go/arch-go@v1.7.0
+
   test:
     runs-on: ubuntu-latest
     needs: [signoff]

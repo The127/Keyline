@@ -1,0 +1,13 @@
+version: 1
+threshold:
+  compliance: 100
+  coverage: 100
+dependenciesRules:
+  - package: '**.client.**'
+    shouldOnlyDependsOn:
+      internal:
+        - '**.client.**'
+      external:
+        - github.com/golang-jwt/jwt/v5
+        - github.com/google/uuid
+        - golang.org/x/oauth2

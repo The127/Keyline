@@ -72,6 +72,10 @@ fmt:
     go fmt ./...
     cd client && go fmt ./...
 
+arch:
+    @echo "🏛️ Checking client module dependencies..."
+    cd client && go run github.com/arch-go/arch-go@v1.7.0
+
 # -----------------------------
 # Utility
 # -----------------------------
@@ -92,6 +96,7 @@ ci fix="":
     @echo "🏗️ Running full CI pipeline..."
     just fmt
     just lint {{fix}}
+    just arch
     just test
     just integration
     just e2e
