@@ -653,7 +653,14 @@ func OidcEndSession(w http.ResponseWriter, r *http.Request) {
 
 	redirectUriString := r.Form.Get("post_logout_redirect_uri")
 	if redirectUriString == "" {
-		redirectUriString = application.RedirectUris()[0]
+		err = middlewares.DeleteSession(w, r, vsName)
+		if err != nil {
+			utils.HandleHttpError(w, err)
+			return
+		}
+
+		http.Redirect(w, r, fmt.Sprintf("%s/%s/logout/success", config.C.Frontend.ExternalUrl, vsName), http.StatusFound)
+		return
 	}
 
 	if !slices.Contains(application.PostLogoutRedirectUris(), redirectUriString) {
