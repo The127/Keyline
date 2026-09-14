@@ -201,6 +201,71 @@ func (s *CreateVirtualServerCommandSuite) TestProjectSlugWithAColonIsRefusedBefo
 	s.ErrorIs(err, utils.ErrHttpBadRequest)
 }
 
+func (s *CreateVirtualServerCommandSuite) TestJavascriptRedirectUriIsRefusedBeforeAnythingIsCreated() {
+	// arrange
+	ctrl := gomock.NewController(s.T())
+	defer ctrl.Finish()
+
+	ctx := s.createContext(ctrl, nil, nil, nil, nil, nil, nil, nil, nil)
+	cmd := CreateVirtualServer{
+		Name:        "virtualServer",
+		DisplayName: "Virtual Server",
+		Projects: []CreateVirtualServerProject{
+			{
+				Slug: "project",
+				Name: "Project",
+				Applications: []CreateVirtualServerProjectApplication{
+					{
+						Name:         "my-app",
+						DisplayName:  "My App",
+						Type:         "public",
+						RedirectUris: []string{"javascript:alert(document.domain)"},
+					},
+				},
+			},
+		},
+	}
+
+	// act
+	_, err := HandleCreateVirtualServer(ctx, cmd)
+
+	// assert
+	s.ErrorIs(err, utils.ErrHttpBadRequest)
+}
+
+func (s *CreateVirtualServerCommandSuite) TestJavascriptPostLogoutRedirectUriIsRefusedBeforeAnythingIsCreated() {
+	// arrange
+	ctrl := gomock.NewController(s.T())
+	defer ctrl.Finish()
+
+	ctx := s.createContext(ctrl, nil, nil, nil, nil, nil, nil, nil, nil)
+	cmd := CreateVirtualServer{
+		Name:        "virtualServer",
+		DisplayName: "Virtual Server",
+		Projects: []CreateVirtualServerProject{
+			{
+				Slug: "project",
+				Name: "Project",
+				Applications: []CreateVirtualServerProjectApplication{
+					{
+						Name:           "my-app",
+						DisplayName:    "My App",
+						Type:           "public",
+						RedirectUris:   []string{"http://localhost/callback"},
+						PostLogoutUris: []string{"javascript:alert(document.domain)"},
+					},
+				},
+			},
+		},
+	}
+
+	// act
+	_, err := HandleCreateVirtualServer(ctx, cmd)
+
+	// assert
+	s.ErrorIs(err, utils.ErrHttpBadRequest)
+}
+
 func (s *CreateVirtualServerCommandSuite) TestApplicationWithAHyphenatedNameIsCreated() {
 	// arrange
 	ctrl := gomock.NewController(s.T())

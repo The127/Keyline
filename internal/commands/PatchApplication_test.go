@@ -84,6 +84,62 @@ func (s *PatchApplicationCommandSuite) setupVSAndProject(ctrl *gomock.Controller
 	return virtualServer, project, virtualServerRepository, projectRepository
 }
 
+func (s *PatchApplicationCommandSuite) TestJavascriptRedirectUriIsRefused() {
+	// arrange
+	ctrl := gomock.NewController(s.T())
+	defer ctrl.Finish()
+
+	now := time.Now()
+	virtualServer, project, virtualServerRepository, projectRepository := s.setupVSAndProject(ctrl, now)
+
+	application := repositories.NewApplication(virtualServer.Id(), project.Id(), "application", "Application", repositories.ApplicationTypePublic, []string{})
+	application.Mock(now)
+	applicationRepository := mocks.NewMockApplicationRepository(ctrl)
+	applicationRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(application, nil)
+
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, applicationRepository)
+	cmd := PatchApplication{
+		VirtualServerName: virtualServer.Name(),
+		ProjectSlug:       project.Slug(),
+		ApplicationId:     application.Id(),
+		RedirectUris:      utils.Ptr([]string{"javascript:alert(document.domain)"}),
+	}
+
+	// act
+	_, err := HandlePatchApplication(ctx, cmd)
+
+	// assert
+	s.ErrorIs(err, utils.ErrHttpBadRequest)
+}
+
+func (s *PatchApplicationCommandSuite) TestJavascriptPostLogoutRedirectUriIsRefused() {
+	// arrange
+	ctrl := gomock.NewController(s.T())
+	defer ctrl.Finish()
+
+	now := time.Now()
+	virtualServer, project, virtualServerRepository, projectRepository := s.setupVSAndProject(ctrl, now)
+
+	application := repositories.NewApplication(virtualServer.Id(), project.Id(), "application", "Application", repositories.ApplicationTypePublic, []string{})
+	application.Mock(now)
+	applicationRepository := mocks.NewMockApplicationRepository(ctrl)
+	applicationRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(application, nil)
+
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, applicationRepository)
+	cmd := PatchApplication{
+		VirtualServerName:      virtualServer.Name(),
+		ProjectSlug:            project.Slug(),
+		ApplicationId:          application.Id(),
+		PostLogoutRedirectUris: utils.Ptr([]string{"javascript:alert(document.domain)"}),
+	}
+
+	// act
+	_, err := HandlePatchApplication(ctx, cmd)
+
+	// assert
+	s.ErrorIs(err, utils.ErrHttpBadRequest)
+}
+
 func (s *PatchApplicationCommandSuite) TestHappyPath() {
 	// arrange
 	ctrl := gomock.NewController(s.T())

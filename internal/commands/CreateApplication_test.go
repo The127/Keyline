@@ -106,7 +106,80 @@ func (s *CreateApplicationCommandSuite) TestNameWithAColonIsRefused() {
 		Name:              "project:api",
 		DisplayName:       "Display Name",
 		Type:              repositories.ApplicationTypePublic,
-		RedirectUris:      []string{"redirectUri"},
+		RedirectUris:      []string{"https://app.example.com/callback"},
+	}
+
+	// act
+	_, err := HandleCreateApplication(ctx, cmd)
+
+	// assert
+	s.ErrorIs(err, utils.ErrHttpBadRequest)
+}
+
+func (s *CreateApplicationCommandSuite) TestJavascriptRedirectUriIsRefused() {
+	// arrange
+	ctrl := gomock.NewController(s.T())
+	defer ctrl.Finish()
+
+	now := time.Now()
+
+	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
+	virtualServer.Mock(now)
+	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
+	virtualServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
+
+	project := repositories.NewProject(virtualServer.Id(), "project", "Project", "Test Project")
+	project.Mock(now)
+	projectRepository := mocks.NewMockProjectRepository(ctrl)
+	projectRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(project, nil)
+
+	applicationRepository := mocks.NewMockApplicationRepository(ctrl)
+
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, applicationRepository)
+	cmd := CreateApplication{
+		VirtualServerName: virtualServer.Name(),
+		ProjectSlug:       "project",
+		Name:              "application",
+		DisplayName:       "Display Name",
+		Type:              repositories.ApplicationTypePublic,
+		RedirectUris:      []string{"javascript:alert(document.domain)"},
+	}
+
+	// act
+	_, err := HandleCreateApplication(ctx, cmd)
+
+	// assert
+	s.ErrorIs(err, utils.ErrHttpBadRequest)
+}
+
+func (s *CreateApplicationCommandSuite) TestJavascriptPostLogoutRedirectUriIsRefused() {
+	// arrange
+	ctrl := gomock.NewController(s.T())
+	defer ctrl.Finish()
+
+	now := time.Now()
+
+	virtualServer := repositories.NewVirtualServer("virtualServer", "Virtual Server")
+	virtualServer.Mock(now)
+	virtualServerRepository := mocks.NewMockVirtualServerRepository(ctrl)
+	virtualServerRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(virtualServer, nil)
+
+	project := repositories.NewProject(virtualServer.Id(), "project", "Project", "Test Project")
+	project.Mock(now)
+	projectRepository := mocks.NewMockProjectRepository(ctrl)
+	projectRepository.EXPECT().FirstOrErr(gomock.Any(), gomock.Any()).Return(project, nil)
+
+	applicationRepository := mocks.NewMockApplicationRepository(ctrl)
+
+	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, applicationRepository)
+	cmd := CreateApplication{
+		VirtualServerName:      virtualServer.Name(),
+		ProjectSlug:            "project",
+		Name:                   "application",
+		DisplayName:            "Display Name",
+		Type:                   repositories.ApplicationTypePublic,
+		RedirectUris:           []string{"https://app.example.com/callback"},
+		PostLogoutRedirectUris: []string{"javascript:alert(document.domain)"},
 	}
 
 	// act
@@ -143,8 +216,8 @@ func (s *CreateApplicationCommandSuite) TestPublicApplicationHappyPath() {
 			x.Type() == repositories.ApplicationTypePublic &&
 			x.HashedSecret() == "" &&
 			x.DisplayName() == "Display Name" &&
-			x.RedirectUris()[0] == "redirectUri1" &&
-			x.RedirectUris()[1] == "redirectUri2"
+			x.RedirectUris()[0] == "https://app.example.com/callback1" &&
+			x.RedirectUris()[1] == "https://app.example.com/callback2"
 	}))
 
 	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, applicationRepository)
@@ -155,8 +228,8 @@ func (s *CreateApplicationCommandSuite) TestPublicApplicationHappyPath() {
 		DisplayName:       "Display Name",
 		Type:              repositories.ApplicationTypePublic,
 		RedirectUris: []string{
-			"redirectUri1",
-			"redirectUri2",
+			"https://app.example.com/callback1",
+			"https://app.example.com/callback2",
 		},
 	}
 
@@ -195,8 +268,8 @@ func (s *CreateApplicationCommandSuite) TestConfidentialApplicationHappyPath() {
 			x.Type() == repositories.ApplicationTypeConfidential &&
 			x.HashedSecret() != "" &&
 			x.DisplayName() == "Display Name" &&
-			x.RedirectUris()[0] == "redirectUri1" &&
-			x.RedirectUris()[1] == "redirectUri2"
+			x.RedirectUris()[0] == "https://app.example.com/callback1" &&
+			x.RedirectUris()[1] == "https://app.example.com/callback2"
 	}))
 
 	ctx := s.createContext(ctrl, virtualServerRepository, projectRepository, applicationRepository)
@@ -207,8 +280,8 @@ func (s *CreateApplicationCommandSuite) TestConfidentialApplicationHappyPath() {
 		DisplayName:       "Display Name",
 		Type:              repositories.ApplicationTypeConfidential,
 		RedirectUris: []string{
-			"redirectUri1",
-			"redirectUri2",
+			"https://app.example.com/callback1",
+			"https://app.example.com/callback2",
 		},
 	}
 
@@ -256,7 +329,7 @@ func (s *CreateApplicationCommandSuite) TestConfidentialApplicationDefaultsToCli
 		Name:              "applicationName",
 		DisplayName:       "Display Name",
 		Type:              repositories.ApplicationTypeConfidential,
-		RedirectUris:      []string{"redirectUri1"},
+		RedirectUris:      []string{"https://app.example.com/callback1"},
 	}
 
 	// act
@@ -287,7 +360,7 @@ func (s *CreateApplicationCommandSuite) TestPrivateKeyJwtApplicationHasNoSecret(
 		Name:                    "applicationName",
 		DisplayName:             "Display Name",
 		Type:                    repositories.ApplicationTypeConfidential,
-		RedirectUris:            []string{"redirectUri1"},
+		RedirectUris:            []string{"https://app.example.com/callback1"},
 		TokenEndpointAuthMethod: utils.Ptr(repositories.TokenEndpointAuthMethodPrivateKeyJwt),
 	}
 
@@ -314,7 +387,7 @@ func (s *CreateApplicationCommandSuite) TestPrivateKeyJwtApplicationRejectsHashe
 		Name:                    "applicationName",
 		DisplayName:             "Display Name",
 		Type:                    repositories.ApplicationTypeConfidential,
-		RedirectUris:            []string{"redirectUri1"},
+		RedirectUris:            []string{"https://app.example.com/callback1"},
 		HashedSecret:            utils.Ptr("hashed"),
 		TokenEndpointAuthMethod: utils.Ptr(repositories.TokenEndpointAuthMethodPrivateKeyJwt),
 	}
@@ -341,7 +414,7 @@ func (s *CreateApplicationCommandSuite) TestPublicApplicationRejectsTokenEndpoin
 		Name:                    "applicationName",
 		DisplayName:             "Display Name",
 		Type:                    repositories.ApplicationTypePublic,
-		RedirectUris:            []string{"redirectUri1"},
+		RedirectUris:            []string{"https://app.example.com/callback1"},
 		TokenEndpointAuthMethod: utils.Ptr(repositories.TokenEndpointAuthMethodClientSecret),
 	}
 
