@@ -7,6 +7,7 @@ import (
 	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/change"
 	"github.com/The127/Keyline/utils"
+	"net/url"
 	"slices"
 	"strings"
 
@@ -80,6 +81,46 @@ func ValidateApplicationName(name string) error {
 	if strings.Contains(name, ":") {
 		return fmt.Errorf("application name %q must not contain a colon: %w", name, utils.ErrHttpBadRequest)
 	}
+	return nil
+}
+
+func ValidateRedirectUri(uri string) error {
+	parsed, err := url.Parse(uri)
+	if err != nil {
+		return fmt.Errorf("redirect uri %q is not a valid uri: %w", uri, utils.ErrHttpBadRequest)
+	}
+
+	if strings.Contains(uri, "#") {
+		return fmt.Errorf("redirect uri %q must not contain a fragment: %w", uri, utils.ErrHttpBadRequest)
+	}
+
+	if parsed.Scheme == "https" || parsed.Scheme == "http" {
+		if parsed.Hostname() == "" {
+			return fmt.Errorf("redirect uri %q must name a host: %w", uri, utils.ErrHttpBadRequest)
+		}
+
+		return nil
+	}
+
+	if !strings.Contains(parsed.Scheme, ".") {
+		return fmt.Errorf("redirect uri %q must use https, http or a reverse domain name scheme: %w", uri, utils.ErrHttpBadRequest)
+	}
+
+	if parsed.Opaque == "" && parsed.Path == "" {
+		return fmt.Errorf("redirect uri %q must have a path after its scheme: %w", uri, utils.ErrHttpBadRequest)
+	}
+
+	return nil
+}
+
+func ValidateRedirectUris(uris []string) error {
+	for _, uri := range uris {
+		err := ValidateRedirectUri(uri)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

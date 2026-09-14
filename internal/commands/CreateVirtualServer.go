@@ -150,6 +150,16 @@ func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer)
 			if err != nil {
 				return nil, err
 			}
+
+			err = repositories.ValidateRedirectUris(app.RedirectUris)
+			if err != nil {
+				return nil, err
+			}
+
+			err = repositories.ValidateRedirectUris(app.PostLogoutUris)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 

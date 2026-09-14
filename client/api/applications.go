@@ -9,8 +9,8 @@ import (
 type CreateApplicationRequestDto struct {
 	Name                    string   `json:"name" validate:"required,min=1,max=255"`
 	DisplayName             string   `json:"displayName" validate:"required,min=1,max=255"`
-	RedirectUris            []string `json:"redirectUris" validate:"required,dive,url,min=1"`
-	PostLogoutUris          []string `json:"postLogoutUris" validate:"dive,url"`
+	RedirectUris            []string `json:"redirectUris" validate:"required,dive,min=1"`
+	PostLogoutUris          []string `json:"postLogoutUris" validate:"dive,min=1"`
 	Type                    string   `json:"type" validate:"required,oneof=public confidential"`
 	AccessTokenHeaderType   *string  `json:"accessTokenHeaderType" validate:"omitempty,oneof=at+jwt JWT"`
 	DeviceFlowEnabled       bool     `json:"deviceFlowEnabled"`

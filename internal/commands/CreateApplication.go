@@ -85,6 +85,16 @@ func HandleCreateApplication(ctx context.Context, command CreateApplication) (*C
 		return nil, err
 	}
 
+	err = repositories.ValidateRedirectUris(command.RedirectUris)
+	if err != nil {
+		return nil, err
+	}
+
+	err = repositories.ValidateRedirectUris(command.PostLogoutRedirectUris)
+	if err != nil {
+		return nil, err
+	}
+
 	application := repositories.NewApplication(virtualServer.Id(), project.Id(), command.Name, command.DisplayName, command.Type, command.RedirectUris)
 
 	if command.TokenEndpointAuthMethod != nil {

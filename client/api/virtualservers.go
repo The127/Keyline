@@ -38,8 +38,8 @@ type CreateVirtualServerRequestDtoProjectDtoApplicationDto struct {
 	DisplayName             string                                                     `json:"displayName" validate:"required,min=1,max=255"`
 	Type                    string                                                     `json:"type" validate:"required,oneof=public confidential"`
 	HashedSecret            *string                                                    `json:"hashedSecret"`
-	RedirectUris            []string                                                   `json:"redirectUris" validate:"required,dive,url,min=1"`
-	PostLogoutUris          []string                                                   `json:"postLogoutUris" validate:"dive,url"`
+	RedirectUris            []string                                                   `json:"redirectUris" validate:"required,dive,min=1"`
+	PostLogoutUris          []string                                                   `json:"postLogoutUris" validate:"dive,min=1"`
 	TokenEndpointAuthMethod *string                                                    `json:"tokenEndpointAuthMethod,omitempty" validate:"omitempty,oneof=client_secret private_key_jwt"`
 	PublicKeys              []CreateVirtualServerRequestDtoProjectDtoApplicationKeyDto `json:"publicKeys,omitempty" validate:"dive"`
 	UserinfoInAccessToken   bool                                                       `json:"userinfoInAccessToken"`
