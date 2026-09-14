@@ -4,6 +4,7 @@ package e2e
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/The127/Keyline/client"
 	"github.com/The127/Keyline/client/api"
@@ -14,6 +15,8 @@ import (
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/repositories"
 	"github.com/The127/Keyline/utils"
+	"net/http"
+	"net/url"
 
 	"github.com/The127/ioc"
 	"github.com/The127/mediatr"
@@ -67,6 +70,22 @@ func init() {
 				It("rejects missing openid scope", func() {
 					_, err := h.Client().Oidc().BeginDeviceFlow(h.Ctx(), deviceAppName, "profile")
 					Expect(err).To(HaveOccurred())
+				})
+
+				It("rejects a resource server scope", func() {
+					form := url.Values{
+						"client_id": {deviceAppName},
+						"scope":     {"openid mungbean:k8s"},
+					}
+
+					response, err := http.PostForm(fmt.Sprintf("%s/oidc/%s/device", h.ApiUrl(), h.VirtualServer()), form)
+					Expect(err).ToNot(HaveOccurred())
+					defer response.Body.Close() //nolint:errcheck
+
+					var body map[string]any
+					Expect(json.NewDecoder(response.Body).Decode(&body)).To(Succeed())
+					Expect(response.StatusCode).To(Equal(http.StatusBadRequest))
+					Expect(body["error"]).To(Equal("invalid_scope"))
 				})
 
 				It("returns device authorization response", func() {

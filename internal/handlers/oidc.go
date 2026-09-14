@@ -1665,6 +1665,11 @@ func BeginDeviceFlow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if asksForResourceServerScope(scopes) {
+		writeOAuthError(w, invalidScope.Error, invalidScope.ErrorDescription)
+		return
+	}
+
 	dbContext := ioc.GetDependency[database.Context](scope)
 
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(vsName)
