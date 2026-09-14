@@ -60,9 +60,9 @@ func init() {
 			// the id_token_hint check itself doesn't need a live session, so
 			// reuse across specs would still work — fresh tokens just keep
 			// failure modes isolated).
-			mintIdToken := func() string {
+			loginAndMintIdToken := func() (string, string) {
 				challenge := authCodePkceChallenge(endSessionPkceVerifier)
-				code, err := endSessionAuthCodeFlow(h.ApiUrl(), h.VirtualServer(), endSessionSharedApp, endSessionVictimURI, challenge)
+				code, sessionCookie, err := endSessionAuthCodeFlow(h.ApiUrl(), h.VirtualServer(), endSessionSharedApp, endSessionVictimURI, challenge)
 				Expect(err).ToNot(HaveOccurred())
 
 				form := url.Values{}
@@ -80,6 +80,11 @@ func init() {
 				body := readJSON(resp)
 				idTok, _ := body["id_token"].(string)
 				Expect(idTok).ToNot(BeEmpty())
+				return idTok, sessionCookie
+			}
+
+			mintIdToken := func() string {
+				idTok, _ := loginAndMintIdToken()
 				return idTok
 			}
 
@@ -127,6 +132,30 @@ func init() {
 					location, err := url.Parse(resp.Header.Get("Location"))
 					Expect(err).ToNot(HaveOccurred())
 					Expect(location.Query().Get("state")).To(Equal("logout-state"))
+				})
+
+				It("ends the session and shows the logged out page without a post_logout_redirect_uri", func() {
+					idTok, sessionCookie := loginAndMintIdToken()
+					httpClient := &http.Client{
+						CheckRedirect: func(req *http.Request, via []*http.Request) error {
+							return http.ErrUseLastResponse
+						},
+					}
+					q := url.Values{}
+					q.Set("id_token_hint", idTok)
+					req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/oidc/%s/end_session?%s", h.ApiUrl(), h.VirtualServer(), q.Encode()), nil)
+					Expect(err).ToNot(HaveOccurred())
+					req.Header.Set("Cookie", sessionCookie)
+					resp, err := httpClient.Do(req)
+					Expect(err).ToNot(HaveOccurred())
+					defer resp.Body.Close() //nolint:errcheck
+
+					Expect(resp.StatusCode).To(Equal(http.StatusFound))
+					Expect(resp.Header.Get("Location")).To(Equal(fmt.Sprintf("%s/%s/logout/success", config.C.Frontend.ExternalUrl, h.VirtualServer())))
+					Expect(resp.Header.Values("Set-Cookie")).To(ContainElement(And(
+						HavePrefix(middlewares.GetSessionCookieName(h.VirtualServer())+"="),
+						ContainSubstring("Max-Age=0"),
+					)))
 				})
 
 				It("rejects a post_logout_redirect_uri that is registered ONLY in another VS's same-named app (REGRESSION: cross-tenant lookup)", func() {
@@ -178,7 +207,7 @@ func init() {
 // endSessionAuthCodeFlow drives /authorize -> /verify-password -> /finish-login
 // in a target VS, returning the authorization code. Mirrors authCodeFlow but
 // parameterized over the VS name so it can be used against the attacker VS too.
-func endSessionAuthCodeFlow(serverUrl, vs, clientId, redirectUri, codeChallenge string) (string, error) {
+func endSessionAuthCodeFlow(serverUrl, vs, clientId, redirectUri, codeChallenge string) (string, string, error) {
 	httpClient := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
@@ -198,21 +227,21 @@ func endSessionAuthCodeFlow(serverUrl, vs, clientId, redirectUri, codeChallenge 
 
 	resp, err := httpClient.Get(authorizeURL + "?" + q.Encode())
 	if err != nil {
-		return "", fmt.Errorf("authorize: %w", err)
+		return "", "", fmt.Errorf("authorize: %w", err)
 	}
 
 	_ = resp.Body.Close()
 	if resp.StatusCode != http.StatusFound {
-		return "", fmt.Errorf("authorize: expected 302, got %d", resp.StatusCode)
+		return "", "", fmt.Errorf("authorize: expected 302, got %d", resp.StatusCode)
 	}
 
 	loc, err := url.Parse(resp.Header.Get("Location"))
 	if err != nil {
-		return "", fmt.Errorf("parsing login redirect: %w", err)
+		return "", "", fmt.Errorf("parsing login redirect: %w", err)
 	}
 	loginToken := loc.Query().Get("token")
 	if loginToken == "" {
-		return "", fmt.Errorf("no login token in /authorize redirect: %s", resp.Header.Get("Location"))
+		return "", "", fmt.Errorf("no login token in /authorize redirect: %s", resp.Header.Get("Location"))
 	}
 
 	credentialsBody := fmt.Sprintf(`{"username":%q,"password":%q}`, endSessionUser, endSessionPassword)
@@ -222,26 +251,26 @@ func endSessionAuthCodeFlow(serverUrl, vs, clientId, redirectUri, codeChallenge 
 		strings.NewReader(credentialsBody),
 	)
 	if err != nil {
-		return "", fmt.Errorf("verify-password: %w", err)
+		return "", "", fmt.Errorf("verify-password: %w", err)
 	}
 
 	_ = resp.Body.Close()
 	if resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("verify-password: status %d", resp.StatusCode)
+		return "", "", fmt.Errorf("verify-password: status %d", resp.StatusCode)
 	}
 
 	resp, err = httpClient.Post(fmt.Sprintf("%s/logins/%s/finish-login", serverUrl, loginToken), "", nil)
 	if err != nil {
-		return "", fmt.Errorf("finish-login: %w", err)
+		return "", "", fmt.Errorf("finish-login: %w", err)
 	}
 
 	_ = resp.Body.Close()
 	if resp.StatusCode != http.StatusFound {
-		return "", fmt.Errorf("finish-login: expected 302, got %d", resp.StatusCode)
+		return "", "", fmt.Errorf("finish-login: expected 302, got %d", resp.StatusCode)
 	}
 	cookieHdr := resp.Header.Get("Set-Cookie")
 	if cookieHdr == "" {
-		return "", fmt.Errorf("finish-login: no Set-Cookie")
+		return "", "", fmt.Errorf("finish-login: no Set-Cookie")
 	}
 	sessionCookie := strings.SplitN(cookieHdr, ";", 2)[0]
 	nextURL := resp.Header.Get("Location")
@@ -251,31 +280,31 @@ func endSessionAuthCodeFlow(serverUrl, vs, clientId, redirectUri, codeChallenge 
 
 	req, err := http.NewRequest(http.MethodGet, nextURL, nil)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	req.Header.Set("Cookie", sessionCookie)
 	resp, err = httpClient.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("second authorize: %w", err)
+		return "", "", fmt.Errorf("second authorize: %w", err)
 	}
 
 	_ = resp.Body.Close()
 	if resp.StatusCode != http.StatusFound {
-		return "", fmt.Errorf("second authorize: expected 302, got %d", resp.StatusCode)
+		return "", "", fmt.Errorf("second authorize: expected 302, got %d", resp.StatusCode)
 	}
 
 	finalURL, err := url.Parse(resp.Header.Get("Location"))
 	if err != nil {
-		return "", fmt.Errorf("parsing final redirect: %w", err)
+		return "", "", fmt.Errorf("parsing final redirect: %w", err)
 	}
 	if errStr := finalURL.Query().Get("error"); errStr != "" {
-		return "", fmt.Errorf("authorize returned error: %s (%s)", errStr, finalURL.Query().Get("error_description"))
+		return "", "", fmt.Errorf("authorize returned error: %s (%s)", errStr, finalURL.Query().Get("error_description"))
 	}
 	code := finalURL.Query().Get("code")
 	if code == "" {
-		return "", fmt.Errorf("no code in final redirect: %s", resp.Header.Get("Location"))
+		return "", "", fmt.Errorf("no code in final redirect: %s", resp.Header.Get("Location"))
 	}
-	return code, nil
+	return code, sessionCookie, nil
 }
 
 func readJSON(resp *http.Response) map[string]any {
