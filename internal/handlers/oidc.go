@@ -54,6 +54,11 @@ var (
 		ErrorDescription: "The redirect_uri in the Authorization Request does not match a pre-registered value.",
 		ErrorUri:         "https://datatracker.ietf.org/doc/html/rfc6749#section-3.1.2",
 	}
+	invalidScope = OidcError{
+		Error:            "invalid_scope",
+		ErrorDescription: "The requested scope is invalid, unknown, or malformed.",
+		ErrorUri:         "https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.2.1",
+	}
 )
 
 type Ed25519JWK struct {
@@ -421,6 +426,11 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if asksForResourceServerScope(authRequest.Scopes) {
+		errorRedirect(w, r, authRequest, invalidScope)
+		return
+	}
+
 	// PKCE policy (OAuth 2.1): the authorization code flow MUST use PKCE.
 	// We accept S256 only -- "plain" is trivially bypassable by an attacker
 	// who can read the request and is no longer recommended.
@@ -555,6 +565,12 @@ func errorRedirect(w http.ResponseWriter, r *http.Request, authRequest Authoriza
 	errorUrl.RawQuery = query.Encode()
 
 	http.Redirect(w, r, errorUrl.String(), http.StatusFound)
+}
+
+func asksForResourceServerScope(scopes []string) bool {
+	return slices.ContainsFunc(scopes, func(requestedScope string) bool {
+		return strings.Contains(requestedScope, ":")
+	})
 }
 
 // OidcEndSession ends the user session and redirects.
@@ -1646,6 +1662,11 @@ func BeginDeviceFlow(w http.ResponseWriter, r *http.Request) {
 
 	if !slices.Contains(scopes, "openid") {
 		writeOAuthError(w, "invalid_scope", "required openid scope missing")
+		return
+	}
+
+	if asksForResourceServerScope(scopes) {
+		writeOAuthError(w, invalidScope.Error, invalidScope.ErrorDescription)
 		return
 	}
 

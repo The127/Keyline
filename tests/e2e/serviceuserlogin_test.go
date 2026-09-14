@@ -153,6 +153,15 @@ func init() {
 				Expect(body["error"]).To(Equal("invalid_request"))
 			})
 
+			It("refuses a resource server scope", func() {
+				status, body := loginServiceUser(h, serviceUserAssertion(serviceUserPrivateKey, issuer, now, nil), func(form url.Values) {
+					form.Set("scope", "openid mungbean:k8s")
+				})
+
+				Expect(status).To(Equal(http.StatusBadRequest))
+				Expect(body["error"]).To(Equal("invalid_scope"))
+			})
+
 			Describe("refuses a request", func() {
 				cases := map[string]func(url.Values){
 					"for an unknown application": func(form url.Values) {

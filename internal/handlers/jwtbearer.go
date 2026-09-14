@@ -42,6 +42,11 @@ func handleJwtBearer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if asksForResourceServerScope(scopes) {
+		writeOAuthError(w, invalidScope.Error, invalidScope.ErrorDescription)
+		return
+	}
+
 	ctx := r.Context()
 	scope := middlewares.GetScope(ctx)
 	dbContext := ioc.GetDependency[database.Context](scope)
