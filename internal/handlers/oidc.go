@@ -340,31 +340,31 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 	if requestParam != "" {
 		token, _, err := new(jwt.Parser).ParseUnverified(requestParam, jwt.MapClaims{})
 		if err != nil {
-			utils.HandleHttpError(w, fmt.Errorf("parsing request parameter: %w", err))
+			utils.HandleHttpError(w, fmt.Errorf("parsing request parameter: %w: %w", err, utils.ErrHttpBadRequest))
 			return
 		}
 
 		if claims, ok := token.Claims.(jwt.MapClaims); ok {
-			if claims["response_type"] != nil {
-				authRequest.ResponseTypes = strings.Split(claims["response_type"].(string), " ")
+			setters := map[string]func(string){
+				"response_type": func(value string) { authRequest.ResponseTypes = strings.Split(value, " ") },
+				"client_id":     func(value string) { authRequest.ApplicationName = value },
+				"redirect_uri":  func(value string) { authRequest.RedirectUri = value },
+				"scope":         func(value string) { authRequest.Scopes = strings.Split(value, " ") },
+				"state":         func(value string) { authRequest.State = value },
+				"nonce":         func(value string) { authRequest.Nonce = value },
+				"response_mode": func(value string) { authRequest.ResponseMode = value },
 			}
-			if claims["client_id"] != nil {
-				authRequest.ApplicationName = claims["client_id"].(string)
-			}
-			if claims["redirect_uri"] != nil {
-				authRequest.RedirectUri = claims["redirect_uri"].(string)
-			}
-			if claims["scope"] != nil {
-				authRequest.Scopes = strings.Split(claims["scope"].(string), " ")
-			}
-			if claims["state"] != nil {
-				authRequest.State = claims["state"].(string)
-			}
-			if claims["nonce"] != nil {
-				authRequest.Nonce = claims["nonce"].(string)
-			}
-			if claims["response_mode"] != nil {
-				authRequest.ResponseMode = claims["response_mode"].(string)
+
+			for name, set := range setters {
+				value, present, err := requestObjectClaim(claims, name)
+				if err != nil {
+					utils.HandleHttpError(w, err)
+					return
+				}
+
+				if present {
+					set(value)
+				}
 			}
 		}
 
@@ -571,6 +571,20 @@ func asksForResourceServerScope(scopes []string) bool {
 	return slices.ContainsFunc(scopes, func(requestedScope string) bool {
 		return strings.Contains(requestedScope, ":")
 	})
+}
+
+func requestObjectClaim(claims jwt.MapClaims, name string) (string, bool, error) {
+	value, present := claims[name]
+	if !present || value == nil {
+		return "", false, nil
+	}
+
+	text, isString := value.(string)
+	if !isString {
+		return "", false, fmt.Errorf("request object claim %s must be a string: %w", name, utils.ErrHttpBadRequest)
+	}
+
+	return text, true, nil
 }
 
 // OidcEndSession ends the user session and redirects.
