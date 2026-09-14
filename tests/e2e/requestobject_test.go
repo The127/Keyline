@@ -36,18 +36,24 @@ func init() {
 
 			for _, claim := range []string{"response_type", "client_id", "redirect_uri", "scope", "state", "nonce", "response_mode"} {
 				It("refuses a "+claim+" claim that is not a string", func() {
-					status, _ := authorizeWithRequestObject(h, jwt.MapClaims{
+					status, _ := authorizeWithRequestObject(h, unsignedRequestObject(jwt.MapClaims{
 						claim: 123,
-					})
+					}))
 
 					Expect(status).To(Equal(http.StatusBadRequest))
 				})
 			}
 
+			It("refuses a request object that is not a JWT", func() {
+				status, _ := authorizeWithRequestObject(h, "not.a.jwt")
+
+				Expect(status).To(Equal(http.StatusBadRequest))
+			})
+
 			It("applies a string claim", func() {
-				status, location := authorizeWithRequestObject(h, jwt.MapClaims{
+				status, location := authorizeWithRequestObject(h, unsignedRequestObject(jwt.MapClaims{
 					"response_type": "token",
-				})
+				}))
 
 				Expect(status).To(Equal(http.StatusFound))
 				Expect(location.Query().Get("error")).To(Equal("unsupported_response_type"))
@@ -56,10 +62,14 @@ func init() {
 	}
 }
 
-func authorizeWithRequestObject(h *harness, claims jwt.MapClaims) (int, *url.URL) {
+func unsignedRequestObject(claims jwt.MapClaims) string {
 	requestObject, err := jwt.NewWithClaims(jwt.SigningMethodNone, claims).SignedString(jwt.UnsafeAllowNoneSignatureType)
 	Expect(err).ToNot(HaveOccurred())
 
+	return requestObject
+}
+
+func authorizeWithRequestObject(h *harness, requestObject string) (int, *url.URL) {
 	httpClient := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse

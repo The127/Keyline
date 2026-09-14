@@ -340,7 +340,7 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 	if requestParam != "" {
 		token, _, err := new(jwt.Parser).ParseUnverified(requestParam, jwt.MapClaims{})
 		if err != nil {
-			utils.HandleHttpError(w, fmt.Errorf("parsing request parameter: %w", err))
+			utils.HandleHttpError(w, fmt.Errorf("parsing request parameter: %w: %w", err, utils.ErrHttpBadRequest))
 			return
 		}
 
