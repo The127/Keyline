@@ -19,7 +19,7 @@ require (
 	github.com/gorilla/mux v1.8.1
 	github.com/hashicorp/raft v1.8.0
 	github.com/hashicorp/vault/api v1.23.0
-	github.com/huandu/go-sqlbuilder v1.43.0
+	github.com/huandu/go-sqlbuilder v1.44.0
 	github.com/knadh/koanf/parsers/yaml v1.1.1
 	github.com/knadh/koanf/providers/env/v2 v2.0.1
 	github.com/knadh/koanf/providers/file v1.2.1
