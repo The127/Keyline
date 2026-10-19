@@ -229,16 +229,16 @@ func init() {
 	}
 }
 
-func setupDeviceFlowClientAuthFixtures(scope *ioc.DependencyProvider) (string, error) {
-	subscope := scope.NewScope()
-	defer utils.PanicOnError(subscope.Close, "closing scope")
+func setupDeviceFlowClientAuthFixtures(scopeIn *ioc.DependencyProvider) (string, error) {
+	scope := scopeIn.NewScope()
+	defer utils.PanicOnError(scope.Close, "closing scope")
 
 	ctx := context.Background()
-	ctx = middlewares.ContextWithScope(ctx, subscope)
+	ctx = middlewares.ContextWithScope(ctx, scope)
 	ctx = authentication.ContextWithCurrentUser(ctx, authentication.SystemUser())
 
-	m := ioc.GetDependency[mediatr.Mediator](subscope)
-	dbContext := ioc.GetDependency[database.Context](subscope)
+	m := scope.GetDependency[mediatr.Mediator]()
+	dbContext := scope.GetDependency[database.Context]()
 
 	_, err := mediatr.Send[*commands.CreateProjectResponse](ctx, m, commands.CreateProject{
 		VirtualServerName: "test-vs",

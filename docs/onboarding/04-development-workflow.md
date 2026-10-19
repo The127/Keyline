@@ -226,8 +226,8 @@ func HandleDeactivateUser(
     
     // Get scope and dependencies
     scope := middlewares.GetScope(ctx)
-    userRepo := ioc.GetDependency[repositories.UserRepository](scope)
-    m := ioc.GetDependency[mediatr.Mediator](scope)
+    userRepo := scope.GetDependency[repositories.UserRepository]()
+    m := scope.GetDependency[mediatr.Mediator]()
     
     // Get user
     filter := repositories.NewUserFilter().Id(cmd.UserID)

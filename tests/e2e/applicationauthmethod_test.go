@@ -14,7 +14,6 @@ import (
 	"github.com/The127/Keyline/internal/queries"
 	"github.com/The127/Keyline/internal/repositories"
 	"github.com/The127/Keyline/utils"
-	"github.com/The127/ioc"
 	"github.com/The127/mediatr"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -123,8 +122,8 @@ func init() {
 				defer utils.PanicOnError(scope.Close, "closing scope")
 				ctx := middlewares.ContextWithScope(context.Background(), scope)
 				ctx = authentication.ContextWithCurrentUser(ctx, authentication.SystemUser())
-				m := ioc.GetDependency[mediatr.Mediator](scope)
-				dbContext := ioc.GetDependency[database.Context](scope)
+				m := scope.GetDependency[mediatr.Mediator]()
+				dbContext := scope.GetDependency[database.Context]()
 
 				const vsName = "auth-method-vs"
 				created, err := mediatr.Send[*commands.CreateVirtualServerResponse](ctx, m, commands.CreateVirtualServer{

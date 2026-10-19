@@ -3,12 +3,11 @@ package claimsMapping
 import (
 	"context"
 	"fmt"
+
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/logging"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/repositories"
-
-	"github.com/The127/ioc"
 
 	"github.com/dop251/goja"
 	"github.com/google/uuid"
@@ -44,7 +43,7 @@ func defaultMapping(params Params) map[string]any {
 
 func (c *claimsMapper) MapClaims(ctx context.Context, applicationId uuid.UUID, params Params) map[string]any {
 	scope := middlewares.GetScope(ctx)
-	dbContext := ioc.GetDependency[database.Context](scope)
+	dbContext := scope.GetDependency[database.Context]()
 
 	applicationFilter := repositories.NewApplicationFilter().
 		Id(applicationId)

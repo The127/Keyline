@@ -6,16 +6,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/repositories"
 	"github.com/The127/Keyline/internal/services/keyValue"
 	"github.com/The127/Keyline/utils"
-	"time"
 
 	"github.com/The127/go-clock"
-	"github.com/The127/ioc"
-
 	"github.com/google/uuid"
 )
 
@@ -33,7 +32,7 @@ func NewSessionService() middlewares.SessionService {
 
 func (s *sessionService) NewSession(ctx context.Context, virtualServerName string, userId uuid.UUID) (*utils.SplitToken, error) {
 	scope := middlewares.GetScope(ctx)
-	dbContext := ioc.GetDependency[database.Context](scope)
+	dbContext := scope.GetDependency[database.Context]()
 
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(virtualServerName)
 	virtualServer, err := dbContext.VirtualServers().FirstOrErr(ctx, virtualServerFilter)
@@ -41,7 +40,7 @@ func (s *sessionService) NewSession(ctx context.Context, virtualServerName strin
 		return nil, fmt.Errorf("getting virtual server: %w", err)
 	}
 
-	clockService := ioc.GetDependency[clock.Service](scope)
+	clockService := scope.GetDependency[clock.Service]()
 	now := clockService.Now()
 
 	session := repositories.NewSession(virtualServer.Id(), userId, now.Add(time.Hour*24*30))
@@ -54,8 +53,8 @@ func (s *sessionService) NewSession(ctx context.Context, virtualServerName strin
 
 func (s *sessionService) GetSession(ctx context.Context, virtualServerName string, id uuid.UUID) (*middlewares.Session, error) {
 	scope := middlewares.GetScope(ctx)
-	kvStore := ioc.GetDependency[keyValue.Store](scope)
-	clockService := ioc.GetDependency[clock.Service](scope)
+	kvStore := scope.GetDependency[keyValue.Store]()
+	clockService := scope.GetDependency[clock.Service]()
 
 	cacheKey := getCacheKey(virtualServerName, id)
 
@@ -104,7 +103,7 @@ func (s *sessionService) GetSession(ctx context.Context, virtualServerName strin
 
 func (s *sessionService) DeleteSession(ctx context.Context, virtualServerName string, id uuid.UUID) error {
 	scope := middlewares.GetScope(ctx)
-	dbContext := ioc.GetDependency[database.Context](scope)
+	dbContext := scope.GetDependency[database.Context]()
 
 	vsFilter := repositories.NewVirtualServerFilter().Name(virtualServerName)
 	virtualServer, err := dbContext.VirtualServers().FirstOrErr(ctx, vsFilter)
@@ -125,7 +124,7 @@ func (s *sessionService) DeleteSession(ctx context.Context, virtualServerName st
 		return fmt.Errorf("session does not belong to virtual server")
 	}
 
-	kvStore := ioc.GetDependency[keyValue.Store](scope)
+	kvStore := scope.GetDependency[keyValue.Store]()
 
 	cacheKey := getCacheKey(virtualServerName, id)
 	err = kvStore.Delete(ctx, cacheKey)
@@ -140,7 +139,7 @@ func (s *sessionService) DeleteSession(ctx context.Context, virtualServerName st
 
 func (s *sessionService) loadSessionFromDatabase(ctx context.Context, virtualServerName string, id uuid.UUID) (*middlewares.Session, error) {
 	scope := middlewares.GetScope(ctx)
-	dbContext := ioc.GetDependency[database.Context](scope)
+	dbContext := scope.GetDependency[database.Context]()
 
 	vsFilter := repositories.NewVirtualServerFilter().
 		Name(virtualServerName)
@@ -161,7 +160,7 @@ func (s *sessionService) loadSessionFromDatabase(ctx context.Context, virtualSer
 		return nil, nil
 	}
 
-	clockService := ioc.GetDependency[clock.Service](scope)
+	clockService := scope.GetDependency[clock.Service]()
 	return middlewares.NewSession(dbSession.UserId(), dbSession.HashedToken(), clockService.Now()), nil
 }
 

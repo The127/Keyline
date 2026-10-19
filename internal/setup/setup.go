@@ -2,6 +2,7 @@ package setup
 
 import (
 	"fmt"
+
 	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/behaviours"
 	"github.com/The127/Keyline/internal/caching"
@@ -17,10 +18,10 @@ import (
 )
 
 func KeyServices(dc *ioc.DependencyCollection, keyStoreConfig config.KeyStoreConfig) {
-	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) services.KeyCache {
+	ioc.RegisterSingleton(dc, func(scope *ioc.DependencyProvider) services.KeyCache {
 		return caching.NewMemoryCache[services.KeyCacheKey, services.KeyPair]()
 	})
-	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) services.KeyStore {
+	ioc.RegisterSingleton(dc, func(scope *ioc.DependencyProvider) services.KeyStore {
 		switch keyStoreConfig.Mode {
 		case config.KeyStoreModeMemory:
 			return services.NewMemoryKeyStore()
@@ -44,35 +45,35 @@ func KeyServices(dc *ioc.DependencyCollection, keyStoreConfig config.KeyStoreCon
 			panic("not implemented")
 		}
 	})
-	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) services.KeyService {
+	ioc.RegisterSingleton(dc, func(scope *ioc.DependencyProvider) services.KeyService {
 		return services.NewKeyService(
-			ioc.GetDependency[services.KeyCache](dp),
-			ioc.GetDependency[services.KeyStore](dp),
+			scope.GetDependency[services.KeyCache](),
+			scope.GetDependency[services.KeyStore](),
 		)
 	})
 }
 
 func Services(dc *ioc.DependencyCollection) {
-	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) claimsMapping.ClaimsMapper {
+	ioc.RegisterSingleton(dc, func(scope *ioc.DependencyProvider) claimsMapping.ClaimsMapper {
 		return claimsMapping.NewClaimsMapper()
 	})
-	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) services.MailService {
+	ioc.RegisterSingleton(dc, func(scope *ioc.DependencyProvider) services.MailService {
 		return services.NewMailService()
 	})
-	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) services.TemplateService {
+	ioc.RegisterSingleton(dc, func(scope *ioc.DependencyProvider) services.TemplateService {
 		return services.NewTemplateService()
 	})
-	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) *identityproviders.Client {
+	ioc.RegisterSingleton(dc, func(scope *ioc.DependencyProvider) *identityproviders.Client {
 		return identityproviders.NewClient()
 	})
 
-	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) services.TokenService {
+	ioc.RegisterSingleton(dc, func(scope *ioc.DependencyProvider) services.TokenService {
 		return services.NewTokenService()
 	})
-	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) middlewares.SessionService {
+	ioc.RegisterSingleton(dc, func(scope *ioc.DependencyProvider) middlewares.SessionService {
 		return services.NewSessionService()
 	})
-	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) behaviours.AuditLogger {
+	ioc.RegisterSingleton(dc, func(scope *ioc.DependencyProvider) behaviours.AuditLogger {
 		return audit.NewDbAuditLogger()
 	})
 	ioc.RegisterScoped(dc, func(_ *ioc.DependencyProvider) password.Validator {
@@ -81,7 +82,7 @@ func Services(dc *ioc.DependencyCollection) {
 }
 
 func Caching(dc *ioc.DependencyCollection, mode config.CacheMode) {
-	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) keyValue.Store {
+	ioc.RegisterSingleton(dc, func(scope *ioc.DependencyProvider) keyValue.Store {
 		switch mode {
 		case config.CacheModeMemory:
 			return keyValue.NewMemoryStore()

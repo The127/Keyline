@@ -2,14 +2,14 @@ package handlers
 
 import (
 	"encoding/json"
+	"net/http"
+
 	"github.com/The127/Keyline/client/api"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/queries"
 	"github.com/The127/Keyline/internal/repositories"
 	"github.com/The127/Keyline/utils"
-	"net/http"
 
-	"github.com/The127/ioc"
 	"github.com/The127/mediatr"
 
 	"github.com/gorilla/mux"
@@ -41,7 +41,7 @@ func GetTemplate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m := ioc.GetDependency[mediatr.Mediator](scope)
+	m := scope.GetDependency[mediatr.Mediator]()
 	query := queries.GetTemplate{
 		VirtualServerName: vsName,
 		Type:              repositories.TemplateType(templateType),
@@ -93,7 +93,7 @@ func ListTemplates(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[mediatr.Mediator](scope)
+	m := scope.GetDependency[mediatr.Mediator]()
 
 	templates, err := mediatr.Send[*queries.ListTemplatesResponse](ctx, m, queries.ListTemplates{
 		VirtualServerName: vsName,

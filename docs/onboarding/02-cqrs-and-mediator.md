@@ -138,8 +138,8 @@ func HandleCreateUser(
     scope := middlewares.GetScope(ctx)
     
     // Resolve dependencies
-    userRepo := ioc.GetDependency[repositories.UserRepository](scope)
-    m := ioc.GetDependency[mediatr.Mediator](scope)
+    userRepo := scope.GetDependency[repositories.UserRepository]()
+    m := scope.GetDependency[mediatr.Mediator]()
     
     // Validate business rules
     if cmd.Username == "" {
@@ -224,7 +224,7 @@ func HandleGetUser(
     scope := middlewares.GetScope(ctx)
     
     // Resolve dependencies
-    userRepo := ioc.GetDependency[repositories.UserRepository](scope)
+    userRepo := scope.GetDependency[repositories.UserRepository]()
     
     // Retrieve data
     filter := repositories.NewUserFilter().Id(query.UserID)
@@ -315,9 +315,9 @@ func (p *PolicyMiddleware) Handle(
 
 ```go
 func Behaviours(dc *ioc.DependencyCollection) {
-    ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) any {
-        m := ioc.GetDependency[mediatr.Mediator](dp)
-        userRepo := ioc.GetDependency[repositories.UserRepository](dp)
+    ioc.RegisterSingleton(dc, func(scope *ioc.DependencyProvider) any {
+        m := scope.GetDependency[mediatr.Mediator](dp)
+        userRepo := scope.GetDependency[repositories.UserRepository](dp)
         
         behavior := &behaviours.PolicyMiddleware{
             userRepo: userRepo,
@@ -364,8 +364,8 @@ func QueueEmailVerificationJobOnUserCreatedEvent(
     scope := middlewares.GetScope(ctx)
     
     // Get dependencies
-    userRepo := ioc.GetDependency[repositories.UserRepository](scope)
-    emailService := ioc.GetDependency[services.EmailService](scope)
+    userRepo := scope.GetDependency[repositories.UserRepository]()
+    emailService := scope.GetDependency[services.EmailService]()
     
     // Get user
     user, err := userRepo.FirstOrNil(ctx, repositories.NewUserFilter().Id(evt.UserID))
@@ -382,7 +382,7 @@ func CreateAuditLogOnUserCreatedEvent(
     evt UserCreatedEvent,
 ) error {
     scope := middlewares.GetScope(ctx)
-    auditRepo := ioc.GetDependency[repositories.AuditLogRepository](scope)
+    auditRepo := scope.GetDependency[repositories.AuditLogRepository]()
     
     // Create audit log
     return auditRepo.Insert(ctx, repositories.NewAuditLog(
@@ -402,8 +402,8 @@ func HandleCreateUser(
     scope := middlewares.GetScope(ctx)
     
     // Get dependencies
-    userRepo := ioc.GetDependency[repositories.UserRepository](scope)
-    m := ioc.GetDependency[mediatr.Mediator](scope)
+    userRepo := scope.GetDependency[repositories.UserRepository]()
+    m := scope.GetDependency[mediatr.Mediator]()
     
     // Create user...
     user := repositories.NewUser(cmd.Username, cmd.DisplayName, cmd.Email, vsID)
@@ -440,7 +440,7 @@ func (h *UserHandlers) RegisterUser(w http.ResponseWriter, r *http.Request) {
     json.NewDecoder(r.Body).Decode(&dto)
     
     scope := middlewares.GetScope(r.Context())
-    m := ioc.GetDependency[mediatr.Mediator](scope)
+    m := scope.GetDependency[mediatr.Mediator]()
     
     // Send command via mediator
     result, err := mediatr.Send[*commands.RegisterUserResponse](
@@ -469,9 +469,9 @@ func HandleRegisterUser(
 ) (*commands.RegisterUserResponse, error) {
     scope := middlewares.GetScope(ctx)
     
-    vsRepo := ioc.GetDependency[repositories.VirtualServerRepository](scope)
-    userRepo := ioc.GetDependency[repositories.UserRepository](scope)
-    m := ioc.GetDependency[mediatr.Mediator](scope)
+    vsRepo := scope.GetDependency[repositories.VirtualServerRepository]()
+    userRepo := scope.GetDependency[repositories.UserRepository]()
+    m := scope.GetDependency[mediatr.Mediator]()
     
     // 1. Check if registration is enabled
     vs, err := vsRepo.FirstOrNil(ctx, repositories.NewVirtualServerFilter().Name(cmd.VirtualServerName))
@@ -514,8 +514,8 @@ func QueueEmailVerificationJobOnUserCreatedEvent(
 ) error {
     scope := middlewares.GetScope(ctx)
     
-    userRepo := ioc.GetDependency[repositories.UserRepository](scope)
-    tokenService := ioc.GetDependency[services.TokenService](scope)
+    userRepo := scope.GetDependency[repositories.UserRepository]()
+    tokenService := scope.GetDependency[services.TokenService]()
     
     // Get user
     user, err := userRepo.FirstOrNil(ctx, repositories.NewUserFilter().Id(evt.UserID))
@@ -542,7 +542,7 @@ func CreateAuditLogOnUserCreatedEvent(
     evt events.UserCreatedEvent,
 ) error {
     scope := middlewares.GetScope(ctx)
-    auditRepo := ioc.GetDependency[repositories.AuditLogRepository](scope)
+    auditRepo := scope.GetDependency[repositories.AuditLogRepository]()
     
     return auditRepo.Insert(ctx, repositories.NewAuditLog("user_created", evt.UserID))
 }
@@ -571,7 +571,7 @@ func HandleGetApplication(
 ) (*GetApplicationResponse, error) {
     scope := middlewares.GetScope(ctx)
     
-    appRepo := ioc.GetDependency[repositories.ApplicationRepository](scope)
+    appRepo := scope.GetDependency[repositories.ApplicationRepository]()
     
     // Get application
     filter := repositories.NewApplicationFilter().Id(query.ApplicationID)
@@ -602,10 +602,10 @@ func HandleAssignRole(
 ) (*AssignRoleResponse, error) {
     scope := middlewares.GetScope(ctx)
     
-    db := ioc.GetDependency[*sql.DB](scope)
-    roleRepo := ioc.GetDependency[repositories.RoleRepository](scope)
-    assignmentRepo := ioc.GetDependency[repositories.RoleAssignmentRepository](scope)
-    m := ioc.GetDependency[mediatr.Mediator](scope)
+    db := scope.GetDependency[*sql.DB]()
+    roleRepo := scope.GetDependency[repositories.RoleRepository]()
+    assignmentRepo := scope.GetDependency[repositories.RoleAssignmentRepository]()
+    m := scope.GetDependency[mediatr.Mediator]()
     
     // Start transaction
     tx, err := db.BeginTx(ctx, nil)

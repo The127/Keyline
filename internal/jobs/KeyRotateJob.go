@@ -3,6 +3,8 @@ package jobs
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/logging"
@@ -10,7 +12,6 @@ import (
 	"github.com/The127/Keyline/internal/repositories"
 	"github.com/The127/Keyline/internal/services"
 	"github.com/The127/Keyline/utils"
-	"time"
 
 	"github.com/The127/go-clock"
 	"github.com/The127/ioc"
@@ -21,7 +22,7 @@ func KeyRotateJob() JobFn {
 		scope := middlewares.GetScope(ctx).NewScope()
 		defer utils.PanicOnError(scope.Close, "failed to close scope")
 
-		dbContext := ioc.GetDependency[database.Context](scope)
+		dbContext := scope.GetDependency[database.Context]()
 
 		virtualServerFilter := repositories.NewVirtualServerFilter()
 		virtualServers, _, err := dbContext.VirtualServers().List(ctx, virtualServerFilter)
@@ -41,14 +42,14 @@ func KeyRotateJob() JobFn {
 	}
 }
 
-func rotateKeysForVirtualServer(dp *ioc.DependencyProvider, server *repositories.VirtualServer) error {
-	keyStore := ioc.GetDependency[services.KeyStore](dp)
+func rotateKeysForVirtualServer(scope *ioc.DependencyProvider, server *repositories.VirtualServer) error {
+	keyStore := scope.GetDependency[services.KeyStore]()
 	keyPairs, err := keyStore.GetAll(server.Name())
 	if err != nil {
 		return fmt.Errorf("getting key pairs: %w", err)
 	}
 
-	clockService := ioc.GetDependency[clock.Service](dp)
+	clockService := scope.GetDependency[clock.Service]()
 
 	err = deleteExpiredKeys(keyPairs, keyStore, server.Name(), clockService.Now())
 	if err != nil {
@@ -60,7 +61,7 @@ func rotateKeysForVirtualServer(dp *ioc.DependencyProvider, server *repositories
 		return fmt.Errorf("deleting orphan keys: %w", err)
 	}
 
-	keyService := ioc.GetDependency[services.KeyService](dp)
+	keyService := scope.GetDependency[services.KeyService]()
 	err = generateNewKeys(keyPairs, keyService, server, clockService)
 	if err != nil {
 		return fmt.Errorf("generating new key: %w", err)

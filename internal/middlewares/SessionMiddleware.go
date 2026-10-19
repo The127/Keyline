@@ -4,12 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/The127/Keyline/config"
-	"github.com/The127/Keyline/utils"
 	"net/http"
 	"time"
 
-	"github.com/The127/ioc"
+	"github.com/The127/Keyline/config"
+	"github.com/The127/Keyline/utils"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
@@ -78,7 +77,7 @@ func SessionMiddleware() mux.MiddlewareFunc {
 				return
 			}
 
-			sessionService := ioc.GetDependency[SessionService](scope)
+			sessionService := scope.GetDependency[SessionService]()
 			session, err := sessionService.GetSession(ctx, vsName, tokenId)
 			if err != nil {
 				utils.HandleHttpError(w, fmt.Errorf("getting session: %w", err))
@@ -122,7 +121,7 @@ func DeleteSession(w http.ResponseWriter, r *http.Request, vsName string) error 
 		return nil
 	}
 
-	sessionService := ioc.GetDependency[SessionService](scope)
+	sessionService := scope.GetDependency[SessionService]()
 	err := sessionService.DeleteSession(ctx, vsName, s.SessionId())
 	if err != nil {
 		return fmt.Errorf("deleting session: %w", err)
@@ -137,7 +136,7 @@ func CreateSession(w http.ResponseWriter, r *http.Request, vsName string, userId
 	ctx := r.Context()
 	scope := GetScope(ctx)
 
-	sessionService := ioc.GetDependency[SessionService](scope)
+	sessionService := scope.GetDependency[SessionService]()
 	sessionToken, err := sessionService.NewSession(ctx, vsName, userId)
 	if err != nil {
 		return fmt.Errorf("creating session: %w", err)

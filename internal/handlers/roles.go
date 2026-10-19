@@ -2,14 +2,14 @@ package handlers
 
 import (
 	"encoding/json"
+	"net/http"
+
 	"github.com/The127/Keyline/client/api"
 	"github.com/The127/Keyline/internal/commands"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/queries"
 	"github.com/The127/Keyline/utils"
-	"net/http"
 
-	"github.com/The127/ioc"
 	"github.com/The127/mediatr"
 
 	"github.com/google/uuid"
@@ -49,7 +49,7 @@ func GetRoleById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m := ioc.GetDependency[mediatr.Mediator](scope)
+	m := scope.GetDependency[mediatr.Mediator]()
 	query := queries.GetRoleQuery{
 		VirtualServerName: vsName,
 		ProjectSlug:       projectSlug,
@@ -113,7 +113,7 @@ func ListRoles(w http.ResponseWriter, r *http.Request) {
 	projectSlug := vars["projectSlug"]
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[mediatr.Mediator](scope)
+	m := scope.GetDependency[mediatr.Mediator]()
 
 	roles, err := mediatr.Send[*queries.ListRolesResponse](ctx, m, queries.ListRoles{
 		VirtualServerName: vsName,
@@ -186,7 +186,7 @@ func CreateRole(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[mediatr.Mediator](scope)
+	m := scope.GetDependency[mediatr.Mediator]()
 
 	response, err := mediatr.Send[*commands.CreateRoleResponse](ctx, m, commands.CreateRole{
 		VirtualServerName: vsName,
@@ -257,7 +257,7 @@ func AssignRole(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[mediatr.Mediator](scope)
+	m := scope.GetDependency[mediatr.Mediator]()
 
 	_, err = mediatr.Send[*commands.AssignRoleToUserResponse](ctx, m, commands.AssignRoleToUser{
 		VirtualServerName: vsName,
@@ -316,7 +316,7 @@ func ListUsersInRole(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[mediatr.Mediator](scope)
+	m := scope.GetDependency[mediatr.Mediator]()
 
 	users, err := mediatr.Send[*queries.ListUsersInRoleResponse](ctx, m, queries.ListUsersInRole{
 		VirtualServerName: vsName,
@@ -392,7 +392,7 @@ func PatchRole(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[mediatr.Mediator](scope)
+	m := scope.GetDependency[mediatr.Mediator]()
 
 	_, err = mediatr.Send[*commands.PatchRoleResponse](ctx, m, commands.PatchRole{
 		VirtualServerName: vsName,
@@ -440,7 +440,7 @@ func DeleteRole(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[mediatr.Mediator](scope)
+	m := scope.GetDependency[mediatr.Mediator]()
 
 	_, err = mediatr.Send[*commands.DeleteRoleResponse](ctx, m, commands.DeleteRole{
 		VirtualServerName: vsName,

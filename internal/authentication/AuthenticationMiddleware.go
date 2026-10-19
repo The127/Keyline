@@ -3,16 +3,15 @@ package authentication
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"strings"
+
 	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/authentication/permissions"
 	"github.com/The127/Keyline/internal/authentication/roles"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/services"
 	"github.com/The127/Keyline/utils"
-	"net/http"
-	"strings"
-
-	"github.com/The127/ioc"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -105,7 +104,7 @@ func extractUserFromBearerToken(ctx context.Context, authorizationHeader string,
 		return CurrentUser{}, fmt.Errorf("empty token: %w", utils.ErrHttpUnauthorized)
 	}
 
-	keyService := ioc.GetDependency[services.KeyService](scope)
+	keyService := scope.GetDependency[services.KeyService]()
 
 	// TODO: use the key id to get the key and refactor key infrastructure
 	token, err := parseTokenWithVS(tokenString, keyService, vsName)

@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 	"fmt"
+
 	"github.com/The127/Keyline/internal/authentication/permissions"
 	"github.com/The127/Keyline/internal/behaviours"
 	"github.com/The127/Keyline/internal/database"
@@ -10,7 +11,6 @@ import (
 	"github.com/The127/Keyline/internal/repositories"
 	"github.com/The127/Keyline/utils"
 
-	"github.com/The127/ioc"
 	"github.com/google/uuid"
 )
 
@@ -41,7 +41,7 @@ type SetPasswordResponse struct{}
 
 func HandleSetPassword(ctx context.Context, command SetPassword) (*SetPasswordResponse, error) {
 	scope := middlewares.GetScope(ctx)
-	dbContext := ioc.GetDependency[database.Context](scope)
+	dbContext := scope.GetDependency[database.Context]()
 
 	hashedPassword := utils.HashPassword(command.NewPassword)
 

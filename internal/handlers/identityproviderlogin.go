@@ -7,6 +7,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"net/url"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/events"
@@ -17,13 +23,7 @@ import (
 	"github.com/The127/Keyline/internal/services"
 	"github.com/The127/Keyline/internal/services/identityproviders"
 	"github.com/The127/Keyline/utils"
-	"net/http"
-	"net/url"
-	"strconv"
-	"strings"
-	"time"
 
-	"github.com/The127/ioc"
 	"github.com/The127/mediatr"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
@@ -70,7 +70,7 @@ func StartIdentityProviderLogin(w http.ResponseWriter, r *http.Request) {
 	loginToken := vars["loginToken"]
 	providerName := vars["name"]
 
-	tokenService := ioc.GetDependency[services.TokenService](scope)
+	tokenService := scope.GetDependency[services.TokenService]()
 	rawLoginInfo, err := tokenService.GetToken(ctx, services.LoginSessionTokenType, loginToken)
 	switch {
 	case errors.Is(err, services.ErrTokenNotFound):
@@ -94,7 +94,7 @@ func StartIdentityProviderLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dbContext := ioc.GetDependency[database.Context](scope)
+	dbContext := scope.GetDependency[database.Context]()
 	identityProviderFilter := repositories.NewIdentityProviderFilter().
 		VirtualServerId(loginInfo.VirtualServerId).
 		Name(providerName)
@@ -219,7 +219,7 @@ func IdentityProviderCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tokenService := ioc.GetDependency[services.TokenService](scope)
+	tokenService := scope.GetDependency[services.TokenService]()
 	rawIdentityProviderLogin, err := tokenService.GetToken(ctx, services.IdentityProviderLoginTokenType, state)
 	switch {
 	case errors.Is(err, services.ErrTokenNotFound):
@@ -306,7 +306,7 @@ func IdentityProviderCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dbContext := ioc.GetDependency[database.Context](scope)
+	dbContext := scope.GetDependency[database.Context]()
 	identityProviderFilter := repositories.NewIdentityProviderFilter().
 		VirtualServerId(loginInfo.VirtualServerId).
 		Name(providerName)
@@ -321,7 +321,7 @@ func IdentityProviderCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	upstream := ioc.GetDependency[*identityproviders.Client](scope)
+	upstream := scope.GetDependency[*identityproviders.Client]()
 	settings := identityProvider.Settings()
 
 	tokens, err := upstream.Exchange(ctx, settings, code, identityProviderCallbackUrl(virtualServerName, providerName), identityProviderLogin.CodeVerifier)
@@ -480,7 +480,7 @@ func resolveExternalIdentity(ctx context.Context, upstream *identityproviders.Cl
 
 func registerExternalIdentity(ctx context.Context, virtualServerId uuid.UUID, identityProvider *repositories.IdentityProvider, identity externalIdentity) (*repositories.User, error) {
 	scope := middlewares.GetScope(ctx)
-	dbContext := ioc.GetDependency[database.Context](scope)
+	dbContext := scope.GetDependency[database.Context]()
 
 	virtualServer, err := dbContext.VirtualServers().FirstOrErr(ctx, repositories.NewVirtualServerFilter().Id(virtualServerId))
 	if err != nil {
@@ -539,7 +539,7 @@ func registerExternalIdentity(ctx context.Context, virtualServerId uuid.UUID, id
 		Subject:            identity.Subject,
 	}))
 
-	m := ioc.GetDependency[mediatr.Mediator](scope)
+	m := scope.GetDependency[mediatr.Mediator]()
 	err = mediatr.SendEvent(ctx, m, events.UserCreatedEvent{
 		User: user,
 	})

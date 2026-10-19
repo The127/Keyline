@@ -23,7 +23,6 @@ import (
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/repositories"
 	"github.com/The127/Keyline/utils"
-	"github.com/The127/ioc"
 	"github.com/The127/mediatr"
 	"github.com/google/uuid"
 
@@ -287,14 +286,14 @@ func dexSubjectOfAlice() string {
 }
 
 func linkUserToDex(h *harness, identityProviderId uuid.UUID, username string, subject string) {
-	subscope := h.Scope().NewScope()
-	defer utils.PanicOnError(subscope.Close, "closing scope")
+	scope := h.Scope().NewScope()
+	defer utils.PanicOnError(scope.Close, "closing scope")
 
-	ctx := middlewares.ContextWithScope(context.Background(), subscope)
+	ctx := middlewares.ContextWithScope(context.Background(), scope)
 	ctx = authentication.ContextWithCurrentUser(ctx, authentication.SystemUser())
 
-	m := ioc.GetDependency[mediatr.Mediator](subscope)
-	dbContext := ioc.GetDependency[database.Context](subscope)
+	m := scope.GetDependency[mediatr.Mediator]()
+	dbContext := scope.GetDependency[database.Context]()
 
 	userResp, err := mediatr.Send[*commands.CreateUserResponse](ctx, m, commands.CreateUser{
 		VirtualServerName: "test-vs",

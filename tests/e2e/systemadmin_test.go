@@ -20,7 +20,6 @@ import (
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/utils"
-	"github.com/The127/ioc"
 	"github.com/The127/mediatr"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -49,8 +48,8 @@ func setupSystemAdminFixtures(h *harness) {
 
 	ctx := middlewares.ContextWithScope(context.Background(), scope)
 	ctx = authentication.ContextWithCurrentUser(ctx, authentication.SystemUser())
-	m := ioc.GetDependency[mediatr.Mediator](scope)
-	dbContext := ioc.GetDependency[database.Context](scope)
+	m := scope.GetDependency[mediatr.Mediator]()
+	dbContext := scope.GetDependency[database.Context]()
 
 	// Create the system-admin role in the initial VS's system project.
 	// The system project always has slug "system", so the token claim becomes "system:system-admin".

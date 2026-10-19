@@ -2,15 +2,15 @@ package handlers
 
 import (
 	"encoding/json"
+	"net/http"
+
 	"github.com/The127/Keyline/client/api"
 	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/commands"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/queries"
 	"github.com/The127/Keyline/utils"
-	"net/http"
 
-	"github.com/The127/ioc"
 	"github.com/The127/mediatr"
 )
 
@@ -39,7 +39,7 @@ func CreateVirtualServer(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, err)
 		return
 	}
-	m := ioc.GetDependency[mediatr.Mediator](scope)
+	m := scope.GetDependency[mediatr.Mediator]()
 
 	primaryAlgorithm := config.SigningAlgorithmEdDSA
 	if dto.PrimarySigningAlgorithm != nil {
@@ -143,7 +143,7 @@ func GetVirtualServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m := ioc.GetDependency[mediatr.Mediator](scope)
+	m := scope.GetDependency[mediatr.Mediator]()
 	response, err := mediatr.Send[*queries.GetVirtualServerResponse](ctx, m, queries.GetVirtualServerQuery{
 		VirtualServerName: vsName,
 	})
@@ -195,7 +195,7 @@ func GetVirtualServerPublicInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m := ioc.GetDependency[mediatr.Mediator](scope)
+	m := scope.GetDependency[mediatr.Mediator]()
 
 	response, err := mediatr.Send[*queries.GetVirtualServerPublicInfoResponse](ctx, m, queries.GetVirtualServerPublicInfo{
 		VirtualServerName: vsName,
@@ -254,7 +254,7 @@ func PatchVirtualServer(w http.ResponseWriter, r *http.Request) {
 		additionalAlgorithms = &converted
 	}
 
-	m := ioc.GetDependency[mediatr.Mediator](scope)
+	m := scope.GetDependency[mediatr.Mediator]()
 	command := commands.PatchVirtualServer{
 		VirtualServerName:           vsName,
 		DisplayName:                 utils.TrimSpace(dto.DisplayName),

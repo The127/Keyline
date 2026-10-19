@@ -5,11 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/repositories"
-
-	"github.com/The127/ioc"
 )
 
 //go:generate mockgen -destination=./mock/mock_validator.go -package=mock . Validator
@@ -25,7 +24,7 @@ func NewValidator() Validator {
 
 func (v *validator) Validate(ctx context.Context, password string) error {
 	scope := middlewares.GetScope(ctx)
-	dbContext := ioc.GetDependency[database.Context](scope)
+	dbContext := scope.GetDependency[database.Context]()
 
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {

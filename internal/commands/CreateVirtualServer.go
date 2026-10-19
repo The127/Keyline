@@ -3,6 +3,8 @@ package commands
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/authentication/permissions"
 	"github.com/The127/Keyline/internal/behaviours"
@@ -12,11 +14,9 @@ import (
 	"github.com/The127/Keyline/internal/services"
 	"github.com/The127/Keyline/templates"
 	"github.com/The127/Keyline/utils"
-	"strings"
 
 	"github.com/The127/go-clock"
 
-	"github.com/The127/ioc"
 	"github.com/google/uuid"
 )
 
@@ -164,7 +164,7 @@ func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer)
 	}
 
 	scope := middlewares.GetScope(ctx)
-	dbContext := ioc.GetDependency[database.Context](scope)
+	dbContext := scope.GetDependency[database.Context]()
 
 	roleIdsByFullyQualifiedName := make(map[string]uuid.UUID)
 
@@ -176,9 +176,9 @@ func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer)
 
 	dbContext.VirtualServers().Insert(virtualServer)
 
-	clockService := ioc.GetDependency[clock.Service](scope)
+	clockService := scope.GetDependency[clock.Service]()
 
-	keyService := ioc.GetDependency[services.KeyService](scope)
+	keyService := scope.GetDependency[services.KeyService]()
 	var err error
 	for _, alg := range virtualServer.AllSigningAlgorithms() {
 		_, err = keyService.Generate(clockService, command.Name, alg)
@@ -352,7 +352,7 @@ func HandleCreateVirtualServer(ctx context.Context, command CreateVirtualServer)
 
 func assignRoles(ctx context.Context, userId uuid.UUID, roleList []string, roleIdsByFullyQualifiedName map[string]uuid.UUID) error {
 	scope := middlewares.GetScope(ctx)
-	dbContext := ioc.GetDependency[database.Context](scope)
+	dbContext := scope.GetDependency[database.Context]()
 
 	for _, configuredRole := range roleList {
 		if !strings.Contains(configuredRole, ":") {
@@ -377,7 +377,7 @@ type createDefaultApplicationResult struct {
 
 func initializeDefaultApplications(ctx context.Context, virtualServer *repositories.VirtualServer, systemProject *repositories.Project) *createDefaultApplicationResult {
 	scope := middlewares.GetScope(ctx)
-	dbContext := ioc.GetDependency[database.Context](scope)
+	dbContext := scope.GetDependency[database.Context]()
 
 	adminUiApplication := repositories.NewApplication(virtualServer.Id(), systemProject.Id(), AdminApplicationName, "Admin Application", repositories.ApplicationTypePublic, []string{
 		fmt.Sprintf("%s/mgmt/%s/auth", config.C.Frontend.ExternalUrl, virtualServer.Name()),
@@ -402,7 +402,7 @@ type createDefaultAdminUiRolesResult struct {
 
 func initializeDefaultAdminRoles(ctx context.Context, virtualServer *repositories.VirtualServer, project *repositories.Project, createSystemAdminRole bool) *createDefaultAdminUiRolesResult {
 	scope := middlewares.GetScope(ctx)
-	dbContext := ioc.GetDependency[database.Context](scope)
+	dbContext := scope.GetDependency[database.Context]()
 
 	adminRole := repositories.NewRole(
 		virtualServer.Id(),
@@ -445,7 +445,7 @@ func insertTemplate(
 	virtualServer *repositories.VirtualServer,
 ) {
 	scope := middlewares.GetScope(ctx)
-	dbContext := ioc.GetDependency[database.Context](scope)
+	dbContext := scope.GetDependency[database.Context]()
 
 	file := repositories.NewFile(templateName, "text/plain", templates.DefaultEmailVerificationTemplate)
 	dbContext.Files().Insert(file)

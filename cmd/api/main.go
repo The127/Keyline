@@ -12,6 +12,12 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/url"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
 	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/authentication"
 	"github.com/The127/Keyline/internal/commands"
@@ -27,11 +33,6 @@ import (
 	"github.com/The127/Keyline/internal/server"
 	"github.com/The127/Keyline/internal/setup"
 	"github.com/The127/Keyline/utils"
-	"net/url"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
 
 	"github.com/The127/go-clock"
 
@@ -54,7 +55,7 @@ func main() {
 
 	dc := ioc.NewDependencyCollection()
 
-	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) clock.Service {
+	ioc.RegisterSingleton(dc, func(scope *ioc.DependencyProvider) clock.Service {
 		return clock.NewSystemClock()
 	})
 
@@ -133,15 +134,15 @@ func main() {
 
 // initApplication sets up the initial application state on the first startup.
 // It creates an initial virtual server and other necessary defaults if none exist.
-func initApplication(dp *ioc.DependencyProvider) {
-	scope := dp.NewScope()
+func initApplication(scopeIn *ioc.DependencyProvider) {
+	scope := scopeIn.NewScope()
 	defer utils.PanicOnError(scope.Close, "failed creating scope to init application")
 
-	dbContext := ioc.GetDependency[database.Context](scope)
+	dbContext := scope.GetDependency[database.Context]()
 
 	ctx := middlewares.ContextWithScope(context.Background(), scope)
 	ctx = authentication.ContextWithCurrentUser(ctx, authentication.SystemUser())
-	m := ioc.GetDependency[mediatr.Mediator](scope)
+	m := scope.GetDependency[mediatr.Mediator]()
 
 	// check if there are no virtual servers
 	existsResult, err := mediatr.Send[*queries.AnyVirtualServerExistsResult](ctx, m, queries.AnyVirtualServerExists{})

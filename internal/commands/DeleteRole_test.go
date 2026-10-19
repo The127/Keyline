@@ -3,6 +3,9 @@ package commands
 import (
 	"context"
 	"errors"
+	"testing"
+	"time"
+
 	"github.com/The127/Keyline/internal/authentication"
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/middlewares"
@@ -10,8 +13,6 @@ import (
 	"github.com/The127/Keyline/internal/repositories"
 	"github.com/The127/Keyline/internal/repositories/mocks"
 	"github.com/The127/Keyline/utils"
-	"testing"
-	"time"
 
 	"github.com/The127/ioc"
 
@@ -38,7 +39,7 @@ func (s *DeleteRoleCommandSuite) createContext(
 	dc := ioc.NewDependencyCollection()
 
 	dbContext := mocks2.NewMockContext(ctrl)
-	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) database.Context {
+	ioc.RegisterTransient(dc, func(scope *ioc.DependencyProvider) database.Context {
 		return dbContext
 	})
 

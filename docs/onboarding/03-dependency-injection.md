@@ -152,8 +152,8 @@ Dependencies are registered during application startup in `internal/setup/setup.
 ```go
 func SetupServices(dc *ioc.DependencyCollection) {
     // Singleton: Database connection
-    ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) *sql.DB {
-        config := ioc.GetDependency[*config.Config](dp)
+    ioc.RegisterSingleton(dc, func(scope *ioc.DependencyProvider) *sql.DB {
+        config := scope.GetDependency[*config.Config](dp)
         db, err := sql.Open("postgres", config.Database.ConnectionString())
         if err != nil {
             panic(err)
@@ -162,14 +162,14 @@ func SetupServices(dc *ioc.DependencyCollection) {
     })
     
     // Singleton: User repository
-    ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) repositories.UserRepository {
-        db := ioc.GetDependency[*sql.DB](dp)
+    ioc.RegisterSingleton(dc, func(scope *ioc.DependencyProvider) repositories.UserRepository {
+        db := scope.GetDependency[*sql.DB](dp)
         return postgres.NewUserRepository(db)
     })
     
     // Singleton: User service
-    ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) *services.UserService {
-        repo := ioc.GetDependency[repositories.UserRepository](dp)
+    ioc.RegisterSingleton(dc, func(scope *ioc.DependencyProvider) *services.UserService {
+        repo := scope.GetDependency[repositories.UserRepository](dp)
         return services.NewUserService(repo)
     })
 }
@@ -178,10 +178,10 @@ func SetupServices(dc *ioc.DependencyCollection) {
 ### Registration with Multiple Dependencies
 
 ```go
-ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) *TokenService {
-    config := ioc.GetDependency[*config.Config](dp)
-    keyService := ioc.GetDependency[*KeyService](dp)
-    auditService := ioc.GetDependency[*AuditService](dp)
+ioc.RegisterSingleton(dc, func(scope *ioc.DependencyProvider) *TokenService {
+    config := scope.GetDependency[*config.Config](dp)
+    keyService := scope.GetDependency[*KeyService](dp)
+    auditService := scope.GetDependency[*AuditService](dp)
     
     return &TokenService{
         config:       config,
@@ -197,13 +197,13 @@ The IoC container automatically resolves dependencies in the correct order. You 
 
 ```go
 // This works even though UserService is registered before UserRepository
-ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) *UserService {
-    repo := ioc.GetDependency[repositories.UserRepository](dp) // Will be resolved
+ioc.RegisterSingleton(dc, func(scope *ioc.DependencyProvider) *UserService {
+    repo := scope.GetDependency[repositories.UserRepository](dp) // Will be resolved
     return NewUserService(repo)
 })
 
-ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) repositories.UserRepository {
-    db := ioc.GetDependency[*sql.DB](dp)
+ioc.RegisterSingleton(dc, func(scope *ioc.DependencyProvider) repositories.UserRepository {
+    db := scope.GetDependency[*sql.DB](dp)
     return postgres.NewUserRepository(db)
 })
 ```
@@ -227,8 +227,8 @@ func main() {
     provider := dc.BuildProvider()
     
     // 4. Get singleton dependencies
-    mediator := ioc.GetDependency[mediatr.Mediator](provider)
-    router := ioc.GetDependency[*mux.Router](provider)
+    mediator := scope.GetDependency[mediatr.Mediator](provider)
+    router := scope.GetDependency[*mux.Router](provider)
     
     // 5. Start server
     http.ListenAndServe(":8080", router)
@@ -263,7 +263,7 @@ func GetUserHandler(w http.ResponseWriter, r *http.Request) {
     scope := r.Context().Value("scope").(*ioc.DependencyProvider)
     
     // Resolve scoped or singleton dependencies
-    mediator := ioc.GetDependency[mediatr.Mediator](scope)
+    mediator := scope.GetDependency[mediatr.Mediator]()
     
     // Use the dependency
     result, err := mediatr.Send[GetUserResult](r.Context(), GetUserQuery{...})
@@ -306,8 +306,8 @@ Scoped dependencies are automatically cleaned up when the scope closes:
 
 ```go
 // Register a scoped database transaction
-ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) *sql.Tx {
-    db := ioc.GetDependency[*sql.DB](dp)
+ioc.RegisterScoped(dc, func(scope *ioc.DependencyProvider) *sql.Tx {
+    db := scope.GetDependency[*sql.DB](dp)
     tx, _ := db.Begin()
     return tx
 })
@@ -320,7 +320,7 @@ ioc.RegisterCloseHandler(dc, func(tx *sql.Tx) error {
 
 // Usage in request
 scope := provider.NewScope()
-tx := ioc.GetDependency[*sql.Tx](scope)
+tx := scope.GetDependency[*sql.Tx]()
 // ... use transaction
 tx.Commit()
 scope.Close() // Cleanup called here
@@ -374,7 +374,7 @@ func main() {
 	provider := dc.BuildProvider()
 
 	// Start server
-	router := ioc.GetDependency[*mux.Router](provider)
+	router := scope.GetDependency[*mux.Router](provider)
 	http.ListenAndServe(":8080", router)
 }
 ```
@@ -390,20 +390,20 @@ func Repositories(dc *ioc.DependencyCollection, mode config.DatabaseMode, c any)
         pc := c.(config.PostgresConfig)
         
         // User repository
-        ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) repositories.UserRepository {
-            db := ioc.GetDependency[*sql.DB](dp)
+        ioc.RegisterSingleton(dc, func(scope *ioc.DependencyProvider) repositories.UserRepository {
+            db := scope.GetDependency[*sql.DB](dp)
             return postgres.NewUserRepository(db)
         })
         
         // Application repository
-        ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) repositories.ApplicationRepository {
-            db := ioc.GetDependency[*sql.DB](dp)
+        ioc.RegisterSingleton(dc, func(scope *ioc.DependencyProvider) repositories.ApplicationRepository {
+            db := scope.GetDependency[*sql.DB](dp)
             return postgres.NewApplicationRepository(db)
         })
         
         // Role repository
-        ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) repositories.RoleRepository {
-            db := ioc.GetDependency[*sql.DB](dp)
+        ioc.RegisterSingleton(dc, func(scope *ioc.DependencyProvider) repositories.RoleRepository {
+            db := scope.GetDependency[*sql.DB](dp)
             return postgres.NewRoleRepository(db)
         })
         
@@ -417,10 +417,10 @@ func Repositories(dc *ioc.DependencyCollection, mode config.DatabaseMode, c any)
 ```go
 func Commands(dc *ioc.DependencyCollection) {
     // CreateUser command
-    ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) any {
-        m := ioc.GetDependency[mediatr.Mediator](dp)
-        userRepo := ioc.GetDependency[repositories.UserRepository](dp)
-        emailService := ioc.GetDependency[services.EmailService](dp)
+    ioc.RegisterSingleton(dc, func(scope *ioc.DependencyProvider) any {
+        m := scope.GetDependency[mediatr.Mediator](dp)
+        userRepo := scope.GetDependency[repositories.UserRepository](dp)
+        emailService := scope.GetDependency[services.EmailService](dp)
         
         handler := &commands.CreateUserHandler{
             userRepo:     userRepo,
@@ -435,9 +435,9 @@ func Commands(dc *ioc.DependencyCollection) {
     })
     
     // UpdateUser command
-    ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) any {
-        m := ioc.GetDependency[mediatr.Mediator](dp)
-        userRepo := ioc.GetDependency[repositories.UserRepository](dp)
+    ioc.RegisterSingleton(dc, func(scope *ioc.DependencyProvider) any {
+        m := scope.GetDependency[mediatr.Mediator](dp)
+        userRepo := scope.GetDependency[repositories.UserRepository](dp)
         
         handler := &commands.UpdateUserHandler{
             userRepo: userRepo,
@@ -453,7 +453,7 @@ func Commands(dc *ioc.DependencyCollection) {
 
 ```go
 // Register scoped request context
-ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) *RequestContext {
+ioc.RegisterScoped(dc, func(scope *ioc.DependencyProvider) *RequestContext {
     return &RequestContext{
         RequestID:   uuid.New(),
         StartTime:   time.Now(),
@@ -470,7 +470,7 @@ func AuthMiddleware(provider *ioc.DependencyProvider) func(http.Handler) http.Ha
             defer scope.Close()
             
             // Get scoped request context
-            reqCtx := ioc.GetDependency[*RequestContext](scope)
+            reqCtx := scope.GetDependency[*RequestContext]()
             
             // Set user from token
             userID := extractUserFromToken(r)
@@ -490,25 +490,25 @@ func AuthMiddleware(provider *ioc.DependencyProvider) func(http.Handler) http.Ha
 
 ```go
 // Good: Depend on interface
-ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) repositories.UserRepository {
-    db := ioc.GetDependency[*sql.DB](dp)
+ioc.RegisterSingleton(dc, func(scope *ioc.DependencyProvider) repositories.UserRepository {
+    db := scope.GetDependency[*sql.DB](dp)
     return postgres.NewUserRepository(db) // Returns interface
 })
 
 // Usage
-userRepo := ioc.GetDependency[repositories.UserRepository](dp)
+userRepo := scope.GetDependency[repositories.UserRepository](dp)
 ```
 
 ### 2. Use Singletons for Stateless Services
 
 ```go
 // Repositories are typically singleton
-ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) repositories.UserRepository {
+ioc.RegisterSingleton(dc, func(scope *ioc.DependencyProvider) repositories.UserRepository {
     // ...
 })
 
 // Services are typically singleton
-ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) *TokenService {
+ioc.RegisterSingleton(dc, func(scope *ioc.DependencyProvider) *TokenService {
     // ...
 })
 ```
@@ -517,14 +517,14 @@ ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) *TokenService {
 
 ```go
 // Database transactions per request
-ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) *sql.Tx {
-    db := ioc.GetDependency[*sql.DB](dp)
+ioc.RegisterScoped(dc, func(scope *ioc.DependencyProvider) *sql.Tx {
+    db := scope.GetDependency[*sql.DB](dp)
     tx, _ := db.Begin()
     return tx
 })
 
 // Request context per request
-ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) *RequestContext {
+ioc.RegisterScoped(dc, func(scope *ioc.DependencyProvider) *RequestContext {
     return &RequestContext{}
 })
 ```
@@ -533,12 +533,12 @@ ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) *RequestContext {
 
 ```go
 // Bad: Database connections are expensive
-ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) *sql.DB {
+ioc.RegisterTransient(dc, func(scope *ioc.DependencyProvider) *sql.DB {
     return sql.Open(...) // Creates new connection every time!
 })
 
 // Good: Use singleton
-ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) *sql.DB {
+ioc.RegisterSingleton(dc, func(scope *ioc.DependencyProvider) *sql.DB {
     return sql.Open(...) // Creates once, reuses
 })
 ```
@@ -547,7 +547,7 @@ ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) *sql.DB {
 
 ```go
 // Register resource
-ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) *DatabaseConnection {
+ioc.RegisterScoped(dc, func(scope *ioc.DependencyProvider) *DatabaseConnection {
     return OpenConnection()
 })
 
@@ -578,8 +578,8 @@ func Services(dc *ioc.DependencyCollection) {
 
 ```go
 // Bad: A depends on B, B depends on A
-ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) *ServiceA {
-    b := ioc.GetDependency[*ServiceB](dp) // ServiceB depends on ServiceA!
+ioc.RegisterSingleton(dc, func(scope *ioc.DependencyProvider) *ServiceA {
+    b := scope.GetDependency[*ServiceB](dp) // ServiceB depends on ServiceA!
     return &ServiceA{b: b}
 })
 
@@ -612,7 +612,7 @@ func TestUserServiceIntegration(t *testing.T) {
     dc := ioc.NewDependencyCollection()
     
     // Register test database
-    ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) *sql.DB {
+    ioc.RegisterSingleton(dc, func(scope *ioc.DependencyProvider) *sql.DB {
         return setupTestDatabase()
     })
     
@@ -626,7 +626,7 @@ func TestUserServiceIntegration(t *testing.T) {
     provider := dc.BuildProvider()
     
     // Test
-    service := ioc.GetDependency[*UserService](provider)
+    service := scope.GetDependency[*UserService](provider)
     user, err := service.GetUser("user123")
     assert.NoError(t, err)
 }
@@ -642,7 +642,7 @@ Error: dependency not registered for type *UserService
 
 **Solution**: Register the dependency in `internal/setup/setup.go`:
 ```go
-ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) *UserService {
+ioc.RegisterSingleton(dc, func(scope *ioc.DependencyProvider) *UserService {
     return NewUserService(...)
 })
 ```

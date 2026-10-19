@@ -3,6 +3,8 @@ package events
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/The127/Keyline/config"
 	db "github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/messages"
@@ -10,9 +12,6 @@ import (
 	"github.com/The127/Keyline/internal/repositories"
 	"github.com/The127/Keyline/internal/services"
 	"github.com/The127/Keyline/templates"
-	"time"
-
-	"github.com/The127/ioc"
 )
 
 type UserCreatedEvent struct {
@@ -21,7 +20,7 @@ type UserCreatedEvent struct {
 
 func QueueEmailVerificationJobOnUserCreatedEvent(ctx context.Context, event UserCreatedEvent) error {
 	scope := middlewares.GetScope(ctx)
-	dbContext := ioc.GetDependency[db.Context](scope)
+	dbContext := scope.GetDependency[db.Context]()
 
 	if event.User.EmailVerified() {
 		return nil
@@ -32,13 +31,13 @@ func QueueEmailVerificationJobOnUserCreatedEvent(ctx context.Context, event User
 		return fmt.Errorf("getting virtual server: %w", err)
 	}
 
-	tokenService := ioc.GetDependency[services.TokenService](scope)
+	tokenService := scope.GetDependency[services.TokenService]()
 	token, err := tokenService.GenerateAndStoreToken(ctx, services.EmailVerificationTokenType, event.User.Id().String(), time.Minute*15)
 	if err != nil {
 		return fmt.Errorf("storing email verification token: %w", err)
 	}
 
-	templateService := ioc.GetDependency[services.TemplateService](scope)
+	templateService := scope.GetDependency[services.TemplateService]()
 	mailBody, err := templateService.Template(
 		ctx,
 		event.User.VirtualServerId(),

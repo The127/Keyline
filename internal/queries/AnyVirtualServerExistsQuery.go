@@ -3,11 +3,10 @@ package queries
 import (
 	"context"
 	"fmt"
+
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/repositories"
-
-	"github.com/The127/ioc"
 )
 
 type AnyVirtualServerExists struct{}
@@ -20,7 +19,7 @@ type AnyVirtualServerExistsResult struct {
 
 func HandleAnyVirtualServerExists(ctx context.Context, _ AnyVirtualServerExists) (*AnyVirtualServerExistsResult, error) {
 	scope := middlewares.GetScope(ctx)
-	dbContext := ioc.GetDependency[database.Context](scope)
+	dbContext := scope.GetDependency[database.Context]()
 
 	virtualServer, err := dbContext.VirtualServers().FirstOrNil(ctx, repositories.NewVirtualServerFilter())
 	if err != nil {

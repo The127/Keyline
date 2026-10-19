@@ -3,15 +3,16 @@ package commands
 import (
 	"context"
 	"errors"
+	"slices"
+	"testing"
+	"time"
+
 	db "github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/middlewares"
 	mocks2 "github.com/The127/Keyline/internal/mocks"
 	"github.com/The127/Keyline/internal/repositories"
 	"github.com/The127/Keyline/internal/repositories/mocks"
 	"github.com/The127/Keyline/utils"
-	"slices"
-	"testing"
-	"time"
 
 	"github.com/The127/ioc"
 
@@ -37,7 +38,7 @@ func (s *PatchApplicationCommandSuite) createContext(
 	dc := ioc.NewDependencyCollection()
 
 	dbContext := mocks2.NewMockContext(ctrl)
-	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) db.Context {
+	ioc.RegisterTransient(dc, func(scope *ioc.DependencyProvider) db.Context {
 		return dbContext
 	})
 

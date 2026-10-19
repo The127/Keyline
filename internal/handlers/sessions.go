@@ -2,15 +2,15 @@ package handlers
 
 import (
 	"encoding/json"
+	"net/http"
+	"strings"
+
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/logging"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/repositories"
 	"github.com/The127/Keyline/utils"
-	"net/http"
-	"strings"
 
-	"github.com/The127/ioc"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
@@ -25,8 +25,8 @@ func ListActiveSessions(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	scope := middlewares.GetScope(ctx)
 
-	sessionService := ioc.GetDependency[middlewares.SessionService](scope)
-	dbContext := ioc.GetDependency[database.Context](scope)
+	sessionService := scope.GetDependency[middlewares.SessionService]()
+	dbContext := scope.GetDependency[database.Context]()
 
 	result := make([]activeSessionDto, 0)
 
@@ -115,7 +115,7 @@ func DeleteActiveSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sessionService := ioc.GetDependency[middlewares.SessionService](scope)
+	sessionService := scope.GetDependency[middlewares.SessionService]()
 
 	cookie, err := r.Cookie(middlewares.GetSessionCookieName(vsName))
 	if err != nil {

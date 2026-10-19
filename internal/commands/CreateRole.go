@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 	"fmt"
+
 	"github.com/The127/Keyline/internal/authentication"
 	"github.com/The127/Keyline/internal/authentication/permissions"
 	"github.com/The127/Keyline/internal/behaviours"
@@ -11,8 +12,6 @@ import (
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/repositories"
 	"github.com/The127/Keyline/utils"
-
-	"github.com/The127/ioc"
 
 	"github.com/The127/mediatr"
 
@@ -48,7 +47,7 @@ type CreateRoleResponse struct {
 
 func HandleCreateRole(ctx context.Context, command CreateRole) (*CreateRoleResponse, error) {
 	scope := middlewares.GetScope(ctx)
-	dbContext := ioc.GetDependency[database.Context](scope)
+	dbContext := scope.GetDependency[database.Context]()
 
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(command.VirtualServerName)
 	virtualServer, err := dbContext.VirtualServers().FirstOrErr(ctx, virtualServerFilter)
@@ -78,7 +77,7 @@ func HandleCreateRole(ctx context.Context, command CreateRole) (*CreateRoleRespo
 	)
 	dbContext.Roles().Insert(role)
 
-	m := ioc.GetDependency[mediatr.Mediator](scope)
+	m := scope.GetDependency[mediatr.Mediator]()
 	err = mediatr.SendEvent(ctx, m, events.RoleCreatedEvent{
 		Role: role,
 	})

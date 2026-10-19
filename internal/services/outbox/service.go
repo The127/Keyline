@@ -4,13 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	"github.com/The127/Keyline/internal/logging"
 	"github.com/The127/Keyline/internal/messages"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/repositories"
 	"github.com/The127/Keyline/internal/services"
-
-	"github.com/The127/ioc"
 
 	gomail "gopkg.in/mail.v2"
 )
@@ -44,7 +43,7 @@ func (m *messageBroker) Distribute(ctx context.Context, message *repositories.Ou
 			return fmt.Errorf("failed to unmarshal send email message details: %w", err)
 		}
 
-		mailService := ioc.GetDependency[services.MailService](scope)
+		mailService := scope.GetDependency[services.MailService]()
 
 		mail := gomail.NewMessage()
 		mail.SetAddressHeader("To", sendEmailDetails.To, sendEmailDetails.DisplayName)

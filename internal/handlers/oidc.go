@@ -9,6 +9,12 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/url"
+	"slices"
+	"strings"
+	"time"
+
 	"github.com/The127/Keyline/client/api"
 	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/database"
@@ -18,15 +24,8 @@ import (
 	"github.com/The127/Keyline/internal/services"
 	"github.com/The127/Keyline/internal/services/claimsMapping"
 	"github.com/The127/Keyline/utils"
-	"net/http"
-	"net/url"
-	"slices"
-	"strings"
-	"time"
 
 	"github.com/The127/go-clock"
-
-	"github.com/The127/ioc"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -115,8 +114,8 @@ func WellKnownJwks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(r.Context())
-	keyService := ioc.GetDependency[services.KeyService](scope)
-	dbContext := ioc.GetDependency[database.Context](scope)
+	keyService := scope.GetDependency[services.KeyService]()
+	dbContext := scope.GetDependency[database.Context]()
 
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(vsName)
 	virtualServer, err := dbContext.VirtualServers().FirstOrNil(r.Context(), virtualServerFilter)
@@ -221,7 +220,7 @@ type OpenIdConfigurationResponseDto struct {
 func WellKnownOpenIdConfiguration(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	scope := middlewares.GetScope(ctx)
-	dbContext := ioc.GetDependency[database.Context](scope)
+	dbContext := scope.GetDependency[database.Context]()
 
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
@@ -344,7 +343,7 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO: use validation annotations to validate the auth request
-	dbContext := ioc.GetDependency[database.Context](scope)
+	dbContext := scope.GetDependency[database.Context]()
 
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(vsName)
 	virtualServer, err := dbContext.VirtualServers().FirstOrNil(ctx, virtualServerFilter)
@@ -442,7 +441,7 @@ func BeginAuthorizationFlow(w http.ResponseWriter, r *http.Request) {
 
 	// TODO: check the scopes for email and profile
 
-	tokenService := ioc.GetDependency[services.TokenService](scope)
+	tokenService := scope.GetDependency[services.TokenService]()
 
 	s, ok := middlewares.GetSession(ctx)
 	if ok {
@@ -570,7 +569,7 @@ func asksForResourceServerScope(scopes []string) bool {
 func OidcEndSession(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	scope := middlewares.GetScope(ctx)
-	dbContext := ioc.GetDependency[database.Context](scope)
+	dbContext := scope.GetDependency[database.Context]()
 
 	err := r.ParseForm()
 	if err != nil {
@@ -586,7 +585,7 @@ func OidcEndSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	keyService := ioc.GetDependency[services.KeyService](scope)
+	keyService := scope.GetDependency[services.KeyService]()
 
 	idTokenString := r.Form.Get("id_token_hint")
 	if idTokenString == "" {
@@ -753,7 +752,7 @@ func userinfoClaims(user *repositories.User, scopes []string) map[string]any {
 func OidcUserinfo(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	scope := middlewares.GetScope(ctx)
-	dbContext := ioc.GetDependency[database.Context](scope)
+	dbContext := scope.GetDependency[database.Context]()
 
 	vsName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
@@ -768,7 +767,7 @@ func OidcUserinfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	keyService := ioc.GetDependency[services.KeyService](scope)
+	keyService := scope.GetDependency[services.KeyService]()
 
 	err = r.ParseForm()
 	if err != nil {
@@ -977,7 +976,7 @@ func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 
 	code := r.Form.Get("code")
 
-	tokenService := ioc.GetDependency[services.TokenService](scope)
+	tokenService := scope.GetDependency[services.TokenService]()
 	valueString, err := tokenService.GetToken(ctx, services.OidcCodeTokenType, code)
 	if err != nil {
 		writeOAuthError(w, "invalid_grant", "authorization code already used")
@@ -993,7 +992,7 @@ func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 
 	credentials := readClientCredentials(r)
 
-	dbContext := ioc.GetDependency[database.Context](scope)
+	dbContext := scope.GetDependency[database.Context]()
 
 	// Resolve the virtual server from the code itself (not the URL): the code
 	// is what we're trusting; everything else must be validated against it.
@@ -1047,10 +1046,10 @@ func handleAuthorizationCode(w http.ResponseWriter, r *http.Request) {
 
 	// TODO: get claims from scopes
 
-	clockService := ioc.GetDependency[clock.Service](scope)
+	clockService := scope.GetDependency[clock.Service]()
 	now := clockService.Now()
 
-	keyService := ioc.GetDependency[services.KeyService](scope)
+	keyService := scope.GetDependency[services.KeyService]()
 	keyPair, err := keyService.GetKey(codeInfo.VirtualServerName, appSigningAlgorithm(virtualServer, application))
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -1307,7 +1306,7 @@ func generateAccessToken(ctx context.Context, params AccessTokenGenerationParams
 
 func mapClaims(ctx context.Context, params AccessTokenGenerationParams) (jwt.MapClaims, error) {
 	scope := middlewares.GetScope(ctx)
-	dbContext := ioc.GetDependency[database.Context](scope)
+	dbContext := scope.GetDependency[database.Context]()
 
 	userFilter := repositories.NewUserFilter().Id(params.UserId)
 	user, err := dbContext.Users().FirstOrNil(ctx, userFilter)
@@ -1367,7 +1366,7 @@ func mapClaims(ctx context.Context, params AccessTokenGenerationParams) (jwt.Map
 		return nil, fmt.Errorf("unmarshaling user metadata: %w", err)
 	}
 
-	claimsMapper := ioc.GetDependency[claimsMapping.ClaimsMapper](scope)
+	claimsMapper := scope.GetDependency[claimsMapping.ClaimsMapper]()
 	mappedClaims := claimsMapper.MapClaims(
 		ctx,
 		params.ApplicationId,
@@ -1447,7 +1446,7 @@ func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 
 	credentials := readClientCredentials(r)
 
-	tokenService := ioc.GetDependency[services.TokenService](scope)
+	tokenService := scope.GetDependency[services.TokenService]()
 	refreshTokenInfoString, err := tokenService.GetToken(ctx, services.OidcRefreshTokenTokenType, r.Form.Get("refresh_token"))
 	if err != nil {
 		writeOAuthError(w, "invalid_grant", "refresh token is invalid or expired")
@@ -1461,7 +1460,7 @@ func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dbContext := ioc.GetDependency[database.Context](scope)
+	dbContext := scope.GetDependency[database.Context]()
 
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(refreshTokenInfo.VirtualServerName)
 	virtualServer, err := dbContext.VirtualServers().FirstOrNil(ctx, virtualServerFilter)
@@ -1502,10 +1501,10 @@ func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	clockService := ioc.GetDependency[clock.Service](scope)
+	clockService := scope.GetDependency[clock.Service]()
 	now := clockService.Now()
 
-	keyService := ioc.GetDependency[services.KeyService](scope)
+	keyService := scope.GetDependency[services.KeyService]()
 	keyPair, err := keyService.GetKey(refreshTokenInfo.VirtualServerName, appSigningAlgorithm(virtualServer, application))
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -1568,14 +1567,14 @@ func issueServiceUserAccessToken(w http.ResponseWriter, r *http.Request, virtual
 	ctx := r.Context()
 	scope := middlewares.GetScope(ctx)
 
-	keyService := ioc.GetDependency[services.KeyService](scope)
+	keyService := scope.GetDependency[services.KeyService]()
 	keyPair, err := keyService.GetKey(virtualServer.Name(), appSigningAlgorithm(virtualServer, application))
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
 	}
 
-	clockService := ioc.GetDependency[clock.Service](scope)
+	clockService := scope.GetDependency[clock.Service]()
 	now := clockService.Now()
 
 	accessToken, err := generateAccessToken(ctx, AccessTokenGenerationParams{
@@ -1660,7 +1659,7 @@ func BeginDeviceFlow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dbContext := ioc.GetDependency[database.Context](scope)
+	dbContext := scope.GetDependency[database.Context]()
 
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(vsName)
 	virtualServer, err := dbContext.VirtualServers().FirstOrNil(ctx, virtualServerFilter)
@@ -1702,7 +1701,7 @@ func BeginDeviceFlow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tokenService := ioc.GetDependency[services.TokenService](scope)
+	tokenService := scope.GetDependency[services.TokenService]()
 
 	deviceCode, err := tokenService.GenerateAndStoreToken(ctx, services.OidcDeviceCodeTokenType, string(deviceCodeInfoJson), 10*time.Minute)
 	if err != nil {
@@ -1750,7 +1749,7 @@ func handleDeviceCodeGrant(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tokenService := ioc.GetDependency[services.TokenService](scope)
+	tokenService := scope.GetDependency[services.TokenService]()
 	valueString, err := tokenService.GetToken(ctx, services.OidcDeviceCodeTokenType, deviceCode)
 	if err != nil {
 		writeOAuthError(w, "expired_token", "device code has expired or is invalid")
@@ -1778,7 +1777,7 @@ func handleDeviceCodeGrant(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dbContext := ioc.GetDependency[database.Context](scope)
+	dbContext := scope.GetDependency[database.Context]()
 
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(deviceCodeInfo.VirtualServerName)
 	virtualServer, err := dbContext.VirtualServers().FirstOrNil(ctx, virtualServerFilter)
@@ -1832,14 +1831,14 @@ func handleDeviceCodeGrant(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	keyService := ioc.GetDependency[services.KeyService](scope)
+	keyService := scope.GetDependency[services.KeyService]()
 	keyPair, err := keyService.GetKey(deviceCodeInfo.VirtualServerName, appSigningAlgorithm(virtualServer, application))
 	if err != nil {
 		utils.HandleHttpError(w, err)
 		return
 	}
 
-	clockService := ioc.GetDependency[clock.Service](scope)
+	clockService := scope.GetDependency[clock.Service]()
 	now := clockService.Now()
 
 	tokenDuration := time.Hour
@@ -1924,7 +1923,7 @@ func PostActivatePage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tokenService := ioc.GetDependency[services.TokenService](scope)
+	tokenService := scope.GetDependency[services.TokenService]()
 
 	deviceCode, err := tokenService.GetToken(ctx, services.OidcUserCodeTokenType, userCode)
 	if err != nil {
@@ -1950,7 +1949,7 @@ func PostActivatePage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dbContext := ioc.GetDependency[database.Context](scope)
+	dbContext := scope.GetDependency[database.Context]()
 
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(vsName)
 	virtualServer, err := dbContext.VirtualServers().FirstOrNil(ctx, virtualServerFilter)

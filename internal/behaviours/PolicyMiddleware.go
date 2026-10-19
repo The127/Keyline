@@ -3,6 +3,7 @@ package behaviours
 import (
 	"context"
 	"fmt"
+
 	"github.com/The127/Keyline/internal/authentication"
 	"github.com/The127/Keyline/internal/authentication/permissions"
 	"github.com/The127/Keyline/internal/authentication/roles"
@@ -10,8 +11,6 @@ import (
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/repositories"
 	"github.com/The127/Keyline/utils"
-
-	"github.com/The127/ioc"
 
 	"github.com/The127/mediatr"
 
@@ -156,7 +155,7 @@ func PolicyBehaviour(ctx context.Context, request Policy, next mediatr.Next) (an
 	// don't log if there was an error and only log if the request says so
 	if err == nil && request.LogRequest() {
 		scope := middlewares.GetScope(ctx)
-		auditLogger := ioc.GetDependency[AuditLogger](scope)
+		auditLogger := scope.GetDependency[AuditLogger]()
 
 		var logResponse any = nil
 		if request.LogResponse() {
@@ -189,7 +188,7 @@ func evaluatePolicy(ctx context.Context, request Policy) (PolicyResult, error) {
 	// cron jobs and other internal requests should ensure that the virtual server is set in the context
 	if virtualServerName != "" {
 		scope := middlewares.GetScope(ctx)
-		dbContext := ioc.GetDependency[database.Context](scope)
+		dbContext := scope.GetDependency[database.Context]()
 
 		virtualServerFilter := repositories.NewVirtualServerFilter().Name(virtualServerName)
 		virtualServer, err := dbContext.VirtualServers().FirstOrErr(ctx, virtualServerFilter)
@@ -224,7 +223,7 @@ func PermissionBasedPolicy(ctx context.Context, permission permissions.Permissio
 
 	if virtualServerName != "" {
 		scope := middlewares.GetScope(ctx)
-		dbContext := ioc.GetDependency[database.Context](scope)
+		dbContext := scope.GetDependency[database.Context]()
 
 		virtualServerFilter := repositories.NewVirtualServerFilter().Name(virtualServerName)
 		virtualServer, err := dbContext.VirtualServers().FirstOrNil(ctx, virtualServerFilter)

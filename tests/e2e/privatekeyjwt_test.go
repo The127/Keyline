@@ -22,7 +22,6 @@ import (
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/repositories"
 	"github.com/The127/Keyline/utils"
-	"github.com/The127/ioc"
 	"github.com/The127/mediatr"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -46,8 +45,8 @@ func setupPrivateKeyJwtFixtures(h *harness) uuid.UUID {
 	defer utils.PanicOnError(scope.Close, "closing scope")
 	ctx := middlewares.ContextWithScope(context.Background(), scope)
 	ctx = authentication.ContextWithCurrentUser(ctx, authentication.SystemUser())
-	m := ioc.GetDependency[mediatr.Mediator](scope)
-	dbContext := ioc.GetDependency[database.Context](scope)
+	m := scope.GetDependency[mediatr.Mediator]()
+	dbContext := scope.GetDependency[database.Context]()
 
 	_, err := mediatr.Send[*commands.CreateProjectResponse](ctx, m, commands.CreateProject{
 		VirtualServerName: h.VirtualServer(),
@@ -465,5 +464,5 @@ func withAdminScope(h *harness, f func(ctx context.Context, m mediatr.Mediator, 
 	defer utils.PanicOnError(scope.Close, "closing scope")
 	ctx := middlewares.ContextWithScope(context.Background(), scope)
 	ctx = authentication.ContextWithCurrentUser(ctx, authentication.SystemUser())
-	f(ctx, ioc.GetDependency[mediatr.Mediator](scope), ioc.GetDependency[database.Context](scope))
+	f(ctx, scope.GetDependency[mediatr.Mediator](), scope.GetDependency[database.Context]())
 }
