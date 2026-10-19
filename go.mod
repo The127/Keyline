@@ -1,6 +1,6 @@
 module github.com/The127/Keyline
 
-go 1.26.0
+go 1.27.2
 
 replace github.com/The127/Keyline/client => ./client
 
