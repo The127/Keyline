@@ -23,7 +23,6 @@ import (
 	"github.com/The127/Keyline/internal/repositories"
 	"github.com/The127/Keyline/utils"
 
-	"github.com/The127/ioc"
 	"github.com/The127/mediatr"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
@@ -260,8 +259,8 @@ func setupPasskeyCrossTenantFixtures(h *harness) (*passkeyTestKey, *passkeyTestK
 
 	ctx := middlewares.ContextWithScope(context.Background(), scope)
 	ctx = authentication.ContextWithCurrentUser(ctx, authentication.SystemUser())
-	m := ioc.GetDependency[mediatr.Mediator](scope)
-	dbContext := ioc.GetDependency[database.Context](scope)
+	m := scope.GetDependency[mediatr.Mediator]()
+	dbContext := scope.GetDependency[database.Context]()
 
 	// --- target VS (the harness's existing test-vs) ---
 	if _, err := mediatr.Send[*commands.CreateProjectResponse](ctx, m, commands.CreateProject{

@@ -154,11 +154,11 @@ func systemUserScope(h *harness) (context.Context, *ioc.DependencyProvider) {
 }
 
 func createResourceServerWithScope(h *harness, fixture resourceServerScopeFixture) (uuid.UUID, uuid.UUID, error) {
-	ctx, subscope := systemUserScope(h)
-	defer utils.PanicOnError(subscope.Close, "closing scope")
+	ctx, scope := systemUserScope(h)
+	defer utils.PanicOnError(scope.Close, "closing scope")
 
-	m := ioc.GetDependency[mediatr.Mediator](subscope)
-	dbContext := ioc.GetDependency[database.Context](subscope)
+	m := scope.GetDependency[mediatr.Mediator]()
+	dbContext := scope.GetDependency[database.Context]()
 
 	resourceServer, err := mediatr.Send[*commands.CreateResourceServerResponse](ctx, m, commands.CreateResourceServer{
 		VirtualServerName: h.VirtualServer(),
@@ -196,10 +196,10 @@ func createResourceServerWithScope(h *harness, fixture resourceServerScopeFixtur
 }
 
 func getResourceServerScope(h *harness, projectSlug string, resourceServerId uuid.UUID, scopeId uuid.UUID) (*queries.GetResourceServerScopeResponse, error) {
-	ctx, subscope := systemUserScope(h)
-	defer utils.PanicOnError(subscope.Close, "closing scope")
+	ctx, scope := systemUserScope(h)
+	defer utils.PanicOnError(scope.Close, "closing scope")
 
-	m := ioc.GetDependency[mediatr.Mediator](subscope)
+	m := scope.GetDependency[mediatr.Mediator]()
 
 	return mediatr.Send[*queries.GetResourceServerScopeResponse](ctx, m, queries.GetResourceServerScope{
 		VirtualServerName: h.VirtualServer(),
@@ -210,10 +210,10 @@ func getResourceServerScope(h *harness, projectSlug string, resourceServerId uui
 }
 
 func listResourceServerScopes(h *harness, projectSlug string, resourceServerId uuid.UUID) (*queries.ListResourceServerScopesResponse, error) {
-	ctx, subscope := systemUserScope(h)
-	defer utils.PanicOnError(subscope.Close, "closing scope")
+	ctx, scope := systemUserScope(h)
+	defer utils.PanicOnError(scope.Close, "closing scope")
 
-	m := ioc.GetDependency[mediatr.Mediator](subscope)
+	m := scope.GetDependency[mediatr.Mediator]()
 
 	return mediatr.Send[*queries.ListResourceServerScopesResponse](ctx, m, queries.ListRessouceServerScopes{
 		VirtualServerName: h.VirtualServer(),

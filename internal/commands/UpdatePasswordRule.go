@@ -4,12 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/password"
 	"github.com/The127/Keyline/internal/repositories"
-
-	"github.com/The127/ioc"
 )
 
 type UpdatePasswordRule struct {
@@ -22,7 +21,7 @@ type UpdatePasswordRuleResponse struct{}
 
 func HandleUpdatePasswordRule(ctx context.Context, command UpdatePasswordRule) (*UpdatePasswordRuleResponse, error) {
 	scope := middlewares.GetScope(ctx)
-	dbContext := ioc.GetDependency[database.Context](scope)
+	dbContext := scope.GetDependency[database.Context]()
 
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(command.VirtualServerName)
 	virtualServer, err := dbContext.VirtualServers().FirstOrErr(ctx, virtualServerFilter)

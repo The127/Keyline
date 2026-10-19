@@ -2,13 +2,12 @@ package handlers
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/repositories"
 	"github.com/The127/Keyline/internal/services"
 	"github.com/The127/Keyline/utils"
-	"net/http"
-
-	"github.com/The127/ioc"
 
 	"github.com/google/uuid"
 )
@@ -26,7 +25,7 @@ type Data struct {
 // @Router      /debug [get]
 func Debug(w http.ResponseWriter, r *http.Request) {
 	scope := middlewares.GetScope(r.Context())
-	templateService := ioc.GetDependency[services.TemplateService](scope)
+	templateService := scope.GetDependency[services.TemplateService]()
 
 	data := Data{
 		Link: "https://website.url/verifyemail/asodhrflaeawrhgawubhkawdf",

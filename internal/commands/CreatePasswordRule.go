@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	"github.com/The127/Keyline/internal/authentication/permissions"
 	"github.com/The127/Keyline/internal/behaviours"
 	"github.com/The127/Keyline/internal/database"
@@ -11,8 +12,6 @@ import (
 	"github.com/The127/Keyline/internal/password"
 	"github.com/The127/Keyline/internal/repositories"
 	"github.com/The127/Keyline/utils"
-
-	"github.com/The127/ioc"
 )
 
 type CreatePasswordRule struct {
@@ -41,7 +40,7 @@ type CreatePasswordRuleResponse struct{}
 
 func HandleCreatePasswordRule(ctx context.Context, command CreatePasswordRule) (*CreatePasswordRuleResponse, error) {
 	scope := middlewares.GetScope(ctx)
-	dbContext := ioc.GetDependency[database.Context](scope)
+	dbContext := scope.GetDependency[database.Context]()
 
 	// TODO: validation
 

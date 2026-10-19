@@ -4,14 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/The127/Keyline/config"
-	"github.com/The127/Keyline/internal/middlewares"
 	"sync"
 	"time"
 
-	"github.com/The127/go-clock"
-	"github.com/The127/ioc"
+	"github.com/The127/Keyline/config"
+	"github.com/The127/Keyline/internal/middlewares"
 
+	"github.com/The127/go-clock"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -62,7 +61,7 @@ type memoryStore struct {
 
 func (m *memoryStore) Set(ctx context.Context, key string, value string, opts ...Option) error {
 	scope := middlewares.GetScope(ctx)
-	clockService := ioc.GetDependency[clock.Service](scope)
+	clockService := scope.GetDependency[clock.Service]()
 
 	item := memoryStoreItem{
 		value: value,
@@ -85,7 +84,7 @@ func (m *memoryStore) Set(ctx context.Context, key string, value string, opts ..
 
 func (m *memoryStore) SetIfAbsent(ctx context.Context, key string, value string, opts ...Option) (bool, error) {
 	scope := middlewares.GetScope(ctx)
-	clockService := ioc.GetDependency[clock.Service](scope)
+	clockService := scope.GetDependency[clock.Service]()
 	now := clockService.Now()
 
 	item := memoryStoreItem{
@@ -115,7 +114,7 @@ func (m *memoryStore) SetIfAbsent(ctx context.Context, key string, value string,
 
 func (m *memoryStore) Get(ctx context.Context, key string) (string, error) {
 	scope := middlewares.GetScope(ctx)
-	clockService := ioc.GetDependency[clock.Service](scope)
+	clockService := scope.GetDependency[clock.Service]()
 
 	m.mu.RLock()
 	item, ok := m.data[key]

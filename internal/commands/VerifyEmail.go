@@ -3,12 +3,11 @@ package commands
 import (
 	"context"
 	"fmt"
+
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/repositories"
 	"github.com/The127/Keyline/internal/services"
-
-	"github.com/The127/ioc"
 
 	"github.com/google/uuid"
 )
@@ -29,9 +28,9 @@ type VerifyEmailResponse struct {
 
 func HandleVerifyEmail(ctx context.Context, command VerifyEmail) (*VerifyEmailResponse, error) {
 	scope := middlewares.GetScope(ctx)
-	dbContext := ioc.GetDependency[database.Context](scope)
+	dbContext := scope.GetDependency[database.Context]()
 
-	tokenService := ioc.GetDependency[services.TokenService](scope)
+	tokenService := scope.GetDependency[services.TokenService]()
 	value, err := tokenService.GetToken(ctx, services.EmailVerificationTokenType, command.Token)
 	if err != nil {
 		return nil, fmt.Errorf("getting token: %w", err)

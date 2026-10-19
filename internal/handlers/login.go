@@ -14,6 +14,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"net/url"
+	"time"
+
 	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/authentication"
 	"github.com/The127/Keyline/internal/commands"
@@ -26,13 +30,9 @@ import (
 	"github.com/The127/Keyline/internal/services/keyValue"
 	"github.com/The127/Keyline/templates"
 	"github.com/The127/Keyline/utils"
-	"net/http"
-	"net/url"
-	"time"
 
 	"github.com/The127/go-clock"
 
-	"github.com/The127/ioc"
 	"github.com/The127/mediatr"
 
 	"github.com/google/uuid"
@@ -47,7 +47,7 @@ func updateLoginStep(
 	mutate func(info *jsonTypes.LoginInfo) error,
 ) error {
 	scope := middlewares.GetScope(ctx)
-	tokenService := ioc.GetDependency[services.TokenService](scope)
+	tokenService := scope.GetDependency[services.TokenService]()
 
 	redisValueString, err := tokenService.GetToken(ctx, services.LoginSessionTokenType, loginToken)
 	if err != nil {
@@ -95,7 +95,7 @@ func DetermineNextLoginStep(
 	}
 
 	scope := middlewares.GetScope(ctx)
-	dbContext := ioc.GetDependency[database.Context](scope)
+	dbContext := scope.GetDependency[database.Context]()
 
 	virtualServerFilter := repositories.NewVirtualServerFilter().Id(loginInfo.VirtualServerId)
 	virtualServer, err := dbContext.VirtualServers().FirstOrErr(ctx, virtualServerFilter)
@@ -198,7 +198,7 @@ func GetLoginState(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	loginToken := vars["loginToken"]
 
-	tokenService := ioc.GetDependency[services.TokenService](scope)
+	tokenService := scope.GetDependency[services.TokenService]()
 	rawTokenData, err := tokenService.GetToken(ctx, services.LoginSessionTokenType, loginToken)
 	switch {
 	case errors.Is(err, services.ErrTokenNotFound):
@@ -217,7 +217,7 @@ func GetLoginState(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dbContext := ioc.GetDependency[database.Context](scope)
+	dbContext := scope.GetDependency[database.Context]()
 	identityProviderFilter := repositories.NewIdentityProviderFilter().VirtualServerId(loginInfo.VirtualServerId)
 	identityProviders, err := dbContext.IdentityProviders().List(ctx, identityProviderFilter)
 	if err != nil {
@@ -296,8 +296,8 @@ func VerifyPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tokenService := ioc.GetDependency[services.TokenService](scope)
-	dbContext := ioc.GetDependency[database.Context](scope)
+	tokenService := scope.GetDependency[services.TokenService]()
+	dbContext := scope.GetDependency[database.Context]()
 
 	rawLoginInfo, err := tokenService.GetToken(ctx, services.LoginSessionTokenType, loginToken)
 	if err != nil {
@@ -430,7 +430,7 @@ func VerifyEmailToken(w http.ResponseWriter, r *http.Request) {
 		}
 
 		scope := middlewares.GetScope(ctx)
-		dbContext := ioc.GetDependency[database.Context](scope)
+		dbContext := scope.GetDependency[database.Context]()
 
 		userFilter := repositories.NewUserFilter().Id(loginInfo.UserId)
 		user, err := dbContext.Users().FirstOrNil(ctx, userFilter)
@@ -492,7 +492,7 @@ func OnboardTotp(w http.ResponseWriter, r *http.Request) {
 		}
 
 		scope := middlewares.GetScope(ctx)
-		dbContext := ioc.GetDependency[database.Context](scope)
+		dbContext := scope.GetDependency[database.Context]()
 
 		isValid := totp.Validate(dto.TotpCode, loginInfo.TotpSecret)
 		if !isValid {
@@ -557,7 +557,7 @@ func VerifyTotp(w http.ResponseWriter, r *http.Request) {
 		}
 
 		scope := middlewares.GetScope(ctx)
-		dbContext := ioc.GetDependency[database.Context](scope)
+		dbContext := scope.GetDependency[database.Context]()
 
 		totpCredentialFilter := repositories.NewCredentialFilter().
 			UserId(loginInfo.UserId).
@@ -567,7 +567,7 @@ func VerifyTotp(w http.ResponseWriter, r *http.Request) {
 			return fmt.Errorf("failed to get totp credentials: %w", err)
 		}
 
-		clockService := ioc.GetDependency[clock.Service](scope)
+		clockService := scope.GetDependency[clock.Service]()
 		now := clockService.Now()
 
 		var isValid = false
@@ -621,7 +621,7 @@ func FinishLogin(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	loginToken := vars["loginToken"]
 
-	tokenService := ioc.GetDependency[services.TokenService](scope)
+	tokenService := scope.GetDependency[services.TokenService]()
 	rawTokenData, err := tokenService.GetToken(ctx, services.LoginSessionTokenType, loginToken)
 	if err != nil {
 		http.Error(w, "invalid login token", http.StatusBadRequest)
@@ -735,7 +735,7 @@ func ResetTemporaryPassword(w http.ResponseWriter, r *http.Request) {
 		// LoginStepTemporaryPassword guard above are the proof that the
 		// caller is authorised to reset their own temp password.
 		sysCtx := authentication.ContextWithCurrentUser(ctx, authentication.SystemUser())
-		m := ioc.GetDependency[mediatr.Mediator](scope)
+		m := scope.GetDependency[mediatr.Mediator]()
 		_, err = mediatr.Send[*commands.SetPasswordResponse](sysCtx, m, commands.SetPassword{
 			UserId:      loginInfo.UserId,
 			NewPassword: dto.NewPassword,
@@ -773,7 +773,7 @@ func ResendEmailVerification(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	loginToken := vars["loginToken"]
 
-	tokenService := ioc.GetDependency[services.TokenService](scope)
+	tokenService := scope.GetDependency[services.TokenService]()
 	rawTokenData, err := tokenService.GetToken(ctx, services.LoginSessionTokenType, loginToken)
 	if err != nil {
 		http.Error(w, "invalid login token", http.StatusBadRequest)
@@ -799,7 +799,7 @@ func ResendEmailVerification(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	templateService := ioc.GetDependency[services.TemplateService](scope)
+	templateService := scope.GetDependency[services.TemplateService]()
 	mailBody, err := templateService.Template(
 		ctx,
 		loginInfo.VirtualServerId,
@@ -818,7 +818,7 @@ func ResendEmailVerification(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dbContext := ioc.GetDependency[database.Context](scope)
+	dbContext := scope.GetDependency[database.Context]()
 
 	userFilter := repositories.NewUserFilter().Id(loginInfo.UserId)
 	user, err := dbContext.Users().FirstOrNil(ctx, userFilter)
@@ -871,7 +871,7 @@ func StartPasskeyLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kvStore := ioc.GetDependency[keyValue.Store](scope)
+	kvStore := scope.GetDependency[keyValue.Store]()
 	err = kvStore.Set(ctx, "passkey_login:"+challenge.Id.String(), string(challengeJson), keyValue.WithExpiration(time.Minute*5))
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -928,7 +928,7 @@ func FinishPasskeyLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// get from kv store
-	kvStore := ioc.GetDependency[keyValue.Store](scope)
+	kvStore := scope.GetDependency[keyValue.Store]()
 	challengeKey := "passkey_login:" + dto.Id.String()
 	challengeJson, err := kvStore.Get(ctx, challengeKey)
 	if err != nil {
@@ -1009,7 +1009,7 @@ func FinishPasskeyLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// get credential from database
-	dbContext := ioc.GetDependency[database.Context](scope)
+	dbContext := scope.GetDependency[database.Context]()
 	credentialFilter := repositories.NewCredentialFilter().
 		DetailsId(dto.WebauthnResponse.RawId).
 		Type(repositories.CredentialTypeWebauthn)

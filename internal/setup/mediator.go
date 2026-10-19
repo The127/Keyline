@@ -85,7 +85,7 @@ func Mediator(dc *ioc.DependencyCollection) {
 	mediatr.RegisterBehaviour(m, behaviours.PolicyBehaviour)
 	mediatr.RegisterBehaviour(m, behaviours.SaveChangesBehaviour)
 
-	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) mediatr.Mediator {
+	ioc.RegisterSingleton(dc, func(scope *ioc.DependencyProvider) mediatr.Mediator {
 		return m
 	})
 }

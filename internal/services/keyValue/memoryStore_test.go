@@ -2,10 +2,11 @@ package keyValue
 
 import (
 	"context"
-	"github.com/The127/Keyline/internal/middlewares"
-	"github.com/The127/Keyline/utils"
 	"testing"
 	"time"
+
+	"github.com/The127/Keyline/internal/middlewares"
+	"github.com/The127/Keyline/utils"
 
 	"github.com/The127/go-clock"
 	"github.com/The127/ioc"
@@ -26,7 +27,7 @@ func (s *MemoryStoreSuite) createContext() (context.Context, clock.TimeSetterFn)
 	dc := ioc.NewDependencyCollection()
 
 	clockService, timeSetter := clock.NewMockClock(time.Now())
-	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) clock.Service {
+	ioc.RegisterTransient(dc, func(scope *ioc.DependencyProvider) clock.Service {
 		return clockService
 	})
 

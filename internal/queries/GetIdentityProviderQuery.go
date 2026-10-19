@@ -3,13 +3,12 @@ package queries
 import (
 	"context"
 	"fmt"
+
 	"github.com/The127/Keyline/internal/authentication/permissions"
 	"github.com/The127/Keyline/internal/behaviours"
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/repositories"
-
-	"github.com/The127/ioc"
 )
 
 type GetIdentityProvider struct {
@@ -42,7 +41,7 @@ type GetIdentityProviderResult struct {
 
 func HandleGetIdentityProvider(ctx context.Context, query GetIdentityProvider) (*GetIdentityProviderResult, error) {
 	scope := middlewares.GetScope(ctx)
-	dbContext := ioc.GetDependency[database.Context](scope)
+	dbContext := scope.GetDependency[database.Context]()
 
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(query.VirtualServerName)
 	virtualServer, err := dbContext.VirtualServers().FirstOrErr(ctx, virtualServerFilter)

@@ -2,6 +2,9 @@ package commands
 
 import (
 	"context"
+	"testing"
+	"time"
+
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/middlewares"
 	mocks2 "github.com/The127/Keyline/internal/mocks"
@@ -10,8 +13,6 @@ import (
 	"github.com/The127/Keyline/internal/services"
 	serviceMocks "github.com/The127/Keyline/internal/services/mocks"
 	"github.com/The127/Keyline/utils"
-	"testing"
-	"time"
 
 	"github.com/The127/go-clock"
 
@@ -46,7 +47,7 @@ func (s *CreateVirtualServerCommandSuite) createContext(
 	dc := ioc.NewDependencyCollection()
 
 	dbContext := mocks2.NewMockContext(ctrl)
-	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) database.Context {
+	ioc.RegisterTransient(dc, func(scope *ioc.DependencyProvider) database.Context {
 		return dbContext
 	})
 

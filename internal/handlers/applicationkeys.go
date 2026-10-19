@@ -3,14 +3,14 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+
 	"github.com/The127/Keyline/client/api"
 	"github.com/The127/Keyline/internal/commands"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/queries"
 	"github.com/The127/Keyline/utils"
-	"net/http"
 
-	"github.com/The127/ioc"
 	"github.com/The127/mediatr"
 
 	"github.com/google/uuid"
@@ -64,7 +64,7 @@ func AddApplicationKey(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[mediatr.Mediator](scope)
+	m := scope.GetDependency[mediatr.Mediator]()
 
 	response, err := mediatr.Send[*commands.AddApplicationKeyResponse](ctx, m, commands.AddApplicationKey{
 		VirtualServerName: vsName,
@@ -119,7 +119,7 @@ func ListApplicationKeys(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[mediatr.Mediator](scope)
+	m := scope.GetDependency[mediatr.Mediator]()
 
 	response, err := mediatr.Send[*queries.ListApplicationKeysResponse](ctx, m, queries.ListApplicationKeys{
 		VirtualServerName: vsName,
@@ -184,7 +184,7 @@ func RemoveApplicationKey(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[mediatr.Mediator](scope)
+	m := scope.GetDependency[mediatr.Mediator]()
 
 	_, err = mediatr.Send[*commands.RemoveApplicationKeyResponse](ctx, m, commands.RemoveApplicationKey{
 		VirtualServerName: vsName,

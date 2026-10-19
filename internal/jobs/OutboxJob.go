@@ -3,6 +3,7 @@ package jobs
 import (
 	"context"
 	"fmt"
+
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/logging"
 	"github.com/The127/Keyline/internal/middlewares"
@@ -13,12 +14,12 @@ import (
 	"github.com/The127/ioc"
 )
 
-func OutboxSendingJob(dp *ioc.DependencyProvider) JobFn {
+func OutboxSendingJob(scope *ioc.DependencyProvider) JobFn {
 	return func(ctx context.Context) error {
-		scope := dp.NewScope()
+		scope := scope.NewScope()
 		defer utils.PanicOnError(scope.Close, "failed to close scope")
 		ctx = middlewares.ContextWithScope(ctx, scope)
-		dbContext := ioc.GetDependency[database.Context](scope)
+		dbContext := scope.GetDependency[database.Context]()
 
 		filter := repositories.NewOutboxMessageFilter()
 		outboxMessages, err := dbContext.OutboxMessages().List(ctx, filter)
@@ -41,7 +42,7 @@ func OutboxSendingJob(dp *ioc.DependencyProvider) JobFn {
 
 func handleMessage(ctx context.Context, message *repositories.OutboxMessage, dbContext database.Context) error {
 	scope := middlewares.GetScope(ctx)
-	delivery := ioc.GetDependency[outbox.DeliveryService](scope)
+	delivery := scope.GetDependency[outbox.DeliveryService]()
 
 	err := delivery.Deliver(ctx, message)
 	if err != nil {

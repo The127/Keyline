@@ -182,8 +182,8 @@ func init() {
 				defer utils.PanicOnError(scope.Close, "closing scope")
 				ctx := middlewares.ContextWithScope(context.Background(), scope)
 				ctx = authentication.ContextWithCurrentUser(ctx, authentication.SystemUser())
-				m := ioc.GetDependency[mediatr.Mediator](scope)
-				dbContext := ioc.GetDependency[database.Context](scope)
+				m := scope.GetDependency[mediatr.Mediator]()
+				dbContext := scope.GetDependency[database.Context]()
 
 				const vsName = "userinfo-claims-vs"
 				_, err := mediatr.Send[*commands.CreateVirtualServerResponse](ctx, m, commands.CreateVirtualServer{
@@ -221,15 +221,15 @@ func init() {
 	}
 }
 
-func createUserinfoUser(scope *ioc.DependencyProvider) {
-	subscope := scope.NewScope()
-	defer utils.PanicOnError(subscope.Close, "closing scope")
+func createUserinfoUser(scopeIn *ioc.DependencyProvider) {
+	scope := scopeIn.NewScope()
+	defer utils.PanicOnError(scope.Close, "closing scope")
 
-	ctx := middlewares.ContextWithScope(context.Background(), subscope)
+	ctx := middlewares.ContextWithScope(context.Background(), scope)
 	ctx = authentication.ContextWithCurrentUser(ctx, authentication.SystemUser())
 
-	m := ioc.GetDependency[mediatr.Mediator](subscope)
-	dbContext := ioc.GetDependency[database.Context](subscope)
+	m := scope.GetDependency[mediatr.Mediator]()
+	dbContext := scope.GetDependency[database.Context]()
 
 	userResp, err := mediatr.Send[*commands.CreateUserResponse](ctx, m, commands.CreateUser{
 		VirtualServerName: "test-vs",

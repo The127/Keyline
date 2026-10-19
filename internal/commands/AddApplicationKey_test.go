@@ -7,14 +7,15 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
+	"testing"
+	"time"
+
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/middlewares"
 	mocks2 "github.com/The127/Keyline/internal/mocks"
 	"github.com/The127/Keyline/internal/repositories"
 	"github.com/The127/Keyline/internal/repositories/mocks"
 	"github.com/The127/Keyline/utils"
-	"testing"
-	"time"
 
 	"github.com/The127/ioc"
 
@@ -86,7 +87,7 @@ func arrangeApplicationKeyFixture(t *testing.T, ctrl *gomock.Controller, method 
 
 	dc := ioc.NewDependencyCollection()
 	dbContext := mocks2.NewMockContext(ctrl)
-	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) database.Context {
+	ioc.RegisterTransient(dc, func(scope *ioc.DependencyProvider) database.Context {
 		return dbContext
 	})
 	dbContext.EXPECT().VirtualServers().Return(virtualServerRepository).AnyTimes()

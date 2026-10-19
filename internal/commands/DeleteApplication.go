@@ -3,14 +3,13 @@ package commands
 import (
 	"context"
 	"fmt"
+
 	"github.com/The127/Keyline/internal/authentication/permissions"
 	"github.com/The127/Keyline/internal/behaviours"
 	db "github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/repositories"
 	"github.com/The127/Keyline/utils"
-
-	"github.com/The127/ioc"
 
 	"github.com/google/uuid"
 )
@@ -41,7 +40,7 @@ type DeleteApplicationResponse struct{}
 
 func HandleDeleteApplication(ctx context.Context, command DeleteApplication) (*DeleteApplicationResponse, error) {
 	scope := middlewares.GetScope(ctx)
-	dbContext := ioc.GetDependency[db.Context](scope)
+	dbContext := scope.GetDependency[db.Context]()
 
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(command.VirtualServerName)
 	virtualServer, err := dbContext.VirtualServers().FirstOrErr(ctx, virtualServerFilter)

@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 	"fmt"
+
 	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/authentication/permissions"
 	"github.com/The127/Keyline/internal/behaviours"
@@ -10,8 +11,6 @@ import (
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/repositories"
 	"github.com/The127/Keyline/utils"
-
-	"github.com/The127/ioc"
 
 	"github.com/google/uuid"
 )
@@ -51,7 +50,7 @@ type PatchApplicationResponse struct{}
 
 func HandlePatchApplication(ctx context.Context, command PatchApplication) (*PatchApplicationResponse, error) {
 	scope := middlewares.GetScope(ctx)
-	dbContext := ioc.GetDependency[database.Context](scope)
+	dbContext := scope.GetDependency[database.Context]()
 
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(command.VirtualServerName)
 	virtualServer, err := dbContext.VirtualServers().FirstOrErr(ctx, virtualServerFilter)

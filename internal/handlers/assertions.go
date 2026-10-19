@@ -10,7 +10,6 @@ import (
 	"github.com/The127/Keyline/internal/services"
 
 	"github.com/The127/go-clock"
-	"github.com/The127/ioc"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 )
@@ -30,7 +29,7 @@ type verifiedAssertion struct {
 
 func verifySignedAssertion(ctx context.Context, assertion string, jtiTokenType services.TokenType, resolveKey assertionKeyResolver) (*verifiedAssertion, error) {
 	scope := middlewares.GetScope(ctx)
-	clockService := ioc.GetDependency[clock.Service](scope)
+	clockService := scope.GetDependency[clock.Service]()
 	now := clockService.Now()
 
 	var signerId uuid.UUID
@@ -89,7 +88,7 @@ func verifySignedAssertion(ctx context.Context, assertion string, jtiTokenType s
 		return nil, fmt.Errorf("assertion has no jti")
 	}
 
-	tokenService := ioc.GetDependency[services.TokenService](scope)
+	tokenService := scope.GetDependency[services.TokenService]()
 	unused, err := tokenService.StoreTokenIfAbsent(ctx, jtiTokenType, signerId.String()+":"+jti, "", expiresAt.Sub(now))
 	if err != nil {
 		return nil, fmt.Errorf("recording assertion jti: %w", err)

@@ -4,6 +4,9 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
+	"testing"
+	"time"
+
 	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/middlewares"
@@ -14,8 +17,6 @@ import (
 	"github.com/The127/Keyline/internal/services/claimsMapping"
 	serviceMocks "github.com/The127/Keyline/internal/services/mocks"
 	"github.com/The127/Keyline/utils"
-	"testing"
-	"time"
 
 	"github.com/The127/go-clock"
 	"github.com/The127/ioc"
@@ -33,7 +34,7 @@ func newTestContext(t *testing.T) context.Context {
 	ctrl := gomock.NewController(t)
 
 	dbContext := mocks.NewMockContext(ctrl)
-	ioc.RegisterTransient(dependencyCollection, func(dp *ioc.DependencyProvider) database.Context {
+	ioc.RegisterTransient(dependencyCollection, func(scope *ioc.DependencyProvider) database.Context {
 		return dbContext
 	})
 
@@ -54,7 +55,7 @@ func newTestContext(t *testing.T) context.Context {
 
 	claimsMapper := serviceMocks.NewMockClaimsMapper(ctrl)
 	claimsMapper.EXPECT().MapClaims(gomock.Any(), gomock.Any(), gomock.Any()).Return(jwt.MapClaims{})
-	ioc.RegisterSingleton(dependencyCollection, func(dp *ioc.DependencyProvider) claimsMapping.ClaimsMapper {
+	ioc.RegisterSingleton(dependencyCollection, func(scope *ioc.DependencyProvider) claimsMapping.ClaimsMapper {
 		return claimsMapper
 	})
 

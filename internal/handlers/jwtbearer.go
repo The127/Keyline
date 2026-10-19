@@ -14,7 +14,6 @@ import (
 	"github.com/The127/Keyline/internal/services"
 	"github.com/The127/Keyline/utils"
 
-	"github.com/The127/ioc"
 	"github.com/google/uuid"
 )
 
@@ -49,7 +48,7 @@ func handleJwtBearer(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	scope := middlewares.GetScope(ctx)
-	dbContext := ioc.GetDependency[database.Context](scope)
+	dbContext := scope.GetDependency[database.Context]()
 
 	virtualServerName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {

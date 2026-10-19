@@ -3,6 +3,7 @@ package setup
 import (
 	"context"
 	"fmt"
+
 	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/database/memory"
@@ -37,16 +38,16 @@ func Database(dc *ioc.DependencyCollection, c config.DatabaseConfig) (database.D
 		panic("database mode missing or not supported")
 	}
 
-	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) database.Database {
+	ioc.RegisterSingleton(dc, func(scope *ioc.DependencyProvider) database.Database {
 		return db
 	})
 
-	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) database.Factory {
+	ioc.RegisterSingleton(dc, func(scope *ioc.DependencyProvider) database.Factory {
 		return database.NewDbFactory(db)
 	})
 
-	ioc.RegisterScoped(dc, func(dp *ioc.DependencyProvider) database.Context {
-		dbFactory := ioc.GetDependency[database.Factory](dp)
+	ioc.RegisterScoped(dc, func(scope *ioc.DependencyProvider) database.Context {
+		dbFactory := scope.GetDependency[database.Factory]()
 		dbContext, err := dbFactory.NewContext(context.TODO())
 		if err != nil {
 			logging.Logger.Fatalf("creating database context: %v", err)

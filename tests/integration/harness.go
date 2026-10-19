@@ -5,6 +5,11 @@ package integration
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
+
 	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/authentication"
 	"github.com/The127/Keyline/internal/commands"
@@ -14,10 +19,6 @@ import (
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/setup"
 	"github.com/The127/Keyline/utils"
-	"os"
-	"path/filepath"
-	"strings"
-	"time"
 
 	"github.com/The127/go-clock"
 	"github.com/The127/ioc"
@@ -38,7 +39,7 @@ type harness struct {
 }
 
 func (h *harness) Close() {
-	dbConnection := ioc.GetDependency[db2.Database](h.scope)
+	dbConnection := h.scope.GetDependency[db2.Database]()
 	utils.PanicOnError(h.scope.Close, "closing scope")
 	utils.PanicOnError(dbConnection.Close, "closing db connection in test")
 
@@ -162,7 +163,7 @@ func newIntegrationTestHarness(dbMode config.DatabaseMode) *harness {
 		panic(fmt.Errorf("failed to create test database: %w", err))
 	}
 
-	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) clock.Service {
+	ioc.RegisterSingleton(dc, func(scope *ioc.DependencyProvider) clock.Service {
 		return c
 	})
 	setup.OutboxDelivery(dc, config.QueueModeNoop)
@@ -174,7 +175,7 @@ func newIntegrationTestHarness(dbMode config.DatabaseMode) *harness {
 	setup.Mediator(dc)
 
 	scope := dc.BuildProvider()
-	m := ioc.GetDependency[mediatr.Mediator](scope)
+	m := scope.GetDependency[mediatr.Mediator]()
 
 	ctx = middlewares.ContextWithScope(ctx, scope)
 	ctx = authentication.ContextWithCurrentUser(ctx, authentication.SystemUser())
@@ -189,7 +190,7 @@ func newIntegrationTestHarness(dbMode config.DatabaseMode) *harness {
 		logging.Logger.Fatalf("failed to create initial virtual server: %v", err)
 	}
 
-	dbContext := ioc.GetDependency[db2.Context](scope)
+	dbContext := scope.GetDependency[db2.Context]()
 	err = dbContext.SaveChanges(ctx)
 	if err != nil {
 		panic(err)

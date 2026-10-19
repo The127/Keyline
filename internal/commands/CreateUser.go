@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 	"fmt"
+
 	"github.com/The127/Keyline/internal/authentication/permissions"
 	"github.com/The127/Keyline/internal/behaviours"
 	"github.com/The127/Keyline/internal/database"
@@ -10,7 +11,6 @@ import (
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/repositories"
 
-	"github.com/The127/ioc"
 	"github.com/The127/mediatr"
 
 	"github.com/google/uuid"
@@ -46,7 +46,7 @@ type CreateUserResponse struct {
 
 func HandleCreateUser(ctx context.Context, command CreateUser) (*CreateUserResponse, error) {
 	scope := middlewares.GetScope(ctx)
-	dbContext := ioc.GetDependency[database.Context](scope)
+	dbContext := scope.GetDependency[database.Context]()
 
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(command.VirtualServerName)
 	virtualServer, err := dbContext.VirtualServers().FirstOrErr(ctx, virtualServerFilter)
@@ -63,7 +63,7 @@ func HandleCreateUser(ctx context.Context, command CreateUser) (*CreateUserRespo
 	user.SetEmailVerified(command.EmailVerified)
 	dbContext.Users().Insert(user)
 
-	m := ioc.GetDependency[mediatr.Mediator](scope)
+	m := scope.GetDependency[mediatr.Mediator]()
 	err = mediatr.SendEvent(ctx, m, events.UserCreatedEvent{
 		User: user,
 	})

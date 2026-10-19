@@ -2,15 +2,15 @@ package handlers
 
 import (
 	"encoding/json"
+	"net/http"
+
 	"github.com/The127/Keyline/client/api"
 	"github.com/The127/Keyline/internal/commands"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/queries"
 	"github.com/The127/Keyline/internal/repositories"
 	"github.com/The127/Keyline/utils"
-	"net/http"
 
-	"github.com/The127/ioc"
 	"github.com/The127/mediatr"
 	"github.com/gorilla/mux"
 )
@@ -49,7 +49,7 @@ func CreateIdentityProvider(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[mediatr.Mediator](scope)
+	m := scope.GetDependency[mediatr.Mediator]()
 
 	response, err := mediatr.Send[*commands.CreateIdentityProviderResponse](ctx, m, commands.CreateIdentityProvider{
 		VirtualServerName: vsName,
@@ -104,7 +104,7 @@ func GetIdentityProvider(w http.ResponseWriter, r *http.Request) {
 	name := mux.Vars(r)["name"]
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[mediatr.Mediator](scope)
+	m := scope.GetDependency[mediatr.Mediator]()
 
 	identityProvider, err := mediatr.Send[*queries.GetIdentityProviderResult](ctx, m, queries.GetIdentityProvider{
 		VirtualServerName: vsName,

@@ -71,7 +71,7 @@ func (h *harness) Close() {
 	utils.PanicOnError(func() error { return h.shutdown(shutdownCtx) }, "shutting down server in test")
 
 	// cleanup database
-	dbConnection := ioc.GetDependency[database.Database](h.scope)
+	dbConnection := h.scope.GetDependency[database.Database]()
 	utils.PanicOnError(h.scope.Close, "closing scope")
 	utils.PanicOnError(dbConnection.Close, "closing db connection in test")
 
@@ -204,7 +204,7 @@ func newE2eTestHarness(dbMode config.DatabaseMode, login client.TransportOptions
 		panic(fmt.Errorf("failed to create test database: %w", err))
 	}
 
-	ioc.RegisterSingleton(dc, func(dp *ioc.DependencyProvider) clock.Service {
+	ioc.RegisterSingleton(dc, func(scope *ioc.DependencyProvider) clock.Service {
 		return clockService
 	})
 	setup.OutboxDelivery(dc, config.QueueModeNoop)
@@ -286,13 +286,13 @@ func newE2eTestHarness(dbMode config.DatabaseMode, login client.TransportOptions
 	}
 }
 
-func initTest(dp *ioc.DependencyProvider) error {
-	scope := dp.NewScope()
-	dbContext := ioc.GetDependency[database.Context](scope)
+func initTest(scopeIn *ioc.DependencyProvider) error {
+	scope := scopeIn.NewScope()
+	dbContext := scope.GetDependency[database.Context]()
 
 	ctx := middlewares.ContextWithScope(context.Background(), scope)
 	ctx = authentication.ContextWithCurrentUser(ctx, authentication.SystemUser())
-	m := ioc.GetDependency[mediatr.Mediator](scope)
+	m := scope.GetDependency[mediatr.Mediator]()
 
 	createVirtualServerResponse, err := mediatr.Send[*commands.CreateVirtualServerResponse](ctx, m, commands.CreateVirtualServer{
 		Name:                    "test-vs",

@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 	"fmt"
+
 	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/authentication/permissions"
 	"github.com/The127/Keyline/internal/behaviours"
@@ -13,7 +14,6 @@ import (
 	"github.com/The127/Keyline/utils"
 
 	"github.com/The127/go-clock"
-	"github.com/The127/ioc"
 )
 
 type PatchVirtualServer struct {
@@ -48,7 +48,7 @@ type PatchVirtualServerResponse struct{}
 
 func HandlePatchVirtualServer(ctx context.Context, command PatchVirtualServer) (*PatchVirtualServerResponse, error) {
 	scope := middlewares.GetScope(ctx)
-	dbContext := ioc.GetDependency[database.Context](scope)
+	dbContext := scope.GetDependency[database.Context]()
 
 	virtualServerFilter := repositories.NewVirtualServerFilter().Name(command.VirtualServerName)
 	virtualServer, err := dbContext.VirtualServers().FirstOrErr(ctx, virtualServerFilter)
@@ -95,9 +95,9 @@ func HandlePatchVirtualServer(ctx context.Context, command PatchVirtualServer) (
 	dbContext.VirtualServers().Update(virtualServer)
 
 	if command.PrimarySigningAlgorithm != nil || command.AdditionalSigningAlgorithms != nil {
-		keyStore := ioc.GetDependency[services.KeyStore](scope)
-		keyService := ioc.GetDependency[services.KeyService](scope)
-		clockService := ioc.GetDependency[clock.Service](scope)
+		keyStore := scope.GetDependency[services.KeyStore]()
+		keyService := scope.GetDependency[services.KeyService]()
+		clockService := scope.GetDependency[clock.Service]()
 
 		for _, alg := range virtualServer.AllSigningAlgorithms() {
 			existing, err := keyStore.GetAllForAlgorithm(command.VirtualServerName, alg)

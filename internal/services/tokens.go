@@ -5,12 +5,11 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/services/keyValue"
 	"github.com/The127/Keyline/utils"
-	"time"
-
-	"github.com/The127/ioc"
 )
 
 type TokenType string
@@ -54,7 +53,7 @@ func (t *tokenService) GenerateAndStoreToken(ctx context.Context, tokenType Toke
 	token := base64.URLEncoding.EncodeToString(bytes)
 
 	scope := middlewares.GetScope(ctx)
-	kvStore := ioc.GetDependency[keyValue.Store](scope)
+	kvStore := scope.GetDependency[keyValue.Store]()
 
 	err := kvStore.Set(ctx, tokenType.Key(token), value, keyValue.WithExpiration(expiration))
 	if err != nil {
@@ -66,7 +65,7 @@ func (t *tokenService) GenerateAndStoreToken(ctx context.Context, tokenType Toke
 
 func (t *tokenService) UpdateToken(ctx context.Context, tokenType TokenType, token string, value string, expiration time.Duration) error {
 	scope := middlewares.GetScope(ctx)
-	kvStore := ioc.GetDependency[keyValue.Store](scope)
+	kvStore := scope.GetDependency[keyValue.Store]()
 
 	err := kvStore.Set(ctx, tokenType.Key(token), value, keyValue.WithExpiration(expiration))
 	if err != nil {
@@ -78,7 +77,7 @@ func (t *tokenService) UpdateToken(ctx context.Context, tokenType TokenType, tok
 
 func (t *tokenService) GetToken(ctx context.Context, tokenType TokenType, token string) (string, error) {
 	scope := middlewares.GetScope(ctx)
-	kvStore := ioc.GetDependency[keyValue.Store](scope)
+	kvStore := scope.GetDependency[keyValue.Store]()
 
 	token, err := kvStore.Get(ctx, tokenType.Key(token))
 	switch {
@@ -94,7 +93,7 @@ func (t *tokenService) GetToken(ctx context.Context, tokenType TokenType, token 
 
 func (t *tokenService) DeleteToken(ctx context.Context, tokenType TokenType, token string) error {
 	scope := middlewares.GetScope(ctx)
-	kvStore := ioc.GetDependency[keyValue.Store](scope)
+	kvStore := scope.GetDependency[keyValue.Store]()
 
 	err := kvStore.Delete(ctx, tokenType.Key(token))
 	switch {
@@ -110,7 +109,7 @@ func (t *tokenService) DeleteToken(ctx context.Context, tokenType TokenType, tok
 
 func (t *tokenService) StoreToken(ctx context.Context, tokenType TokenType, token string, value string, expiration time.Duration) error {
 	scope := middlewares.GetScope(ctx)
-	kvStore := ioc.GetDependency[keyValue.Store](scope)
+	kvStore := scope.GetDependency[keyValue.Store]()
 
 	err := kvStore.Set(ctx, tokenType.Key(token), value, keyValue.WithExpiration(expiration))
 	if err != nil {
@@ -122,7 +121,7 @@ func (t *tokenService) StoreToken(ctx context.Context, tokenType TokenType, toke
 
 func (t *tokenService) StoreTokenIfAbsent(ctx context.Context, tokenType TokenType, token string, value string, expiration time.Duration) (bool, error) {
 	scope := middlewares.GetScope(ctx)
-	kvStore := ioc.GetDependency[keyValue.Store](scope)
+	kvStore := scope.GetDependency[keyValue.Store]()
 
 	stored, err := kvStore.SetIfAbsent(ctx, tokenType.Key(token), value, keyValue.WithExpiration(expiration))
 	if err != nil {

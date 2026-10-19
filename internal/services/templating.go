@@ -4,12 +4,11 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"html/template"
+
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/repositories"
-	"html/template"
-
-	"github.com/The127/ioc"
 
 	"github.com/google/uuid"
 )
@@ -27,7 +26,7 @@ func NewTemplateService() TemplateService {
 
 func (s templateService) Template(ctx context.Context, virtualServerId uuid.UUID, templateType repositories.TemplateType, data any) (string, error) {
 	scope := middlewares.GetScope(ctx)
-	dbContext := ioc.GetDependency[database.Context](scope)
+	dbContext := scope.GetDependency[database.Context]()
 
 	dbTemplate, err := dbContext.Templates().FirstOrNil(ctx, repositories.NewTemplateFilter().
 		VirtualServerId(virtualServerId).

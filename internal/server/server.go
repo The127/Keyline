@@ -4,13 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
+	"net/http"
+
 	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/authentication"
 	"github.com/The127/Keyline/internal/handlers"
 	"github.com/The127/Keyline/internal/logging"
 	"github.com/The127/Keyline/internal/middlewares"
-	"net"
-	"net/http"
 
 	"github.com/The127/ioc"
 	httpSwagger "github.com/swaggo/http-swagger"
@@ -22,13 +23,13 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func Serve(dp *ioc.DependencyProvider, serverConfig config.ServerConfig) (func(context.Context) error, error) {
+func Serve(scope *ioc.DependencyProvider, serverConfig config.ServerConfig) (func(context.Context) error, error) {
 	var servers []*http.Server
 	r := mux.NewRouter()
 
 	r.Use(middlewares.RecoverMiddleware())
 	r.Use(middlewares.LoggingMiddleware())
-	r.Use(middlewares.ScopeMiddleware(dp))
+	r.Use(middlewares.ScopeMiddleware(scope))
 
 	r.HandleFunc("/health", handlers.ApplicationHealth).Methods(http.MethodGet, http.MethodOptions)
 	r.HandleFunc("/debug", handlers.Debug).Methods(http.MethodGet, http.MethodOptions)
@@ -100,7 +101,7 @@ func Serve(dp *ioc.DependencyProvider, serverConfig config.ServerConfig) (func(c
 
 		apiRouter.Use(middlewares.RecoverMiddleware())
 		apiRouter.Use(middlewares.LoggingMiddleware())
-		apiRouter.Use(middlewares.ScopeMiddleware(dp))
+		apiRouter.Use(middlewares.ScopeMiddleware(scope))
 
 		mapApiRoutes(apiRouter)
 

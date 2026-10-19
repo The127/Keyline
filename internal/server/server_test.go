@@ -25,10 +25,10 @@ func freePort(t *testing.T) int {
 	return port
 }
 
-func serveOnFreePort(t *testing.T, dp *ioc.DependencyProvider) int {
+func serveOnFreePort(t *testing.T, scope *ioc.DependencyProvider) int {
 	for range 5 {
 		port := freePort(t)
-		shutdown, err := Serve(dp, config.ServerConfig{Host: "127.0.0.1", Port: port})
+		shutdown, err := Serve(scope, config.ServerConfig{Host: "127.0.0.1", Port: port})
 		if errors.Is(err, syscall.EADDRINUSE) {
 			continue
 		}

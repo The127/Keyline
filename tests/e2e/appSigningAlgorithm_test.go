@@ -13,7 +13,6 @@ import (
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/utils"
-	"github.com/The127/ioc"
 	"github.com/The127/mediatr"
 	"github.com/golang-jwt/jwt/v5"
 	. "github.com/onsi/ginkgo/v2"
@@ -41,8 +40,8 @@ func init() {
 				defer utils.PanicOnError(scope.Close, "closing scope")
 				ctx := middlewares.ContextWithScope(context.Background(), scope)
 				ctx = authentication.ContextWithCurrentUser(ctx, authentication.SystemUser())
-				m := ioc.GetDependency[mediatr.Mediator](scope)
-				dbCtx := ioc.GetDependency[database.Context](scope)
+				m := scope.GetDependency[mediatr.Mediator]()
+				dbCtx := scope.GetDependency[database.Context]()
 
 				// Create a VS with EdDSA primary + RS256 additional
 				createVSResp, err := mediatr.Send[*commands.CreateVirtualServerResponse](ctx, m, commands.CreateVirtualServer{
@@ -135,7 +134,7 @@ func init() {
 				defer utils.PanicOnError(scope.Close, "closing scope")
 				ctx := middlewares.ContextWithScope(context.Background(), scope)
 				ctx = authentication.ContextWithCurrentUser(ctx, authentication.SystemUser())
-				m := ioc.GetDependency[mediatr.Mediator](scope)
+				m := scope.GetDependency[mediatr.Mediator]()
 
 				// Try to create an app on a VS that only has EdDSA — RS256 is not configured
 				_, err := mediatr.Send[*commands.CreateApplicationResponse](ctx, m, commands.CreateApplication{
@@ -157,7 +156,7 @@ func init() {
 				defer utils.PanicOnError(scope.Close, "closing scope")
 				ctx := middlewares.ContextWithScope(context.Background(), scope)
 				ctx = authentication.ContextWithCurrentUser(ctx, authentication.SystemUser())
-				m := ioc.GetDependency[mediatr.Mediator](scope)
+				m := scope.GetDependency[mediatr.Mediator]()
 
 				// Try to remove RS256 from the VS — but rs256-app still uses it
 				empty := []config.SigningAlgorithm{}

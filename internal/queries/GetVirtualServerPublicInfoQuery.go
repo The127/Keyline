@@ -3,11 +3,10 @@ package queries
 import (
 	"context"
 	"fmt"
+
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/repositories"
-
-	"github.com/The127/ioc"
 )
 
 type GetVirtualServerPublicInfo struct {
@@ -24,7 +23,7 @@ type GetVirtualServerPublicInfoResponse struct {
 
 func HandleGetVirtualServerPublicInfo(ctx context.Context, query GetVirtualServerPublicInfo) (*GetVirtualServerPublicInfoResponse, error) {
 	scope := middlewares.GetScope(ctx)
-	dbContext := ioc.GetDependency[database.Context](scope)
+	dbContext := scope.GetDependency[database.Context]()
 
 	virtualServerFilter := repositories.NewVirtualServerFilter().
 		Name(query.VirtualServerName)

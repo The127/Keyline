@@ -23,7 +23,7 @@ func OutboxDelivery(dc *ioc.DependencyCollection, queueMode config.QueueMode) {
 		panic("queue mode missing or not supported")
 	}
 
-	ioc.RegisterTransient(dc, func(dp *ioc.DependencyProvider) outbox.MessageBroker {
+	ioc.RegisterTransient(dc, func(scope *ioc.DependencyProvider) outbox.MessageBroker {
 		return outbox.NewMessageBroker()
 	})
 }

@@ -3,16 +3,16 @@ package handlers
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"slices"
+
 	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/database"
 	"github.com/The127/Keyline/internal/middlewares"
 	"github.com/The127/Keyline/internal/repositories"
 	"github.com/The127/Keyline/internal/services"
 	"github.com/The127/Keyline/utils"
-	"net/http"
-	"slices"
 
-	"github.com/The127/ioc"
 	"github.com/google/uuid"
 )
 
@@ -49,7 +49,7 @@ func (c clientCredentials) hasAssertion() bool {
 
 func findApplication(ctx context.Context, virtualServer *repositories.VirtualServer, name string) (*repositories.Application, error) {
 	scope := middlewares.GetScope(ctx)
-	dbContext := ioc.GetDependency[database.Context](scope)
+	dbContext := scope.GetDependency[database.Context]()
 
 	applicationFilter := repositories.NewApplicationFilter().
 		VirtualServerId(virtualServer.Id()).
@@ -139,7 +139,7 @@ func authenticateApplicationWithAssertion(
 	}
 
 	scope := middlewares.GetScope(ctx)
-	dbContext := ioc.GetDependency[database.Context](scope)
+	dbContext := scope.GetDependency[database.Context]()
 
 	var application *repositories.Application
 	assertion, err := verifySignedAssertion(ctx, credentials.clientAssertion, services.ClientAssertionJtiTokenType, func(ctx context.Context, subject string, kid string) (uuid.UUID, any, error) {

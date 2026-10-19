@@ -14,7 +14,6 @@ import (
 	"github.com/The127/Keyline/utils"
 
 	"github.com/The127/go-clock"
-	"github.com/The127/ioc"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 )
@@ -49,7 +48,7 @@ func handleTokenExchange(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	scope := middlewares.GetScope(ctx)
-	dbContext := ioc.GetDependency[database.Context](scope)
+	dbContext := scope.GetDependency[database.Context]()
 
 	virtualServerName, err := middlewares.GetVirtualServerName(ctx)
 	if err != nil {
@@ -84,8 +83,8 @@ func handleTokenExchange(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	keyService := ioc.GetDependency[services.KeyService](scope)
-	clockService := ioc.GetDependency[clock.Service](scope)
+	keyService := scope.GetDependency[services.KeyService]()
+	clockService := scope.GetDependency[clock.Service]()
 	now := clockService.Now()
 	issuer := fmt.Sprintf("%s/oidc/%s", config.C.Server.ExternalUrl, virtualServer.Name())
 

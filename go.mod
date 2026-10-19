@@ -1,13 +1,13 @@
 module github.com/The127/Keyline
 
-go 1.26.0
+go 1.27.2
 
 replace github.com/The127/Keyline/client => ./client
 
 require (
 	github.com/The127/Keyline/client v0.0.0-00010101000000-000000000000
 	github.com/The127/go-clock v0.0.0-20251223175028-de53998b7f1b
-	github.com/The127/ioc v0.0.0-20251106160055-64edcb05f08d
+	github.com/The127/ioc v0.0.0-20261019160552-38c32175d0dc
 	github.com/The127/mediatr v0.0.0-20251106154229-12859853c010
 	github.com/dop251/goja v0.0.0-20251008123653-cf18d89f3cf6
 	github.com/go-crypt/crypt v0.14.15
@@ -39,8 +39,6 @@ require (
 	gopkg.in/mail.v2 v2.3.1
 	modernc.org/sqlite v1.60.1
 )
-
-require golang.org/x/oauth2 v0.37.0 // indirect
 
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
@@ -109,6 +107,7 @@ require (
 	golang.org/x/crypto v0.57.0 // indirect
 	golang.org/x/mod v0.41.0 // indirect
 	golang.org/x/net v0.59.0 // indirect
+	golang.org/x/oauth2 v0.37.0 // indirect
 	golang.org/x/sync v0.23.0 // indirect
 	golang.org/x/sys v0.48.0 // indirect
 	golang.org/x/text v0.42.0 // indirect

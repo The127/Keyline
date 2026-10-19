@@ -4,6 +4,9 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/The127/Keyline/client/api"
 	"github.com/The127/Keyline/config"
 	"github.com/The127/Keyline/internal/authentication"
@@ -15,10 +18,7 @@ import (
 	"github.com/The127/Keyline/internal/repositories"
 	"github.com/The127/Keyline/internal/services/keyValue"
 	"github.com/The127/Keyline/utils"
-	"net/http"
-	"time"
 
-	"github.com/The127/ioc"
 	"github.com/The127/mediatr"
 
 	"github.com/google/uuid"
@@ -52,7 +52,7 @@ func VerifyEmail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(r.Context())
-	m := ioc.GetDependency[mediatr.Mediator](scope)
+	m := scope.GetDependency[mediatr.Mediator]()
 
 	_, err = mediatr.Send[*commands.VerifyEmailResponse](r.Context(), m, commands.VerifyEmail{
 		VirtualServerName: vsName,
@@ -99,7 +99,7 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[mediatr.Mediator](scope)
+	m := scope.GetDependency[mediatr.Mediator]()
 
 	_, err = mediatr.Send[*commands.RegisterUserResponse](ctx, m, commands.RegisterUser{
 		VirtualServerName: vsName,
@@ -148,7 +148,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[mediatr.Mediator](scope)
+	m := scope.GetDependency[mediatr.Mediator]()
 
 	createUserResponse, err := mediatr.Send[*commands.CreateUserResponse](ctx, m, commands.CreateUser{
 		VirtualServerName: vsName,
@@ -211,7 +211,7 @@ func ListUsers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[mediatr.Mediator](scope)
+	m := scope.GetDependency[mediatr.Mediator]()
 
 	users, err := mediatr.Send[*queries.ListUsersResponse](ctx, m, queries.ListUsers{
 		VirtualServerName: vsName,
@@ -275,7 +275,7 @@ func GetUserById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m := ioc.GetDependency[mediatr.Mediator](scope)
+	m := scope.GetDependency[mediatr.Mediator]()
 	query := queries.GetUserQuery{
 		UserId:            userId,
 		VirtualServerName: vsName,
@@ -339,7 +339,7 @@ func GetUserApplicationMetadata(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m := ioc.GetDependency[mediatr.Mediator](scope)
+	m := scope.GetDependency[mediatr.Mediator]()
 	query := queries.GetUserMetadata{
 		VirtualServerName: vsName,
 		UserId:            userId,
@@ -396,7 +396,7 @@ func GetUserGlobalMetadata(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m := ioc.GetDependency[mediatr.Mediator](scope)
+	m := scope.GetDependency[mediatr.Mediator]()
 	query := queries.GetUserMetadata{
 		VirtualServerName:     vsName,
 		UserId:                userId,
@@ -452,7 +452,7 @@ func GetUserMetadata(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m := ioc.GetDependency[mediatr.Mediator](scope)
+	m := scope.GetDependency[mediatr.Mediator]()
 	query := queries.GetUserMetadata{
 		VirtualServerName:             vsName,
 		UserId:                        userId,
@@ -530,7 +530,7 @@ func UpdateUserGlobalMetadata(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m := ioc.GetDependency[mediatr.Mediator](scope)
+	m := scope.GetDependency[mediatr.Mediator]()
 	_, err = mediatr.Send[*commands.UpdateUserMetadataResponse](ctx, m, commands.UpdateUserMetadata{
 		VirtualServerName: vsName,
 		UserId:            userId,
@@ -580,7 +580,7 @@ func PatchUserGlobalMetadata(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m := ioc.GetDependency[mediatr.Mediator](scope)
+	m := scope.GetDependency[mediatr.Mediator]()
 	_, err = mediatr.Send[*commands.PatchUserMetadataResponse](ctx, m, commands.PatchUserMetadata{
 		VirtualServerName: vsName,
 		UserId:            userId,
@@ -635,7 +635,7 @@ func UpdateUserApplicationMetadata(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m := ioc.GetDependency[mediatr.Mediator](scope)
+	m := scope.GetDependency[mediatr.Mediator]()
 	_, err = mediatr.Send[*commands.UpdateUserAppMetadataResponse](ctx, m, commands.UpdateUserAppMetadata{
 		VirtualServerName: vsName,
 		UserId:            userId,
@@ -692,7 +692,7 @@ func PatchUserApplicationMetadata(w http.ResponseWriter, r *http.Request) {
 		utils.HandleHttpError(w, err)
 	}
 
-	m := ioc.GetDependency[mediatr.Mediator](scope)
+	m := scope.GetDependency[mediatr.Mediator]()
 	_, err = mediatr.Send[*commands.PatchUserAppMetadataResponse](ctx, m, commands.PatchUserAppMetadata{
 		VirtualServerName: vsName,
 		UserId:            userId,
@@ -743,7 +743,7 @@ func PatchUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m := ioc.GetDependency[mediatr.Mediator](scope)
+	m := scope.GetDependency[mediatr.Mediator]()
 	command := commands.PatchUser{
 		UserId:            userId,
 		VirtualServerName: vsName,
@@ -791,7 +791,7 @@ func CreateServiceUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[mediatr.Mediator](scope)
+	m := scope.GetDependency[mediatr.Mediator]()
 
 	response, err := mediatr.Send[*commands.CreateServiceUserResponse](ctx, m, commands.CreateServiceUser{
 		VirtualServerName: vsName,
@@ -850,7 +850,7 @@ func AssociateServiceUserPublicKey(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[mediatr.Mediator](scope)
+	m := scope.GetDependency[mediatr.Mediator]()
 
 	response, err := mediatr.Send[*commands.AssociateServiceUserPublicKeyResponse](ctx, m, commands.AssociateServiceUserPublicKey{
 		VirtualServerName: vsName,
@@ -907,7 +907,7 @@ func RemoveServiceUserPublicKey(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scope := middlewares.GetScope(ctx)
-	m := ioc.GetDependency[mediatr.Mediator](scope)
+	m := scope.GetDependency[mediatr.Mediator]()
 
 	_, err = mediatr.Send[*commands.RemoveServiceUserPublicKeyResponse](ctx, m, commands.RemoveServiceUserPublicKey{
 		VirtualServerName: vsName,
@@ -925,7 +925,7 @@ func RemoveServiceUserPublicKey(w http.ResponseWriter, r *http.Request) {
 func PasskeyCreateChallenge(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	scope := middlewares.GetScope(ctx)
-	dbContext := ioc.GetDependency[database.Context](scope)
+	dbContext := scope.GetDependency[database.Context]()
 
 	vars := mux.Vars(r)
 	userId, err := uuid.Parse(vars["userId"])
@@ -961,7 +961,7 @@ func PasskeyCreateChallenge(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kvStore := ioc.GetDependency[keyValue.Store](scope)
+	kvStore := scope.GetDependency[keyValue.Store]()
 	err = kvStore.Set(ctx, "passkey_challenge:"+challenge.Id.String(), string(challengeJson), keyValue.WithExpiration(time.Minute*5))
 	if err != nil {
 		utils.HandleHttpError(w, err)
@@ -986,7 +986,7 @@ func PasskeyCreateChallenge(w http.ResponseWriter, r *http.Request) {
 func PasskeyValidateCreateChallengeResponse(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	scope := middlewares.GetScope(ctx)
-	dbContext := ioc.GetDependency[database.Context](scope)
+	dbContext := scope.GetDependency[database.Context]()
 
 	vars := mux.Vars(r)
 	userId, err := uuid.Parse(vars["userId"])
@@ -1016,7 +1016,7 @@ func PasskeyValidateCreateChallengeResponse(w http.ResponseWriter, r *http.Reque
 	}
 
 	// get challenge from kv store
-	kvStore := ioc.GetDependency[keyValue.Store](scope)
+	kvStore := scope.GetDependency[keyValue.Store]()
 
 	pubKey, err := base64.RawURLEncoding.DecodeString(dto.WebauthnResponse.Response.PublicKey)
 	if err != nil {
@@ -1055,7 +1055,7 @@ func ListPasskeys(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m := ioc.GetDependency[mediatr.Mediator](scope)
+	m := scope.GetDependency[mediatr.Mediator]()
 
 	passkeys, err := mediatr.Send[*queries.ListPasskeysResponse](ctx, m, queries.ListPasskeys{
 		VirtualServerName: vsName,
