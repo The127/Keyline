@@ -21,7 +21,7 @@ require (
 	github.com/hashicorp/vault/api v1.23.0
 	github.com/huandu/go-sqlbuilder v1.44.0
 	github.com/knadh/koanf/parsers/yaml v1.1.1
-	github.com/knadh/koanf/providers/env/v2 v2.0.1
+	github.com/knadh/koanf/providers/env/v2 v2.0.2
 	github.com/knadh/koanf/providers/file v1.2.1
 	github.com/knadh/koanf/v2 v2.3.8
 	github.com/lib/pq v1.12.3
