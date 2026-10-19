@@ -62,12 +62,12 @@ jobs:
       - name: Run golangci-lint (v2)
         uses: golangci/golangci-lint-action@v9
         with:
-          version: v2.13.2
+          version: v2.15.0
 
       - name: Run golangci-lint on the client module
         uses: golangci/golangci-lint-action@v9
         with:
-          version: v2.13.2
+          version: v2.15.0
           working-directory: client
 
       - name: Check client module dependencies
