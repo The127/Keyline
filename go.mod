@@ -37,7 +37,7 @@ require (
 	go.uber.org/mock v0.6.0
 	go.uber.org/zap v1.28.0
 	gopkg.in/mail.v2 v2.3.1
-	modernc.org/sqlite v1.61.0
+	modernc.org/sqlite v1.61.1
 )
 
 require (
