@@ -6,7 +6,7 @@ replace github.com/The127/Keyline/client => ./client
 
 require (
 	github.com/The127/Keyline/client v0.0.0-00010101000000-000000000000
-	github.com/The127/go-clock v0.0.0-20251223175028-de53998b7f1b
+	github.com/The127/go-clock v1.0.0
 	github.com/The127/ioc v0.0.0-20261019160552-38c32175d0dc
 	github.com/The127/mediatr v0.0.0-20251106154229-12859853c010
 	github.com/dop251/goja v0.0.0-20251008123653-cf18d89f3cf6
